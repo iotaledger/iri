@@ -234,10 +234,6 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                         } catch (TransactionPruningException e) {
                             throw new RuntimeException(e);
                         }
-                    } else {
-                        // Confirmed TX, add to data structure
-                        // either add to list, or add a new job to add to the cuckoofilter
-                        
                     }
                 } else if(Milestone.class.equals(element.hi)) {
                     MilestoneViewModel.clear(((IntegerIndex) element.low).getValue());

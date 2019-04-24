@@ -31,7 +31,7 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
     
     /**
      * The amount of fingerprints each bucket keeps. 
-     * More than 4 
+     * More than 4 will be slower in performance, whilst the extra space it gets us is not needed.
      */
     private static final int BUCKET_SIZE = 4;
     

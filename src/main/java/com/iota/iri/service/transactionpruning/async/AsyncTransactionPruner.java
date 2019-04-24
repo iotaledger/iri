@@ -106,7 +106,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
     private final Map<Class<? extends TransactionPrunerJob>, JobQueue> jobQueues = new HashMap<>();
 
     /**
-     * 
+     * Provider for managing transactions we delete from the database in an optimized data structure
      */
     private PrunedTransactionProvider prunedTransactionProvider;
 

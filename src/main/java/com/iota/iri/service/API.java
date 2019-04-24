@@ -703,7 +703,7 @@ public class API {
     // FIXME add comments
     private synchronized AbstractResponse getDAGStatement(String type) throws Exception {
         LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
-        String graph = prov.printGraph(prov.getCondensedGraph(), type);
+        String graph = prov.printGraph(prov.getGraph(), type);
         return GetDAGResponse.create(graph);
     }
 

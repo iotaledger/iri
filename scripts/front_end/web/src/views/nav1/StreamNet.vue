@@ -64,7 +64,7 @@
                 alert(response["Message"]);
             } else {
                 let detail = response["Data"];
-                detail = JSON.parse(detail.replace("']", "]").replace("['", "[").replace(/\', \'/g ,","));
+                detail = JSON.parse(detail.replace("']", "]").replace("['", "[").replace(/\', \'/g, ","));
                 $(".detail-show pre").html(JSON.stringify(detail, null, 2));
             }
         });
@@ -93,7 +93,7 @@
             },
             getDagMap() {
                 if (!requestServer || !requestPort) {
-                    this.$alert("Please choose server and port", "Warning",{type:"warning"});
+                    this.$alert("Please choose server and port", "Warning", this.messageOption.warning);
                 }
                 let requestUrl = "";
                 requestHost = requestServer + ":" + requestPort;
@@ -106,145 +106,38 @@
                     if (res.data["Code"] === 0) {
                         alert(data["Message"]);
                     } else {
-                        let data = JSON.parse(res.data["Data"]);
-                        let nodes = this.prepareMapData(data);
-                        let relations = [];
-                        for (let i in data) {
-                            let b = data[i];
-                            for (let j in b) {
-                                let unit = {};
-                                unit.target = i.substr(0, 6);
-                                unit.source = b[j].substr(0, 6);
-                                relations.push(unit);
-                            }
+                        let data = {};
+                        try {
+                            data = JSON.parse(res.data["Data"]);
+                        } catch (e) {
+                            console.error("message format error:" + res.data["Data"])
                         }
-                        this.drawDagMap(nodes, relations);
+                        let digraph = this.prepareVizMap(data);
+                        this.drawVizGraph(digraph, {format: "svg"});
                     }
                 }).catch((err) => {
                     console.error(err);
                 })
             },
-            drawDagMap(nodes, relations) {
-                nameMap = {};
-                let myChart = this.$echarts.init(document.getElementById("dagChart"));
-                myChart.clear();
-                myChart.showLoading();
-                // prepare nodes
-                let datas = [];
-                nodes.forEach(function (item) {
-                    let shortName = item.id.substr(0, 6);
-                    let unit = {
-                        x: item.x,
-                        y: item.y,
-                        id: shortName,
-                        name: shortName,
-                        symbolSize: 10,
-                        itemStyle: {
-                            normal: {
-                                color: "rgb(63, 167, 220)"
-                            }
-                        }
-                    };
-                    datas.push(unit);
-                    nameMap[shortName] = item.id;
-                });
-                //prepare charts datas
-                let series = [];
-                let seriesData;
-                seriesData = {
-                    type: "graph",
-                    layout: "none",
-                    edgeSymbol: ["arrow"],
-                    data: datas,
-                    edges: relations.map(function (edge) {
-                        return {
-                            source: edge.source,
-                            target: edge.target
-                        };
-                    }),
-                    label: {
-                        normal: {
-                            show: true,
-                            fontSize: 9
-                        }
-                    },
-                    roam: true,
-                    focusNodeAdjacency: true,
-                    lineStyle: {
-                        normal: {
-                            width: 0.5,
-                            curveness: 0,
-                            opacity: 0.7
-                        }
-                    }
-                };
-                series[0] = seriesData;
-                let mapOption = {};
-                mapOption.title = {};
-                mapOption.title.text = "Dag Map";
-                mapOption.animationDurationUpdate = 1500;
-                mapOption.animationEasingUpdate = "quinticInOut";
-                mapOption.series = series;
-                myChart.setOption(mapOption, true);
-                myChart.off("click");
-                myChart.on("click", function (param) {
-                    let name = param.name;
-                    queryNodeDetail(name);
-                });
-                myChart.hideLoading();
-            },
-            prepareMapData(data) {
-                //get root node
-                let root = "";
-                let keys = [];
-                let values = {};
+            prepareVizMap(data) {
+                let resultHtml = "digraph {rankdir=LR;";
                 for (let i in data) {
-                    keys.push(i);
                     let b = data[i];
+                    nameMap[i.substr(0, 6)] = i;
                     for (let j in b) {
-                        values[b[j]] = 1;
+                        nameMap[b[j].substr(0, 6)] = b[j];
+                        resultHtml += "\"" + i.substr(0, 6) + "\"->\"" + b[j].substr(0, 6) + "\";";
                     }
                 }
-                for (let i in keys) {
-                    if (values[keys[i]] == null) {
-                        root = keys[i];
-                        break;
-                    }
-                }
-                let resultData = [];
-                let existNode = {};
-                let startx = 0;
-                let starty = 500;
-                let unit = {0: 100, 1: -100};
-                if (root !== "") {
-                    let createMap = function (nodeName, data, x, y) {
-                        if (!data[nodeName] || existNode[nodeName]) {
-                            return;
-                        } else {
-                            let item = {};
-                            item.id = nodeName;
-                            item.x = x;
-                            item.y = y;
-                            resultData.push(item);
-                            existNode[nodeName] = 1;
-                            for (var i = 0, j = data[nodeName].length; i < j; i++) {
-                                if (j > 1) {
-                                    createMap(data[nodeName][i], data, x + 200, y + unit[i]);
-                                } else {
-                                    createMap(data[nodeName][i], data, x + 200, y);
-                                }
-                            }
-                        }
-                    };
-                    createMap(root, data, startx, starty);
-                }
-                return resultData;
+                resultHtml += "}";
+                return resultHtml;
             },
             getTotalOrder() {
-                if (requestHost === "") {
-                    return;
+                if (!requestServer || !requestPort) {
+                    this.$alert("Please choose server and port", "Warning", this.messageOption.warning);
                 }
                 let requestUrl = "";
+                requestHost = requestServer + ":" + requestPort;
                 requestUrl = requestHost + "/get_total_order";
                 let request = {};
                 request.requestUrl = requestUrl;
@@ -253,32 +146,36 @@
                     if (res.data["Code"] === 0) {
                         alert(data["Message"]);
                     } else {
-                        let data = JSON.parse(res.data["Data"]);
-                        let nodes = this.prepareTreeData(data);
-                        let relations = [];
-                        for (let i = 0, j = data.length; i < j - 1; i++) {
-                            let unit = {};
-                            unit.source = data[i].substr(0, 6);
-                            unit.target = data[i + 1].substr(0, 6);
-                            relations.push(unit)
+                        let data = {};
+                        try {
+                            data = JSON.parse(res.data["Data"]);
+                        } catch (e) {
+                            console.error("message format error:" + res.data["Data"])
                         }
-                        this.drawDagMap(nodes, relations);
+                        let digraph = this.prepareTreeData(data);
+                        this.drawVizGraph(digraph, {format: "svg"});
                     }
                 }).catch((err) => {
                     console.error(err);
                 });
             },
             prepareTreeData(data) {
-                let result = [];
-                for (let i in data) {
-                    let item = {};
-                    item.id = data[i];
-                    item.x = i * 100;
-                    item.y = 300;
-                    result.push(item);
+                let resultHtml = "digraph {rankdir=LR;";
+                for (let i = 0, j = data.length; i < j - 1; i++) {
+                    nameMap[data[i].substr(0, 6)] = data[i];
+                    nameMap[data[i + 1].substr(0, 6)] = data[i + 1];
+                    resultHtml += "\"" + data[i].substr(0, 6) + "\"->\"" + data[i + 1].substr(0, 6) + "\";";
                 }
-                return result;
+                resultHtml += "}";
+                return resultHtml;
             },
+            drawVizGraph(digraph, option) {
+                let svgXml = this.$viz(digraph, option);
+                $("#dagChart").html(svgXml);
+                $("#dagChart .node").off("click").on("click", function () {
+                    queryNodeDetail($(this).children("title").text());
+                })
+            }
         }
     };
 </script>
@@ -296,17 +193,23 @@
     .dag-chart {
         width: 98%;
         height: 500px;
-        background: #f3f3f3 !important;
+        overflow-x: auto;
+        margin-top: 100px;
     }
 
     .detail-show {
         width: 98%;
         height: auto;
+        background: #f3f3f3 !important;
         text-align: left;
     }
 
     .detail-show pre {
         font-family: Arial, serif;
         color: forestgreen;
+    }
+
+    .dag-chart .node {
+        cursor: pointer;
     }
 </style>

@@ -39,6 +39,20 @@ export default {
                     value: "14700"
                 }
             ]
+        };
+        Vue.prototype.messageOption = {
+            warning: {
+                type: "warning",
+                confirmButtonText: "OK"
+            },
+            success: {
+                type: "success",
+                confirmButtonText: "OK"
+            },
+            error: {
+                type: "error",
+                confirmButtonText: "OK"
+            }
         }
     }
 }

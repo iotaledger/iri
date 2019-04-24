@@ -107,4 +107,19 @@ public enum ApiCommand {
     public String toString() {
         return name;
     }
+    
+    /** 
+     * Looks up the {@link ApiCommand} based on its name    
+     *  
+     * @param name the name of the API we are looking for   
+     * @return The ApiCommand if it exists, otherwise <code>null</code> 
+     */ 
+    public static ApiCommand findByName(String name) {  
+        for (ApiCommand c : values()) { 
+            if (c.toString().equals(name)) {    
+                return c;   
+            }   
+        }   
+        return null;    
+    }
 }

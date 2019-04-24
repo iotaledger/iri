@@ -6,7 +6,9 @@ defaults: &transaction_tests_config_files
   '--milestone-start',
   '0',
   '--testnet-no-coo-validation',
+  'true',
   '--testnet',
+  'true',
   '--snapshot',
   './snapshot.txt'
   ]

@@ -130,4 +130,18 @@ public interface NeighborMetrics {
      * @return the number of packets received with an invalid message length
      */
     long incrInvalidProtocolMessageLengthCount();
+
+    /**
+     * Gets the number of packets dropped from the neighbor's send queue.
+     *
+     * @return the number of packets dropped from the neighbor's send queue
+     */
+    long getDroppedSendPacketsCount();
+
+    /**
+     * Increments the number of packets dropped from the neighbor's send queue.
+     *
+     * @return the number of packets dropped from the neighbor's send queue
+     */
+    long incrDroppedSendPacketsCount();
 }

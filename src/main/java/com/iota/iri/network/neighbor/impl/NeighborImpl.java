@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -34,7 +35,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private TransactionProcessingPipeline txPipeline;
 
     // data to be written out to the neighbor
-    private BlockingQueue<ByteBuffer> sendQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(100);
     private ByteBuffer currentToWrite;
 
     // stats
@@ -178,17 +179,15 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
 
     @Override
     public void send(ByteBuffer buf) {
-        try {
-            // re-register write interest
-            SelectionKey key = channel.keyFor(selector);
-            if (key != null && key.isValid() && (key.interestOps() & SelectionKey.OP_WRITE) == 0) {
-                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                selector.wakeup();
-            }
+        // re-register write interest
+        SelectionKey key = channel.keyFor(selector);
+        if (key != null && key.isValid() && (key.interestOps() & SelectionKey.OP_WRITE) == 0) {
+            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            selector.wakeup();
+        }
 
-            sendQueue.put(buf);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (!sendQueue.offer(buf)) {
+            metrics.incrDroppedSendPacketsCount();
         }
     }
 

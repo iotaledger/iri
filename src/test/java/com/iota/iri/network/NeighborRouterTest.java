@@ -103,7 +103,7 @@ public class NeighborRouterTest {
         neighborRouterAThread.start();
         neighborRouterBThread.start();
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         // A should be connected to B
         Map<String, Neighbor> connectedNeighborsA = neighborRouterA.getConnectedNeighbors();
@@ -126,7 +126,7 @@ public class NeighborRouterTest {
                 Protocol.createHandshakePacket((char) 17000, Hash.NULL_HASH.bytes(), (byte) nodeConfigA.getMwm()));
 
         // should now be disconnected
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         assertEquals(0, connectedNeighborsB.size());
 
         neighborRouterB.shutdown();

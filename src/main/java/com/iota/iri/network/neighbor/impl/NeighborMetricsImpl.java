@@ -15,6 +15,7 @@ public class NeighborMetricsImpl implements NeighborMetrics {
     private AtomicLong unknownMsgTypePacketsCount = new AtomicLong();
     private AtomicLong incompatiblePacketsCount = new AtomicLong();
     private AtomicLong invalidMsgLengthCount = new AtomicLong();
+    private AtomicLong droppedSendPacketsCount = new AtomicLong();
 
     @Override
     public long getAllTransactionsCount() {
@@ -104,5 +105,15 @@ public class NeighborMetricsImpl implements NeighborMetrics {
     @Override
     public long incrInvalidProtocolMessageLengthCount() {
         return invalidMsgLengthCount.incrementAndGet();
+    }
+
+    @Override
+    public long getDroppedSendPacketsCount() {
+        return droppedSendPacketsCount.get();
+    }
+
+    @Override
+    public long incrDroppedSendPacketsCount() {
+        return droppedSendPacketsCount.incrementAndGet();
     }
 }

@@ -37,13 +37,36 @@ public class Serializer {
         return res;
     }
 
+    /**
+     * Reads the default amount of bytes for an int(4) and turns it into an int.
+     * Starts at the beginning of the array
+     * 
+     * @param bytes The bytes we use to make an int
+     * @return The created int, or 0 when bytes is <code>null</code>
+     */
     public static int getInteger(byte[] bytes) {
         return getInteger(bytes, 0);
     }
+    
+    /**
+     * Reads the default amount of bytes for an int(4) and turns it into an int.
+     * 
+     * @param bytes The bytes we use to make an int
+     * @param start The point in the array from which we start reading
+     * @return The created int, or 0 when bytes is <code>null</code>
+     */
     public static int getInteger(byte[] bytes, int start) {
         return getInteger(bytes, start, Integer.BYTES);
     }
     
+    /**
+     * Reads the bytes for the given length, starting at the starting point given.
+     * 
+     * @param bytes The bytes we use to make an int
+     * @param start The point in the array from which we start reading
+     * @param length Amount of bytes to read
+     * @return The created int, or 0 when bytes is <code>null</code>
+     */
     public static int getInteger(byte[] bytes, int start, int length) {
         if(bytes == null) {
             return 0;

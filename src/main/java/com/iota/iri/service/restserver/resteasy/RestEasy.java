@@ -77,6 +77,18 @@ public class RestEasy extends Application implements RestConnector {
     private int port;
     
     /**
+     * Required for every {@link Application}
+     * Will be instantiated once and is supposed to provide REST api classes
+     * <b>Do not call manually</b>
+     * 
+     * We handle all calls manually without ever using the {@link Application} functionality using a
+     * {@link DeploymentInfo#addInnerHandlerChainWrapper}
+     */
+    public RestEasy() {
+        
+    }
+    
+    /**
      * 
      * @param configuration
      */
@@ -120,7 +132,7 @@ public class RestEasy extends Application implements RestConnector {
         
         server = new UndertowJaxrsServer();
         
-        info = server.undertowDeployment(RootPath.class);
+        info = server.undertowDeployment(RestEasy.class);
         info.setDisplayName("Iota Realm");
         info.setDeploymentName("Iota Realm");
         info.setContextPath("/");

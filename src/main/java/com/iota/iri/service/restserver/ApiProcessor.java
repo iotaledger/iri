@@ -9,6 +9,7 @@ import com.iota.iri.service.dto.AbstractResponse;
  * Interface that defines the API call handling
  *  
  */
+@FunctionalInterface
 public interface ApiProcessor {
     
     /**

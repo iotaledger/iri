@@ -132,7 +132,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         public String getConnectionType() {
             return connectionType;
         }
-        
+
         /**
          * Creates a new Neighbor DTO from a Neighbor network instance
          * @param n the neighbor currently connected to this node

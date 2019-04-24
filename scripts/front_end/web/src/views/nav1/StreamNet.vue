@@ -11,6 +11,14 @@
                             :value="item.value"
                     ></el-option>
                 </el-select>
+                <el-select v-model="form.port" placeholder="Choose a port" @change="choosePort">
+                    <el-option
+                            v-for="item in portList"
+                            :key="item.name"
+                            :label="item.name"
+                            :value="item.value"
+                    ></el-option>
+                </el-select>
                 <el-button @click="getDagMap" class="dag-button">DagMap</el-button>
                 <el-button @click="getTotalOrder" class="dag-button">TotalOrder</el-button>
             </div>
@@ -23,16 +31,10 @@
 </template>
 
 <script>
-    let iplist = require("./ipConfig");
     let requestHost = "";
     let nameMap = {};
-    let servers = [];
-    for (let i in iplist.ips) {
-        servers.push({
-            name: iplist.ips[i],
-            value: iplist.ips[i]
-        })
-    }
+    let requestServer;
+    let requestPort;
 
     function queryNodeDetail(name) {
         if (requestHost === "") {
@@ -74,7 +76,8 @@
                 form: {
                     server: ""
                 },
-                serverList: servers
+                serverList: this.ipList,
+                portList: []
             };
         },
         methods: {
@@ -82,13 +85,18 @@
                 console.log("submit!");
             },
             chooseServer(data) {
-                requestHost = data;
+                requestServer = data;
+                this.portList = this.serverPort[data];
+            },
+            choosePort(data) {
+                requestPort = data;
             },
             getDagMap() {
-                if (requestHost === "") {
-                    return;
+                if (!requestServer || !requestPort) {
+                    this.$alert("Please choose server and port", "Warning",{type:"warning"});
                 }
                 let requestUrl = "";
+                requestHost = requestServer + ":" + requestPort;
                 requestUrl = requestHost + "/get_dag";
                 let request = {};
                 let requestData = {"type": "JSON"};
@@ -119,6 +127,7 @@
             drawDagMap(nodes, relations) {
                 nameMap = {};
                 let myChart = this.$echarts.init(document.getElementById("dagChart"));
+                myChart.clear();
                 myChart.showLoading();
                 // prepare nodes
                 let datas = [];
@@ -129,7 +138,7 @@
                         y: item.y,
                         id: shortName,
                         name: shortName,
-                        symbolSize: 20,
+                        symbolSize: 10,
                         itemStyle: {
                             normal: {
                                 color: "rgb(63, 167, 220)"
@@ -177,6 +186,7 @@
                 mapOption.animationEasingUpdate = "quinticInOut";
                 mapOption.series = series;
                 myChart.setOption(mapOption, true);
+                myChart.off("click");
                 myChart.on("click", function (param) {
                     let name = param.name;
                     queryNodeDetail(name);

@@ -74,7 +74,7 @@
     export default {
         data() {
             return {
-                sysName: 'Trias-Dag',
+                sysName: 'TRIAS',
                 collapsed: false,
                 sysUserName: '',
                 sysUserAvatar: '',

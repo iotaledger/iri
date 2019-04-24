@@ -1,14 +1,31 @@
 <template>
     <el-form ref="form" :model="form" label-width="80px" @submit.prevent="onSubmit"
-             style="margin:20px;width:70%;min-width:600px;">
+             style="margin:20px;width:100%;min-width:600px;text-align: center;">
         <el-form-item>
-            <label class="form-lable">Attester：</label>
-            <el-input v-model="form.attester" class="input-small" placeholder="Please input the attester ip"
+            <label>server：</label>
+            <el-select v-model="form.server" placeholder="Choose a server" @change="chooseServer">
+                <el-option
+                        v-for="item in serverList"
+                        :key="item.name"
+                        :label="item.name"
+                        :value="item.value"
+                ></el-option>
+            </el-select>
+            <el-select v-model="form.port" placeholder="Choose a port" @change="choosePort">
+                <el-option
+                        v-for="item in portList"
+                        :key="item.name"
+                        :label="item.name"
+                        :value="item.value"
+                ></el-option>
+            </el-select>
+            <label>Attester：</label>
+            <el-input v-model="form.attester" class="input-small" placeholder="Input the attester"
                       @change="setAttester"/>
-            <label class="form-lable">Attestee：</label>
-            <el-input v-model="form.attestee" class="input-small" placeholder="Please input the attestee ip"
+            <label>Attestee：</label>
+            <el-input v-model="form.attestee" class="input-small" placeholder="Input the attestee"
                       @change="setAttestee"/>
-            <label class="form-lable">Score</label>
+            <label>Score</label>
             <el-radio-group v-model="form.score" @change="setScore">
                 <el-radio label="1"></el-radio>
                 <el-radio label="0"></el-radio>
@@ -25,15 +42,19 @@
 <script>
     let requestData = {};
     requestData.Score = "1";
-
+    let requestServer;
+    let requestPort;
     export default {
         data() {
             return {
                 form: {
                     attester: "",
                     attestee: "",
-                    score: "1"
-                }
+                    score: "1",
+                    server: ""
+                },
+                serverList: this.ipList,
+                portList: this.portList
             }
         },
         methods: {
@@ -41,21 +62,30 @@
                 console.log("submit!");
             },
             setAttester(val) {
-                requestData.Attester = val;
+                requestData.attester = val;
             },
             setAttestee(val) {
-                requestData.Attestee = val;
+                requestData.attestee = val;
             },
             setScore(val) {
-                requestData.Score = val;
+                requestData.score = val;
+            },
+            chooseServer(data) {
+                requestServer = data;
+            },
+            choosePort(data) {
+                requestPort = data;
             },
             addNode() {
-                if (!checkRequestData()) {
-                    return;
+                if (!requestServer || !requestPort) {
+                    this.$alert("Please choose server and port", "Warning",{type:"warning"});
                 }
+                requestData.url = requestServer + ":" + requestPort;
                 this.axios.post("/api/AddNode", requestData).then(res => {//success callback
                     if (res.data["Code"] === 1) {
-                        alert("addNode success!");
+                        this.$alert("addNode success!","Success",{type:"success"});
+                    } else {
+                        this.$alert(res.data["Message"],"Error",{type:"error"})
                     }
                 }).catch(error => {//error callback
                     console.error(error);
@@ -64,27 +94,8 @@
         }
     };
 
-    function checkRequestData() {
-        if (!requestData.Attestee || requestData.Attestee === "" || !isValidIP(requestData.Attestee)) {
-            return false;
-        }
-        if (!requestData.Attester || requestData.Attester === "" || !isValidIP(requestData.Attester)) {
-            return false;
-        }
-        return !(!requestData.Score || requestData.Score === "");
-    }
-
-    function isValidIP(ip) {
-        let reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/
-        return reg.test(ip);
-    }
-
 </script>
 <style>
-    .form-lable {
-        margin-left: 50px;
-    }
-
     .input-small {
         width: 150px;
     }

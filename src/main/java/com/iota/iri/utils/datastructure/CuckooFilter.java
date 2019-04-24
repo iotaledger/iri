@@ -2,8 +2,6 @@ package com.iota.iri.utils.datastructure;
 
 import java.util.BitSet;
 
-import com.iota.iri.model.persistables.Cuckoo;
-
 /**
  * The Cuckoo Filter is a probabilistic data structure that supports fast set membership testing.
  *

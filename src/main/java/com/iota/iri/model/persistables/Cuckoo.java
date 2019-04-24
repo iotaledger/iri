@@ -19,7 +19,7 @@ public class Cuckoo implements Persistable {
     public IntegerIndex filterId;
     
     /**
-     * 
+     * The bits that make up the CF
      */
     public BitSet filterBits;
     

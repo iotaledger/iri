@@ -42,6 +42,7 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
         this.requester = requester;
         
         verifiedFalse = new LinkedList<>();
+        prunedHashTest = new HashMap<>();
     }
     
     /**
@@ -68,8 +69,8 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
             return false;
         }
         
-        if (prunedHashTest == null || !prunedHashTest.containsKey(hash)) {
-            return initializeVerify(hash);
+        if (!prunedHashTest.containsKey(hash)) {
+            initializeVerify(hash);
         }
         
         return prunedHashTest.get(hash) >= PRUNED_CERTAIN; 
@@ -146,17 +147,17 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
         if (parents.containsKey(child)) {
             list = parents.get(child);
         } else {
-            list = parents.put(child, new LinkedList<>());
+            list = new LinkedList<>();
+            parents.put(child, list);
         }
         
         list.add(parent);
         return list;
     }
     
-    private boolean initializeVerify(Hash hash) {
+    private void initializeVerify(Hash hash) {
         addParentForChild(hash, hash);
         prunedHashTest.put(hash, 1);
-        return true;
     }
     
     private Hash getChildForParent(Hash parent) {

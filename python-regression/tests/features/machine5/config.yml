@@ -8,7 +8,9 @@ defaults: &no_validation_tests_config_files
   '--milestone-start',
   '2',
   '--testnet-no-coo-validation',
-  '--testnet'
+  'true',
+  '--testnet',
+  'true'
   ]
 
 db_with_validation: &validation_tests_config_files
@@ -20,7 +22,8 @@ db_with_validation: &validation_tests_config_files
   '18',
   '--milestone-start',
   '2',
-  '--testnet'
+  '--testnet',
+  'true'
   ]
 
 

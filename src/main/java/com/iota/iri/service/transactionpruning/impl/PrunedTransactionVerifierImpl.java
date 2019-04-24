@@ -84,7 +84,7 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
     public void submitTransaction(TransactionViewModel receivedTransactionViewModel) throws PrunedTransactionException {
         Hash parent = receivedTransactionViewModel.getHash();
         Hash child = getChildForParent(parent);
-        if (isPruned(child)) {
+        if (child == null || isPruned(child)) {
             // We succeeded in the meantime.
             return;
         }
@@ -95,7 +95,7 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
             
             if (isPruned(child)) {
                 // We succeeded in the meantime.
-                clean(child);
+                parents.remove(child);
                 return;
             }
             

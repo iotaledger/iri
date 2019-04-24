@@ -67,6 +67,31 @@ public class GetNeighborsResponse extends AbstractResponse {
         private long numberOfStaleTransactions;
         private long numberOfSentTransactions;
         private String connectionType;
+        
+        /**
+         * Creates a new Neighbor DTO from a Neighbor network instance
+         * @param n the neighbor currently connected to this node
+         * @return a new instance of {@link GetNeighborsResponse.Neighbor}
+         */
+        public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
+            Neighbor ne = new Neighbor();
+            
+            String host = n.getHostAddress();
+            if (host == null) {
+                host = n.getAddress().getHostString();
+            }
+            
+            int port = n.getPort();
+            ne.address = host + ":" + port;
+            ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
+            ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
+            ne.numberOfStaleTransactions = n.getNumberOfStaleTransactions();
+            ne.numberOfNewTransactions = n.getNumberOfNewTransactions();
+            ne.numberOfRandomTransactionRequests = n.getNumberOfRandomTransactionRequests();
+            ne.numberOfSentTransactions = n.getNumberOfSentTransactions();
+            ne.connectionType = n.connectionType();
+            return ne;
+        }
 
         /**
          * The address of your neighbor
@@ -131,25 +156,6 @@ public class GetNeighborsResponse extends AbstractResponse {
          */
         public String getConnectionType() {
             return connectionType;
-        }
-
-        /**
-         * Creates a new Neighbor DTO from a Neighbor network instance
-         * @param n the neighbor currently connected to this node
-         * @return a new instance of {@link GetNeighborsResponse.Neighbor}
-         */
-        public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
-            Neighbor ne = new Neighbor();
-            int port = n.getPort();
-            ne.address = n.getAddress().getAddress().getHostAddress() + ":" + port;
-            ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
-            ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
-            ne.numberOfStaleTransactions = n.getNumberOfStaleTransactions();
-            ne.numberOfNewTransactions = n.getNumberOfNewTransactions();
-            ne.numberOfRandomTransactionRequests = n.getNumberOfRandomTransactionRequests();
-            ne.numberOfSentTransactions = n.getNumberOfSentTransactions();
-            ne.connectionType = n.connectionType();
-            return ne;
         }
     }
 }

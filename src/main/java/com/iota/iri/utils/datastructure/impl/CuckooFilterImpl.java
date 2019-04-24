@@ -12,10 +12,6 @@ import java.util.BitSet;
  */
 public class CuckooFilterImpl implements CuckooFilter {
     
-    private static int CUR_INDEX = 0;
-
-    int index = CUR_INDEX ++;
-    
     /**
      * The amount of times we try to kick elements when inserting before we consider the index to be too full.
      */
@@ -470,11 +466,6 @@ public class CuckooFilterImpl implements CuckooFilter {
 
         // do a simple conversion of the byte array to a BitSet of the desired length
         return BitSetUtils.convertByteArrayToBitSet(hash, 4, fingerPrintSize);
-    }
-    
-    @Override
-    public String toString() {
-        return index + "";
     }
 
     @Override

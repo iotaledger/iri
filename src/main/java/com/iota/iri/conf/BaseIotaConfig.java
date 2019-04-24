@@ -654,7 +654,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     
     @JsonProperty
     @Parameter(names = {"--spent-addresses-db-log-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH)
-    protected void setPrunedTransactionDbLogPath(String spentAddressesDbLogPath) {
+    protected void setSpentAddressesDbLogPath(String spentAddressesDbLogPath) {
         this.spentAddressesDbLogPath = spentAddressesDbLogPath;
     }
     
@@ -665,7 +665,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     
     @JsonProperty
     @Parameter(names = {"--pruned-transactions-db-log-path"}, description = SnapshotConfig.Descriptions.PRUNED_TRANSACTIONS_DB_LOG_PATH)
-    protected void setSpentAddressesDbLogPath(String prunedTransactionsDbLogPath) {
+    protected void setPrunedTransactionDbLogPath(String prunedTransactionsDbLogPath) {
         this.prunedTransactionsDbLogPath = prunedTransactionsDbLogPath;
     }
     

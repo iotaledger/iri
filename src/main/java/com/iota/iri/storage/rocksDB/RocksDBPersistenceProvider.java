@@ -15,7 +15,10 @@ import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
@@ -51,6 +54,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private static final String txnCountFileName = "TXN_COUNT";
     private AtomicLong txnCount = new AtomicLong(0);
     private File txnCountFile;
+
+    private final String ANCESTORS = "ancestors";
 
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
@@ -616,5 +621,50 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public int getNumOfTips() {
         // TODO
         return -1;
+    }
+
+    @Override
+    public Stack<Hash> getAncestors() {
+        byte[] ancestors = null;
+        try {
+            ancestors = db.get(ANCESTORS.getBytes());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
+        if (null == ancestors){
+            return null;
+        }
+
+        Queue<Hash> hashes = new ArrayDeque<>();
+
+        for(int i=0; i<ancestors.length; i+= Hash.SIZE_IN_BYTES){
+            byte[] ins = new byte[Hash.SIZE_IN_BYTES];
+            System.arraycopy(ancestors, 0 + i, ins, 0, Hash.SIZE_IN_BYTES);
+            Hash hash = HashFactory.TRANSACTION.create(ins);
+            hashes.add(hash);
+        }
+        Stack<Hash> stack = new Stack<>();
+        while(!hashes.isEmpty()){
+            stack.push(((ArrayDeque<Hash>) hashes).pollLast());
+        }
+        log.info("=== ancestors : " + stack);
+        return stack;
+    }
+
+    @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        if (null == ancestors){
+            return;
+        }
+        ByteBuffer byteBuffer = ByteBuffer.allocate(ancestors.size() * Hash.SIZE_IN_BYTES);
+        while(!ancestors.empty()){
+            Hash h = ancestors.pop();
+            byteBuffer.put(h.bytes());
+        }
+        try {
+            db.put(ANCESTORS.getBytes(), byteBuffer.array());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
     }
 }

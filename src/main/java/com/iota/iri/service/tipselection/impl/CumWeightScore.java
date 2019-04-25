@@ -1,11 +1,12 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.model.Hash;
+
 import java.util.*;
 
 public class CumWeightScore
 {
-    public static HashMap<Hash, Double> update(HashMap<Hash, Set<Hash>> graph, HashMap<Hash, Double> score, Hash newVet) {
+    public static HashMap<Hash, Double> update(Map<Hash, Set<Hash>> graph, HashMap<Hash, Double> score, Hash newVet) {
 
         HashMap<Hash, Double> ret = score;
         LinkedList<Hash> queue = new LinkedList<>();
@@ -75,7 +76,7 @@ public class CumWeightScore
         return ret;
     }
 
-    public static HashMap<Hash, Double> compute(HashMap<Hash, Set<Hash>> revGraph, HashMap<Hash, Set<Hash>> graph, Hash genesis) {
+    public static HashMap<Hash, Double> compute(Map<Hash, Set<Hash>> revGraph, Map<Hash, Set<Hash>> graph, Hash genesis) {
         HashMap<Hash, Double> ret = new HashMap<>();
         LinkedList<Hash> queue = new LinkedList<>();
 
@@ -85,10 +86,13 @@ public class CumWeightScore
 
         while (!queue.isEmpty()) {
             Hash h = queue.pop();
-            for(Hash e : revGraph.get(h)) {
-                if(revGraph.containsKey(e) && !visited.contains(e)) {
-                    queue.add(e);
-                    visited.add(e);
+            Set<Hash> set = revGraph.get(h);
+            if (set != null) {
+                for (Hash e : set) {
+                    if (graph.containsKey(e) && !visited.contains(e)) {
+                        queue.add(e);
+                        visited.add(e);
+                    }
                 }
             }
             ret = update(graph, ret, h);

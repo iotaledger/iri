@@ -24,8 +24,8 @@ public class KatzCentrality
     private double alpha;
     private double beta;
 
-    HashMap<Hash, Set<Hash>> network;
-    HashMap<Hash, Set<Hash>> revnetwork;
+    Map<Hash, Set<Hash>> network;
+    Map<Hash, Set<Hash>> revnetwork;
     Set<Hash>                all_vertices;
     HashMap<Hash, Double>    score;
 
@@ -34,17 +34,17 @@ public class KatzCentrality
         this(network, null, DEFAULT_ALPHA, DEFAULT_BETA);
     }
 
-    public KatzCentrality (HashMap<Hash, Set<Hash>> network, HashMap<Hash, Set<Hash>> revNetwork, double alpha)
+    public KatzCentrality (Map<Hash, Set<Hash>> network, Map<Hash, Set<Hash>> revNetwork, double alpha)
     {
         this(network, revNetwork, alpha,DEFAULT_BETA);
     }
 
-    public KatzCentrality (HashMap<Hash, Set<Hash>> network, double alpha)
+    public KatzCentrality (Map<Hash, Set<Hash>> network, double alpha)
     {
         this(network, null, alpha,DEFAULT_BETA);
     }
 
-    public KatzCentrality (HashMap<Hash, Set<Hash>> network, HashMap<Hash, Set<Hash>> revNetwork, double alpha, double beta)
+    public KatzCentrality (Map<Hash, Set<Hash>> network, Map<Hash, Set<Hash>> revNetwork, double alpha, double beta)
     {
         this.network = network;
 

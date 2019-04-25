@@ -55,6 +55,12 @@ public interface DbConfig extends Config {
      */
     boolean isEnableCompressionTxns();
 
+    /**
+     *
+     * @return {@value Descriptions#ANCESTOR_CREATE_FREQUENCY}
+     */
+    double getAncestorCreateFrequency();
+
     interface Descriptions {
 
         String DB_PATH = "The folder where the DB saves its data.";
@@ -68,5 +74,6 @@ public interface DbConfig extends Config {
         String ENABLE_BATCH_TXNS = "The DB engine can be used to store batches of transactions.";
         String ENABLE_IPFS_TXNS = "The message is stored in IPFS.";
         String ENABLE_COMPRESSION_TXNS = "The message is compressed.";
+        String ANCESTOR_CREATE_FREQUENCY = "Number of nodes to create a new ancestor.";
     }
 }

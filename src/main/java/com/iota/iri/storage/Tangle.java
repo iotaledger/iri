@@ -347,4 +347,19 @@ public class Tangle {
         }
         return count;
     }
+    public Stack<Hash> getAncestors() {
+        for(PersistenceProvider provider : this.persistenceProviders){
+            Stack<Hash> ancestors = provider.getAncestors();
+            if (null != ancestors && !ancestors.isEmpty()){
+                return ancestors;
+            }
+        }
+        return null;
+    }
+
+    public void storeAncestors(Stack<Hash> ancestors) {
+        for(PersistenceProvider provider : this.persistenceProviders){
+            provider.storeAncestors(ancestors);
+        }
+    }
 }

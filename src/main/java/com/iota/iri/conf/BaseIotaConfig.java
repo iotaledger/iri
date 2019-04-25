@@ -67,6 +67,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean enableBatchTxns = Defaults.ENABLE_BATCH_TXNS;
     protected boolean enableIPFSTxns = Defaults.ENABLE_IPFS_TXNS;
     protected boolean enableCompressionTxns = Defaults.ENABLE_COMPRESSION_TXNS;
+    protected double ancestorCreateFrequency = Defaults.ANCESTOR_CREATE_FREQUENCY;
 
     //Protocol
     protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
@@ -884,6 +885,21 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.powThreads = powThreads;
     }
 
+    @Override
+    public double getAncestorCreateFrequency() {
+        return ancestorCreateFrequency;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--ancestor-create-frequency", description = DbConfig.Descriptions.ANCESTOR_CREATE_FREQUENCY)
+    protected void setAncestorCreateFrequency(double ancestorCreateFrequency) {
+        //FIXME 测试通过后加上此限制
+//        if (ancestorCreateFrequency < Defaults.ANCESTOR_CREATE_FREQUENCY){
+//            return;
+//        }
+        this.ancestorCreateFrequency = ancestorCreateFrequency;
+    }
+
     public interface Defaults {
         //API
         int API_PORT = 14265;
@@ -979,5 +995,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MILESTONE_START_INDEX = 774_805;
         int NUM_KEYS_IN_MILESTONE = 20;
         int MAX_ANALYZED_TXS = 20_000;
+        double ANCESTOR_CREATE_FREQUENCY = 1000d;
     }
 }

@@ -25,6 +25,7 @@ Feature: Test Bootstrapping With LS
     Given "nodeB" and "nodeA" are neighbors
     And "nodeB" and "nodeC" are neighbors
 
+    #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
     And we wait "30" second/seconds
     Then "nodeB" is synced up to milestone 10321
     And A local snapshot was taken on "nodeB" at index 10220
@@ -45,6 +46,7 @@ Feature: Test Bootstrapping With LS
     Given "nodeC" and "nodeA" are neighbors
     And "nodeC" and "nodeB" are neighbors
 
+    #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
     When we wait "30" second/seconds
     Then "nodeC" is synced up to milestone 10321
 

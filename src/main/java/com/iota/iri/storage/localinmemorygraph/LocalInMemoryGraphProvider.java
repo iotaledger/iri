@@ -17,25 +17,20 @@ import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
-
-import java.io.*;
 import com.google.gson.Gson;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.utils.*;
-
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     private static final Logger log = LoggerFactory.getLogger(LocalInMemoryGraphProvider.class);
-    private HashMap<Hash, Double> score;
-    private HashMap<Hash, Double> parentScore;
+    private Map<Hash, Double> score;
+    private Map<Hash, Double> parentScore;
     private Map<Hash, Set<Hash>> graph;
     private Map<Hash, Hash> parentGraph;
     private Map<Hash, Set<Hash>> revGraph;
@@ -66,6 +61,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     private Stack<Hash> ancestors;
     private Double ancestorCreateFrequency = BaseIotaConfig.getInstance().getAncestorCreateFrequency();
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
+    private ReentrantReadWriteLock graphLock = new ReentrantReadWriteLock();
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
         this.tangle = tangle;
@@ -79,8 +75,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         topOrder = new HashMap<>();
         lvlMap = new HashMap<>();
         topOrderStreaming = new HashMap<>();
-        score = new HashMap<>();
-        parentScore = new HashMap<>();
+        score = new ConcurrentHashMap<>();
+        parentScore = new ConcurrentHashMap<>();
         totalDepth = 0;
         unTracedNodes = new ConcurrentLinkedDeque<>();
         tracedNodes = ConcurrentHashMap.newKeySet();
@@ -224,41 +220,47 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 TransactionViewModel model = new TransactionViewModel(value, key);
                 Hash trunk = model.getTrunkTransactionHash();
                 Hash branch = model.getBranchTransactionHash();
+                graphLock.writeLock().lock();
+                try {
+                    // Approve graph
+                    if (graph.get(key) == null) {
+                        graph.put(key, new HashSet<>());
+                    }
+                    graph.get(key).add(trunk);
+                    graph.get(key).add(branch);
 
-                // Approve graph
-                if (graph.get(key) == null) {
-                    graph.put(key, new HashSet<>());
-                }
-                graph.get(key).add(trunk);
-                graph.get(key).add(branch);
+                    //parentGraph
+                    parentGraph.put(key, trunk);
 
-                //parentGraph
-                parentGraph.put(key, trunk);
+                    // Approvee graph
+                    if (revGraph.get(trunk) == null) {
+                        revGraph.put(trunk, new HashSet<>());
+                    }
+                    revGraph.get(trunk).add(key);
+                    if (revGraph.get(branch) == null) {
+                        revGraph.put(branch, new HashSet<>());
+                    }
+                    revGraph.get(branch).add(key);
 
-                // Approvee graph
-                if (revGraph.get(trunk) == null) {
-                    revGraph.put(trunk, new HashSet<>());
-                }
-                revGraph.get(trunk).add(key);
-                if (revGraph.get(branch) == null) {
-                    revGraph.put(branch, new HashSet<>());
-                }
-                revGraph.get(branch).add(key);
+                    if (parentRevGraph.get(trunk) == null) {
+                        parentRevGraph.put(trunk, new HashSet<>());
+                    }
+                    parentRevGraph.get(trunk).add(key);
 
-                if (parentRevGraph.get(trunk) == null) {
-                    parentRevGraph.put(trunk, new HashSet<>());
-                }
-                parentRevGraph.get(trunk).add(key);
-
-                // update degrees
-                if (degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
-                    degs.put(model.getHash(), 2);
-                }
-                if (degs.get(trunk) == null) {
-                    degs.put(trunk, 0);
-                }
-                if (degs.get(branch) == null) {
-                    degs.put(branch, 0);
+                    // update degrees
+                    if (degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
+                        degs.put(model.getHash(), 2);
+                    }
+                    if (degs.get(trunk) == null) {
+                        degs.put(trunk, 0);
+                    }
+                    if (degs.get(branch) == null) {
+                        degs.put(branch, 0);
+                    }
+                    updateTopologicalOrder(key, trunk, branch);
+                    updateScore(key);
+                }finally {
+                    graphLock.writeLock().unlock();
                 }
 
                 if(model.getLastIndex() + 1 > 1) {   
@@ -270,8 +272,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     content.add(key);
                     bundleContent.put(model.getBundleHash(), content);
                 }
-                updateTopologicalOrder(key, trunk, branch);
-                updateScore(key);
                 break;
             }
         }
@@ -376,7 +376,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
-		            parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
+                    parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
                     //parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                     //doUpdateScore(vet);
                     //rebuildParentScore(vet);
@@ -474,7 +474,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             return;
         }
         // 假设unTracedNodes也是乱序的，确保节点能够在其依赖节点计算完毕后得到计算机会
-       Queue<Hash> tmpQueue = new ArrayDeque<>();
+        Queue<Hash> tmpQueue = new ArrayDeque<>();
         Set<Hash> visited = new HashSet<>();
         while (!unTracedNodes.isEmpty()) {
             Hash h = unTracedNodes.poll();
@@ -561,6 +561,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public void computeScore() {
+        graphLock.readLock().lock();
         try {
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
@@ -575,6 +576,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
+        } finally {
+            graphLock.readLock().unlock();
         }
     }
 
@@ -711,8 +714,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return new HashSet<>();
     }
 
-    
-
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
         // TODO implement this
     }
@@ -804,34 +805,44 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public List<Hash> pivotChain(Hash start) {
-        if (start == null || !graph.keySet().contains(start)) {
-            return Collections.emptyList();
-        }
-        ArrayList<Hash> list = new ArrayList<>();
-        list.add(start);
-        while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
-            Hash s = getMax(start);
-            if(s == null) {
-                return list;
+        graphLock.readLock().lock();
+        try {
+            if (start == null || !graph.keySet().contains(start)) {
+                return Collections.emptyList();
             }
-            start = s;
-            list.add(s);
+            ArrayList<Hash> list = new ArrayList<>();
+            list.add(start);
+            while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
+                Hash s = getMax(start);
+                if (s == null) {
+                    return list;
+                }
+                start = s;
+                list.add(s);
+            }
+            return list;
+        }finally {
+            graphLock.readLock().unlock();
         }
-        return list;
     }
 
     public Hash getPivot(Hash start) {
-        if (start == null || !graph.keySet().contains(start)) {
-            return null;
-        }
-        while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
-            Hash s = getMax(start);
-            if(s == null) {
-                return start;
+        graphLock.readLock().lock();
+        try {
+            if (start == null || !graph.keySet().contains(start)) {
+                return null;
             }
-            start = s;
+            while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
+                Hash s = getMax(start);
+                if (s == null) {
+                    return start;
+                }
+                start = s;
+            }
+            return start;
+        }finally {
+            graphLock.readLock().unlock();
         }
-        return start;
     }
 
     public Hash getGenesis() {
@@ -943,7 +954,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public double getScore(Hash hash) {
-        return score.get(hash);
+        graphLock.readLock().lock();
+        try {
+            return score.get(hash);
+        }finally {
+            graphLock.readLock().unlock();
+        }
     }
 
     public double getParentScore(Hash h) {
@@ -1059,19 +1075,24 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         subParentGraph.putIfAbsent(curAncestor, parentGraph.get(curAncestor));
         subParentRevGraph.putIfAbsent(subParentGraph.get(curAncestor),new HashSet(){{add(curAncestor);}});
 
-        graph.clear();
-        revGraph.clear();
-        parentGraph.clear();
-        parentRevGraph.clear();
+        graphLock.writeLock().lock();
+        try {
+            graph.clear();
+            revGraph.clear();
+            parentGraph.clear();
+            parentRevGraph.clear();
 
-        graph = new ConcurrentHashMap<>(subGraph);
-        revGraph = new ConcurrentHashMap<>(subRevGraph);
-        parentGraph = new ConcurrentHashMap<>(subParentGraph);
-        parentRevGraph = new ConcurrentHashMap<>(subParentRevGraph);
+            graph = new ConcurrentHashMap<>(subGraph);
+            revGraph = new ConcurrentHashMap<>(subRevGraph);
+            parentGraph = new ConcurrentHashMap<>(subParentGraph);
+            parentRevGraph = new ConcurrentHashMap<>(subParentRevGraph);
 
-        topOrder.clear();
-        computeToplogicalOrder();
-        computeScore();
+            topOrder.clear();
+            computeToplogicalOrder();
+            computeScore();
+        }finally {
+            graphLock.writeLock().unlock();
+        }
         buildPivotChain();
     }
 
@@ -1087,44 +1108,49 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
         //入参，全图 + 上一个ancestor
         public Hash getAncestor() {
-            if (null == parentGraph) {
-                return null;
-            }
-            Iterator<Hash> iterator = parentGraph.keySet().iterator();
-            Double maxScore = -1d;
-            Hash maxScoreNode = null;
-            while (iterator.hasNext()) {
-                Hash node = iterator.next();
-                if (pivotChain.contains(node)) {
-                    continue;
+            graphLock.readLock().lock();
+            try {
+                if (null == parentGraph) {
+                    return null;
                 }
-                Double score = parentScore.get(node);
-                if (null == score){
-                    throw new NullPointerException("key："+ node);
+                Iterator<Hash> iterator = parentGraph.keySet().iterator();
+                Double maxScore = -1d;
+                Hash maxScoreNode = null;
+                while (iterator.hasNext()) {
+                    Hash node = iterator.next();
+                    if (pivotChain.contains(node)) {
+                        continue;
+                    }
+                    Double score = parentScore.get(node);
+                    if (null == score) {
+                        throw new NullPointerException("key：" + node);
+                    }
+                    if (score > maxScore) {
+                        maxScore = score;
+                        maxScoreNode = node;
+                    }
                 }
-                if (score > maxScore) {
-                    maxScore = score;
-                    maxScoreNode = node;
+                if (maxScoreNode == null) {
+                    return null;
                 }
-            }
-            if (maxScoreNode == null) {
-                return null;
-            }
 
-            Double minScore = 1000000000000000d;
-            Hash minScoreNode = null;
+                Double minScore = 1000000000000000d;
+                Hash minScoreNode = null;
 
-            for (Hash mainChainNode : pivotChain) {
-                double mainChainNodeScore = parentScore.get(mainChainNode);
-                if (mainChainNodeScore < (maxScore + new Double(ancestorCreateFrequency))) {
-                    continue;
+                for (Hash mainChainNode : pivotChain) {
+                    double mainChainNodeScore = parentScore.get(mainChainNode);
+                    if (mainChainNodeScore < (maxScore + new Double(ancestorCreateFrequency))) {
+                        continue;
+                    }
+                    if (minScore > mainChainNodeScore) {
+                        minScore = mainChainNodeScore;
+                        minScoreNode = mainChainNode;
+                    }
                 }
-                if (minScore > mainChainNodeScore) {
-                    minScore = mainChainNodeScore;
-                    minScoreNode = mainChainNode;
-                }
+                return minScoreNode;
+            }finally {
+                graphLock.readLock().unlock();
             }
-            return minScoreNode;
         }
 
         void refreshGraph() {

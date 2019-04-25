@@ -657,8 +657,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             return;
         }
         ByteBuffer byteBuffer = ByteBuffer.allocate(ancestors.size() * Hash.SIZE_IN_BYTES);
-        while(!ancestors.empty()){
-            Hash h = ancestors.pop();
+        for(Hash h : ancestors){
             byteBuffer.put(h.bytes());
         }
         try {

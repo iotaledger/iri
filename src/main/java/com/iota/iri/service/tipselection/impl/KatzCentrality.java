@@ -26,8 +26,8 @@ public class KatzCentrality
 
     Map<Hash, Set<Hash>> network;
     Map<Hash, Set<Hash>> revnetwork;
-    Set<Hash>                all_vertices;
-    HashMap<Hash, Double>    score;
+    Set<Hash>            all_vertices;
+    Map<Hash, Double>    score;
 
     public KatzCentrality (HashMap<Hash, Set<Hash>> network)
     {
@@ -68,7 +68,7 @@ public class KatzCentrality
         }
     }
 
-    public void setScore(HashMap<Hash, Double> score) {
+    public void setScore(Map<Hash, Double> score) {
         this.score = score;
     }
 

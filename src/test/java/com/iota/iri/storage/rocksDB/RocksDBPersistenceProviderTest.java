@@ -100,8 +100,6 @@ public class RocksDBPersistenceProviderTest {
 
         rocksDBPersistenceProvider.storeAncestors(stack);
         Stack<Hash> obj = rocksDBPersistenceProvider.getAncestors();
-        stack.push(h1);
-        stack.push(h2);
         assert obj.size() == stack.size();
         obj.stream().forEach(o -> Assert.assertTrue(stack.contains(o)));
     }

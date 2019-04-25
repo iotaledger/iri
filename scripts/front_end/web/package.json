@@ -12,15 +12,15 @@
   "dependencies": {
     "axios": "^0.15.3",
     "echarts": "^3.8.5",
-    "element-ui": "^1.2.8",
     "font-awesome": "^4.7.0",
+    "element-ui": "^2.7.2",
     "jquery": "^3.3.1",
     "nprogress": "^0.2.0",
+    "viz.js": "^1.8.0",
     "vue": "^2.2.2",
     "vue-axios": "^2.1.4",
     "vue-router": "^2.3.0",
-    "vuex": "^2.0.0-rc.6",
-    "viz.js": "^1.8.0"
+    "vuex": "^2.0.0-rc.6"
   },
   "devDependencies": {
     "autoprefixer": "^6.7.2",

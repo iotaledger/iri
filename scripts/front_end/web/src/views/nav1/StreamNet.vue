@@ -23,6 +23,10 @@
                 <el-button @click="getTotalOrder" class="dag-button">TotalOrder</el-button>
             </div>
         </el-form-item>
+        <div id="scale_div">
+            <el-button icon="el-icon-plus" @click="scalePlus"></el-button>
+            <el-button icon="el-icon-minus" @click="scaleMinus"></el-button>
+        </div>
         <div id="dagChart" class="dag-chart"></div>
         <div class="detail-show">
             <pre></pre>
@@ -77,7 +81,8 @@
                     server: ""
                 },
                 serverList: this.ipList,
-                portList: []
+                portList: [],
+                dagScale: 1
             };
         },
         methods: {
@@ -175,6 +180,20 @@
                 $("#dagChart .node").off("click").on("click", function () {
                     queryNodeDetail($(this).children("title").text());
                 })
+            },
+            scalePlus() {
+                this.setScale("#dagChart svg",0.1);
+            },
+            scaleMinus() {
+                this.setScale("#dagChart svg",-0.1);
+            },
+            setScale(dom,value) {
+                if ($(dom).css("-webkit-transform") === undefined) {
+                    return;
+                }
+                this.dagScale += value;
+                let scale = "scale(" + this.dagScale + ")";
+                $(dom).css({"-webkit-transform": scale, "-webkit-transform-origin": "top left"});
             }
         }
     };

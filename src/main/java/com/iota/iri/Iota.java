@@ -22,7 +22,6 @@ import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.PrunedTransactionException;
-import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
 import com.iota.iri.service.transactionpruning.PrunedTransactionVerifier;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;

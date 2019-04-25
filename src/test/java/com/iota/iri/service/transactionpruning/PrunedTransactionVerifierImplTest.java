@@ -15,7 +15,6 @@ import org.mockito.junit.MockitoRule;
 
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.transactionpruning.impl.PrunedTransactionProviderImpl;
@@ -63,16 +62,16 @@ public class PrunedTransactionVerifierImplTest {
     public void isPossiblyPrunedTest() throws PrunedTransactionException {
         Mockito.when(provider.containsTransaction(A)).thenReturn(true);
         
-        assertTrue(verifier.isPossiblyPruned(A));
-        assertFalse(verifier.isPossiblyPruned(B));
+        assertTrue("A should be seen as pruned", verifier.isPossiblyPruned(A));
+        assertFalse("B should not be seen as pruned", verifier.isPossiblyPruned(B));
     }
     
     @Test
     public void waitingForHashTest() throws PrunedTransactionException {
-        assertFalse(verifier.isPruned(A));
-        assertTrue(verifier.waitingForHash(A));
+        assertFalse("A should not be seen as definitely pruned", verifier.isPruned(A));
+        assertTrue("Verifier should be waiting for TVM for A", verifier.waitingForHash(A));
 
-        assertFalse(verifier.waitingForHash(B));
+        assertFalse("Verifier should not be waitingfor TVM for B", verifier.waitingForHash(B));
     }
     
     @Test

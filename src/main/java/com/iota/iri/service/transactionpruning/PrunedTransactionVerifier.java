@@ -3,6 +3,9 @@ package com.iota.iri.service.transactionpruning;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
+/**
+ * Verifies the integrity of a chain of pruned transactions by checking each trunk/branch.
+ */
 public interface PrunedTransactionVerifier {
 
     /**

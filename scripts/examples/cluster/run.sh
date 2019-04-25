@@ -39,11 +39,11 @@ do
         sudo python data_generate.py ${DATA}
 
         # configure iri
-        python server_deploy_batch.py iri
+        python server_deploy_batch.py iri $1 
         sleep 2
 
         # configure cli
-        python server_deploy_batch.py cli true
+        python server_deploy_batch.py cli $1 $2
         sleep 2
 
         # configure topology
@@ -70,7 +70,7 @@ do
         sleep 2
 
         # configure iri
-        python server_deploy_batch.py clear
+        python server_deploy_batch.py clear $1
         sleep  300
     done
 done

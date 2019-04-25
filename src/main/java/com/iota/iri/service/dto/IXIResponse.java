@@ -1,6 +1,8 @@
 package com.iota.iri.service.dto;
 
 import com.iota.iri.IXI;
+import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * <p>
@@ -27,4 +29,38 @@ public class IXIResponse extends AbstractResponse {
     public Object getResponse() {
         return ixi;
     }
+
+    /**
+     * Returnes "application/json" as the default content type of the API response.
+     */
+    private String getDefaultContentType() {
+        return "application/json";
+    }
+    
+    /**
+     * Returnes the contentType in the contentType field of ixi, otherwise the default contentType.
+     */
+    public String getResponseContentType() {
+        Map<String, Object> responseMapper = getResponseMapper();
+        String fieldObj = (String)responseMapper.get("contentType");
+        String fieldValue = StringUtils.isBlank(fieldObj) ? getDefaultContentType() : fieldObj;
+        return fieldValue;
+    }
+
+    /**
+     * Returnes the casted version of ixi to a Map<String, Object> instance.
+     */
+    private Map<String, Object> getResponseMapper(){
+        return (Map<String, Object>)ixi;
+    }
+
+    /**
+     * Returnes the string in the content field of ixi, otherwise null if the field is empty.
+     */
+    public String getContent() {
+        Map<String, Object> responseMapper = getResponseMapper();
+        String fieldObj = (String)responseMapper.get("content");
+        String fieldValue = StringUtils.isBlank(fieldObj) ? null : fieldObj;
+        return fieldValue;
+	}
 }

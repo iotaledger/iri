@@ -16,7 +16,7 @@ default_args: &args
   ]
 
 default_ixi: &ixi
-  ['https://github.com/DyrellC/LocalSnapshots.ixi/archive/v0.1.tar.gz']
+  ['https://raw.githubusercontent.com/iotaledger/iri/dev/python-regression/IXI/LocalSnapshots.ixi.tar.gz']
 
 defaults: &db_full
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_All_Files.tar

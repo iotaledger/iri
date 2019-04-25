@@ -41,7 +41,6 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     // stats
     private long msgsWritten;
     private long msgsRead;
-    private long faultyPackets;
 
     private NeighborState state = NeighborState.HANDSHAKING;
     private ReadState readState = ReadState.PARSE_HEADER;

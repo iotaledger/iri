@@ -68,7 +68,11 @@ public class GetNeighborsResponse extends AbstractResponse {
                 numberOfNewTransactions,
                 numberOfInvalidTransactions,
                 numberOfStaleTransactions,
-                numberOfSentTransactions;
+                numberOfSentTransactions,
+                numberOfUnknownMsgTypePackets,
+                numberOfIncompatiblePackets,
+                numberOfInvalidMsgLengthPackets,
+                numberOfDroppedSentPackets;
         public String connectionType;
         public boolean connected;
 
@@ -138,6 +142,51 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
 
         /**
+         * Amount of packets with an unknown message type.
+         *
+         * @return the number
+         */
+        public long getNumberOfUnknownMsgTypePackets() {
+            return numberOfUnknownMsgTypePackets;
+        }
+
+        /**
+         * Amount of incompatible packets received.
+         *
+         * @return the number
+         */
+        public long getNumberOfIncompatiblePackets() {
+            return numberOfIncompatiblePackets;
+        }
+
+        /**
+         * Amount of packets received with an invalid message length.
+         *
+         * @return the number
+         */
+        public long getNumberOfInvalidMsgLengthPackets() {
+            return numberOfInvalidMsgLengthPackets;
+        }
+
+        /**
+         * Amount of packets received where a random transaction is requested.
+         *
+         * @return the number
+         */
+        public long getNumberOfRandomTransactionRequests() {
+            return numberOfRandomTransactionRequests;
+        }
+
+        /**
+         * Amount of packets dropped from the neighbor's send queue as it was full.
+         *
+         * @return the number
+         */
+        public long getNumberOfDroppedSentPackets() {
+            return numberOfDroppedSentPackets;
+        }
+
+        /**
          * The method type your neighbor is using to connect (TCP / UDP)
          *
          * @return the connection type
@@ -171,8 +220,12 @@ public class GetNeighborsResponse extends AbstractResponse {
             ne.numberOfInvalidTransactions = metrics.getInvalidTransactionsCount();
             ne.numberOfStaleTransactions = metrics.getStaleTransactionsCount();
             ne.numberOfNewTransactions = metrics.getNewTransactionsCount();
-            ne.numberOfRandomTransactionRequests = metrics.getRandomTransactionRequestsCount();
             ne.numberOfSentTransactions = metrics.getSentTransactionsCount();
+            ne.numberOfUnknownMsgTypePackets = metrics.getUnknownMessageTypePacketsCount();
+            ne.numberOfIncompatiblePackets = metrics.getIncompatiblePacketsCount();
+            ne.numberOfInvalidMsgLengthPackets = metrics.getInvalidProtocolMessageLengthCount();
+            ne.numberOfDroppedSentPackets = metrics.getDroppedSendPacketsCount();
+            ne.numberOfRandomTransactionRequests = metrics.getRandomTransactionRequestsCount();
             ne.connectionType = "tcp";
             ne.connected = neighbor.getState() == NeighborState.READY_FOR_MESSAGES;
             return ne;

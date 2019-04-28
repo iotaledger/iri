@@ -68,6 +68,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean enableIPFSTxns = Defaults.ENABLE_IPFS_TXNS;
     protected boolean enableCompressionTxns = Defaults.ENABLE_COMPRESSION_TXNS;
     protected double ancestorCreateFrequency = Defaults.ANCESTOR_CREATE_FREQUENCY;
+    protected boolean ancestorForwardEnable = Defaults.ANCESTOR_FORWARD_ENABLE;
 
     //Protocol
     protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
@@ -900,6 +901,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.ancestorCreateFrequency = ancestorCreateFrequency;
     }
 
+    @Override
+    public boolean isAncestorForwardEnable() {
+        return ancestorForwardEnable;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--ancestor-forward-enable", description = DbConfig.Descriptions.ANCESTOR_FORWARD_ENABLE)
+    protected void setAncestorForwardEnable(boolean ancestorForwardEnable) {
+        this.ancestorForwardEnable = ancestorForwardEnable;
+    }
+
     public interface Defaults {
         //API
         int API_PORT = 14265;
@@ -996,5 +1008,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int NUM_KEYS_IN_MILESTONE = 20;
         int MAX_ANALYZED_TXS = 20_000;
         double ANCESTOR_CREATE_FREQUENCY = 1000d;
+        boolean ANCESTOR_FORWARD_ENABLE = false;
     }
 }

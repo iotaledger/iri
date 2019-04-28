@@ -1,5 +1,6 @@
 package com.iota.iri.storage.localinmemorygraph;
 
+import com.google.gson.Gson;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -16,16 +17,14 @@ import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
-import com.google.gson.Gson;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     private static final Logger log = LoggerFactory.getLogger(LocalInMemoryGraphProvider.class);
@@ -111,8 +110,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public void init() throws Exception {
         try {
             buildGraph();
-            loadAncestorGraph();
-            service.scheduleAtFixedRate(new AncestorEngine(), 10, 30, TimeUnit.SECONDS);
+            if (BaseIotaConfig.getInstance().isAncestorForwardEnable()) {
+                loadAncestorGraph();
+                service.scheduleAtFixedRate(new AncestorEngine(), 10, 30, TimeUnit.SECONDS);
+            }
         } catch (NullPointerException e) {
             e.printStackTrace();
         } catch (Throwable e){
@@ -376,10 +377,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
-                    parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
-                    //parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
-                    //doUpdateScore(vet);
-                    //rebuildParentScore(vet);
+                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     score.put(vet, 1.0 / (score.size() + 1));
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -393,45 +391,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    private void doUpdateScore(Hash h){
-        Hash genesis = getGenesis();
-        if (null == genesis){
-            return;
-        }
-        if (!tracedNodes.contains(genesis)){
-            tracedNodes.add(genesis);
-            tracedNodes.addAll(graph.get(genesis));
-        }
-        // 判断是否可回溯
-        if (!traceToGenesis(h)){
-            unTracedNodes.offer(h);
-            return;
-        }
-
-        tracedNodes.add(h);
-        score = CumWeightScore.update(graph, score, h);
-        checkUntracedNodes();
-    }
-
-    private void rebuildParentScore(Hash h){
-        Hash genesis = getGenesis();
-        if (null == genesis){
-            return;
-        }
-        if (!parentTracedNodes.contains(genesis)){
-            parentTracedNodes.add(genesis);
-            parentTracedNodes.add(parentGraph.get(genesis));
-        }
-
-        if (!parentTraceToGenesis(h)){
-            parentUnTracedNodes.offer(h);
-            return;
-        }
-
-        parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
-        parentTracedNodes.add(h);
-        checkUntracedParentNodes();
-    }
 
     private void checkUntracedParentNodes() {
         Queue<Hash> tmpUnTracedQueue = new ArrayDeque<>();
@@ -465,62 +424,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             visited.add(confirmed);
         }
         parentTracedNodes.add(h);
-        return true;
-    }
-
-
-    private void checkUntracedNodes() {
-        if (unTracedNodes.isEmpty()){
-            return;
-        }
-        // 假设unTracedNodes也是乱序的，确保节点能够在其依赖节点计算完毕后得到计算机会
-        Queue<Hash> tmpQueue = new ArrayDeque<>();
-        Set<Hash> visited = new HashSet<>();
-        while (!unTracedNodes.isEmpty()) {
-            Hash h = unTracedNodes.poll();
-            if (!traceToGenesis(h)) {
-                if (!visited.contains(h)) {
-                    tmpQueue.offer(h);
-                }
-            }else {
-                score = CumWeightScore.update(graph, score, h);
-            }
-            visited.add(h);
-        }
-        unTracedNodes = tmpQueue;
-    }
-
-    // 回溯方法，能够回溯到genesis或者已回溯节点都算作回溯成功
-    private boolean traceToGenesis(Hash h){
-        //遍历，前驱节点是已遍历节点或genesis，返回true
-        Queue<Hash> confirmNodes = new ArrayDeque<>();
-        Set<Hash> visited = new HashSet<>();
-        confirmNodes.add(h);
-        while (!confirmNodes.isEmpty()){
-            Hash cur = confirmNodes.poll();
-            if (visited.contains(cur)){
-                continue;
-            }else{
-                visited.add(cur);
-            }
-
-            Set<Hash> confirmed = graph.get(cur);
-            if (null == confirmed){
-                continue;
-            }
-            Set<Hash> checkParentEqual = new HashSet<>();
-            for (Hash hash : confirmed){
-                if (tracedNodes.contains(hash)){
-                    checkParentEqual.add(hash);
-                }
-            }
-            // 父节点不都是可回溯节点
-            if (checkParentEqual.size() != confirmed.size()){
-                return false;
-            }
-            confirmed.forEach(e -> confirmNodes.add(e));
-        }
-        tracedNodes.add(h);
         return true;
     }
 

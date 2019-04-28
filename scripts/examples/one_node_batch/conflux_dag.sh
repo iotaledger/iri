@@ -22,4 +22,6 @@ java -jar iri-1.5.5.jar --testnet \
                         --ipfs-txns false \
                         --batch-txns true \
                         --weight-calculation-algorithm "IN_MEM" \
+                        --ancestor-forward-enable true  \
+                        --ancestor-create-frequency 100  \
                         &>  streamnet.log &

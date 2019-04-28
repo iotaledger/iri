@@ -95,23 +95,28 @@
                 let requestUrl = "";
                 requestHost = requestServer + ":" + requestPort;
                 requestUrl = requestHost + "/get_balance";
+                let request = {};
                 let requestData = {"account": this.form.account};
                 request.requestUrl = requestUrl;
                 request.requestData = JSON.stringify(requestData);
                 request.requestMethod = this.requestMethod.GET;
                 this.axios.post("/api/QueryNodeDetail", request).then((res) => {
                     if (res.data["Code"] === 0) {
-                        alert(data["Message"]);
+                        this.$alert(res.data["Message"],this.messageOption.error);
                     } else {
-                        this.drawVizGraph(res.data["Data"], {format: "svg"});
+                        this.form.balance = res.data["Data"];
                     }
                 }).catch((err) => {
                     console.error(err);
                 })
             },
             sendTrans() {
-                if (!this.form.source || !this.from.target || !this.form.tarnsBalance || this.form.tarnsBalance * 1 === 0) {
+                if (!this.checkServerAndPort()) {
+                    return;
+                }
+                if (!this.form.source || !this.form.target || !this.form.tarnsBalance || this.form.tarnsBalance * 1 === 0) {
                     this.$alert("Please input correct info", this.messageOption.warning);
+                    return;
                 }
                 let requestUrl = "";
                 requestHost = requestServer + ":" + requestPort;

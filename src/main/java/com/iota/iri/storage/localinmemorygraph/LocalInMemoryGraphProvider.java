@@ -61,6 +61,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     Queue<Hash> parentUnTracedNodes;
     Set<Hash> parentTracedNodes;
+    boolean freshScore;
+    List<Hash> cachedTotalOrder;
 
     private boolean available;
 
@@ -83,6 +85,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         tracedNodes = ConcurrentHashMap.newKeySet();
         parentUnTracedNodes = new ConcurrentLinkedDeque<>();
         parentTracedNodes = ConcurrentHashMap.newKeySet();
+        freshScore = false;
     }
 
     //FIXME for debug
@@ -359,6 +362,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
                     parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
+                    freshScore = false;
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     score.put(vet, 1.0 / (score.size() + 1));
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -543,7 +547,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         try {
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
-                    score = CumWeightScore.compute(revGraph, graph, getGenesis());
+                    if(!freshScore) {
+                        score = CumWeightScore.compute(revGraph, graph, getGenesis());
+                        parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
+                        freshScore = true;
+                        cachedTotalOrder = confluxOrder(getPivot(getGenesis()));
+                    }
                     // FIXME add parent score here
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -712,6 +721,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public List<Hash> totalTopOrder() {
+        if(freshScore) {
+            return cachedTotalOrder;
+        }
         return confluxOrder(getPivot(getGenesis()));
     }
 

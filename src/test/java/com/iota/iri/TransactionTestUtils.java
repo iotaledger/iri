@@ -8,7 +8,6 @@ import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Converter;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
@@ -60,15 +59,15 @@ public class TransactionTestUtils {
     }
 
     /**
-     * Generates a random transaction with a random hash.
+     * Generates a transaction with a hash.
      * Transaction last and current index are set to the index provided.
      * 
      * @param index The index to set the transaction to
-     * @return A random transaction which is located on the end of its (nonexistent) bundle
+     * @return A transaction which is located on the end of its (nonexistent) bundle
      */
     public static TransactionViewModel createBundleHead(int index) {
         
-        TransactionViewModel tx = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        TransactionViewModel tx = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
         setLastIndex(tx, index);
         setCurrentIndex(tx, index);
         return tx;
@@ -83,14 +82,14 @@ public class TransactionTestUtils {
      * @return A transaction in the same bundle as trunk, with its index 1 below trunk index
      */
     public static TransactionViewModel createTransactionWithTrunkBundleHash(TransactionViewModel trunkTx, Hash branchHash) {
-        byte[] txTrits = getRandomTransactionTritsWithTrunkAndBranch(trunkTx.getHash(), branchHash);
+        byte[] txTrits = getTransactionTritsWithTrunkAndBranch(trunkTx.getHash(), branchHash);
         setCurrentIndex(txTrits, trunkTx.getCurrentIndex() - 1);
         setLastIndex(txTrits, trunkTx.lastIndex());
         System.arraycopy(trunkTx.trits(), TransactionViewModel.BUNDLE_TRINARY_OFFSET, txTrits,
                 TransactionViewModel.BUNDLE_TRINARY_OFFSET, TransactionViewModel.BUNDLE_TRINARY_SIZE);
         TransactionViewModel tx = new TransactionViewModel(
                 txTrits,
-                getRandomTransactionHash());
+                getTransactionHash());
 
         return tx;
     }
@@ -151,15 +150,15 @@ public class TransactionTestUtils {
     }
     
     /**
-     * Generates random transaction trits with the provided trytes, trunk and hash.
+     * Generates transaction trits with the provided trytes, trunk and hash.
      * No validation is done on the resulting trits, so fields are not valid except trunk and branch. 
      * 
      * @param trunk The trunk transaction hash
      * @param branch The branch transaction hash
      * @return The transaction trits
      */
-    public static byte[] getRandomTransactionTritsWithTrunkAndBranch(Hash trunk, Hash branch) {
-        byte[] trits = getRandomTransactionTrits();
+    public static byte[] getTransactionTritsWithTrunkAndBranch(Hash trunk, Hash branch) {
+        byte[] trits = getTransactionTrits();
         return getTransactionTritsWithTrunkAndBranchTrits(trits, trunk, branch);
     }
     
@@ -204,22 +203,22 @@ public class TransactionTestUtils {
     }
     
     /**
-     * Generates a random transaction.
+     * Generates a transaction.
      * 
      * @return The transaction
      */
-    public static Transaction getRandomTransaction() {
-        byte[] trits = getRandomTransactionTrits();
+    public static Transaction getTransaction() {
+        byte[] trits = getTransactionTrits();
         return buildTransaction(trits);
     }
     
     /**
-     * Generates random trits for a transaction.
+     * Generates trits for a transaction.
      * 
      * @return The transaction trits
      */
-    public static byte[] getRandomTransactionTrits() {
-        return getRandomTrits(TransactionViewModel.TRINARY_SIZE);
+    public static byte[] getTransactionTrits() {
+        return getTrits(TransactionViewModel.TRINARY_SIZE);
     }
     
     /**
@@ -244,19 +243,19 @@ public class TransactionTestUtils {
      * @param branch The branch transaction hash
      * @return The transaction
      */
-    public static Transaction createRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
-        byte[] trits = getRandomTrits(TransactionViewModel.TRINARY_SIZE);
+    public static Transaction createTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
+        byte[] trits = getTrits(TransactionViewModel.TRINARY_SIZE);
         getTransactionTritsWithTrunkAndBranchTrits(trits, trunk, branch);
         return buildTransaction(trits);
     }
 
     /**
-     * Generates random trits for a transaction.
+     * Generates trits for a hash.
      * 
      * @return The transaction hash
      */
-    public static Hash getRandomTransactionHash() {
-        byte[] out = getRandomTrits(Hash.SIZE_IN_TRITS);
+    public static Hash getTransactionHash() {
+        byte[] out = getTrits(Hash.SIZE_IN_TRITS);
         return HashFactory.TRANSACTION.create(out);
     }
     
@@ -294,12 +293,13 @@ public class TransactionTestUtils {
     }
     
     /**
-     * Generates random trits of specified size.
+     * Generates 'random' trits of specified size.
+     * Not truly random as we always use the same seed.
      * 
      * @param size the amount of trits to generate
      * @return The trits
      */
-    private static byte[] getRandomTrits(int size) {
+    private static byte[] getTrits(int size) {
         byte[] out = new byte[size];
 
         for(int i = 0; i < out.length; i++) {

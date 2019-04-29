@@ -1,5 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;

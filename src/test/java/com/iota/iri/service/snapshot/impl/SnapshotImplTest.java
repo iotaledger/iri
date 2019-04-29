@@ -44,7 +44,7 @@ public class SnapshotImplTest {
         
         Snapshot newSnapshot = snapshot.clone();
         newSnapshot.setIndex(1);
-        snapshot.setHash(TransactionTestUtils.getRandomTransactionHash());
+        snapshot.setHash(TransactionTestUtils.getTransactionHash());
         snapshot.setInitialTimestamp(5l);
         
         assertNotEquals("Modified snapshot clone should not be equal to its original", snapshot, newSnapshot);

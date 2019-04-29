@@ -17,8 +17,8 @@ import com.iota.iri.service.snapshot.SnapshotStateDiff;
 
 public class SnapshotStateImplTest {
     
-    private static final Hash A = TransactionTestUtils.getRandomTransactionHash();
-    private static final Hash B = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash A = TransactionTestUtils.getTransactionHash();
+    private static final Hash B = TransactionTestUtils.getTransactionHash();
     
     private static Map<Hash, Long> map = new HashMap<Hash, Long>(){{
         put(Hash.NULL_HASH, TransactionViewModel.SUPPLY - 10);

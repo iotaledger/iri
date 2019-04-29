@@ -295,11 +295,14 @@ public class API {
                     return response;
                 }
             }
-        } catch (final ValidationException e) {
+        } catch (ValidationException e) {
             log.error("API Validation failed: " + e.getLocalizedMessage());
             return ExceptionResponse.create(e.getLocalizedMessage());
-        } catch (final IllegalStateException e) {
+        } catch (IllegalStateException e) {
             log.error("API Exception: " + e.getLocalizedMessage());
+            return ExceptionResponse.create(e.getLocalizedMessage());
+        } catch (RuntimeException e) {
+            log.error("Unexpected API Exception: " + e.getLocalizedMessage());
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
     }
@@ -569,9 +572,8 @@ public class API {
       * @param depth Number of bundles to go back to determine the transactions for approval.
       * @param reference Hash of transaction to start random-walk from, used to make sure the tips returned reference a given transaction in their past.
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
-      * @throws Exception When tip selection has failed. Currently caught and returned as an {@link ErrorResponse}.
       **/
-    private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+    private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) {
         if (depth < 0 || depth > configuration.getMaxDepth()) {
             return ErrorResponse.create("Invalid depth input");
         }
@@ -1627,11 +1629,7 @@ public class API {
                 : Optional.empty();
             int depth = getParameterAsInt(request, "depth");
 
-            try {
-                return getTransactionsToApproveStatement(depth, reference);
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
+            return getTransactionsToApproveStatement(depth, reference);
         };
     }
 

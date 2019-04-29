@@ -13,7 +13,7 @@ public class TransactionTest {
 
     @Test
     public void testBytes() {
-        Transaction t = TransactionTestUtils.getRandomTransaction();
+        Transaction t = TransactionTestUtils.getTransaction();
         
         Transaction newtx = new Transaction();
         newtx.read(t.bytes());
@@ -25,7 +25,7 @@ public class TransactionTest {
     
     @Test
     public void fromTrits() {
-        byte[] trits = TransactionTestUtils.getRandomTransactionTrits();
+        byte[] trits = TransactionTestUtils.getTransactionTrits();
         byte[] bytes = Converter.allocateBytesForTrits(trits.length);
         Converter.bytes(trits, bytes);
         

@@ -25,16 +25,16 @@ import com.iota.iri.storage.Tangle;
 
 public class DAGHelperTest {
     
-    private static final Hash A = TransactionTestUtils.getRandomTransactionHash();
-    private static final Hash B = TransactionTestUtils.getRandomTransactionHash();
-    private static final Hash C = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash A = TransactionTestUtils.getTransactionHash();
+    private static final Hash B = TransactionTestUtils.getTransactionHash();
+    private static final Hash C = TransactionTestUtils.getTransactionHash();
     
     private static final Transaction TX1 = TransactionTestUtils
-            .createRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH); // Hash.NULL_HASH, 
+            .createTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH); // Hash.NULL_HASH, 
     private static final Transaction TX2 = TransactionTestUtils
-            .createRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH, B); //A
+            .createTransactionWithTrunkAndBranch(Hash.NULL_HASH, B); //A
     private static final Transaction TX3 = TransactionTestUtils
-            .createRandomTransactionWithTrunkAndBranch( A, B); //C
+            .createTransactionWithTrunkAndBranch( A, B); //C
     
     @Rule 
     public MockitoRule mockitoRule = MockitoJUnit.rule();

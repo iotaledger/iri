@@ -31,8 +31,8 @@ import com.iota.iri.utils.Pair;
 
 public class SpentAddressesProviderImplTest {
     
-    private static final Hash A = TransactionTestUtils.getRandomTransactionHash();
-    private static final Hash B = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash A = TransactionTestUtils.getTransactionHash();
+    private static final Hash B = TransactionTestUtils.getTransactionHash();
     
     @Rule 
     public MockitoRule mockitoRule = MockitoJUnit.rule();

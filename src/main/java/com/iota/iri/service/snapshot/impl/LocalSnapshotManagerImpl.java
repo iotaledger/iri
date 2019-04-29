@@ -1,5 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
@@ -31,7 +32,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * To prevent jumping back and forth in and out of sync, there is a buffer in between.
      * Only when the latest milestone and latest snapshot differ more than this number, we fall out of sync
      */
-    //Package Private for testing
+    @VisibleForTesting
     static final int LOCAL_SNAPSHOT_SYNC_BUFFER = 5;
 
     /**
@@ -129,7 +130,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      *
      * @param latestMilestoneTracker tracker for the milestones to determine when a new local snapshot is due
      */
-    //Package Private For Testing
+    @VisibleForTesting
     void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
         while (!Thread.currentThread().isInterrupted()) {
             int localSnapshotInterval = getSnapshotInterval(isInSync(latestMilestoneTracker));
@@ -156,7 +157,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param inSync if this node is in sync
      * @return the current interval in which we take local snapshots
      */
-    //Package Private For Testing
+    @VisibleForTesting
     int getSnapshotInterval(boolean inSync) {
         return inSync
                 ? config.getLocalSnapshotsIntervalSynced()
@@ -174,7 +175,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param latestMilestoneTracker tracker we use to determine milestones
      * @return <code>true</code> if we are in sync, otherwise <code>false</code>
      */
-    // Package Private For Testing
+    @VisibleForTesting
     boolean isInSync(LatestMilestoneTracker latestMilestoneTracker) {
         if (!latestMilestoneTracker.isInitialScanComplete()) {
             return false;

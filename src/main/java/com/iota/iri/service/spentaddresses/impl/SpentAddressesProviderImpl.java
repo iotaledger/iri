@@ -61,8 +61,6 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
             return;
         }
 
-        String test = config.getPreviousEpochSpentAddressesFiles();
-        
         for (String previousEpochsSpentAddressesFile : config.getPreviousEpochSpentAddressesFiles().split(" ")) {
                 readSpentAddressesFromStream(
                         SpentAddressesProviderImpl.class.getResourceAsStream(previousEpochsSpentAddressesFile));

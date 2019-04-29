@@ -85,7 +85,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         tracedNodes = ConcurrentHashMap.newKeySet();
         parentUnTracedNodes = new ConcurrentLinkedDeque<>();
         parentTracedNodes = ConcurrentHashMap.newKeySet();
-        freshScore = true;
+        freshScore = false;
     }
 
     //FIXME for debug

@@ -293,7 +293,7 @@ def get_total_order():
 
 if __name__ == '__main__':
     # timer
-    global timer_thread
+    timer_thread
     timer_thread = threading.Timer(TIMER_INTERVAL, get_cache)
     timer_thread.start()
     app.run(host=listen_address, port=listen_port)

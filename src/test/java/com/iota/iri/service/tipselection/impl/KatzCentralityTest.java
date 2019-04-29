@@ -35,7 +35,7 @@ public class KatzCentralityTest {
         Hash E = getRandomTransactionHash();
         Hash F = getRandomTransactionHash();
 
-        HashMap<Hash, Set<Hash>> g = new HashMap<Hash, Set<Hash>>();
+        Map<Hash, Set<Hash>> g = new HashMap<Hash, Set<Hash>>();
         g.put(A, new HashSet<Hash>());
         g.put(B, new HashSet<Hash>());
         g.put(C, new HashSet<Hash>());

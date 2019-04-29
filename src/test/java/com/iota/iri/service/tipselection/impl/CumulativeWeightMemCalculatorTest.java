@@ -241,11 +241,11 @@ public class CumulativeWeightMemCalculatorTest {
         });
             System.out.println("=======================");
             LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
+            provider.printGraph(provider.getGraph(),"graph:dot");
             System.out.println("=======================");
         }catch (Exception e){
             LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
+            provider.printGraph(provider.getGraph(),"graph:dot");
             throw e;
         }
     }
@@ -264,7 +264,7 @@ public class CumulativeWeightMemCalculatorTest {
 //            Assert.assertEquals("The circle raised the weight", 1, txToCw.get(randomTransactionHash).intValue());
         }catch (Exception e){
             LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
+            provider.printGraph(provider.getGraph(),"graph:dot");
             throw e;
         }
     }
@@ -290,11 +290,11 @@ public class CumulativeWeightMemCalculatorTest {
             //FIXME exist circle, can't calculate score, comment by yk
 //            cumulativeWeightCalculator.calculate(transaction.getHash());
             LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
+            provider.printGraph(provider.getGraph(),"graph:dot");
             //No infinite loop (which will probably result in an overflow exception) means test has passed
         }catch (Exception e){
             LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
+            provider.printGraph(provider.getGraph(),"graph:dot");
             throw e;
         }
     }

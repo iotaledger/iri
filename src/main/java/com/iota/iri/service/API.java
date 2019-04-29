@@ -807,7 +807,8 @@ public class API {
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         List<Hash> hashes = new ArrayList<>();
-        for (final String trytesPart : trytes) {
+        for(int i=trytes.size()-1; i>=0; i--) {
+            String trytesPart = trytes.get(i);
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,

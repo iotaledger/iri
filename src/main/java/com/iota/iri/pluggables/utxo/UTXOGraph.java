@@ -104,6 +104,7 @@ public class UTXOGraph {
 
 
     public void markDoubleSpend(List<Hash> order, HashMap<String, Hash> txnToTangleMap) {
+        doubleSpendSet.clear();
         for(String key : outGraph.keySet()) {
             Set<String> valSet = new ConcurrentSet<>();
             for(String val : outGraph.get(key)) {

@@ -94,13 +94,16 @@ public class RocksDBPersistenceProviderTest {
     public void testStore(){
         Hash h1 = IotaUtils.getRandomTransactionHash();
         Hash h2 = IotaUtils.getRandomTransactionHash();
+        Hash h3 = IotaUtils.getRandomTransactionHash();
+        Hash h4 = IotaUtils.getRandomTransactionHash();
         Stack<Hash> stack = new Stack<>();
         stack.push(h1);
         stack.push(h2);
+        stack.push(h3);
+        stack.push(h4);
 
         rocksDBPersistenceProvider.storeAncestors(stack);
         Stack<Hash> obj = rocksDBPersistenceProvider.getAncestors();
-        assert obj.size() == stack.size();
-        obj.stream().forEach(o -> Assert.assertTrue(stack.contains(o)));
+        assert obj.equals(stack);
     }
 }

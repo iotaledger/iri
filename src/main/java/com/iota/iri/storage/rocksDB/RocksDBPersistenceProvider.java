@@ -6,6 +6,7 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -635,19 +636,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             return null;
         }
 
-        Queue<Hash> hashes = new ArrayDeque<>();
-
+        Stack<Hash> stack = new Stack<>();
         for(int i=0; i<ancestors.length; i+= Hash.SIZE_IN_BYTES){
             byte[] ins = new byte[Hash.SIZE_IN_BYTES];
             System.arraycopy(ancestors, 0 + i, ins, 0, Hash.SIZE_IN_BYTES);
             Hash hash = HashFactory.TRANSACTION.create(ins);
-            hashes.add(hash);
+            stack.push(hash);
         }
-        Stack<Hash> stack = new Stack<>();
-        while(!hashes.isEmpty()){
-            stack.push(((ArrayDeque<Hash>) hashes).pollLast());
-        }
-        log.info("=== ancestors : " + stack);
+        log.info("=== ancestors : " + stack.stream().map(h -> IotaUtils.abbrieviateHash(h, 6)).collect(Collectors.toList()));
         return stack;
     }
 

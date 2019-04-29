@@ -92,7 +92,7 @@ public class ValidationStage {
         Hash requestedHash = optHashOfRequestedTx.get();
         Hash txToRequest = requestedHash.equals(txHash) ? Hash.NULL_HASH : requestedHash;
 
-        ReplyPayload replyStagePayload = new ReplyPayload(optNeighbor.get(), optHashOfRequestedTx.get());
+        ReplyPayload replyStagePayload = new ReplyPayload(optNeighbor.get(), txToRequest);
         ProcessingContext replyCtx = new ProcessingContext(TransactionProcessingPipeline.Stage.REPLY,
                 replyStagePayload);
         ProcessingContext receivedCtx = new ProcessingContext(TransactionProcessingPipeline.Stage.RECEIVED,

@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 import org.junit.After;
 import org.junit.Before;
@@ -11,7 +12,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Answers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.exceptions.base.MockitoAssertionError;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -66,7 +66,7 @@ public class LocalSnapshotManagerImplTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         lsManager.shutdown();
     }
     
@@ -83,14 +83,7 @@ public class LocalSnapshotManagerImplTest {
         when(snapshotProvider.getInitialSnapshot().getIndex()).thenReturn(100 - SNAPSHOT_DEPTH - DELAY_SYNC - 1);
         
         // Run in separate thread to allow us to time-out
-        Thread t = new Thread(new Runnable() {
-            
-            @Override
-            public void run() {
-                lsManager.monitorThread(milestoneTracker);
-                
-            }
-        });
+        Thread t = new Thread(() -> lsManager.monitorThread(milestoneTracker));
 
         t.start();
         // We should finish directly, margin for slower computers
@@ -101,7 +94,7 @@ public class LocalSnapshotManagerImplTest {
         
         // Verify we took a snapshot
         try {
-            verify(snapshotService, times(1)).takeLocalSnapshot(Mockito.any(), Mockito.any());
+            verify(snapshotService, times(1)).takeLocalSnapshot(any(), any());
         } catch (MockitoAssertionError e) {
             throw new MockitoAssertionError("A snapshot should have been taken when we are below SNAPSHOT_DEPTH");
         }

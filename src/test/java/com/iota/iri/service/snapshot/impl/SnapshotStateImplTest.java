@@ -53,7 +53,7 @@ public class SnapshotStateImplTest {
     @Test
     public void testGetBalances() {
         assertEquals("State should not have balances", new HashMap<>(), state.getBalances());
-        assertEquals("State should have the ballances it was created with", map, balanceState.getBalances());
+        assertEquals("State should have the balances it was created with", map, balanceState.getBalances());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class SnapshotStateImplTest {
         state.applyStateDiff(diff);
         
         long balance = state.getBalance(Hash.NULL_HASH);
-        assertEquals("Applying state to an empty state should have 5 for genisis", 5l, balance);
+        assertEquals("Applying state to an empty state should have 5 for genesis", 5l, balance);
         
         balance = state.getBalance(A);
         assertEquals("Applying state to an empty state should have -5 for A", -5l, balance);
@@ -127,7 +127,7 @@ public class SnapshotStateImplTest {
         patchedState = balanceState.patchedState(diff);
         
         long balance = patchedState.getBalance(Hash.NULL_HASH);
-        assertEquals("5 should have been added to genisis", TransactionViewModel.SUPPLY - 5l, balance);
+        assertEquals("5 should have been added to genesis", TransactionViewModel.SUPPLY - 5l, balance);
         
         balance = patchedState.getBalance(A);
         assertEquals("5 should have been removed from A", 5, balance);

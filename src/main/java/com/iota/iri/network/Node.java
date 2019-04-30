@@ -79,10 +79,11 @@ public class Node {
     private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
 
     private ConcurrentHashMap<Hash, Map<Integer, Pair<TransactionViewModel, Neighbor>>> bundleCache;
-    private Set<Hash> hashesToRequest;
 
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
     private DatagramSocket udpSocket;
+
+    private boolean optimizeNetworkEnabled;
 
     public Node(final Tangle tangle, final TransactionValidator transactionValidator, final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, final MilestoneTracker milestoneTracker, final MessageQ messageQ, final NodeConfig configuration
     ) {
@@ -97,8 +98,8 @@ public class Node {
         int packetSize = configuration.getTransactionPacketSize();
         this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
         this.tipRequestingPacket = new DatagramPacket(new byte[packetSize], packetSize);
-        this.bundleCache = new ConcurrentHashMap<Hash, Map<Integer, Pair<TransactionViewModel, Neighbor>>>();
-        this.hashesToRequest = new HashSet<>();
+        this.bundleCache = new ConcurrentHashMap<>();
+        this.optimizeNetworkEnabled = configuration.isOptimizeNetworkEnabled();
     }
 
     public void init() throws Exception {
@@ -213,7 +214,7 @@ public class Node {
         return Optional.of(hostAddress);
     }
 
-    private boolean checkIfBundle(TransactionViewModel model) {      
+    private boolean checkIfBundle(TransactionViewModel model) {
        long tot = model.getLastIndex()+1;
         return tot > 1;
     }
@@ -563,7 +564,7 @@ public class Node {
         }
 
         if (transactionViewModel != null && transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
-            sendTxn( transactionViewModel, neighbor);     
+            sendTxn( transactionViewModel, neighbor);
         } else {
             //trytes not found
             if (!requestedHash.equals(Hash.NULL_HASH)) {
@@ -607,7 +608,7 @@ public class Node {
         return tip == null ? Hash.NULL_HASH : tip;
     }
 
-    public void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
+    public void sendPacket(DatagramPacket packet, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
 
         //limit amount of sends per second
         long now = System.currentTimeMillis();
@@ -622,14 +623,14 @@ public class Node {
             return;
         }
 
-        synchronized (sendingPacket) {
-            System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-            
+        synchronized (packet) {
+            System.arraycopy(transactionViewModel.getBytes(), 0, packet.getData(), 0, TransactionViewModel.SIZE);
+
             Hash hash = transactionRequester.transactionToRequest(false);
 
             System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,
-                    sendingPacket.getData(), TransactionViewModel.SIZE, reqHashSize);
-            neighbor.send(sendingPacket);
+                    packet.getData(), TransactionViewModel.SIZE, reqHashSize);
+            neighbor.send(packet);
         }
 
         sendPacketsCounter.getAndIncrement();

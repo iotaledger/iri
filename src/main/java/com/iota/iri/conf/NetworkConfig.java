@@ -63,6 +63,11 @@ public interface NetworkConfig extends Config {
      */
     int getCacheSizeBytes();
 
+    /**
+     * @return Descriptions#OPTIMIZE_NETWORK_ENABLED
+     */
+    boolean isOptimizeNetworkEnabled();
+
     interface Descriptions {
         String UDP_RECEIVER_PORT = "The UDP Receiver Port.";
         String TCP_RECEIVER_PORT = "The TCP Receiver Port.";
@@ -76,5 +81,6 @@ public interface NetworkConfig extends Config {
         String Q_SIZE_NODE = "The size of the REPLY, BROADCAST, and RECEIVE network queues.";
         String P_DROP_CACHE_ENTRY = DescriptionHelper.PROB_OF + "dropping recently seen transactions out of the network cache.";
         String CACHE_SIZE_BYTES = "The size of the network cache in bytes";
+        String OPTIMIZE_NETWORK_ENABLED = "Optimize the network to reduce the traffic";
     }
 }

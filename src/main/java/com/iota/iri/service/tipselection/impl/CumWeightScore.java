@@ -87,10 +87,9 @@ public class CumWeightScore
 
         while (!queue.isEmpty()) {
             Hash h = queue.pop();
-            Set<Hash> set = revGraph.get(h);
-            if (set != null) {
-                for (Hash e : set) {
-                    if (graph.containsKey(e) && !visited.contains(e)) {
+            if(revGraph.containsKey(h)) {
+                for(Hash e : revGraph.get(h)) {
+                    if((revGraph.containsKey(e) || graph.containsKey(e)) && !visited.contains(e)) {
                         queue.add(e);
                         visited.add(e);
                     }

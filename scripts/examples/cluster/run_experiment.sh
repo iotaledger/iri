@@ -10,7 +10,7 @@ sudo cp conf_info/topology/${TOPOLOGY} topology.txt
 python server_deploy_batch.py iri $2
 python server_deploy_batch.py cli $2 $3
 python server_deploy_batch.py add
-sleep(10)
+sleep 10
 endtime=`date +'%Y-%m-%d %H:%M:%S'`
 start_seconds=$(date --date="$starttime" +%s);
 end_seconds=$(date --date="$endtime" +%s);

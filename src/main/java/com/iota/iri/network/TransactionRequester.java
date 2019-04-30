@@ -96,6 +96,19 @@ public class TransactionRequester {
         return transactionsToRequest.size() >= TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
     }
 
+    public int getRequesterSleepPeriod() {
+        if(transactionsToRequest.size() >= 1000) {
+            return 10; // request every 10 millisecond
+        } else if(transactionsToRequest.size() >= 100) {
+            return 100;
+        } else if(transactionsToRequest.size() >= 10) {
+            return 500;
+        } else if(transactionsToRequest.size() >= 2) {
+            return 1000;
+        } else {
+            return 5000;
+        }
+    }
 
     public Hash transactionToRequest(boolean milestone) throws Exception {
         // determine which set of transactions to operate on

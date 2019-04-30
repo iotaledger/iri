@@ -31,6 +31,10 @@
             <textarea id="dagResult" class="textarea-dag-result"></textarea>
         </el-form-item>
         <el-form-item>
+            <div id="scale_div">
+                <el-button icon="el-icon-plus" @click="scalePlus"></el-button>
+                <el-button icon="el-icon-minus" @click="scaleMinus"></el-button>
+            </div>
             <div id="relationChart" class="dag-map"></div>
         </el-form-item>
         <el-dialog title="Add Node" :visible.sync="addNodeDialog" width="60%" style="text-align: left">
@@ -91,7 +95,8 @@
                 },
                 serverList: this.ipList,
                 portList: [],
-                addNodeDialog: false
+                addNodeDialog: false,
+                dagScale: 1
             };
         },
         methods: {
@@ -145,8 +150,8 @@
             },
             drawRelationMap(data) {
                 let digraph = "digraph {rankdir=LR;";
-                for(let i in data){
-                    if(data[i].attester !== "" && data[i].attestee != ""){
+                for (let i in data) {
+                    if (data[i].attester !== "" && data[i].attestee != "") {
                         digraph += data[i].attester + "->" + data[i].attestee + ";"
                     }
                 }
@@ -166,19 +171,33 @@
             },
             addNode() {
                 if (!requestServer || !requestPort) {
-                    this.$alert("Please choose server and port", "Warning",this.messageOption.warning);
+                    this.$alert("Please choose server and port", "Warning", this.messageOption.warning);
                     return;
                 }
                 requestData.url = requestServer + ":" + requestPort;
                 this.axios.post("/api/AddNode", requestData).then(res => {//success callback
                     if (res.data["Code"] === 1) {
-                        this.$alert("addNode success!","Success",this.messageOption.success);
+                        this.$alert("addNode success!", "Success", this.messageOption.success);
                     } else {
-                        this.$alert(res.data["Message"],"Error",this.messageOption.error);
+                        this.$alert(res.data["Message"], "Error", this.messageOption.error);
                     }
                 }).catch(error => {//error callback
                     console.error(error);
                 });
+            },
+            scalePlus() {
+                this.setScale("#relationChart svg",0.1);
+            },
+            scaleMinus() {
+                this.setScale("#relationChart svg",-0.1);
+            },
+            setScale(dom,value) {
+                if ($(dom).css("-webkit-transform") === undefined) {
+                    return;
+                }
+                this.dagScale += value;
+                let scale = "scale(" + this.dagScale + ")";
+                $(dom).css({"-webkit-transform": scale, "-webkit-transform-origin": "top left"});
             }
         }
     };
@@ -198,6 +217,7 @@
     }
 
     .dag-map {
+        margin-top: 50px;
         width: 95%;
         height: 500px;
     }

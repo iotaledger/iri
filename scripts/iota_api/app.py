@@ -95,11 +95,6 @@ def get_cache():
     if enable_batching is False:
         return
 
-    # timer
-    global timer_thread
-    timer_thread = threading.Timer(TIMER_INTERVAL, get_cache)
-    timer_thread.start()
-
     global cache_lock
     with cache_lock:
         nums = min(len(txn_cache), BATCH_SIZE)
@@ -182,9 +177,7 @@ def put_cache():
     txn_cache.append(tx_string)
 
     if len(txn_cache) >= BATCH_SIZE:
-        # ring-buffer is full, send to ipfs or iota immediately.
-        t = threading.Thread(target=get_cache)
-        t.start()
+        get_cache()
 
     return 'ok'
 
@@ -299,5 +292,7 @@ def get_total_order():
     return resp[u'totalOrder']
 
 if __name__ == '__main__':
-    get_cache()
+    # timer
+    timer_thread = threading.Timer(TIMER_INTERVAL, get_cache)
+    timer_thread.start()
     app.run(host=listen_address, port=listen_port)

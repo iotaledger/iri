@@ -15,7 +15,7 @@ if 'examples' in pwd:
     rmdblog = father_path + '/data/testnetdb.log'
     rmdb = father_path + '/data/testnetdb'
     data_volume = father_path + '/data'
-    conf_volume = father_path = '/conf/neighbors'
+    conf_volume = father_path + '/conf/neighbors'
 else:
     father_path = os.path.abspath(os.path.dirname(pwd) + os.path.sep + ".")
     rmdblog = father_path + '/examples/data/testnetdb.log'

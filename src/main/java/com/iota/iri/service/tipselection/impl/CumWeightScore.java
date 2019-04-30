@@ -85,10 +85,12 @@ public class CumWeightScore
 
         while (!queue.isEmpty()) {
             Hash h = queue.pop();
-            for(Hash e : revGraph.get(h)) {
-                if(revGraph.containsKey(e) && !visited.contains(e)) {
-                    queue.add(e);
-                    visited.add(e);
+            if(revGraph.containsKey(h)) {
+                for(Hash e : revGraph.get(h)) {
+                    if((revGraph.containsKey(e) || graph.containsKey(e)) && !visited.contains(e)) {
+                        queue.add(e);
+                        visited.add(e);
+                    }
                 }
             }
             ret = update(graph, ret, h);

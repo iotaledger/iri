@@ -51,7 +51,7 @@
         requestData.hashes.push(nameMap[name]);
         request.requestUrl = requestUrl;
         request.requestData = JSON.stringify(requestData);
-        request.requestMethod = this.requestMethod.GET;
+        request.requestMethod = "GET";
         let settings = {
             "async": true,
             "crossDomain": true,
@@ -187,12 +187,12 @@
                 })
             },
             scalePlus() {
-                this.setScale("#dagChart svg",0.1);
+                this.setScale("#dagChart svg", 0.1);
             },
             scaleMinus() {
-                this.setScale("#dagChart svg",-0.1);
+                this.setScale("#dagChart svg", -0.1);
             },
-            setScale(dom,value) {
+            setScale(dom, value) {
                 if ($(dom).css("-webkit-transform") === undefined) {
                     return;
                 }

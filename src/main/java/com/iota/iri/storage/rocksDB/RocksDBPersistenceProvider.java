@@ -6,6 +6,7 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -15,7 +16,10 @@ import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
@@ -51,6 +55,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private static final String txnCountFileName = "TXN_COUNT";
     private AtomicLong txnCount = new AtomicLong(0);
     private File txnCountFile;
+
+    private final String ANCESTORS = "ancestors";
 
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
@@ -616,5 +622,44 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public int getNumOfTips() {
         // TODO
         return -1;
+    }
+
+    @Override
+    public Stack<Hash> getAncestors() {
+        byte[] ancestors = null;
+        try {
+            ancestors = db.get(ANCESTORS.getBytes());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
+        if (null == ancestors){
+            return null;
+        }
+
+        Stack<Hash> stack = new Stack<>();
+        for(int i=0; i<ancestors.length; i+= Hash.SIZE_IN_BYTES){
+            byte[] ins = new byte[Hash.SIZE_IN_BYTES];
+            System.arraycopy(ancestors, 0 + i, ins, 0, Hash.SIZE_IN_BYTES);
+            Hash hash = HashFactory.TRANSACTION.create(ins);
+            stack.push(hash);
+        }
+        log.info("=== ancestors : " + stack.stream().map(h -> IotaUtils.abbrieviateHash(h, 6)).collect(Collectors.toList()));
+        return stack;
+    }
+
+    @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        if (null == ancestors){
+            return;
+        }
+        ByteBuffer byteBuffer = ByteBuffer.allocate(ancestors.size() * Hash.SIZE_IN_BYTES);
+        for(Hash h : ancestors){
+            byteBuffer.put(h.bytes());
+        }
+        try {
+            db.put(ANCESTORS.getBytes(), byteBuffer.array());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
     }
 }

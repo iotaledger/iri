@@ -131,7 +131,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
         Hash ancestor = ancestors.peek();
         if (graph != null && !graph.isEmpty()) {
-            subGraph(ancestor);
+            induceGraphFromAncestor(ancestor);
         }
     }
 
@@ -393,42 +393,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
-    }
-
-
-    private void checkUntracedParentNodes() {
-        Queue<Hash> tmpUnTracedQueue = new ArrayDeque<>();
-        for(Hash h : parentUnTracedNodes) {
-            if (parentTraceToGenesis(h)) {
-                parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
-            } else {
-                tmpUnTracedQueue.add(h);
-            }
-        }
-        parentUnTracedNodes = tmpUnTracedQueue;
-    }
-
-    private boolean parentTraceToGenesis(Hash h) {
-        // 遍历，前驱节点是已遍历节点或genesis，返回true
-        Queue<Hash> confirmNodes = new ArrayDeque<>();
-        Set<Hash> visited = new HashSet<>();
-        confirmNodes.add(h);
-        while (!confirmNodes.isEmpty()) {
-            Hash cur = confirmNodes.poll();
-            Hash confirmed = parentGraph.get(cur);
-            if (null == confirmed){
-                continue;
-            }
-            if (!parentTracedNodes.contains(confirmed)){
-                return false;
-            }
-            if (!visited.contains(confirmed)) {
-                confirmNodes.add(confirmed);
-            }
-            visited.add(confirmed);
-        }
-        parentTracedNodes.add(h);
-        return true;
     }
 
     private void computeToplogicalOrder() {
@@ -933,7 +897,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return this.parentRevGraph;
     }
 
-    public void subGraph(Hash curAncestor) {
+    public void induceGraphFromAncestor(Hash curAncestor) {
         Map<Hash, Set<Hash>> subGraph = new HashMap<>();
         Map<Hash, Set<Hash>> subRevGraph = new HashMap<>();
         Map<Hash, Hash> subParentGraph = new HashMap<>();
@@ -1067,7 +1031,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
 
         void refreshGraph() {
-            System.out.println("=========begin to reload ancestor node==========");
+           log.debug("=========begin to reload ancestor node==========");
             long begin = System.currentTimeMillis();
             Stack<Hash> ancestors = tangle.getAncestors();
             Hash curAncestor = getAncestor();
@@ -1076,17 +1040,17 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
             printAllGraph("before", curAncestor);
             if (curAncestor == null) {
-                System.out.println("=========no ancestor node,cost:" + (System.currentTimeMillis() - begin) + "ms ==========");
+                log.debug("=========no ancestor node,cost:" + (System.currentTimeMillis() - begin) + "ms ==========");
                 return;
             }
             if (CollectionUtils.isNotEmpty(ancestors) && ancestors.peek().equals(curAncestor)) {
-                System.out.println("=========no ancestor node to reload,cost:" + (System.currentTimeMillis() - begin) + "ms ==========");
+                log.debug("=========no ancestor node to reload,cost:" + (System.currentTimeMillis() - begin) + "ms ==========");
                 return;
             }
 
             ancestors = reloadAncestor(ancestors, curAncestor);
             tangle.storeAncestors(ancestors);
-            subGraph(curAncestor);
+            induceGraphFromAncestor(curAncestor);
         }
 
         private void printAllGraph(String tag, Hash ancestor) {
@@ -1114,6 +1078,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             ancestors.push(curAncestor);
             return ancestors;
         }
+    }
 
     public boolean hasBlock(Hash h) {
         return graph.containsKey(h);

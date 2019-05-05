@@ -1,6 +1,7 @@
 package vue
 
 import (
+    "encoding/json"
     "fmt"
     "io"
     "io/ioutil"
@@ -13,12 +14,9 @@ import (
     "testing"
 )
 
-var o OCli
 const MyURL = "127.0.0.1:14700"
-var nodesCache = make([]string,3)
-var index = 0
-var number = 1
-
+var requests []AddNodeRequest
+var o OCli
 func TestAddAttestationInfoFunction(t *testing.T) {
     l, err := net.Listen("tcp", MyURL)
     if err != nil {
@@ -45,13 +43,17 @@ func TestAddAttestationInfoFunction(t *testing.T) {
     defer ts.Close()
 
     bytes := []byte("{\"Attester\":\"192.168.130.101\",\"Attestee\":\"192.168.130.110\",\"Score\":\"1\"}")
-    resp := o.AddAttestationInfoFunction(bytes)
+    var addNodeRequest *AddNodeRequest
+    json.Unmarshal(bytes,&addNodeRequest)
+    resp:=o.AddAttestationInfoFunction(addNodeRequest)
     if resp.Code != 1 {
         t.Errorf("failed to call AddAttestationInfoFunction: %s\n", resp.Message)
     }
 
     bytes1 := []byte("{\"Attester\":\"192.168.130.102\",\"Attestee\":\"192.168.130.120\",\"Score\":\"2\"}")
-    resp1 := o.AddAttestationInfoFunction(bytes1)
+    var addNodeRequest1 *AddNodeRequest
+    json.Unmarshal(bytes1,&addNodeRequest1)
+    resp1:=o.AddAttestationInfoFunction(addNodeRequest1)
     if resp1.Code != 1 {
         t.Errorf("failed to call AddAttestationInfoFunction: %s\n", resp1.Message)
     }
@@ -77,9 +79,9 @@ func TestGetRankFunction(t *testing.T) {
 
         var str string
         data := make([]string,1)
-        for i := 0;i < len(nodesCache);i += 3 {
-            data = append(data,`%7B%22attester%22%3A%22` + nodesCache[i+0] +
-                `%22%2C%22attestee%22%3A%22` + nodesCache[i+1] + `%22%2C%22score%22%3A` + nodesCache[i+2] +`%7D`)
+        for i := 0;i < len(requests);i ++ {
+            data = append(data,`%7B%22attester%22%3A%22` + requests[i].Attester +
+                `%22%2C%22attestee%22%3A%22`+requests[i].Attestee+`%22%2C%22score%22%3A`+requests[i].Score+`%7D`)
         }
 
         str = strings.Trim(strings.Join(data,","),",")
@@ -92,95 +94,83 @@ func TestGetRankFunction(t *testing.T) {
     ts.Start()
     defer ts.Close()
     bytes := []byte("{\"period\":1,\"numRank\":100}")
-    resp := o.GetRankFunction(bytes)
+    var queryNodesRequest *QueryNodesRequest
+    json.Unmarshal(bytes,&queryNodesRequest)
+    resp := o.GetRankFunction(queryNodesRequest)
     if resp.Code != 1 {
         t.Errorf("failed to call GetRankFunction: %s\n", resp.Message)
     }
-
-    result:=checkData(resp.Data)
+    result := checkData(resp.Data)
     if result == 1{
         fmt.Println("Data detection correct")
     }else {
         t.Error("Data detection failure")
     }
-
 }
 
 func handleData(bodyBytes []byte){
-    nodes := make([]string,15)
     data1 := strings.Split(string(bodyBytes),",")
-    nodes = strings.Split(data1[2],"%22")
-    reg := regexp.MustCompile(`[%ACD]`)
-    data2 := reg.ReplaceAllString(nodes[14], "0")
-    nodes[14] = strings.Split(data2,"0")[2]
-
-    if number == 1 {
-        for k := range nodes {
-            if k == 7 || k == 11 || k == 14 {
-                nodesCache[index] = nodes[k]
-                index++
-            }
-        }
-        number ++
-    }else{
-        for k := range nodes {
-            if k == 7 || k == 11 || k == 14 {
-                nodesCache=append(nodesCache,nodes[k])
-            }
-        }
-    }
+    data2 := strings.Split(string(data1[2]),"tee_content%22%3A%5B")
+    data3 := strings.Split(data2[1],"%5D")
+    data4 := data3[0]
+    data5 := strings.Split(data4,"score")
+    r := regexp.MustCompile(`%[\d][0-9A-Z]`)
+    arg := strings.Split(r.ReplaceAllString(data5[1],"*"),"*")[2]
+    str := strings.Replace(strings.Replace(strings.Replace(strings.Replace(strings.Replace(data3[0],"%22",
+        "\"",-1), "%7B","{",-1),"%3A",":",-1),"%2C",",",-1),"%7D","}",-1)
+    var req AddNodeRequest
+    json.Unmarshal([]byte(str),&req)
+    req.Score = arg
+    requests = append(requests,req)
 
 }
 
 func checkData(a interface{}) int{
     str := fmt.Sprintf("%v", a)
     reg := regexp.MustCompile(`[{\[\]}]`)
-    ss := reg.ReplaceAllString(str, " ")
+    ss := reg.ReplaceAllString(str, "")
+    s1 := strings.Split(ss," ")[4*len(requests):]
     var tee teectx
     var tees []teectx
-    s1 := strings.Fields(ss)
     for k := range s1{
         if s1[k] == "0" {
             continue
         }else {
             if k % 3 == 0 {
                 tee.Attester = s1[k]
-            } else if k % 3 == 1 {
+            }else if k % 3 == 1 {
                 tee.Attestee = s1[k]
-            } else if k % 3 == 2{
+            }else if k % 3 == 2{
                 tee.Score = s1[k]
                 tees = append(tees,tee)
             }
         }
     }
-    var s []string
-    for k := range tees{
-        s = append(s,tees[k].Attester)
-        s = append(s,tees[k].Attestee)
-        s = append(s,tees[k].Score)
-    }
-    if len(s) != len(nodesCache){
+    if len(tees) != len(requests){
         return 0
     }
-    var j int
-    for i:= 0;i < len(s);i ++{
-        for j = 0;j<len(nodesCache);j ++{
-            if s[i] == nodesCache[j]{
+
+    for k1 := range tees{
+        k2 := 0
+        for k2 = range requests {
+            if tees[k1].Attester == requests[k2].Attester&&
+                tees[k1].Attestee == requests[k2].Attestee&&
+                tees[k1].Score == requests[k2].Score{
                 break
             }
         }
-        if j == len(nodesCache){
+        if k2 == len(requests){
             return 0
         }
     }
-
     return 1
 }
 
 type teectx struct {
-    Attester string
-    Attestee string
-    Score    string
+    Attester string `json:"attester,omitempty"`
+    Attestee string `json:"attestee,omitempty"`
+    Score    string `json:"score,omitempty"`
 }
+
 
 

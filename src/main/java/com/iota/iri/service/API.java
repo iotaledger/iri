@@ -761,7 +761,7 @@ public class API {
             return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
 
         } catch (Exception e) {
-            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            log.error("Tip selection failed: " + e.getLocalizedMessage(),e);
             return ErrorResponse.create(e.getLocalizedMessage());
         }
     }
@@ -875,14 +875,14 @@ public class API {
             }
             conn.disconnect();
         } catch (MalformedURLException e) {
-            log.info("MalformedURLException {}", e);
+            log.error("MalformedURLException {}", e);
             e.printStackTrace();
         } catch (IOException e) {
-            log.info("IOException {}", e);
+            log.error("IOException {}", e);
             e.printStackTrace();
         }
         catch (Exception e) {
-            log.info("Exception {}", e);
+            log.error("Exception {}", e);
         }
     }
 
@@ -1393,7 +1393,7 @@ public class API {
                         exchange.endExchange();
                     }
                 } catch (IOException e) {
-                    log.error("Lost connection to client - cannot send response");
+                    log.error("Lost connection to client - cannot send response",e);
                     exchange.endExchange();
                     sinkChannel.getWriteSetter().set(null);
                 }
@@ -1460,7 +1460,7 @@ public class API {
         try {
             txToApprove = getTransactionToApproveTips(15, Optional.empty());
         } catch (NullPointerException e) {
-            log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage());
+            log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage(),e);
             if(instance.tangle.getTxnCount() > 2) {
                 return AbstractResponse.createEmptyResponse();
                 // TODO, if this happens for multiple times, find the reason and solve it
@@ -1469,7 +1469,7 @@ public class API {
             txToApprove.add(IotaUtils.getRandomTransactionHash());
         }
         catch (Exception e) {
-            log.error("Tip selection failed: " + e.getLocalizedMessage());
+            log.error("Tip selection failed: " + e.getLocalizedMessage(),e);
         } finally {
             if(txToApprove.get(0).equals(null) || (txToApprove.size()>1 && txToApprove.get(1).equals(null))) {
                 log.warn("Tip selection failed, why?");

@@ -71,7 +71,7 @@ public class LedgerValidatorImpl implements LedgerValidator{
                 if (transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > latestSnapshotIndex) {
                     numberOfAnalyzedTransactions++;
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                        transactionRequester.requestTransaction(transactionViewModel.getHash(), milestone);
+                        transactionRequester.requestTransaction(transactionViewModel.getHash(), null, milestone);
                         return null;
 
                     } else {

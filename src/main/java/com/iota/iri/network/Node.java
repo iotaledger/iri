@@ -321,7 +321,7 @@ public class Node {
                     List<Hash> missingHashes = getMissingHash(model);
                     for(Hash req : missingHashes) {
                         try {
-                            transactionRequester.requestTransaction(req, false);
+                            transactionRequester.requestTransaction(req, null, false);
                         } catch(Exception e) {
                             log.error("Something wrong goes here {}", e.getStackTrace().toString());
                         }
@@ -581,7 +581,7 @@ public class Node {
                             }
                         }
                     } else if (rnd.nextDouble() < configuration.getpPropagateRequest()) {
-                        transactionRequester.requestTransaction(requestedHash, false);
+                        transactionRequester.requestTransaction(requestedHash, null, false);
                     }
                 } catch (Exception e) {
                     log.error("Error adding transaction to request.", e);
@@ -626,9 +626,9 @@ public class Node {
         synchronized (packet) {
             System.arraycopy(transactionViewModel.getBytes(), 0, packet.getData(), 0, TransactionViewModel.SIZE);
 
-            Hash hash = transactionRequester.transactionToRequest(false);
+            Pair<Hash, Neighbor> pair = transactionRequester.transactionToRequest(false);
 
-            System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,
+            System.arraycopy(pair != null ? pair.getKey().bytes() : transactionViewModel.getHash().bytes(), 0,
                     packet.getData(), TransactionViewModel.SIZE, reqHashSize);
             neighbor.send(packet);
         }
@@ -676,14 +676,20 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    Hash hash = transactionRequester.transactionToRequest(false);
-                    final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, hash);
-                    System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
-                    System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
-                           reqHashSize);
-                    //Hash.SIZE_IN_BYTES);
+                    Pair<Hash, Neighbor> pair = transactionRequester.transactionToRequest(false);
+                    if (pair != null) {
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, pair.getKey());
+                        System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
+                        System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
+                                reqHashSize);
+                        //Hash.SIZE_IN_BYTES);
 
-                    neighbors.forEach(n -> n.send(tipRequestingPacket));
+                        if (optimizeNetworkEnabled && pair.getValue() != null) {
+                            pair.getValue().send(tipRequestingPacket);
+                        } else {
+                            neighbors.forEach(n -> n.send(tipRequestingPacket));
+                        }
+                    }
 
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {

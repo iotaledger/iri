@@ -2,7 +2,7 @@ package vue
 
 import (
 	"fmt"
-	nr "github.com/wunder3605/noderank"
+	nr "github.com/triasteam/noderank"
 	"io/ioutil"
 	"net/http"
 	"strings"

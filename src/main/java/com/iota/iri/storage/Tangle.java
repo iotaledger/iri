@@ -354,7 +354,7 @@ public class Tangle {
                 return ancestors;
             }
         }
-        return null;
+        return new Stack<Hash>();
     }
 
     public void storeAncestors(Stack<Hash> ancestors) {

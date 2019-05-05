@@ -57,6 +57,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     boolean freshScore;
     List<Hash> cachedTotalOrder;
 
+    private Stack<Hash> ancestors;
+
     private boolean available;
 
     private Stack<Hash> ancestors;
@@ -826,7 +828,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ancestors;
     }
 
-    @Override
+     @Override
     public void storeAncestors(Stack<Hash> ancestors) {
         this.ancestors = ancestors;
     }

@@ -930,6 +930,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
         }
 
+        subGraph.putIfAbsent(curAncestor, graph.get(curAncestor));	
+        for (Hash h : graph.get(curAncestor)){	
+            Set<Hash> set = new HashSet<>();	
+            set.add(curAncestor);	
+            subRevGraph.putIfAbsent(h, set);	
+            degs.putIfAbsent(h, 0);	
+        }	
+        subParentGraph.putIfAbsent(curAncestor, parentGraph.get(curAncestor));	
+        subParentRevGraph.putIfAbsent(subParentGraph.get(curAncestor),new HashSet(){{add(curAncestor);}});
+
         graphLock.writeLock().lock();
         try {
             graph.clear();

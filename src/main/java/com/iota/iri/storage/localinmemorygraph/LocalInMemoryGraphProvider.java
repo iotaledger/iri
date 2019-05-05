@@ -64,6 +64,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     boolean freshScore;
     List<Hash> cachedTotalOrder;
 
+    private Stack<Hash> ancestors;
+
     private boolean available;
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
@@ -917,6 +919,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
         }
         return ret;
+    }
+
+    @Override
+    public Stack<Hash> getAncestors() {
+        return ancestors;
+    }
+
+     @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        this.ancestors = ancestors;
     }
 
     public double getScore(Hash hash) {

@@ -36,6 +36,7 @@ install:
     - sudo pip install mock
     - sudo pip install cryptography==2.5
     - sudo pip install sh
+    - sudo pip install six --upgrade
   # install ipfs
     - wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz
       && tar xf go-ipfs_v0.4.18_linux-amd64.tar.gz

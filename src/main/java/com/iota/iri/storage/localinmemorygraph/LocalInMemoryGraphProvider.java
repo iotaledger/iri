@@ -35,17 +35,17 @@ import com.iota.iri.utils.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     private static final Logger log = LoggerFactory.getLogger(LocalInMemoryGraphProvider.class);
-    private HashMap<Hash, Double> score;
-    private HashMap<Hash, Double> parentScore;
-    private HashMap<Hash, Set<Hash>> graph;
+    private Map<Hash, Double> score;
+    private Map<Hash, Double> parentScore;
+    private Map<Hash, Set<Hash>> graph;
     private Map<Hash, Hash> parentGraph;
-    private HashMap<Hash, Set<Hash>> revGraph;
-    private HashMap<Hash, Set<Hash>> parentRevGraph;
-    private HashMap<Hash, Integer> degs;
+    private Map<Hash, Set<Hash>> revGraph;
+    private Map<Hash, Set<Hash>> parentRevGraph;
+    private Map<Hash, Integer> degs;
     private HashMap<Integer, Set<Hash>> topOrder;
     private HashMap<Integer, Set<Hash>> topOrderStreaming;
 
-    private HashMap<Hash, Integer> lvlMap;
+    private Map<Hash, Integer> lvlMap;
     private HashMap<Hash, String> nameMap;
     private Map<Hash, Pair<Hash,Integer>> bundleMap;
     private Map<Hash, Set<Hash>> bundleContent;
@@ -64,6 +64,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     boolean freshScore;
     List<Hash> cachedTotalOrder;
 
+    private Stack<Hash> ancestors;
+
     private boolean available;
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
@@ -78,8 +80,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         topOrder = new HashMap<>();
         lvlMap = new HashMap<>();
         topOrderStreaming = new HashMap<>();
-        score = new HashMap<>();
-        parentScore = new HashMap<>();
+        score = new ConcurrentHashMap<>();
+        parentScore = new ConcurrentHashMap<>();
         totalDepth = 0;
         unTracedNodes = new ConcurrentLinkedDeque<>();
         tracedNodes = ConcurrentHashMap.newKeySet();
@@ -583,7 +585,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //FIXME for debug :: for graphviz visualization
-    public String printGraph(HashMap<Hash, Set<Hash>> graph, String type) {
+    public String printGraph(Map<Hash, Set<Hash>> graph, String type) {
         String ret = "";
         try {
             if(type.equals("DOT")) {
@@ -919,6 +921,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 
+    @Override
+    public Stack<Hash> getAncestors() {
+        return ancestors;
+    }
+
+     @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        this.ancestors = ancestors;
+    }
+
     public double getScore(Hash hash) {
         return score.get(hash);
     }
@@ -931,7 +943,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return graph.containsKey(hash);
     }
 
-    public HashMap<Hash, Set<Hash>> getGraph() {
+    public Map<Hash, Set<Hash>> getGraph() {
         return this.graph;
     }
 
@@ -976,7 +988,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return this.parentGraph;
     }
 
-    public HashMap<Hash, Set<Hash>> getRevParentGraph() {
+    public Map<Hash, Set<Hash>> getRevParentGraph() {
         return this.parentRevGraph;
     }
 

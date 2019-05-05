@@ -1,11 +1,12 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.Iota;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
@@ -14,6 +15,7 @@ import org.junit.runners.MethodSorters;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -86,5 +88,22 @@ public class RocksDBPersistenceProviderTest {
         rocksDBPersistenceProvider.addTxnCount(number);
         long newCount = rocksDBPersistenceProvider.getTotalTxns();
         Assert.assertEquals(oldCount + number, newCount);
+    }
+
+    @Test
+    public void testStore(){
+        Hash h1 = IotaUtils.getRandomTransactionHash();
+        Hash h2 = IotaUtils.getRandomTransactionHash();
+        Hash h3 = IotaUtils.getRandomTransactionHash();
+        Hash h4 = IotaUtils.getRandomTransactionHash();
+        Stack<Hash> stack = new Stack<>();
+        stack.push(h1);
+        stack.push(h2);
+        stack.push(h3);
+        stack.push(h4);
+
+        rocksDBPersistenceProvider.storeAncestors(stack);
+        Stack<Hash> obj = rocksDBPersistenceProvider.getAncestors();
+        assert obj.equals(stack);
     }
 }

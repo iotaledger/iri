@@ -14,7 +14,6 @@ import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import com.sun.tools.internal.ws.processor.model.jaxb.JAXBModel;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.model.persistables.Bundle;
 import org.junit.AfterClass;

@@ -47,6 +47,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean dnsRefresherEnabled = Defaults.DNS_REFRESHER_ENABLED;
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
     protected List<String> neighbors = new ArrayList<>();
+    protected boolean optimizeNetworkEnabled = Defaults.OPTIMIZE_NETWORK_ENABLED;
 
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
@@ -111,7 +112,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     private static BaseIotaConfig config;
 
     // TODO make this thread safe
-    public static void setInstance(BaseIotaConfig cfg) 
+    public static void setInstance(BaseIotaConfig cfg)
     {
         if (config == null)
         {
@@ -123,7 +124,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         {
             config = new TestnetConfig();
         }
-        return config; 
+        return config;
     }
 
     public BaseIotaConfig() {
@@ -354,6 +355,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"-n", "--neighbors"}, description = NetworkConfig.Descriptions.NEIGHBORS)
     protected void setNeighbors(String neighbors) {
         this.neighbors = IotaUtils.splitStringToImmutableList(neighbors, SPLIT_STRING_TO_LIST_REGEX);
+    }
+
+    @Override
+    public boolean isOptimizeNetworkEnabled() {
+        return optimizeNetworkEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--optimize-network", description = NetworkConfig.Descriptions.OPTIMIZE_NETWORK_ENABLED, arity = 1)
+    protected void setOptimizeNetworkEnabled(boolean optimizeNetworkEnabled) {
+        this.optimizeNetworkEnabled = optimizeNetworkEnabled;
     }
 
     @Override
@@ -800,7 +812,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     public int getBelowMaxDepthTransactionLimit() {
         return maxAnalyzedTransactions;
     }
-    
+
     @JsonProperty
     @Parameter(names = "--max-analyzed-transactions", description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
     protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
@@ -904,6 +916,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_PEERS = 0;
         boolean DNS_REFRESHER_ENABLED = true;
         boolean DNS_RESOLUTION_ENABLED = true;
+        boolean OPTIMIZE_NETWORK_ENABLED = false;
 
         //ixi
         String IXI_DIR = "ixi";

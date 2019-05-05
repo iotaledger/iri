@@ -393,6 +393,7 @@ public class TransactionData {
 
     public long getBalance(String account) {
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
+        provider.computeScore();
         List<Hash> totalTopOrders = provider.totalTopOrder();
         //log.debug("all txs = {}", transactions.toString());
         utxoGraph.markDoubleSpend(totalTopOrders, txnToTangleMap);

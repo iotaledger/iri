@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import re
-import subprocess
 import sys
 import json
+import sh
+cmd =  sh.Command("/usr/local/bin/pssh")
+user = str(sh.Command('whoami')().split()[0])
 # example usage:python add_neighbors_batch.py  add  172.21.0.30:14700  172.21.0.26:14600  172.21.0.17:14600
 
 def check_ip(ip):
@@ -38,7 +40,7 @@ def check_ip_info(iplist,ippvts):
 
 def add_neighbors(source_ip,source_port,desc_ip,desc_port):
     ip_total = get_ip_list()
-    ret = subprocess.check_output(["/usr/local/bin/pssh", "-i", "-H", "trust@"+ip_total[source_ip], "-x", "\"-oStrictHostKeyChecking=no\"",'''/usr/bin/curl -s http://localhost:%s -X POST -H 'Content-Type: application/json' -H  'X-IOTA-API-Version: 1' -d '{"command":"addNeighbors", "uris": ["tcp://%s:%s"]}' '''%(source_port,desc_ip,desc_port)])
+    ret = cmd("-i", "-H", "%s@"%user+ip_total[source_ip], "-x", "\"-oStrictHostKeyChecking=no\"",'''/usr/bin/curl -s http://localhost:%s -X POST -H 'Content-Type: application/json' -H  'X-IOTA-API-Version: 1' -d '{"command":"addNeighbors", "uris": ["tcp://%s:%s"]}' '''%(source_port,desc_ip,desc_port))
     content = ret.split('\n')[1]
     json_data  = json.loads(content)
     if json_data.has_key(u'error'):
@@ -52,7 +54,7 @@ def add_neighbors(source_ip,source_port,desc_ip,desc_port):
 
 def remove_neighbors(source_ip,source_port,desc_ip,desc_port):
     ip_total = get_ip_list()
-    ret = subprocess.check_output(["/usr/local/bin/pssh", "-i", "-H", "trust@"+ip_total[source_ip], "-x", "\"-oStrictHostKeyChecking=no\"",'''/usr/bin/curl -s http://localhost:%s -X POST -H 'Content-Type: application/json' -H  'X-IOTA-API-Version: 1' -d '{"command":"removeNeighbors", "uris": ["tcp://%s:%s"]}' '''%(source_port,desc_ip,desc_port)])
+    ret = cmd("-i", "-H", "%s@"%user+ip_total[source_ip], "-x", "\"-oStrictHostKeyChecking=no\"",'''/usr/bin/curl -s http://localhost:%s -X POST -H 'Content-Type: application/json' -H  'X-IOTA-API-Version: 1' -d '{"command":"removeNeighbors", "uris": ["tcp://%s:%s"]}' '''%(source_port,desc_ip,desc_port))
     content = ret.split('\n')[1]
     json_data  = json.loads(content)
     if json_data.has_key(u'error'):
@@ -66,7 +68,7 @@ def remove_neighbors(source_ip,source_port,desc_ip,desc_port):
 
 def get_neighbors(source_ip,source_port):
     ip_total = get_ip_list()
-    ret = subprocess.check_output(["/usr/local/bin/pssh", "-i", "-H", "trust@"+ip_total[source_ip], "-x", "\"-oStrictHostKeyChecking=no\"",'''/usr/bin/curl -s http://localhost:%s -X POST -H 'Content-Type: application/json' -H  'X-IOTA-API-Version: 1' -d '{"command":"getNeighbors"}' '''%(source_port)])
+    ret = cmd("-i", "-H", "%s@"%user+ip_total[source_ip], "-x", "\"-oStrictHostKeyChecking=no\"",'''/usr/bin/curl -s http://localhost:%s -X POST -H 'Content-Type: application/json' -H  'X-IOTA-API-Version: 1' -d '{"command":"getNeighbors"}' '''%(source_port))
     content = ret.split('\n')[1]
     json_data  = json.loads(content)
     if json_data.has_key(u'error'):

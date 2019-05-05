@@ -10,6 +10,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,7 +171,7 @@ public class TransactionValidator {
                         solid = false;
 
                         if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
-                            transactionRequester.requestTransaction(hashPointer, milestone);
+                            transactionRequester.requestTransaction(hashPointer, null, milestone);
                             break;
                         }
                     } else {
@@ -271,10 +272,10 @@ public class TransactionValidator {
     private boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
         if(!transactionViewModel.isSolid()) {
             boolean solid = true;
-            if (!checkApproovee(transactionViewModel.getTrunkTransaction(tangle))) {
+            if (!checkApproovee(transactionViewModel.getTrunkTransaction(tangle), transactionViewModel)) {
                 solid = false;
             }
-            if (!checkApproovee(transactionViewModel.getBranchTransaction(tangle))) {
+            if (!checkApproovee(transactionViewModel.getBranchTransaction(tangle), transactionViewModel)) {
                 solid = false;
             }
             if(solid) {
@@ -286,9 +287,14 @@ public class TransactionValidator {
         return false;
     }
 
-    private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
-        if(approovee.getType() == PREFILLED_SLOT) {
-            transactionRequester.requestTransaction(approovee.getHash(), false);
+    private boolean checkApproovee(TransactionViewModel approovee, TransactionViewModel transactionViewModel) throws Exception {
+        Hash genesis = null;
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
+        if (provider != null) {
+            genesis = provider.getGenesis();
+        }
+        if(approovee.getType() == PREFILLED_SLOT && (genesis == null || transactionViewModel.getHash() != genesis)) {
+            transactionRequester.requestTransaction(approovee.getHash(), null, false);
             return false;
         }
         if(approovee.getHash().equals(Hash.NULL_HASH)) {

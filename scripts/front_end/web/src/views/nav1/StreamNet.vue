@@ -23,6 +23,10 @@
                 <el-button @click="getTotalOrder" class="dag-button">TotalOrder</el-button>
             </div>
         </el-form-item>
+        <div id="scale_div">
+            <el-button icon="el-icon-plus" @click="scalePlus"></el-button>
+            <el-button icon="el-icon-minus" @click="scaleMinus"></el-button>
+        </div>
         <div id="dagChart" class="dag-chart"></div>
         <div class="detail-show">
             <pre></pre>
@@ -47,6 +51,7 @@
         requestData.hashes.push(nameMap[name]);
         request.requestUrl = requestUrl;
         request.requestData = JSON.stringify(requestData);
+        request.requestMethod = "GET";
         let settings = {
             "async": true,
             "crossDomain": true,
@@ -77,7 +82,8 @@
                     server: ""
                 },
                 serverList: this.ipList,
-                portList: []
+                portList: [],
+                dagScale: 1
             };
         },
         methods: {
@@ -94,6 +100,7 @@
             getDagMap() {
                 if (!requestServer || !requestPort) {
                     this.$alert("Please choose server and port", "Warning", this.messageOption.warning);
+                    return;
                 }
                 let requestUrl = "";
                 requestHost = requestServer + ":" + requestPort;
@@ -102,6 +109,7 @@
                 let requestData = {"type": "JSON"};
                 request.requestUrl = requestUrl;
                 request.requestData = JSON.stringify(requestData);
+                request.requestMethod = this.requestMethod.GET;
                 this.axios.post("/api/QueryNodeDetail", request).then((res) => {
                     if (res.data["Code"] === 0) {
                         alert(data["Message"]);
@@ -135,6 +143,7 @@
             getTotalOrder() {
                 if (!requestServer || !requestPort) {
                     this.$alert("Please choose server and port", "Warning", this.messageOption.warning);
+                    return;
                 }
                 let requestUrl = "";
                 requestHost = requestServer + ":" + requestPort;
@@ -142,6 +151,7 @@
                 let request = {};
                 request.requestUrl = requestUrl;
                 request.requestData = "";
+                request.requestMethod = this.requestMethod.GET;
                 this.axios.post("/api/QueryNodeDetail", request).then((res) => {
                     if (res.data["Code"] === 0) {
                         alert(data["Message"]);
@@ -175,6 +185,20 @@
                 $("#dagChart .node").off("click").on("click", function () {
                     queryNodeDetail($(this).children("title").text());
                 })
+            },
+            scalePlus() {
+                this.setScale("#dagChart svg", 0.1);
+            },
+            scaleMinus() {
+                this.setScale("#dagChart svg", -0.1);
+            },
+            setScale(dom, value) {
+                if ($(dom).css("-webkit-transform") === undefined) {
+                    return;
+                }
+                this.dagScale += value;
+                let scale = "scale(" + this.dagScale + ")";
+                $(dom).css({"-webkit-transform": scale, "-webkit-transform-origin": "top left"});
             }
         }
     };

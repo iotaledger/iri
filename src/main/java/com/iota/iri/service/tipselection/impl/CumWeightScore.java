@@ -1,13 +1,15 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.model.Hash;
+
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CumWeightScore
 {
-    public static HashMap<Hash, Double> update(HashMap<Hash, Set<Hash>> graph, HashMap<Hash, Double> score, Hash newVet) {
+    public static Map<Hash, Double> update(Map<Hash, Set<Hash>> graph, Map<Hash, Double> score, Hash newVet) {
 
-        HashMap<Hash, Double> ret = score;
+        Map<Hash, Double> ret = score;
         LinkedList<Hash> queue = new LinkedList<>();
 
         queue.add(newVet);
@@ -32,8 +34,8 @@ public class CumWeightScore
         return ret;
     }
 
-    public static HashMap<Hash, Double> updateParentScore(Map<Hash, Hash> parentGraph, HashMap<Hash, Double> parentScore, Hash newVet) {
-        HashMap<Hash, Double> ret = parentScore;
+    public static Map<Hash, Double> updateParentScore(Map<Hash, Hash> parentGraph, Map<Hash, Double> parentScore, Hash newVet) {
+        Map<Hash, Double> ret = parentScore;
         Hash start = newVet;
         Set<Hash> visited = new HashSet<>();
 
@@ -55,8 +57,8 @@ public class CumWeightScore
         return ret;
     }
 
-    public static HashMap<Hash, Double> computeParentScore(Map<Hash, Hash> parentGraph, Map<Hash, Set<Hash>> revParentGraph) {
-        HashMap<Hash, Double> ret = new HashMap<>();
+    public static Map<Hash, Double> computeParentScore(Map<Hash, Hash> parentGraph, Map<Hash, Set<Hash>> revParentGraph) {
+        Map<Hash, Double> ret = new ConcurrentHashMap<>();
         
         for(Hash key : parentGraph.keySet()) {
             Hash start = key;
@@ -75,8 +77,8 @@ public class CumWeightScore
         return ret;
     }
 
-    public static HashMap<Hash, Double> compute(HashMap<Hash, Set<Hash>> revGraph, HashMap<Hash, Set<Hash>> graph, Hash genesis) {
-        HashMap<Hash, Double> ret = new HashMap<>();
+    public static Map<Hash, Double> compute(Map<Hash, Set<Hash>> revGraph, Map<Hash, Set<Hash>> graph, Hash genesis) {
+        Map<Hash, Double> ret = new ConcurrentHashMap<>();
         LinkedList<Hash> queue = new LinkedList<>();
 
         queue.add(genesis);

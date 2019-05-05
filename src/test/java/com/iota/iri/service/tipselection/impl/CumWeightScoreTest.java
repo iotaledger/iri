@@ -82,7 +82,7 @@ public class CumWeightScoreTest {
         revG.get(e).add(h);
         revG.get(f).add(h);
 
-        HashMap<Hash, Double> score = CumWeightScore.compute(revG, gr, a);
+        Map<Hash, Double> score = CumWeightScore.compute(revG, gr, a);
 
         Assert.assertEquals((Double)8.0, score.get(a));
         Assert.assertEquals((Double)7.0, score.get(b));

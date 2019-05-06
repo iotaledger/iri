@@ -19,32 +19,32 @@ func main() {
 	}
 }
 
-func AddNode(writer http.ResponseWriter, request *http.Request){
+func AddNode(writer http.ResponseWriter, request *http.Request) {
 	var addNodeRequest *v.AddNodeRequest
-	if err := json.NewDecoder(request.Body).Decode(&addNodeRequest);err != nil {
+	if err := json.NewDecoder(request.Body).Decode(&addNodeRequest); err != nil {
 		fmt.Println(err)
 		log.Fatal(err)
 		request.Body.Close()
 	}
 
 	var o v.OCli
-	response:=o.AddAttestationInfoFunction(addNodeRequest)
+	response := o.AddAttestationInfoFunction(addNodeRequest)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func QueryNodes(writer http.ResponseWriter, request *http.Request){
+func QueryNodes(writer http.ResponseWriter, request *http.Request) {
 	var queryNodesRequest *v.QueryNodesRequest
-	if err := json.NewDecoder(request.Body).Decode(&queryNodesRequest);err != nil {
+	if err := json.NewDecoder(request.Body).Decode(&queryNodesRequest); err != nil {
 		fmt.Println(err)
 		log.Fatal(err)
 		request.Body.Close()
 	}
 
 	var o v.OCli
-	response:=o.GetRankFunction(queryNodesRequest)
+	response := o.GetRankFunction(queryNodesRequest)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
@@ -53,7 +53,7 @@ func QueryNodes(writer http.ResponseWriter, request *http.Request){
 
 func QueryNodeDetail(writer http.ResponseWriter, request *http.Request) {
 	var detailRequest *v.NodeDetailRequest
-	if err := json.NewDecoder(request.Body).Decode(&detailRequest);err != nil {
+	if err := json.NewDecoder(request.Body).Decode(&detailRequest); err != nil {
 		fmt.Println(err)
 		log.Fatal(err)
 		request.Body.Close()

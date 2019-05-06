@@ -3,6 +3,7 @@ import Home from './views/Home.vue'
 import Leviatom from './views/nav1/Leviatom.vue'
 import StreamNet from "./views/nav1/StreamNet";
 import NetCoin from "./views/nav1/NetCoin";
+import DevOps from "./views/nav1/DevOps";
 let routes = [
     {
         path: '/404',
@@ -19,6 +20,7 @@ let routes = [
             { path: '/leviatom', component: Leviatom, name: 'Leviatom' },
             { path: "/streamNet", component: StreamNet, name: "StreamNet" },
             { path: "/netCoin", component: NetCoin, name: "NetCoin" },
+            { path: "/devOps", component: DevOps, name: "DevOps" },
         ]
     },
     {

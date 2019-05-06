@@ -75,10 +75,10 @@ func (o *OCli) GetRankFunction(request *QueryNodesRequest) Message {
 }
 
 func (o *OCli) QueryNodeDetail(request *NodeDetailRequest) Message {
-	if (request.RequestUrl == "") {
+	if request.RequestUrl == "" {
 		return Message{Code: 0, Message: "RequestUrl is empty"}
 	}
-	result, err := httpSend(request.RequestUrl, request.RequestData, request.RequestMethod);
+	result, err := httpSend(request.RequestUrl, request.RequestData, request.RequestMethod)
 	if err == nil {
 		return Message{Code: 1, Message: "Success!", Data: result}
 	} else {
@@ -104,5 +104,5 @@ func httpSend(url string, param string, method string) (string, error) {
 	}
 	body, _ := ioutil.ReadAll(res.Body)
 
-	return string(body), nil;
+	return string(body), nil
 }

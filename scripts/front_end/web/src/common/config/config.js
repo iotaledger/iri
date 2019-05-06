@@ -35,6 +35,9 @@ export default {
         Vue.prototype.requestMethod = {
             GET: "GET",
             POST: "POST"
+        };
+        Vue.prototype.ConfigUrls = {
+            OPS: "http://140.143.187.24"
         }
     }
 }

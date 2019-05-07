@@ -16,7 +16,7 @@ jmeter：5.1
 在每台机器上下载项目压缩包并解压 
 
 ```bash
-wget https://github.com/wunder3605/iri/archive/v0.1.3-streamnet.zip
+wget https://github.com/triasteam/iri/archive/v0.1.3-streamnet.zip
 unzip v0.1.3-streamnet.zip
 mv iri-0.1.3-streamnet iri
 ```  

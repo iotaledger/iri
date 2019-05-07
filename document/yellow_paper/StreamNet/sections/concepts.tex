@@ -97,6 +97,7 @@ Figure~\ref{allMethods} represents the definition of these utility functions.
     g                 & \text{b = g} \\
     Chain(G,P(b))     & \text{otherwise}
   \end{cases} \\
+  & \overline{Chain(G,b)} = \{ b' | b' \in B, b' \notin Chain(G,b) \} \\
    &Child(G,b) = \{ b'| P(b') = b \} \\
    &Sibling(G,b) = Child(G,P(b)) \\
    &SubTree(G,b) = (U_{i\in Child(G,b)}Substree(G,i))U\{b\} \\
@@ -114,7 +115,6 @@ Figure~\ref{allMethods} represents the definition of these utility functions.
     \caption{The Definitions of Chain(), Child(), Sibling(), Subtree(), Before(), Past(), After(), Later(), SubGraph(), ParentScore(), Score(), and TotalOrder(). }
 \label{allMethods}
 \end{figure}
-
 
 \subsubsection{Parent tip Selection by pivotal chain} 
 The algorithm Algorithm~\ref{algo:getPivot} presents our pivot chain selection algorithm(i.e., the definition of $Pivot(G, b)$). 
@@ -184,20 +184,10 @@ Suppose there are $N$ nodes and $L$ links in the network, for a block of size $B
 to spread the information of it, the direct mail algorithm will have a total complexity of $O(LB)$.
 And the average complexity for a node will be $O(\frac{LB}{N})$
 In the chain based system, this is fine, because the design of the system already assume that the transaction rate will be low.
-However, in the DAG based system, this type of gossip manner will result in low scalability due to the network flooding.
-What's worse, consider the heterogenerously and long diameters of network topology, the convergence of DAG will take long time which will result in the delay of confirmation time of blocks.
-
-There are solutions in \cite{demers1988epidemic}, and in Hyperledger \cite{androulaki2018hyperledger} 
-they have adopted the PUSH and PULL model for the gossip message propogation. However, their system is aiming at small scale. 
-Suppose the size of the hash of a block is $H$, we designed the direct signal algorithm. 
-The algorithm is divided into two steps, once a node generate or receive a block, 
-it firstly broadcast the hash of the block, this is the PUSH step. 
-Once a node receive a hash or a set of a hash,
-it will pick one source of the hash for the block content, this is the PULL step.
-The direct signal algorithm's complexity will be $O(LH + NB)$ and for a node averaged to $O(\frac{LH}{N} + 1)$
-The algorithm is as Algorithm~\ref{algo:gossip} shows.
-
-\input{./algorithms/gossip.tex}
+However, in the DAG based system, this type of gossip manner will result in 
+low scalability due to high throughput of the block generation rate and will result in network flooding.
+What's worse, consider the heterogenerously and long diameters of network topology, 
+the convergence of DAG will take long time which will cause the delay of confirmation time of blocks.
 
 \subsection{Differences with other DAG protocols}
 Here, we mainly compare the difference of our protocol with two mainstream DAG based protocols, one is IOTA, another is Conflux.

@@ -1,0 +1,21 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ Graph $G=<B, g, P, E>$ }
+
+    \While {Node is running}{
+        \uIf{$\exists b'$ satisties (1)}{
+            $g' \gets b'$ \;
+            $G' \gets induceGraph(G, g') $ \;
+            UpdateScore(G', g')\;
+            $G \gets G'$ \;
+        } 
+    }
+
+\caption{{ Genesis Forward Algorithm.}}
+\label{algo:genesis_forward}
+\end{algorithm}
+\DecMargin{1em}

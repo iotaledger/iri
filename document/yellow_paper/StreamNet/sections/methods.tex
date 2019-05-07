@@ -29,8 +29,6 @@ TopOrder(G, b)        & StreamNetOrder() & $O(|B|)$              & $O(|B|)$    \
 \end{center}
 \end{table}
 
-
-
 Considering new blocks are genereted and merged into the local data structure in a streaming way.
 The expensive graph properties could be maintained dynamically as the DAG grows.
 Such that the complexity of calculating these properties would be armortized to each time a new block is generated or merged.
@@ -96,7 +94,41 @@ TopOrder(G, b)        & StreamNetOrder() & $O(|1|)$              & $O(|1|)$    \
 \end{center}
 \end{table}
 
-
-
 \subsection{Genesis Forwarding}
-To get the pivotal chain
+The above algorithm solved the problem of how to dynamically maintaining the information needed for total order computation.
+However, it still need to update the information until genesis block. 
+With the size of the graph growing, the updating process still becoming harder to compute.
+Consider that with the DAG size growing, the old historical confirmed block are confirming by more and more blocks, and it will be very hard to mutate it.
+Hence, we can design a strategy to forward the genesis periodically and fix the historical blocks into a total ordered chain.
+The criteria to forward the genesis are based on the threshhold of ParentScore.
+Suppose we define this threshold as $t$, then we only forward the genesis if: 
+
+\begin{equation}
+    \begin{flalign*}
+        & \exists b' | b' \in Chain(G, g), for \\ 
+        & \forall b'' | b'' \in \overline{Chain(G,b)}, such that \\
+        & ParentScore(b') > ParentScore(b'') + t 
+    \end{flalign*}
+\end{equation}
+
+In addition, after the new genesis has been choosen, 
+we will induce a new DAG in memory from this genesis 
+and the vertices in UTXO graph that belongs to the fixed blocks will be eliminated from the memory as well.  
+The algorithm is as Algorithm~\ref{algo:genesis_forward} shows.
+
+
+\input{./algorithms/genesis_forward.tex}
+
+\subsection{The Direct Signal Gossip Protocol}
+To minimize the message passing in the gossip network,
+there are solutions in \cite{demers1988epidemic}. And in Hyperledger \cite{androulaki2018hyperledger}
+they have adopted the PUSH and PULL model for the gossip message propogation. However, their system is aiming at small scale.
+Suppose the size of the hash of a block is $H$, we designed the direct signal algorithm.
+The algorithm is divided into two steps, once a node generate or receive a block,
+it firstly broadcast the hash of the block, this is the PUSH step.
+Once a node receive a hash or a set of a hash,
+it will pick one source of the hash for the block content, this is the PULL step.
+The direct signal algorithm's complexity will be $O(LH + NB)$ and for a node averaged to $O(\frac{LH}{N} + 1)$
+The algorithm is as Algorithm~\ref{algo:gossip} shows.
+
+\input{./algorithms/gossip.tex}

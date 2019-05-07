@@ -182,7 +182,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
     }
 
     private Set<Hash> getInitialUnspentAddresses() {
-        return Stream.of(Hash.NULL_HASH, HashFactory.ADDRESS.create(config.getCoordinator()))
+        return Stream.of(Hash.NULL_HASH, config.getCoordinator())
                 .collect(Collectors.toSet());
     }
 }

@@ -166,8 +166,7 @@ public class SnapshotStateImpl implements SnapshotState {
         HashMap<Hash, Long> result = new HashMap<>();
         balances.forEach((key, value) -> {
             if (value < 0) {
-                log.info("negative value for address " + key + ": " + value);
-
+                log.debug("negative value for address {}: {}", key, value);
                 result.put(key, value);
             }
         });

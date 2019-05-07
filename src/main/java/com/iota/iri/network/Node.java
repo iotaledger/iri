@@ -11,7 +11,7 @@ import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
+import net.openhft.hashing.LongHashFunction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -19,9 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.*;
-import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
@@ -72,12 +69,12 @@ public class Node {
     private final TransactionValidator transactionValidator;
     private final LatestMilestoneTracker latestMilestoneTracker;
     private final TransactionRequester transactionRequester;
-    private final MessageQ messageQ;
 
     private static final SecureRandom rnd = new SecureRandom();
 
 
-    private FIFOCache<ByteBuffer, Hash> recentSeenBytes;
+    private FIFOCache<Long, Hash> recentSeenBytes;
+    private LongHashFunction recentSeenBytesHashFunction;
 
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
     private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
@@ -99,11 +96,10 @@ public class Node {
      * @param transactionRequester Contains a set of transaction hashes to be requested from peers.
      * @param tipsViewModel Contains a hash of solid and non solid tips
      * @param latestMilestoneTracker Tracks milestones issued from the coordinator
-     * @param messageQ Responsible for publishing events on zeroMQ
      * @param configuration Contains all the config.
      *
      */
-    public Node(final Tangle tangle, SnapshotProvider snapshotProvider, final TransactionValidator transactionValidator, final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, final LatestMilestoneTracker latestMilestoneTracker, final MessageQ messageQ, final NodeConfig configuration
+    public Node(final Tangle tangle, SnapshotProvider snapshotProvider, final TransactionValidator transactionValidator, final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, final LatestMilestoneTracker latestMilestoneTracker, final NodeConfig configuration
     ) {
         this.configuration = configuration;
         this.tangle = tangle;
@@ -112,7 +108,6 @@ public class Node {
         this.transactionRequester = transactionRequester;
         this.tipsViewModel = tipsViewModel;
         this.latestMilestoneTracker = latestMilestoneTracker ;
-        this.messageQ = messageQ;
         this.reqHashSize = configuration.getRequestHashSize();
         int packetSize = configuration.getTransactionPacketSize();
         this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
@@ -131,6 +126,7 @@ public class Node {
 
         BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.getqSizeNode();
         recentSeenBytes = new FIFOCache<>(configuration.getCacheSizeBytes(), configuration.getpDropCacheEntry());
+        recentSeenBytesHashFunction = LongHashFunction.xx();
 
         parseNeighborsConfig();
 
@@ -175,7 +171,7 @@ public class Node {
      * traffic - so a balance is sought between speed and resource utilization.
      *
      */
-    private Runnable spawnNeighborDNSRefresherThread() {
+    Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
             if (configuration.isDnsResolutionEnabled()) {
                 log.info("Spawning Neighbor DNS Refresher Thread");
@@ -189,7 +185,7 @@ public class Node {
                             final String hostname = n.getAddress().getHostString();
                             checkIp(hostname).ifPresent(ip -> {
                                 log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
-                                messageQ.publish("dnscv %s %s", hostname, ip);
+                                tangle.publish("dnscv %s %s", hostname, ip);
                                 final String neighborAddress = neighborIpCache.get(hostname);
 
                                 if (neighborAddress == null) {
@@ -197,11 +193,11 @@ public class Node {
                                 } else {
                                     if (neighborAddress.equals(ip)) {
                                         log.info("{} seems fine.", hostname);
-                                        messageQ.publish("dnscc %s", hostname);
+                                        tangle.publish("dnscc %s", hostname);
                                     } else {
                                         if (configuration.isDnsRefresherEnabled()) {
                                             log.info("IP CHANGED for {}! Updating...", hostname);
-                                            messageQ.publish("dnscu %s", hostname);
+                                            tangle.publish("dnscu %s", hostname);
                                             String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
                                             String port = ":" + n.getAddress().getPort();
 
@@ -297,7 +293,7 @@ public class Node {
                 try {
 
                     //Transaction bytes
-                    ByteBuffer digest = getBytesDigest(receivedData);
+                    long digest = getBytesDigest(receivedData);
 
                     //check if cached
                     synchronized (recentSeenBytes) {
@@ -318,9 +314,6 @@ public class Node {
                         addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);
 
                     }
-
-                } catch (NoSuchAlgorithmException e) {
-                    log.error("MessageDigest: " + e);
                 } catch (final TransactionValidator.StaleTimestampException e) {
                     log.debug(e.getMessage());
                     try {
@@ -360,7 +353,7 @@ public class Node {
                     }
                     if (((hitCount + missCount) % 50000L == 0)) {
                         log.info("RecentSeenBytes cache hit/miss ratio: " + hitCount + "/" + missCount);
-                        messageQ.publish("hmr %d/%d", hitCount, missCount);
+                        tangle.publish("hmr %d/%d", hitCount, missCount);
                         recentSeenBytesMissCount.set(0L);
                         recentSeenBytesHitCount.set(0L);
                     }
@@ -375,7 +368,7 @@ public class Node {
             String uriString = uriScheme + ":/" + senderAddress.toString();
             if (Neighbor.getNumPeers() < maxPeersAllowed) {
                 log.info("Adding non-tethered neighbor: " + uriString);
-                messageQ.publish("antn %s", uriString);
+                tangle.publish("antn %s", uriString);
                 try {
                     final URI uri = new URI(uriString);
                     // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
@@ -392,7 +385,7 @@ public class Node {
                     // Avoid ever growing list in case of an attack.
                     rejectedAddresses.clear();
                 } else if (rejectedAddresses.add(uriString)) {
-                    messageQ.publish("rntn %s %s", uriString, String.valueOf(maxPeersAllowed));
+                    tangle.publish("rntn %s %s", uriString, String.valueOf(maxPeersAllowed));
                     log.info("Refused non-tethered neighbor: " + uriString +
                             " (max-peers = " + String.valueOf(maxPeersAllowed) + ")");
                 }
@@ -520,7 +513,7 @@ public class Node {
             try {
                 sendPacket(sendingPacket, transactionViewModel, neighbor);
 
-                ByteBuffer digest = getBytesDigest(transactionViewModel.getBytes());
+                long digest = getBytesDigest(transactionViewModel.getBytes());
                 synchronized (recentSeenBytes) {
                     recentSeenBytes.put(digest, transactionViewModel.getHash());
                 }
@@ -655,7 +648,7 @@ public class Node {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
-                        messageQ.publish("rstat %d %d %d %d %d",
+                        tangle.publish("rstat %d %d %d %d %d",
                                 getReceiveQueueSize(), getBroadcastQueueSize(),
                                 transactionRequester.numberOfTransactionsToRequest(), getReplyQueueSize(),
                                 TransactionViewModel.getNumberOfStoredTransactions(tangle));
@@ -771,10 +764,8 @@ public class Node {
         executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 
-    private ByteBuffer getBytesDigest(byte[] receivedData) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        digest.update(receivedData, 0, TransactionViewModel.SIZE);
-        return ByteBuffer.wrap(digest.digest());
+    private long getBytesDigest(byte[] receivedData) {
+        return recentSeenBytesHashFunction.hashBytes(receivedData);
     }
 
     // helpers methods
@@ -837,7 +828,7 @@ public class Node {
                 .map(u -> newNeighbor(u, true))
                 .peek(u -> {
                     log.info("-> Adding neighbor : {} ", u.getAddress());
-                    messageQ.publish("-> Adding Neighbor : %s", u.getAddress());
+                    tangle.publish("-> Adding Neighbor : %s", u.getAddress());
                 }).forEach(neighbors::add);
     }
 

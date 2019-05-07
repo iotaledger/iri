@@ -266,7 +266,7 @@ public class TransactionValidator {
 
                         if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
                             transactionRequester.requestTransaction(hashPointer, milestone);
-                            break;
+                            continue;
                         }
                     } else {
                         nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());

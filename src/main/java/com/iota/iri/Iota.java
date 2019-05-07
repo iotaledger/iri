@@ -26,11 +26,11 @@ import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
-import com.iota.iri.zmq.MessageQ;
 
 import java.security.SecureRandom;
 import java.util.List;
 
+import com.iota.iri.zmq.ZmqMessageQueueProvider;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +106,6 @@ public class Iota {
     public final Replicator replicator;
     public final IotaConfig configuration;
     public final TipsViewModel tipsViewModel;
-    public final MessageQ messageQ;
     public final TipSelector tipsSelector;
 
     /**
@@ -141,12 +140,11 @@ public class Iota {
         // legacy code
         bundleValidator = new BundleValidator();
         tangle = new Tangle();
-        messageQ = MessageQ.createWith(configuration);
         tipsViewModel = new TipsViewModel();
-        transactionRequester = new TransactionRequester(tangle, snapshotProvider, messageQ);
+        transactionRequester = new TransactionRequester(tangle, snapshotProvider);
         transactionValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester);
         node = new Node(tangle, snapshotProvider, transactionValidator, transactionRequester, tipsViewModel,
-                latestMilestoneTracker, messageQ, configuration);
+                latestMilestoneTracker, configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel, configuration);
@@ -208,11 +206,11 @@ public class Iota {
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
         }
-        milestoneService.init(tangle, snapshotProvider, snapshotService, bundleValidator, messageQ, configuration);
+        milestoneService.init(tangle, snapshotProvider, snapshotService, bundleValidator, configuration);
         latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
-                messageQ, configuration);
+                configuration);
         latestSolidMilestoneTracker.init(tangle, snapshotProvider, milestoneService, ledgerService,
-                latestMilestoneTracker, messageQ);
+                latestMilestoneTracker);
         seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
@@ -273,7 +271,6 @@ public class Iota {
         replicator.shutdown();
         transactionValidator.shutdown();
         tangle.shutdown();
-        messageQ.shutdown();
 
         // free the resources of the snapshot provider last because all other instances need it
         snapshotProvider.shutdown();
@@ -296,7 +293,7 @@ public class Iota {
             }
         }
         if (configuration.isZmqEnabled()) {
-            tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));
+            tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
     }
 
@@ -305,7 +302,7 @@ public class Iota {
                 latestMilestoneTracker);
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
         TailFinder tailFinder = new TailFinderImpl(tangle);
-        Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
+        Walker walker = new WalkerAlpha(tailFinder, tangle, new SecureRandom(), config);
         return new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
                 walker, config);
     }

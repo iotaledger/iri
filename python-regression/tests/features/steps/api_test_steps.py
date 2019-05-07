@@ -34,8 +34,9 @@ def api_method_is_called(step, api_call, node_name):
             :type staticValue: Static name identifier, will fetch value from util/static_vals.py
             :type staticList: Same as staticValue, except it places the results into a list
             :type responseValue: Identifier for api call response value
-            :type responseList: Same as responseValue, ecept it places the results into a list
+            :type responseList: Same as responseValue, except it places the results into a list
             :type configValue: Identifier for a value stored in world.config
+            :type configList: Same as configValue, except it places the results into a list
             :type bool: Bool argument, returns True or False
     """
     logger.info('%s is called on %s', api_call, node_name)
@@ -160,20 +161,24 @@ def spam_call(step, api_call, num_tests, node):
 
     # See if call will be made on one node or all
     api_utils.assign_nodes(node, nodes)
-    node = world.config['nodeId']
+    call_node = world.config['nodeId']
 
-    def run_call(node, api):
+    def run_call(node, args):
         logger.debug('Running Thread on {}'.format(node))
-        response = api.get_transactions_to_approve(depth=3)
+        api = args['api']
+        options = args['options']
+        response = api_utils.fetch_call(api_call, api, options)
         return response
 
-    args = nodes
-    future_results = pool.start_pool(run_call, num_tests, args)
+    for current_node in nodes:
+        nodes[current_node]['options'] = options
+
+    future_results = pool.start_pool(run_call, num_tests, nodes)
 
     responses.fetch_future_results(future_results, num_tests, response_val)
 
     world.responses[api_call] = {}
-    world.responses[api_call][node] = response_val
+    world.responses[api_call][call_node] = response_val
 
     end = time()
     time_spent = end - start

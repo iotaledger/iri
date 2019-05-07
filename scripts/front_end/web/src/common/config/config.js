@@ -38,6 +38,41 @@ export default {
         };
         Vue.prototype.ConfigUrls = {
             OPS: "http://140.143.187.24"
+        };
+        Vue.prototype.Servers = {
+            deployType: [
+                {
+                    name: "3_clique",
+                    value: "3_clique"
+                },
+                {
+                    name: "4_circle",
+                    value: "4_circle"
+                },
+                {
+                    name: "4_clique",
+                    value: "4_clique"
+                },
+                {
+                    name: "7_bridge",
+                    value: "7_bridge"
+                },
+                {
+                    name: "7_circle",
+                    value: "7_circle"
+                },
+                {
+                    name: "7_clique",
+                    value: "7_clique"
+                },
+                {
+                    name: "7_star",
+                    value: "7_star"
+                }
+            ],
+            serverList: {
+                deploymentServer: "http://192.144.152.140:5001"
+            }
         }
     }
 }

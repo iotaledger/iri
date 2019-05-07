@@ -63,20 +63,20 @@ public class TransactionValidatorTest {
 
   @Test
   public void validateTrits() {
-    byte[] trits = getRandomTransactionTrits();
+    byte[] trits = getTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
     txValidator.validateTrits(trits, MAINNET_MWM);
   }
 
   @Test(expected = RuntimeException.class)
   public void validateTritsWithInvalidMetadata() {
-    byte[] trits = getRandomTransactionTrits();
+    byte[] trits = getTransactionTrits();
     txValidator.validateTrits(trits, MAINNET_MWM);
   }
 
   @Test
   public void validateBytesWithNewCurl() throws Exception {
-    byte[] trits = getRandomTransactionTrits();
+    byte[] trits = getTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);
     Converter.bytes(trits, 0, bytes, 0, trits.length);
@@ -99,7 +99,7 @@ public class TransactionValidatorTest {
 
   @Test
   public void addSolidTransactionWithoutErrors() {
-    byte[] trits = getRandomTransactionTrits();
+    byte[] trits = getTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
     txValidator.addSolidTransaction(TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
   }
@@ -113,7 +113,7 @@ public class TransactionValidatorTest {
     trunkTx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
     branchTx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
-    byte[] childTx = getRandomTransactionTrits();
+    byte[] childTx = getTransactionTrits();
     System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
     System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
     tx = new TransactionViewModel(childTx, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, childTx));
@@ -162,25 +162,25 @@ public class TransactionValidatorTest {
 
   @Test
   public void testTransactionPropagationFailure() throws Exception {
-    TransactionViewModel leftChildLeaf = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+    TransactionViewModel leftChildLeaf = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
     leftChildLeaf.updateSolid(true);
     leftChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel rightChildLeaf = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+    TransactionViewModel rightChildLeaf = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
     rightChildLeaf.updateSolid(true);
     rightChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel parent = new TransactionViewModel(getTransactionWithTrunkAndBranch(leftChildLeaf.getHash(),
-            rightChildLeaf.getHash()), getRandomTransactionHash());
+    TransactionViewModel parent = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(leftChildLeaf.getHash(),
+            rightChildLeaf.getHash()), getTransactionHash());
     parent.updateSolid(false);
     parent.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel parentSibling = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+    TransactionViewModel parentSibling = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
     parentSibling.updateSolid(false);
     parentSibling.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel grandParent = new TransactionViewModel(getTransactionWithTrunkAndBranch(parent.getHash(),
-            parentSibling.getHash()), getRandomTransactionHash());
+    TransactionViewModel grandParent = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(parent.getHash(),
+            parentSibling.getHash()), getTransactionHash());
     grandParent.updateSolid(false);
     grandParent.store(tangle, snapshotProvider.getInitialSnapshot());
 
@@ -196,7 +196,7 @@ public class TransactionValidatorTest {
   }
 
   private TransactionViewModel getTxWithoutBranchAndTrunk() throws Exception {
-    byte[] trits = getRandomTransactionTrits();
+    byte[] trits = getTransactionTrits();
     TransactionViewModel tx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
     tx.store(tangle, snapshotProvider.getInitialSnapshot());

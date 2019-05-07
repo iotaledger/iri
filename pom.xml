@@ -215,6 +215,13 @@
             <artifactId>throwing-function</artifactId>
             <version>1.3</version>
         </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/com.google.guava/guava-testlib -->
+		<dependency>
+		    <groupId>com.google.guava</groupId>
+		    <artifactId>guava</artifactId>
+		    <version>23.0</version>
+		</dependency>
 
         <dependency>
             <groupId>net.openhft</groupId>

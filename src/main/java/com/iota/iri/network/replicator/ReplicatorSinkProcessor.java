@@ -31,6 +31,15 @@ class ReplicatorSinkProcessor implements Runnable {
         this.transactionPacketSize = transactionPacketSize;
     }
 
+    private boolean isMessageValid(byte[] message) {
+        if (replicatorSinkPool.node.optimizeNetworkEnabled) {
+            return (message.length == replicatorSinkPool.node.transactionSize || message.length == replicatorSinkPool.node.broadcastHashSize
+                    || message.length == replicatorSinkPool.node.requestHashSize);
+        } else {
+            return (message.length == transactionPacketSize);
+        }
+    }
+
     @Override
     public void run() {
     	try {
@@ -87,7 +96,7 @@ class ReplicatorSinkProcessor implements Runnable {
 
                                         byte[] bytes = message.array();
 
-                                        if (bytes.length == transactionPacketSize) {
+                                        if (isMessageValid(bytes)) {
                                             try {
                                                 CRC32 crc32 = new CRC32();
                                                 crc32.update(message.array());

@@ -39,6 +39,11 @@ public class Node {
 
     private static final Logger log = LoggerFactory.getLogger(Node.class);
     private final int reqHashSize;
+    public final int transactionSize;
+    public final int broadcastHashSize;
+    public final int requestHashSize;
+    String broadcastFlag = "BCAST";
+    String requestFlag = "REQ";
 
 
     private int BROADCAST_QUEUE_SIZE;
@@ -49,6 +54,9 @@ public class Node {
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
+    // `Neighbor` in broadcastQueue stands for where the transaction is from.
+    // If 'null', it means the transaction is from user's input.
+    // If not null, it means the transaction is from the specific Neighbor.
     private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> broadcastQueue = weightQueueTxPair();
     private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> receiveQueue = weightQueueTxPair();
     private final ConcurrentSkipListSet<Pair<Hash, Neighbor>> replyQueue = weightQueueHashPair();
@@ -56,6 +64,9 @@ public class Node {
 
     private final DatagramPacket sendingPacket;
     private final DatagramPacket tipRequestingPacket;
+    private final DatagramPacket sendingTransaction;   // the content to send is `Transaction`
+    private final DatagramPacket sendingBroadcastHash; // the content to send is `broadcastFlag + Hash`
+    private final DatagramPacket sendingReqHash;       // the content to send is `requestFlag   + Hash`
 
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
     private final NodeConfig configuration;
@@ -83,7 +94,7 @@ public class Node {
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
     private DatagramSocket udpSocket;
 
-    private boolean optimizeNetworkEnabled;
+    public boolean optimizeNetworkEnabled;
 
     public Node(final Tangle tangle, final TransactionValidator transactionValidator, final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, final MilestoneTracker milestoneTracker, final MessageQ messageQ, final NodeConfig configuration
     ) {
@@ -96,8 +107,14 @@ public class Node {
         this.messageQ = messageQ;
         this.reqHashSize = configuration.getRequestHashSize();
         int packetSize = configuration.getTransactionPacketSize();
+        this.broadcastHashSize = broadcastFlag.length() + reqHashSize;
+        this.requestHashSize = requestFlag.length() + reqHashSize;
+        this.transactionSize = TransactionViewModel.SIZE;
         this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
         this.tipRequestingPacket = new DatagramPacket(new byte[packetSize], packetSize);
+        this.sendingTransaction = new DatagramPacket(new byte[transactionSize], transactionSize);
+        this.sendingBroadcastHash = new DatagramPacket(new byte[broadcastHashSize], broadcastHashSize);
+        this.sendingReqHash = new DatagramPacket(new byte[requestHashSize], requestHashSize);
         this.bundleCache = new ConcurrentHashMap<>();
         this.optimizeNetworkEnabled = configuration.isOptimizeNetworkEnabled();
     }

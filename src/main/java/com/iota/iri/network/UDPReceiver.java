@@ -78,18 +78,22 @@ public class UDPReceiver {
                 try {
                     socket.receive(receivingPacket);
 
-                    if (receivingPacket.getLength() == packetSize) {
-
-                        byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
-                        SocketAddress address = receivingPacket.getSocketAddress();
-
-                        processor.submit(() -> node.preProcessReceivedData(bytes, address, "udp"));
-                        processed++;
-
-                        Thread.yield();
-
+                    if (node.optimizeNetworkEnabled) {
+                        
                     } else {
-                        receivingPacket.setLength(packetSize);
+                        if (receivingPacket.getLength() == packetSize) {
+
+                            byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
+                            SocketAddress address = receivingPacket.getSocketAddress();
+
+                            processor.submit(() -> node.preProcessReceivedData(bytes, address, "udp"));
+                            processed++;
+
+                            Thread.yield();
+
+                        } else {
+                            receivingPacket.setLength(packetSize);
+                        }
                     }
                 } catch (final RejectedExecutionException e) {
                     //no free thread, packet dropped

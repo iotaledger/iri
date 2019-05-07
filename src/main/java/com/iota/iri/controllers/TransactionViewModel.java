@@ -399,6 +399,20 @@ public class TransactionViewModel {
         }
         return tangle.saveBatch(batch);
     }
+    
+    /**
+     * Creates a copy of the underlying {@link Transaction} object.
+     * 
+     * @return the transaction object
+     */
+    public Transaction getTransaction() {
+        Transaction t = new Transaction();
+        
+        //if the supplied array to the call != null the transaction bytes are copied over from the buffer.
+        t.read(getBytes());
+        t.readMetadata(transaction.metadata());
+        return t;
+    }
 
     /**
      * Gets the {@link ApproveeViewModel} of a {@link Transaction}. If the current {@link ApproveeViewModel} is null, a

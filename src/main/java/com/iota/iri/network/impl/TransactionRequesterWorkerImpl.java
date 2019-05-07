@@ -1,5 +1,6 @@
 package com.iota.iri.network.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -131,12 +132,12 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
         }
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     boolean isActive() {
         return transactionRequester.numberOfTransactionsToRequest() >= REQUESTER_THREAD_ACTIVATION_THRESHOLD;
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     boolean isValidTransaction(TransactionViewModel transaction) {
         return transaction != null && (
                 transaction.getType() != TransactionViewModel.PREFILLED_SLOT
@@ -163,7 +164,7 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
      * @return a random tip
      * @throws Exception if anything unexpected happens while trying to retrieve the random tip.
      */
-    //Package Private For Testing
+    @VisibleForTesting
     TransactionViewModel getTransactionToSendWithRequest() throws Exception {
         Hash tip = tipsViewModel.getRandomSolidTipHash();
         if (tip == null) {

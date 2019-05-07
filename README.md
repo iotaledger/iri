@@ -7,7 +7,7 @@
 # Trias StreamNet
 
 The trias-lab/iri repository is the main StreamNet reference implementation, 
-for the design details, please see yellow paper [[StreamNet]](https://github.com/wunder3605/iri/blob/dev/document/yellow\_paper/StreamNet/StreamNet.pdf). 
+for the design details, please see yellow paper [[StreamNet]](https://github.com/triasteam/iri/blob/dev/document/yellow\_paper/StreamNet/StreamNet.pdf). 
 The original iri reference could be found at [[iri]](https://github.com/iotaledger/iri).
 
 -* **License:** GPLv3
@@ -97,8 +97,8 @@ $ docker run -d --net=host --name <name> -v <local_data_dir>:/iri/data -v <neigh
 
 ## 2.1 Performance Tunning 
 
-Please refere [[Performance tunning]](https://github.com/wunder3605/iri/blob/dev/scripts/iota\_perf/README.md) for details of how to measure performance using Nginx + Jmeter. 
+Please refere [[Performance tunning]](https://github.com/triasteam/iri/blob/dev/scripts/iota\_perf/README.md) for details of how to measure performance using Nginx + Jmeter. 
 
 ## 2.2 Cluster deployment 
 
-Please refere [[Cluster deployment]](https://github.com/wunder3605/iri/blob/dev/scripts/examples/cluster/README.md) for details of how to deploy multiple nodes. 
+Please refere [[Cluster deployment]](https://github.com/triasteam/iri/blob/dev/scripts/examples/cluster/README.md) for details of how to deploy multiple nodes. 

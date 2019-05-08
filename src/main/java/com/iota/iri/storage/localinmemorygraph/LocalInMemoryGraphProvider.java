@@ -427,6 +427,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                         parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
                         freshScore = true;
                         cachedTotalOrder = confluxOrder(getPivot(getGenesis()));
+                        tangle.storeTotalOrder(cachedTotalOrder);
                     }
                     // FIXME add parent score here
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {

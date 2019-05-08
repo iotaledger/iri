@@ -57,6 +57,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private File txnCountFile;
 
     private final String ANCESTORS = "ancestors";
+    private final String TOTAL_ORDER = "totalOrder";
 
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
@@ -649,15 +650,44 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     @Override
     public void storeAncestors(Stack<Hash> ancestors) {
-        if (null == ancestors){
+        doStoreRocksDB(ANCESTORS, ancestors);
+    }
+
+    public List<Hash> getTotalOrder() {
+        byte[] totalOrder = null;
+        try {
+            totalOrder = db.get(TOTAL_ORDER.getBytes());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
+        if (null == totalOrder){
+            return null;
+        }
+
+        List<Hash> list = new ArrayList<>();
+        for(int i=0; i<totalOrder.length; i+= Hash.SIZE_IN_BYTES){
+            byte[] ins = new byte[Hash.SIZE_IN_BYTES];
+            System.arraycopy(totalOrder, 0 + i, ins, 0, Hash.SIZE_IN_BYTES);
+            Hash hash = HashFactory.TRANSACTION.create(ins);
+            list.add(hash);
+        }
+        return list;
+    }
+
+    public void storeTotalOrder(List<Hash> totalOrders) {
+       doStoreRocksDB(TOTAL_ORDER, totalOrders);
+    }
+
+    private void doStoreRocksDB(String key, List<Hash> value){
+        if (null == value){
             return;
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate(ancestors.size() * Hash.SIZE_IN_BYTES);
-        for(Hash h : ancestors){
+        ByteBuffer byteBuffer = ByteBuffer.allocate(value.size() * Hash.SIZE_IN_BYTES);
+        for(Hash h : value){
             byteBuffer.put(h.bytes());
         }
         try {
-            db.put(ANCESTORS.getBytes(), byteBuffer.array());
+            db.put(key.getBytes(), byteBuffer.array());
         } catch (RocksDBException e) {
             e.printStackTrace();
         }

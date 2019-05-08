@@ -18,7 +18,7 @@
     <properties>
         <java-version>1.8</java-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javadoc-version>3.0.1</javadoc-version>
+        <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>1.4.26.Final</undertow.version>
         <jacoco.version>0.7.9</jacoco.version>
@@ -27,9 +27,17 @@
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
              configLocation attribute on every maven goal. -->
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+        
+        <md-doclet-group>com.github.iotaledger</md-doclet-group>
+        <md-doclet-artifact>java-md-doclet</md-doclet-artifact>
+        <md-doclet-version>master-SNAPSHOT</md-doclet-version>
     </properties>
 
     <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
         <repository>
             <id>sonatype-oss-public</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
@@ -208,6 +216,12 @@
             <artifactId>jmh-generator-annprocess</artifactId>
             <version>1.21</version>
             <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>${md-doclet-group}</groupId>
+            <artifactId>${md-doclet-artifact}</artifactId>
+            <version>${md-doclet-version}</version>
         </dependency>
 
         <dependency>
@@ -562,7 +576,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.4</version>
+                        <version>${javadoc-version}</version>
                         <configuration>
                             <show>private</show>
                             <nohelp>true</nohelp>
@@ -701,10 +715,7 @@
             </plugin>
 
             <!-- The javadoc for the report can be called by running "mvn site" and will generate the the iota
-                 documentation in Markdown format. To compile this report you need the iri-mdx-doclet files from:
-                 https://github.com/iotaledger/iri-mdx-doclet. Follow the documentation on the github site to compile
-                 and install the iri-mdx-doclet locally in your maven repository.
-
+                 documentation in Markdown format.
                  Note: If you need the classic api documentation run "mvn javadoc:javadoc" instead.
                  -->
             <plugin>
@@ -715,21 +726,25 @@
                     <reportSet>
                         <id>javadoc</id>
                         <configuration>
-                            <!-- This dependency can be found at: https://github.com/iotaledger/iri-mdx-doclet -->
-                            <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
-                            <sourcepath>src/main/java</sourcepath>
-                            <useStandardDocletOptions>false</useStandardDocletOptions>
-                            <destDir>mdx</destDir>
-                            <additionalOptions>
-                                <additionalOption>-version "${project.version}"</additionalOption>
-                            </additionalOptions>
-                            <quiet>true</quiet>
-                            <docletArtifact>
-                                <groupId>com.iota</groupId>
-                                <artifactId>mdxdoclet</artifactId>
-                                <version>0.1</version>
-                            </docletArtifact>
-                        </configuration>
+                            <!-- This dependency can be found at: https://github.com/iotaledger/java-md-doclet -->
+		                    <doclet>org.iota.mddoclet.MDDoclet</doclet>
+		                    <sourcepath>src/main/java</sourcepath>
+		                    <useStandardDocletOptions>false</useStandardDocletOptions>
+		                    <additionalOptions>
+		                        <additionalOption>-version "${project.version}"</additionalOption>
+		                        <additionalOption>-classeslist "API"</additionalOption>
+		                        <additionalOption>-template "iri"</additionalOption>
+		                        <additionalOption>
+                                    -repolink "${project.scm.url}blob/master/src/main/java/"
+                                </additionalOption>
+		                    </additionalOptions>
+		                    <quiet>true</quiet>
+		                    <docletArtifact>
+		                        <groupId>${md-doclet-group}</groupId>
+                                <artifactId>${md-doclet-artifact}</artifactId>
+                                <version>${md-doclet-version}</version>
+		                    </docletArtifact>
+		                </configuration>
                         <reports>
                             <report>javadoc</report>
                         </reports>

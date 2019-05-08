@@ -349,6 +349,52 @@ public class Node {
         }
     }
 
+    private void printStatistics(boolean cached) {
+        long hitCount, missCount;
+        if (cached) {
+            hitCount = recentSeenBytesHitCount.incrementAndGet();
+            missCount = recentSeenBytesMissCount.get();
+        } else {
+            hitCount = recentSeenBytesHitCount.get();
+            missCount = recentSeenBytesMissCount.incrementAndGet();
+        }
+        if (((hitCount + missCount) % 50000L == 0)) {
+            log.info("RecentSeenBytes cache hit/miss ratio: " + hitCount + "/" + missCount);
+            messageQ.publish("hmr %d/%d", hitCount, missCount);
+            recentSeenBytesMissCount.set(0L);
+            recentSeenBytesHitCount.set(0L);
+        }
+    }
+
+    private void addNeighborFromReceivedData(SocketAddress senderAddress, String uriScheme) {
+        int maxPeersAllowed = configuration.getMaxPeers();
+        String uriString = uriScheme + ":/" + senderAddress.toString();
+        if (Neighbor.getNumPeers() < maxPeersAllowed) {
+            log.info("Adding non-tethered neighbor: " + uriString);
+            messageQ.publish("antn %s", uriString);
+            try {
+                final URI uri = new URI(uriString);
+                // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
+                final Neighbor newneighbor = newNeighbor(uri, false);
+                if (!getNeighbors().contains(newneighbor)) {
+                    getNeighbors().add(newneighbor);
+                    Neighbor.incNumPeers();
+                }
+            } catch (URISyntaxException e) {
+                log.error("Invalid URI string: " + uriString);
+            }
+        } else {
+            if (rejectedAddresses.size() > 20) {
+                // Avoid ever growing list in case of an attack.
+                rejectedAddresses.clear();
+            } else if (rejectedAddresses.add(uriString)) {
+                messageQ.publish("rntn %s %s", uriString, String.valueOf(maxPeersAllowed));
+                log.info("Refused non-tethered neighbor: " + uriString +
+                        " (max-peers = " + String.valueOf(maxPeersAllowed) + ")");
+            }
+        }
+    }
+
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
         TransactionViewModel receivedTransactionViewModel = null;
         Hash receivedTransactionHash = null;
@@ -427,20 +473,7 @@ public class Node {
                 //recentSeenBytes statistics
 
                 if (log.isDebugEnabled()) {
-                    long hitCount, missCount;
-                    if (cached) {
-                        hitCount = recentSeenBytesHitCount.incrementAndGet();
-                        missCount = recentSeenBytesMissCount.get();
-                    } else {
-                        hitCount = recentSeenBytesHitCount.get();
-                        missCount = recentSeenBytesMissCount.incrementAndGet();
-                    }
-                    if (((hitCount + missCount) % 50000L == 0)) {
-                        log.info("RecentSeenBytes cache hit/miss ratio: " + hitCount + "/" + missCount);
-                        messageQ.publish("hmr %d/%d", hitCount, missCount);
-                        recentSeenBytesMissCount.set(0L);
-                        recentSeenBytesHitCount.set(0L);
-                    }
+                    printStatistics(cached);
                 }
 
                 break;
@@ -448,32 +481,7 @@ public class Node {
         }
 
         if (!addressMatch && configuration.isTestnet()) {
-            int maxPeersAllowed = configuration.getMaxPeers();
-            String uriString = uriScheme + ":/" + senderAddress.toString();
-            if (Neighbor.getNumPeers() < maxPeersAllowed) {
-                log.info("Adding non-tethered neighbor: " + uriString);
-                messageQ.publish("antn %s", uriString);
-                try {
-                    final URI uri = new URI(uriString);
-                    // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
-                    final Neighbor newneighbor = newNeighbor(uri, false);
-                    if (!getNeighbors().contains(newneighbor)) {
-                        getNeighbors().add(newneighbor);
-                        Neighbor.incNumPeers();
-                    }
-                } catch (URISyntaxException e) {
-                    log.error("Invalid URI string: " + uriString);
-                }
-            } else {
-                if (rejectedAddresses.size() > 20) {
-                    // Avoid ever growing list in case of an attack.
-                    rejectedAddresses.clear();
-                } else if (rejectedAddresses.add(uriString)) {
-                    messageQ.publish("rntn %s %s", uriString, String.valueOf(maxPeersAllowed));
-                    log.info("Refused non-tethered neighbor: " + uriString +
-                            " (max-peers = " + String.valueOf(maxPeersAllowed) + ")");
-                }
-            }
+            addNeighborFromReceivedData(senderAddress, uriScheme);
         }
     }
 
@@ -581,7 +589,7 @@ public class Node {
         }
 
         if (transactionViewModel != null && transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
-            sendTxn( transactionViewModel, neighbor);
+            sendTxn(transactionViewModel, neighbor);
         } else {
             //trytes not found
             if (!requestedHash.equals(Hash.NULL_HASH)) {
@@ -820,8 +828,8 @@ public class Node {
     }
 
 
-    public void broadcast(final TransactionViewModel transactionViewModel, Neighbor neighbor) {
-        broadcastQueue.add(new ImmutablePair<>(transactionViewModel, neighbor));
+    public void broadcast(final TransactionViewModel transactionViewModel, Neighbor from) {
+        broadcastQueue.add(new ImmutablePair<>(transactionViewModel, from));
         if (broadcastQueue.size() > BROADCAST_QUEUE_SIZE) {
             broadcastQueue.pollLast();
         }
@@ -931,18 +939,21 @@ public class Node {
         private final int capacity;
         private final double dropRate;
         private LinkedHashMap<K, V> map;
+        private HashSet<V> values;
         private final SecureRandom rnd = new SecureRandom();
 
         public FIFOCache(int capacity, double dropRate) {
             this.capacity = capacity;
             this.dropRate = dropRate;
             this.map = new LinkedHashMap<>();
+            this.values = new HashSet<>();
         }
 
         public V get(K key) {
             V value = this.map.get(key);
             if (value != null && (rnd.nextDouble() < this.dropRate)) {
                 this.map.remove(key);
+                this.values.remove(value);
                 return null;
             }
             return value;
@@ -954,10 +965,18 @@ public class Node {
             }
             if (this.map.size() >= this.capacity) {
                 Iterator<K> it = this.map.keySet().iterator();
-                it.next();
+                K k = it.next();
+                V v = this.map.get(k);
                 it.remove();
+
+                values.remove(v);
             }
+            values.add(value);
             return this.map.put(key, value);
+        }
+
+        public boolean containValue(V value) {
+            return this.values.contains(value);
         }
     }
 

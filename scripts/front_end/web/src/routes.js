@@ -32,7 +32,7 @@ let routes = [
         children: [
             { path: "/server/devOps", component: DevOps, name: "DevOps" },
             { path: "/server/deployment", component: Deployment, name: "Deployment" },
-            // { path: "/server/experiment", component: Experiment, name: "Experiment" },
+            { path: "/server/experiment", component: Experiment, name: "Experiment" },
         ]
     },
     {

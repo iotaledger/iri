@@ -1,7 +1,9 @@
 <template>
     <el-form :model="form" style="margin:20px;width:100%;min-width:600px;">
         <el-form-item>
-            <label>Deploy Topology:</label>
+            <div class="label-div">
+                <label>Deploy Topology:</label>
+            </div>
             <el-select v-model="form.deployTopology" placeholder="Choose a deployTopology"
                        @change="chooseDeployTopology">
                 <el-option
@@ -13,12 +15,16 @@
             </el-select>
         </el-form-item>
         <el-form-item>
-            <label>Image File Version:</label>
+            <div class="label-div">
+                <label>Image File Version:</label>
+            </div>
             <el-input v-model="form.fileVersion" class="input-small" placeholder="image-file version"
                       @change="setFileVersion"/>
         </el-form-item>
         <el-form-item>
-            <label>Use Cache:</label>
+            <div class="label-div">
+                <label>Use Cache:</label>
+            </div>
             <el-radio-group v-model="form.flag" @change="setFlag">
                 <el-radio label="true">true</el-radio>
                 <el-radio label="false">false</el-radio>
@@ -69,6 +75,7 @@
                     cancelButtonText: "Cancel"
                 }).then(() => {
                     this.axios.post("/api/QueryNodeDetail", request).then((res) => {
+                        this.$alert("Success",this.messageOption.success);
                         console.log(res);
                     }).catch((err) => {
                         console.error(err);
@@ -80,12 +87,12 @@
     }
 </script>
 <style>
-    iframe {
-        width: 85vw;
-        height: 50vw;
+    .input-small {
+        width: 219px;
     }
 
-    .input-small {
+    .label-div {
         width: 200px;
+        float: left
     }
 </style>

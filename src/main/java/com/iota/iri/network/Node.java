@@ -395,12 +395,70 @@ public class Node {
         }
     }
 
-    public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
+    private Hash preProcessReceivedTransaction(byte[] receivedData, Neighbor neighbor) throws RuntimeException {
         TransactionViewModel receivedTransactionViewModel = null;
+        Hash receivedTransactionHash = null;
+        boolean cached = false;
+
+        try {
+
+            //Transaction bytes
+            ByteBuffer digest = getBytesDigest(receivedData);
+
+            //check if cached
+            synchronized (recentSeenBytes) {
+                cached = (receivedTransactionHash = recentSeenBytes.get(digest)) != null;
+            }
+
+            if (!cached) {
+                //if not, then validate
+                receivedTransactionViewModel = new TransactionViewModel(receivedData, TransactionHash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
+                receivedTransactionHash = receivedTransactionViewModel.getHash();
+                transactionValidator.runValidation(receivedTransactionViewModel, transactionValidator.getMinWeightMagnitude());
+
+                synchronized (recentSeenBytes) {
+                    recentSeenBytes.put(digest, receivedTransactionHash);
+                }
+
+                if(checkIfBundle(receivedTransactionViewModel)) {
+                    if(addBundleAndCheckIfReady(receivedTransactionViewModel, neighbor)) {
+                        persistBundle(receivedTransactionViewModel.getBundleHash());
+                    }
+                } else {
+                    //if valid - add to receive queue (receivedTransactionViewModel, neighbor)
+                    addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);
+                }
+            }
+
+        } catch (NoSuchAlgorithmException e) {
+            log.error("MessageDigest: " + e);
+        } catch (final TransactionValidator.StaleTimestampException e) {
+            log.debug(e.getMessage());
+            try {
+                transactionRequester.clearTransactionRequest(receivedTransactionHash);
+            } catch (Exception e1) {
+                log.error(e1.getMessage());
+            }
+            neighbor.incStaleTransactions();
+        } catch (final RuntimeException e) {
+            log.error(e.getMessage());
+            log.error("Received an Invalid TransactionViewModel. Dropping it...");
+            neighbor.incInvalidTransactions();
+            throw e;
+        }
+
+        //recentSeenBytes statistics
+        if (log.isDebugEnabled()) {
+            printStatistics(cached);
+        }
+
+        return receivedTransactionHash;
+    }
+
+    public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
         Hash receivedTransactionHash = null;
 
         boolean addressMatch = false;
-        boolean cached = false;
         double pDropTransaction = configuration.getpDropTransaction();
 
         for (final Neighbor neighbor : getNeighbors()) {
@@ -412,50 +470,10 @@ public class Node {
                     //log.info("Randomly dropping transaction. Stand by... ");
                     break;
                 }
+
                 try {
-
-                    //Transaction bytes
-                    ByteBuffer digest = getBytesDigest(receivedData);
-
-                    //check if cached
-                    synchronized (recentSeenBytes) {
-                        cached = (receivedTransactionHash = recentSeenBytes.get(digest)) != null;
-                    }
-
-                    if (!cached) {
-                        //if not, then validate
-                        receivedTransactionViewModel = new TransactionViewModel(receivedData, TransactionHash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
-                        receivedTransactionHash = receivedTransactionViewModel.getHash();
-                        transactionValidator.runValidation(receivedTransactionViewModel, transactionValidator.getMinWeightMagnitude());
-
-                        synchronized (recentSeenBytes) {
-                            recentSeenBytes.put(digest, receivedTransactionHash);
-                        }
-
-                        if(checkIfBundle(receivedTransactionViewModel)) {
-                            if(addBundleAndCheckIfReady(receivedTransactionViewModel, neighbor)) {
-                                persistBundle(receivedTransactionViewModel.getBundleHash());
-                            }
-                        } else {
-                            //if valid - add to receive queue (receivedTransactionViewModel, neighbor)
-                            addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);
-                        }
-                    }
-
-                } catch (NoSuchAlgorithmException e) {
-                    log.error("MessageDigest: " + e);
-                } catch (final TransactionValidator.StaleTimestampException e) {
-                    log.debug(e.getMessage());
-                    try {
-                        transactionRequester.clearTransactionRequest(receivedTransactionHash);
-                    } catch (Exception e1) {
-                        log.error(e1.getMessage());
-                    }
-                    neighbor.incStaleTransactions();
-                } catch (final RuntimeException e) {
-                    log.error(e.getMessage());
-                    log.error("Received an Invalid TransactionViewModel. Dropping it...");
-                    neighbor.incInvalidTransactions();
+                    receivedTransactionHash = preProcessReceivedTransaction(receivedData, neighbor);
+                } catch (RuntimeException e) {
                     break;
                 }
 
@@ -469,12 +487,6 @@ public class Node {
                 }
 
                 addReceivedDataToReplyQueue(requestedHash, neighbor);
-
-                //recentSeenBytes statistics
-
-                if (log.isDebugEnabled()) {
-                    printStatistics(cached);
-                }
 
                 break;
             }

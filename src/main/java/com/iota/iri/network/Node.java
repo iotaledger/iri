@@ -939,21 +939,18 @@ public class Node {
         private final int capacity;
         private final double dropRate;
         private LinkedHashMap<K, V> map;
-        private HashSet<V> values;
         private final SecureRandom rnd = new SecureRandom();
 
         public FIFOCache(int capacity, double dropRate) {
             this.capacity = capacity;
             this.dropRate = dropRate;
             this.map = new LinkedHashMap<>();
-            this.values = new HashSet<>();
         }
 
         public V get(K key) {
             V value = this.map.get(key);
             if (value != null && (rnd.nextDouble() < this.dropRate)) {
                 this.map.remove(key);
-                this.values.remove(value);
                 return null;
             }
             return value;
@@ -965,18 +962,15 @@ public class Node {
             }
             if (this.map.size() >= this.capacity) {
                 Iterator<K> it = this.map.keySet().iterator();
-                K k = it.next();
-                V v = this.map.get(k);
+                it.next();
                 it.remove();
-
-                values.remove(v);
             }
-            values.add(value);
             return this.map.put(key, value);
         }
 
+        // TODO: find a quicker way to search value
         public boolean containValue(V value) {
-            return this.values.contains(value);
+            return this.map.containsValue(value);
         }
     }
 

@@ -90,11 +90,13 @@ public class Node {
     private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
 
     private ConcurrentHashMap<Hash, Map<Integer, Pair<TransactionViewModel, Neighbor>>> bundleCache;
+    private ConcurrentHashMap<Hash, Integer> bundleSleepTime;
 
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
     private DatagramSocket udpSocket;
 
     public boolean optimizeNetworkEnabled;
+    private long totalNumPackets;
 
     public Node(final Tangle tangle, final TransactionValidator transactionValidator, final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, final MilestoneTracker milestoneTracker, final MessageQ messageQ, final NodeConfig configuration
     ) {
@@ -116,7 +118,9 @@ public class Node {
         this.sendingBroadcastHash = new DatagramPacket(new byte[broadcastHashSize], broadcastHashSize);
         this.sendingReqHash = new DatagramPacket(new byte[requestHashSize], requestHashSize);
         this.bundleCache = new ConcurrentHashMap<>();
+        this.bundleSleepTime = new ConcurrentHashMap<>();
         this.optimizeNetworkEnabled = configuration.isOptimizeNetworkEnabled();
+        this.totalNumPackets = 0;
     }
 
     public void init() throws Exception {
@@ -231,6 +235,23 @@ public class Node {
         return Optional.of(hostAddress);
     }
 
+    private HashMap<Hash, Set<Hash>> buildMissingGraph() {
+        HashMap<Hash, Set<Hash>> ret = new HashMap<>();
+        for(Hash h : bundleCache.keySet()) {
+            for(int i : bundleCache.get(h).keySet()) {
+                TransactionViewModel model = bundleCache.get(h).get(i).getLeft();
+                Hash trunk = model.getTrunkTransactionHash();
+                Hash branch = model.getBranchTransactionHash();
+                Hash self = model.getHash();
+                Set<Hash> val = new HashSet<>();
+                val.add(branch);
+                val.add(trunk);
+                ret.put(self, val);
+            }
+        }
+        return ret;
+    }
+
     private boolean checkIfBundle(TransactionViewModel model) {
        long tot = model.getLastIndex()+1;
         return tot > 1;
@@ -264,7 +285,7 @@ public class Node {
     private boolean addBundleAndCheckIfReady(TransactionViewModel model, Neighbor neighbor) {
         Hash bundleHash = model.getBundleHash();
         if(!bundleCache.containsKey(bundleHash)) {
-            bundleCache.put(bundleHash, new HashMap<Integer, Pair<TransactionViewModel,Neighbor>>());
+            bundleCache.put(bundleHash, new HashMap<Integer, Pair<TransactionViewModel, Neighbor>>());
         }
         Map<Integer, Pair<TransactionViewModel,Neighbor>> st = bundleCache.get(bundleHash);
         st.put((int)model.getCurrentIndex(), new ImmutablePair(model, neighbor));
@@ -289,11 +310,12 @@ public class Node {
         }
 
         for(Integer i : st.keySet()) {
-            log.info("Persist hash : {} id {}", st.get(i).getLeft().getHash(), i);
+            log.debug("Persist hash : {} id {}", st.get(i).getLeft().getHash(), i);
             processReceivedData(st.get(i).getLeft(), st.get(i).getRight());
         }
 
         bundleCache.remove(bundleHash); // clear memory
+        bundleSleepTime.remove(bundleHash);
     }
 
     private List<Hash> getMissingHash(TransactionViewModel model) {
@@ -395,13 +417,46 @@ public class Node {
         }
     }
 
+    private synchronized void checkAlreadyPersisted() {
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
+        for(Hash h : bundleCache.keySet()) {
+            if(bundleSleepTime.containsKey(h) && bundleSleepTime.get(h) > 10) { // has been in the queue for more than 50 sec
+                int canCleanTot = 0;
+                for(Integer i : bundleCache.get(h).keySet()) {
+                    TransactionViewModel model = bundleCache.get(h).get(i).getLeft();
+
+                     if(provider.hasBlock(model.getHash())) {
+                        canCleanTot++;
+                    }
+                    log.debug("hash {} canClean {}", model.getHash(), canCleanTot);
+                }
+                if(canCleanTot == bundleCache.get(h).size()) {
+                    bundleCache.remove(h);
+                    bundleSleepTime.remove(h);
+                } else {
+                    bundleSleepTime.put(h, 1); // restart
+                }
+            } else {
+                if(!bundleSleepTime.containsKey(h)) {
+                    bundleSleepTime.put(h, 1);
+                } else {
+                    bundleSleepTime.put(h, bundleSleepTime.get(h) + 1);
+                }
+                log.debug("Hash: {} , sleepTime {}", h, bundleSleepTime.get(h));
+            }
+        }
+        if(!bundleCache.isEmpty()) {
+            log.debug(provider.printGraph(buildMissingGraph(), "DOT"));
+        }
+    }
+
     private Hash preProcessReceivedTransaction(byte[] receivedData, Neighbor neighbor) throws RuntimeException {
         TransactionViewModel receivedTransactionViewModel = null;
         Hash receivedTransactionHash = null;
         boolean cached = false;
 
         try {
-
+            this.totalNumPackets++;
             //Transaction bytes
             ByteBuffer digest = getBytesDigest(receivedData);
 
@@ -735,10 +790,13 @@ public class Node {
                                 getReceiveQueueSize(), getBroadcastQueueSize(),
                                 transactionRequester.numberOfTransactionsToRequest(), getReplyQueueSize(),
                                 TransactionViewModel.getNumberOfStoredTransactions(tangle));
-                        log.info("toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}",
+                        log.info("toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {} toCleanBundle {} totalNumPackets {} ",
                                 getReceiveQueueSize(), getBroadcastQueueSize(),
-                                transactionRequester.numberOfTransactionsToRequest(), getReplyQueueSize(),
-                                TransactionViewModel.getNumberOfStoredTransactions(tangle));
+                                transactionRequester.numberOfTransactionsToRequest(),
+                                getReplyQueueSize(),
+                                TransactionViewModel.getNumberOfStoredTransactions(tangle),
+                                bundleCache.size(),
+                                totalNumPackets);
                     }
 
                     Thread.sleep(transactionRequester.getRequesterSleepPeriod());
@@ -762,6 +820,7 @@ public class Node {
                     processReceivedDataFromQueue();
                     if(count++==500) {
                         checkPersist();
+                        checkAlreadyPersisted();
                         count = 0;
                     }
                     Thread.sleep(1);

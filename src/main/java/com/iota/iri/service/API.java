@@ -1456,6 +1456,7 @@ public class API {
      * @param tag     The tag to store, by default is TX
      **/
     private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
+        long tStart = System.currentTimeMillis();
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
             txToApprove = getTransactionToApproveTips(15, Optional.empty());
@@ -1476,6 +1477,7 @@ public class API {
                 return AbstractResponse.createEmptyResponse(); // FIXME why come here?
             }
         }
+        long tTipSel = System.currentTimeMillis();
 
         final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
@@ -1501,6 +1503,8 @@ public class API {
             }
             msg = processed;
         }
+
+        long tPreProcess = System.currentTimeMillis();
 
         final int txCount = (int) (msg.length() + txMessageSize - 1) / txMessageSize;
 
@@ -1557,11 +1561,22 @@ public class API {
 
         transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
 
+        long tBundleHash = System.currentTimeMillis();
+
         // do pow
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
+
+        long tPow = System.currentTimeMillis();
+
         broadcastTransactionsStatement(powResult);
 
+        long tBroadCast = System.currentTimeMillis();
+
         storeTransactionsStatement(powResult);
+
+        long tStore = System.currentTimeMillis();
+
+        log.debug("[time] tTipSel {} tPreProcess {} tBundleHash {} tPow {} tBroadCast {} tStore {} num {}", tTipSel-tStart, tPreProcess-tTipSel, tBundleHash-tPreProcess, tPow-tBundleHash, tBroadCast-tPow, tStore-tBroadCast, powResult.size());
 
         return AbstractResponse.createEmptyResponse();
     }

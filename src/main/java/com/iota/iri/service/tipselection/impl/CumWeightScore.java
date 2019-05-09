@@ -5,10 +5,14 @@ import com.iota.iri.model.Hash;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CumWeightScore
 {
-    public static Map<Hash, Double> update(Map<Hash, Set<Hash>> graph, Map<Hash, Double> score, Hash newVet) {
+    private static final Logger log = LoggerFactory.getLogger(CumWeightScore.class);
 
+    public static Map<Hash, Double> update(Map<Hash, Set<Hash>> graph, Map<Hash, Double> score, Hash newVet) {
         Map<Hash, Double> ret = score;
         LinkedList<Hash> queue = new LinkedList<>();
 
@@ -41,7 +45,7 @@ public class CumWeightScore
 
         while(parentGraph.get(start) != null) {
             if (visited.contains(start)) {
-                System.out.println("Circle exist: " + start);
+                log.error("Circle exist: " + start);
                 break;
             } else {
                 visited.add(start);

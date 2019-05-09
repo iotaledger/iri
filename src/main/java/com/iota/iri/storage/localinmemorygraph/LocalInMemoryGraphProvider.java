@@ -1062,7 +1062,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public boolean hasBlock(Hash h) {
-        return graph.containsKey(h);
+        return graph.containsKey(h) || revGraph.containsKey(h);
     }
 }
 

@@ -600,7 +600,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         if(freshScore) {
             return cachedTotalOrder;
         }
-        return confluxOrder(getPivot(getGenesis()));
+        List<Hash> totalOrder = tangle.getTotalOrder();
+        if (CollectionUtils.isNotEmpty(totalOrder)){
+            return totalOrder;
+        }
+        totalOrder = confluxOrder(getPivot(getGenesis()));
+        cachedTotalOrder = totalOrder;
+        tangle.storeTotalOrder(totalOrder);
+        return totalOrder;
     }
 
     public List<Hash> confluxOrder(Hash block) {

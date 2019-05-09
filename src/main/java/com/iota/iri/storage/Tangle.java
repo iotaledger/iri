@@ -2,22 +2,15 @@ package com.iota.iri.storage;
 
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.model.Hash;
-import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.*;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
-import org.apache.commons.collections4.CollectionUtils;
-import org.neo4j.cypher.internal.frontend.v2_3.ast.functions.Has;
-import org.rocksdb.RocksDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 
 /**

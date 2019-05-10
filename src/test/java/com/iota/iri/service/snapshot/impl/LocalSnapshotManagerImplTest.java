@@ -112,7 +112,7 @@ public class LocalSnapshotManagerImplTest {
         // Always return true
         when(milestoneTracker.isInitialScanComplete()).thenReturn(true);
         
-        //when(snapshotProvider.getLatestSnapshtIndex()).thenReturn(-5, -1, 10, 998, 999, 1999, 2000);
+        // We don't really support -1 indexes, but if this breaks, it is a good indication to be careful going further
         when(milestoneTracker.getLatestMilestoneIndex()).thenReturn(-1, 5, 10, 998 + BUFFER - 1, 2000);
         
         // snapshotProvider & milestoneTracker

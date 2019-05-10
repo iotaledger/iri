@@ -89,6 +89,7 @@ public class SnapshotMetaDataImplTest {
         assertEquals("Index from entry should be to the one set to the hash", 2, meta.getSolidEntryPointIndex(B));
         
         // Test -1 to ensure, if we ever enforce this positive, something could break 
+        // We don't really support -1 indexes, but if this breaks, it is a good indication to be careful going further
         assertEquals("Index from entry should be to the one set to the hash", -1, meta.getSolidEntryPointIndex(C));
         
         assertEquals("Solid entries amount should be the same as the ones provided", meta.getSolidEntryPoints().size(), solidEntryPoints.size());

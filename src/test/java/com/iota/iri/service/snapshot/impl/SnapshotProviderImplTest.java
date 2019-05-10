@@ -18,7 +18,7 @@ public class SnapshotProviderImplTest {
     private SnapshotImpl cachedBuildinSnapshot;
     
     @Before
-    public void setUp() throws Exception {
+    public void setUp(){
         provider = new SnapshotProviderImpl();
         
         // When running multiple tests, the static cached snapshot breaks this test
@@ -27,7 +27,7 @@ public class SnapshotProviderImplTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown(){
         provider.shutdown();
         
         // Set back the cached snapshot for tests after us who might use it

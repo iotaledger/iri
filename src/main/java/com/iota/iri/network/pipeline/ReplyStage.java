@@ -106,7 +106,7 @@ public class ReplyStage {
             try {
                 // retrieve random tx
                 if (txRequester.numberOfTransactionsToRequest() == 0
-                        || rnd.nextDouble() >= config.getpReplyRandomTip()) {
+                        && rnd.nextDouble() >= config.getpReplyRandomTip()) {
                     return ctx;
                 }
                 neighbor.getMetrics().incrRandomTransactionRequestsCount();

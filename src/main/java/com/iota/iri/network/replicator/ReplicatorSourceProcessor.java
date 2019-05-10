@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.CRC32;
 
@@ -182,6 +183,8 @@ class ReplicatorSourceProcessor implements Runnable {
                     }
                     if (!crcError) {
                         if (node.optimizeNetworkEnabled) {
+                            byte[] realData = Arrays.copyOfRange(data, 0, dataLen);
+                            node.preProcessReceivedOptimizedData(realData, address, "tcp");
                         } else {
                             node.preProcessReceivedData(data, address, "tcp");
                         }

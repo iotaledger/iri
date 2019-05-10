@@ -139,6 +139,16 @@ public class ReplyStage {
             return ctx;
         }
 
+        // we didn't have the requested transaction (random or explicit) from the neighbor but we will immediately reply
+        // with the latest known milestone and a needed transaction hash, to keep up the ping-pong
+        try {
+            final TransactionViewModel msTVM = TransactionViewModel.fromHash(tangle,
+                    latestMilestoneTracker.getLatestMilestoneHash());
+            neighborRouter.gossipTransactionTo(neighbor, msTVM, true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // if we don't have the requested transaction (not a random tip) and the propagation
         // chance gets hit, we put the requested transaction into our own request queue.
         if (hashOfRequestedTx.equals(Hash.NULL_HASH) || rnd.nextDouble() >= config.getpPropagateRequest()) {

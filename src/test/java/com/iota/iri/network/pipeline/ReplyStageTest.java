@@ -65,7 +65,7 @@ public class ReplyStageTest {
 
     @Test
     public void usingTheNullHashARandomTipIsGettingReplied() {
-        Mockito.when(random.nextDouble()).thenReturn(0.4, 0.6d);
+        Mockito.when(random.nextDouble()).thenReturn(0.6d);
         Mockito.when(nodeConfig.getpSendMilestone()).thenReturn(0.5);
         Mockito.when(nodeConfig.getpReplyRandomTip()).thenReturn(0.5);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);

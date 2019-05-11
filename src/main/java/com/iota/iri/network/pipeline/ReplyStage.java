@@ -144,7 +144,7 @@ public class ReplyStage {
         try {
             final TransactionViewModel msTVM = TransactionViewModel.fromHash(tangle,
                     latestMilestoneTracker.getLatestMilestoneHash());
-            neighborRouter.gossipTransactionTo(neighbor, msTVM, true);
+            neighborRouter.gossipTransactionTo(neighbor, msTVM, false);
         } catch (Exception e) {
             e.printStackTrace();
         }

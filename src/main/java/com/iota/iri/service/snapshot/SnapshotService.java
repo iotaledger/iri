@@ -1,11 +1,9 @@
 package com.iota.iri.service.snapshot;
 
-import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
-import com.iota.iri.storage.Tangle;
 
 import java.util.Map;
 

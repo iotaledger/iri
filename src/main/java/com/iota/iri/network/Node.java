@@ -765,7 +765,7 @@ public class Node {
     }
 
     private long getBytesDigest(byte[] receivedData) {
-        return recentSeenBytesHashFunction.hashBytes(receivedData);
+        return recentSeenBytesHashFunction.hashBytes(receivedData, 0, TransactionViewModel.SIZE);
     }
 
     // helpers methods

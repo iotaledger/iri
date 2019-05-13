@@ -29,20 +29,20 @@ public class TransactionTest {
         byte[] bytes = Converter.allocateBytesForTrits(trits.length);
         Converter.bytes(trits, bytes);
         
-        TransactionViewModel TVM = new TransactionViewModel(trits, Hash.NULL_HASH);
-        TVM.getAddressHash();
-        TVM.getTrunkTransactionHash();
-        TVM.getBranchTransactionHash();
-        TVM.getBundleHash();
-        TVM.getTagValue();
-        TVM.getObsoleteTagValue();
-        TVM.setAttachmentData();
-        TVM.setMetadata();
+        TransactionViewModel tvm = new TransactionViewModel(trits, Hash.NULL_HASH);
+        tvm.getAddressHash();
+        tvm.getTrunkTransactionHash();
+        tvm.getBranchTransactionHash();
+        tvm.getBundleHash();
+        tvm.getTagValue();
+        tvm.getObsoleteTagValue();
+        tvm.setAttachmentData();
+        tvm.setMetadata();
         
-        assertArrayEquals("bytes in the TVM should be unmodified", TVM.getBytes(), bytes);
+        assertArrayEquals("bytes in the TVM should be unmodified", tvm.getBytes(), bytes);
         
-        Transaction tvmTransaction = TVM.getTransaction();
+        Transaction tvmTransaction = tvm.getTransaction();
         
-        assertEquals("branch in transaction should be the same as in the TVM", tvmTransaction.branch, TVM.getTransaction().branch);
+        assertEquals("branch in transaction should be the same as in the tvm", tvmTransaction.branch, tvm.getTransaction().branch);
     }
 }

@@ -67,11 +67,10 @@ public class DAGHelperTest {
         List<TransactionViewModel> processed = new LinkedList<>();
         Set<Hash> set = new HashSet<>();
         
-        helper.traverseApprovers(Hash.NULL_HASH, transaction -> {
-            return true;
-        }, t -> {
-            processed.add(t);
-        }, set);
+        helper.traverseApprovers(Hash.NULL_HASH, transaction -> true,
+                t -> {
+                    processed.add(t);
+                }, set);
         
         assertEquals("2 transactions should have been traversed", 2, processed.size());
         
@@ -92,13 +91,12 @@ public class DAGHelperTest {
         List<TransactionViewModel> processed = new LinkedList<>();
         Set<Hash> set = new HashSet<>();
         
-        helper.traverseApprovees(C, transaction -> {
-            return true;
-        }, t -> {
-            processed.add(t);
-        }, set);
+        helper.traverseApprovees(C, transaction -> true,
+                t -> {
+                    processed.add(t);
+                }, set);
         
-        assertEquals("", 2, processed.size());
+        assertEquals("2 transactions should have been traversed", 2, processed.size());
         
         TransactionViewModel tx = processed.get(1);
         assertEquals("Last transaction hash should have been the genisis hash", tx.getHash(), Hash.NULL_HASH);

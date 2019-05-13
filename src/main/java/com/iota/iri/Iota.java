@@ -31,6 +31,7 @@ import com.iota.iri.utils.Pair;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
 import org.apache.commons.lang3.NotImplementedException;
@@ -202,7 +203,14 @@ public class Iota {
         //snapshot provider must be initialized first
         //because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
-        spentAddressesProvider.init(configuration, getSpentAddressesProvider());
+        spentAddressesProvider.init(configuration, createRocksDbProvider(
+                configuration.getSpentAddressesDbPath(),
+                configuration.getSpentAddressesDbLogPath(),
+                1000,
+                new HashMap<String, Class<? extends Persistable>>(1)
+                {{put("spent-addresses", SpentAddress.class);}}, null)
+            );
+        
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
@@ -281,7 +289,7 @@ public class Iota {
     private void initializeTangle() {
         switch (configuration.getMainDb()) {
             case "rocksdb": {
-                tangle.addPersistenceProvider(new RocksDBPersistenceProvider(
+                tangle.addPersistenceProvider(createRocksDbProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
                         configuration.getDbCacheSize(),
@@ -299,13 +307,21 @@ public class Iota {
         }
     }
     
-    private PersistenceProvider getSpentAddressesProvider() {
+    /**
+     * Creates a new Persistable provider with the supplied settings
+     * 
+     * @param path The location where the database will be stored
+     * @param log The location where the log files will be stored
+     * @param cacheSize the size of the cache used by the database implementation
+     * @param columnFamily A map of the names related to their Persistable class
+     * @param metadata Map of metadata used by the Persistable class, can be <code>null</code>
+     * @return A new Persistance provider
+     */
+    private PersistenceProvider createRocksDbProvider(String path, String log, int cacheSize, 
+            Map<String, Class<? extends Persistable>> columnFamily,
+            Map.Entry<String, Class<? extends Persistable>> metadata) {
         return new RocksDBPersistenceProvider(
-                configuration.getSpentAddressesDbPath(),
-                configuration.getSpentAddressesDbLogPath(),
-                1000,
-                new HashMap<String, Class<? extends Persistable>>(1)
-                {{put("spent-addresses", SpentAddress.class);}}, null);
+                path, log, cacheSize, columnFamily, metadata);
     }
 
     private TipSelector createTipSelector(TipSelConfig config) {

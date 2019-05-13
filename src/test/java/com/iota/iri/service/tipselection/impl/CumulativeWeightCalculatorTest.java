@@ -9,6 +9,7 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.HashId;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
@@ -24,6 +25,7 @@ import java.util.*;
 
 import static com.iota.iri.TransactionTestUtils.*;
 
+
 public class CumulativeWeightCalculatorTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
@@ -31,7 +33,7 @@ public class CumulativeWeightCalculatorTest {
             "tx%d cumulative weight is not as expected";
     private static Tangle tangle;
     private static SnapshotProvider snapshotProvider;
-    private static CumulativeWeightCalculator cumulativeWeightCalculator;
+    private static RatingCalculator cumulativeWeightCalculator;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @AfterClass

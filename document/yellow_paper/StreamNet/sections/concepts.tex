@@ -13,7 +13,7 @@ Note that there is always a parent edge from a block to its parent block (i.e., 
 $E$ is the set of directly reference edges and parent edges in this graph. 
 $e = <b,b'> \in E$ is an edge from the block $b$ to the block $b'$, 
 which means that $b'$ happens before $b$. 
-For example in Figure~\ref{simple_sn}, vertex $1$ represents the first block, which is referenced by the subsequent block $2$, $3$ and $4$. 
+For example in Figure~\ref{simple_sn}, vertex $1$ represents the first block, which is the parent for the subsequent block $2$, $3$ and $4$. 
 Vertex $5$ has two edges, one is the parent edge pointing to $3$, another is reference edge pointing to $4$.
 When a new block is not referenced, it is called a tip. For example, in Figure~\ref{simple_sn}, block $6$ is a tip.
 All blocks in the StreamNet protocol share a predefined deterministic 

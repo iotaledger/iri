@@ -2,6 +2,7 @@ package com.iota.iri.network.pipeline;
 
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.BaseIotaConfig;
+import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.crypto.batched.BatchedHasher;
@@ -92,13 +93,14 @@ public class TransactionProcessingPipeline {
      * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
      *                               reply stage
      */
-    public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
+
+    public void init(NeighborRouter neighborRouter, IotaConfig config, TransactionValidator txValidator, Tangle tangle,
             SnapshotProvider snapshotProvider, TransactionRequester txRequester, TipsViewModel tipsViewModel,
             LatestMilestoneTracker latestMilestoneTracker) {
         this.recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes(), config.getpDropCacheEntry());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
-                recentlySeenBytesCache, txRequester);
+                snapshotProvider, recentlySeenBytesCache, txRequester);
         this.broadcastStage = new BroadcastStage(neighborRouter);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
         this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider);

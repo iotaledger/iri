@@ -11,6 +11,7 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 
 import java.security.SecureRandom;
@@ -34,6 +35,7 @@ public class ReplyStage {
     private TransactionRequester txRequester;
     private TipsViewModel tipsViewModel;
     private LatestMilestoneTracker latestMilestoneTracker;
+    private SnapshotProvider snapshotProvider;
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
     private SecureRandom rnd = new SecureRandom();
 
@@ -45,6 +47,7 @@ public class ReplyStage {
      * @param tangle                 the {@link Tangle} database to load the request transaction from
      * @param tipsViewModel          the {@link TipsViewModel} to load the random tips from
      * @param latestMilestoneTracker the {@link LatestMilestoneTracker} to load the latest milestone from
+     * @param snapshotProvider       the {@link SnapshotProvider} to check the latest solid milestone from
      * @param recentlySeenBytesCache the {@link FIFOCache} to use to cache the replied transaction
      * @param txRequester            the {@link TransactionRequester} to put in transaction which are requested but not
      *                               available on the node to request them from other neighbors
@@ -52,13 +55,14 @@ public class ReplyStage {
      *                               replying at all or not requesting a not stored requested transaction from neighbors
      */
     public ReplyStage(NeighborRouter neighborRouter, NodeConfig config, Tangle tangle, TipsViewModel tipsViewModel,
-            LatestMilestoneTracker latestMilestoneTracker, FIFOCache<Long, Hash> recentlySeenBytesCache,
-            TransactionRequester txRequester, SecureRandom rnd) {
+            LatestMilestoneTracker latestMilestoneTracker, SnapshotProvider snapshotProvider,
+            FIFOCache<Long, Hash> recentlySeenBytesCache, TransactionRequester txRequester, SecureRandom rnd) {
         this.neighborRouter = neighborRouter;
         this.config = config;
         this.tangle = tangle;
         this.tipsViewModel = tipsViewModel;
         this.latestMilestoneTracker = latestMilestoneTracker;
+        this.snapshotProvider = snapshotProvider;
         this.recentlySeenBytesCache = recentlySeenBytesCache;
         this.txRequester = txRequester;
         this.rnd = rnd;
@@ -72,18 +76,20 @@ public class ReplyStage {
      * @param tangle                 the {@link Tangle} database to load the request transaction from
      * @param tipsViewModel          the {@link TipsViewModel} to load the random tips from
      * @param latestMilestoneTracker the {@link LatestMilestoneTracker} to load the latest milestone from
+     * @param snapshotProvider       the {@link SnapshotProvider} to check the latest solid milestone from
      * @param recentlySeenBytesCache the {@link FIFOCache} to use to cache the replied transaction
      * @param txRequester            the {@link TransactionRequester} to put in transaction which are requested but not
      *                               available on the node to request them from other neighbors
      */
     public ReplyStage(NeighborRouter neighborRouter, NodeConfig config, Tangle tangle, TipsViewModel tipsViewModel,
-            LatestMilestoneTracker latestMilestoneTracker, FIFOCache<Long, Hash> recentlySeenBytesCache,
-            TransactionRequester txRequester) {
+            LatestMilestoneTracker latestMilestoneTracker, SnapshotProvider snapshotProvider,
+            FIFOCache<Long, Hash> recentlySeenBytesCache, TransactionRequester txRequester) {
         this.neighborRouter = neighborRouter;
         this.config = config;
         this.tangle = tangle;
         this.tipsViewModel = tipsViewModel;
         this.latestMilestoneTracker = latestMilestoneTracker;
+        this.snapshotProvider = snapshotProvider;
         this.recentlySeenBytesCache = recentlySeenBytesCache;
         this.txRequester = txRequester;
     }
@@ -104,11 +110,12 @@ public class ReplyStage {
 
         if (hashOfRequestedTx.equals(Hash.NULL_HASH)) {
             try {
-                // retrieve random tx
-                if (txRequester.numberOfTransactionsToRequest() == 0
-                        && rnd.nextDouble() >= config.getpReplyRandomTip()) {
+                // don't reply to random tip requests if we are synchronized
+                if (snapshotProvider.getLatestSnapshot().getIndex() == latestMilestoneTracker
+                        .getLatestMilestoneIndex()) {
                     return ctx;
                 }
+                // retrieve random tx
                 neighbor.getMetrics().incrRandomTransactionRequestsCount();
                 Hash transactionPointer = getRandomTipPointer();
                 tvm = TransactionViewModel.fromHash(tangle, transactionPointer);

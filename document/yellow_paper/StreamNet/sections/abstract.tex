@@ -1,5 +1,5 @@
 \begin{abstract}
-To achieve high throughtput in the POW based blockchain systems, a series of methods has been proposed, 
+To achieve high throughput in the POW based blockchain systems, a series of methods has been proposed, 
 and DAG is one of the most active and promising field.
 We designed and implemented the StreamNet aiming to engineer 
 a scalable and endurable DAG system. 
@@ -10,7 +10,7 @@ We infer a pivotal chain along the path of each epoch in the graph,
 and a total order of the graph could be calculated without a centralized authority.
 To scale up, we leveraged the graph streaming property,
 high transaction validation speed will be achieved even if the DAG is growing.
-To scale out, we designed the `direct signal' gossip protocol to help diseminate block updates in the network,
+To scale out, we designed the `direct signal' gossip protocol to help disseminate block updates in the network,
 such that message can be passed in the network in a more efficient way.
 We implemented our system based on IOTA's reference code (IRI), 
 and ran comprehensive experiments over different size of clusters of multiple network topologies. 

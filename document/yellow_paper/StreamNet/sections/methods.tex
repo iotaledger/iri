@@ -1,7 +1,7 @@
 \section{Optimization Methods}
 One of the biggest challenges to maintain the stability of DAG system is that, 
 as the local data structure growing, the graph algorithms ($Pivot()$, $MCMC()$, $StreamNetOrder()$), 
-relies on some of the graph properties that needs to be recalculated everytime these functions are called,
+relies on some of the graph properties that needs to be recalculated every time these functions are called,
 which are very expensive. 
 Table~\ref{tab:properties} list all the expensive graph properties that are called. 
 Suppose the set of blocks in the DAG is represented by $B$, and the depth of the pivot chain is $d$.
@@ -29,13 +29,13 @@ TopOrder(G, b)        & StreamNetOrder() & $O(|B|)$              & $O(|B|)$    \
 \end{center}
 \end{table}
 
-Considering new blocks are genereted and merged into the local data structure in a streaming way.
+Considering new blocks are generated and merged into the local data structure in a streaming way.
 The expensive graph properties could be maintained dynamically as the DAG grows.
-Such that the complexity of calculating these properties would be armortized to each time a new block is generated or merged.
+Such that the complexity of calculating these properties would be amortized to each time a new block is generated or merged.
 In the following sections, we will discuss how to design streaming algorithms to achieve this goal.
 
 \subsection{Optimization of Score()}
-In the optimized version, the DAG will have a map that keeps the score of each block. once there is a new generated/merged block,
+In the optimized version, the DAG will have a map that keeps the score of each block. Once there is a new generated/merged block,
 it will trigger the BFS based UpdateScore() algorithm to update the scores of the block in the map that are referenced by the new block.
 The skeleton of the UpdateScore() algorithm is as Algorithm~\ref{algo:update_score} shows.
 
@@ -49,11 +49,11 @@ Every time a new reference block $b'$ is discovered, it will perform a backward 
 If yes, $b'$ would not be added to the forward $BFS$ queue.  
 To avoid the complexity of the backward $BFS$, the previous calculated diff set will be added to the covered set $C$, which will be passed to GetDiffSet() as a parameter.
 To be more specific, when a backward BFS is performed, the blocks in $C$ will not be added to the search queue.
-This backward search algorihtm is denoted as IsCovered() and described in detail in Algorithm~\ref{algo:is_covered}.
+This backward search algorithm is denoted as IsCovered() and described in detail in Algorithm~\ref{algo:is_covered}.
 
 Figure~\ref{get_diff} shows the example of the GetDiffSet() method for block $5$.
-it first perform forward BFS to find block $4$ which does not have children, then it will be added to the diff set.
-$4$ then move forward to $1$, which have three childrens, if it detect $3$ which is the parent of $5$, it will stop searching prompty.
+It first perform forward BFS to find block $4$ which does not have children, then it will be added to the diff set.
+$4$ then move forward to $1$, which have three children, if it detect $3$ which is the parent of $5$, it will stop searching promptly.
 If it continue searching on $2$ or $4$, these two blocks would not be added to the search queue, because they are already in the covered set.
 
 \input{./algorithms/get_diff.tex}
@@ -72,7 +72,7 @@ If it continue searching on $2$ or $4$, these two blocks would not be added to t
 
 \subsection{Optimization of TopOrder()}
 The topological order is used in sorting the blocks in the same epoch.
-To get the toppological order, every time, there needs a top sort of the whole DAG from the scratch.
+To get the topological order, every time, there needs a top sort of the whole DAG from the scratch.
 However we can easily update the topological order when a new block is added or merged.
  The update rule is, when a new block is added, it's topological position will be $TopScore(G, b) \gets min(TopScore(G, Parent(b)), TopScore(G, Reference(b)))$. This step can be done in $O(1)$ 
 
@@ -100,7 +100,7 @@ However, it still need to update the information until genesis block.
 With the size of the graph growing, the updating process still becoming harder to compute.
 Consider that with the DAG size growing, the old historical confirmed block are confirming by more and more blocks, and it will be very hard to mutate it.
 Hence, we can design a strategy to forward the genesis periodically and fix the historical blocks into a total ordered chain.
-The criteria to forward the genesis are based on the threshhold of ParentScore.
+The criteria to forward the genesis are based on the threshold of ParentScore.
 Suppose we define this threshold as $t$, then we only forward the genesis if: 
 
 \begin{equation}
@@ -111,7 +111,7 @@ Suppose we define this threshold as $t$, then we only forward the genesis if:
     \end{flalign*}
 \end{equation}
 
-In addition, after the new genesis has been choosen, 
+In addition, after the new genesis has been chosen, 
 we will induce a new DAG in memory from this genesis 
 and the vertices in UTXO graph that belongs to the fixed blocks will be eliminated from the memory as well.  
 The algorithm is as Algorithm~\ref{algo:genesis_forward} shows.
@@ -122,7 +122,7 @@ The algorithm is as Algorithm~\ref{algo:genesis_forward} shows.
 \subsection{The Direct Signal Gossip Protocol}
 To minimize the message passing in the gossip network,
 there are solutions in \cite{demers1988epidemic}. And in Hyperledger \cite{androulaki2018hyperledger}
-they have adopted the PUSH and PULL model for the gossip message propogation. However, their system is aiming at small scale.
+they have adopted the PUSH and PULL model for the gossip message propagation. However, their system is aiming at small scale.
 Suppose the size of the hash of a block is $H$, we designed the direct signal algorithm.
 The algorithm is divided into two steps, once a node generate or receive a block,
 it firstly broadcast the hash of the block, this is the PUSH step.

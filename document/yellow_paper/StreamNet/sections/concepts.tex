@@ -39,11 +39,11 @@ Eventually, every machine will have a unified view of DAG.
 By calling total ordering algorithm, every machine can sort the DAG into a total order, 
 and the data in each block can have a relative order regardless of their local upload time.
 Figure~\ref{node} shows the local architecture of StreamNet.
-In each StreamNet node, there will be a transaction pool accecpting the transactions from the HTTP API.
+In each StreamNet node, there will be a transaction pool accepting the transactions from the HTTP API.
 And there will be a block generator to pack a certain amount of transactions into a block, it firstly find a 
 parent and reference block to attach the new block to, based on the hash information of these two blocks and the meta data of the block itself, 
 it will then perform the proof of work (POW) to calculate the nonce for the received block.
-Agorithm~\ref{algo:main_loop} summarize the server logic for a StreamNet node.
+Algorithm~\ref{algo:main_loop} summarize the server logic for a StreamNet node.
 In the algorithm, the way to find parent reference node is by $Pivot(G, g)$.
 And the way to find reference node is by calling $MCMC(G, g)$ which is the Markov Chain Monte Carlo (MCMC) random walk algorithm \cite{popov2016tangle}.
 The two algorithms will be described in the later section.
@@ -73,8 +73,8 @@ The two algorithms will be described in the later section.
 \input{./algorithms/mcmc.tex}
 
 \subsection{Consensus protocol}
-Based on predefineid data structure, to present the StreamNet consensus algorithm, 
-we firstly define several utility functions and notatons, which is a variation from the definition in the Conflux paper \cite{li2018scaling}. 
+Based on predefined data structure, to present the StreamNet consensus algorithm, 
+we firstly define several utility functions and notations, which is a variation from the definition in the Conflux paper \cite{li2018scaling}. 
 Chain() returns the chain from the genesis block to a given block following only parent edges. 
 Child() returns the set of child blocks of a given block. 
 Sibling() returns the set of siblings of a given block. 
@@ -86,7 +86,7 @@ Later() returns the set of blocks that are generated after a given block (but in
 SubGraph() returns the sub graph by removing blocks and edges except the initial set of blocks.
 ParentScore() presents the weight of blocks, each block have a score when referenced as parent. 
 Score() presents the weight of blocks, each block achieves a score when attaching to the graph. 
-TotalOrder() returns the `flattend' order infered from the consensus algorithm.
+TotalOrder() returns the `flatten' order inferred from the consensus algorithm.
 Figure~\ref{allMethods} represents the definition of these utility functions. 
 
 \begin{figure}
@@ -100,11 +100,11 @@ Figure~\ref{allMethods} represents the definition of these utility functions.
   & \overline{Chain(G,b)} = \{ b' | b' \in B, b' \notin Chain(G,b) \} \\
    &Child(G,b) = \{ b'| P(b') = b \} \\
    &Sibling(G,b) = Child(G,P(b)) \\
-   &SubTree(G,b) = (U_{i\in Child(G,b)}Substree(G,i))U\{b\} \\
+   &SubTree(G,b) = (U_{i\in Child(G,b)}Substree(G,i)) \cup \{b\} \\
    &Before(G,b) = \{b'|b' \in B, <b,b'> \in E \} \\
-   &Past(G,b) = (U_{i\in Before(G,b)}Past(G,i))U\{b\} \\
+   &Past(G,b) = (U_{i\in Before(G,b)}Past(G,i)) \cup \{b\} \\
    &After(G,b) = \{b'|b' \in B, <b',b> \in E \} \\
-   &Later(G,b) = (U_{i\in After(G,b)}Later(G,i))U\{b\} \\
+   &Later(G,b) = (U_{i\in After(G,b)}Later(G,i)) \cup \{b\} \\
    &SubGraph(G,B') = <B', P', E'> | \\
    & \forall <b, b'> \in E', b \subset B' \& b' \subset B'\\
    &ParentScore(G,b) = |SubTree(G,b)| \\
@@ -119,7 +119,7 @@ Figure~\ref{allMethods} represents the definition of these utility functions.
 \subsubsection{Parent tip Selection by pivotal chain} 
 The algorithm Algorithm~\ref{algo:getPivot} presents our pivot chain selection algorithm(i.e., the definition of $Pivot(G, b)$). 
 Given a StreamNet state $G$, Pivot($G$,$g$) returns the last block in the pivot chain starting from the genesis block $g$. 
-The algorithm recursively advances to the child block whoes corresponding subtree has the largest number of blocks. 
+The algorithm recursively advances to the child block whose corresponding sub-tree has the largest number of blocks. 
 Which is calculated by $Score(G, b)$  
 When there are multiple child blocks with the same score, the algorithm selects the child block with the largest block hash. 
 The algorithm terminates until it reaches a tip. 
@@ -134,7 +134,7 @@ The tip selection method by using Monte Carlo Random Walk (MCMC) is as Algorithm
 Starting from the genesis, each random walk step will choose a child to jump to,
 and the probability of jumping from one block to the next block will be calculated using the formula in the algorithm.
 $\alpha$ in the formula is an constant that is used to scale the randomness of the MCMC function, the smaller it is, the more randomness will be in the MCMC function.
-The algorithnm returns until it finds a tip.
+The algorithm returns until it finds a tip.
 
 \subsubsection{Total Order} 
 The algorithm Algorithm~\ref{algo:conflux_order} defines StreamNetOrder(), 
@@ -164,9 +164,9 @@ The algorithm uses the unique hash to break ties.
 In StreamNet, the transactions utilizes the unspent transaction out (UTXO) model, which is exactly the same as in Bitcoin.
 In the confirmation process, the user will call $TotalOrder$ to get the relative order of different blocks, 
 and the conflict content of the block will be eliminated if the order of the block is later than the one conflicting with it in the total order.
-Figure ~\ref{utxo} shows the example of storage of UTXO in StreamNet and how conifliction is resolved.
+Figure ~\ref{utxo} shows the example of storage of UTXO in StreamNet and how conflict is resolved.
 Two blocks both referenced the same block with Alice having 5 tokens, and construct the new transaction out which representing the transfer of token to Bob and Jack respectively.
-However, after calling $totalOrder()$, the Bob transfer block preceeds the Jack transfer block, thus the later block will be discarded.
+However, after calling $totalOrder()$, the Bob transfer block precedes the Jack transfer block, thus the later block will be discarded.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -179,14 +179,14 @@ However, after calling $totalOrder()$, the Bob transfer block preceeds the Jack 
 \end{figure}
 
 \subsection{Gossip Network}
-In the bitcoin and IOTA network, the block information is diseminated in a direct mail way \cite{demers1988epidemic}.
+In the bitcoin and IOTA network, the block information is disseminated in a direct mail way \cite{demers1988epidemic}.
 Suppose there are $N$ nodes and $L$ links in the network, for a block of size $B$,
 to spread the information of it, the direct mail algorithm will have a total complexity of $O(LB)$.
 And the average complexity for a node will be $O(\frac{LB}{N})$
 In the chain based system, this is fine, because the design of the system already assume that the transaction rate will be low.
 However, in the DAG based system, this type of gossip manner will result in 
 low scalability due to high throughput of the block generation rate and will result in network flooding.
-What's worse, consider the heterogenerously and long diameters of network topology, 
+What's worse, consider the heterogeneously and long diameters of network topology, 
 the convergence of DAG will take long time which will cause the delay of confirmation time of blocks.
 
 \subsection{Differences with other DAG protocols}
@@ -195,7 +195,7 @@ Here, we mainly compare the difference of our protocol with two mainstream DAG b
 \subsubsection{IOTA}
 The major difference with IOTA are in three points:
 \begin{itemize}
-    \item Firstly, the IOTA tip selection algorithm's two tips are all randomly choosen, 
+    \item Firstly, the IOTA tip selection algorithm's two tips are all randomly chosen, 
         and ours is one deterministic which is for the total ordering purposes and one by random which is for maintaining the DAG property; 
     \item Secondly, the IOTA consensus algorithm is not purely decentralized, 
         it relies on a central coordinator to issue milestones for multiple purposes, and our algorithm does not dependent on such facility. 

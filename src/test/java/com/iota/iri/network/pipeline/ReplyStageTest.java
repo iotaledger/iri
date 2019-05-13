@@ -12,6 +12,8 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import com.iota.iri.network.neighbor.impl.NeighborMetricsImpl;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 
 import java.security.SecureRandom;
@@ -49,6 +51,12 @@ public class ReplyStageTest {
     private LatestMilestoneTracker latestMilestoneTracker;
 
     @Mock
+    private SnapshotProvider snapshotProvider;
+
+    @Mock
+    private Snapshot snapshot;
+
+    @Mock
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
 
     @Mock
@@ -69,13 +77,16 @@ public class ReplyStageTest {
         Mockito.when(nodeConfig.getpSendMilestone()).thenReturn(0.5);
         Mockito.when(nodeConfig.getpReplyRandomTip()).thenReturn(0.5);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
+        Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(snapshot);
+        Mockito.when(snapshot.getIndex()).thenReturn(9);
+        Mockito.when(latestMilestoneTracker.getLatestMilestoneIndex()).thenReturn(10);
         Mockito.when(transactionRequester.numberOfTransactionsToRequest()).thenReturn(1);
         Mockito.when(tipsViewModel.getRandomSolidTipHash()).thenReturn(SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
         TangleMockUtils.mockTransaction(tangle, SampleTransaction.CURL_HASH_OF_SAMPLE_TX,
                 SampleTransaction.SAMPLE_TRANSACTION);
 
         ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
-                recentlySeenBytesCache, transactionRequester, random);
+                snapshotProvider, recentlySeenBytesCache, transactionRequester, random);
         ReplyPayload replyPayload = new ReplyPayload(neighbor, Hash.NULL_HASH);
         ProcessingContext ctx = new ProcessingContext(replyPayload);
         stage.process(ctx);
@@ -95,7 +106,7 @@ public class ReplyStageTest {
                 SampleTransaction.SAMPLE_TRANSACTION);
 
         ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
-                recentlySeenBytesCache, transactionRequester, random);
+                snapshotProvider, recentlySeenBytesCache, transactionRequester, random);
         ReplyPayload replyPayload = new ReplyPayload(neighbor, SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
         ProcessingContext ctx = new ProcessingContext(replyPayload);
         stage.process(ctx);
@@ -118,7 +129,7 @@ public class ReplyStageTest {
         TangleMockUtils.mockTransaction(tangle, SampleTransaction.CURL_HASH_OF_SAMPLE_TX, null);
 
         ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
-                recentlySeenBytesCache, transactionRequester, random);
+                snapshotProvider, recentlySeenBytesCache, transactionRequester, random);
         ReplyPayload replyPayload = new ReplyPayload(neighbor, SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
         ProcessingContext ctx = new ProcessingContext(replyPayload);
         stage.process(ctx);

@@ -93,8 +93,7 @@ public class TransactionProcessingPipeline {
      * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
      *                               reply stage
      */
-
-    public void init(NeighborRouter neighborRouter, IotaConfig config, TransactionValidator txValidator, Tangle tangle,
+    public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
             SnapshotProvider snapshotProvider, TransactionRequester txRequester, TipsViewModel tipsViewModel,
             LatestMilestoneTracker latestMilestoneTracker) {
         this.recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes(), config.getpDropCacheEntry());

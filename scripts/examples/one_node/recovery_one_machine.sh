@@ -1,8 +1,22 @@
 #!/bin/bash
 
-echo "*******[recovery in single machine]********"
+echo -e "\033[31m *******[recovery in single machine]******** \033[0m"
 
-echo "1. Single txn on machine locally"
+echo -e "\033[31m 1. Single txn on machine locally \033[0m"
+
+echo "reset cli ..."
+
+cli_pid=`ps aux|awk '/python/ && /app.py/ && !/awk/ {print $2}'`
+if [ -n "$cli_pid" ]; then
+  kill -9 $cli_pid
+fi
+
+rm -rf cli.log
+cp cli_conf ../../iota_api/conf
+cd ../../iota_api/
+pyton app.py &> ../examples/one_node/cli.log  &
+cd ../examples/one_node
+sleep 5
 
 iri_pid=`ps aux|awk '/java/ && !/awk/ {print $2}'`
 if [ -n "$iri_pid" ]; then
@@ -84,19 +98,27 @@ curl -s -X GET http://127.0.0.1:5000/get_dag -H 'Content-Type: application/json'
 sleep 2
 
 echo "compare balance between the two execution:"
-diff balance_a.data balance_b.data 
+diff balance_a.data balance_b.data > one_machine.diff 
 
 echo "compare total order"
-diff total_order_a.data total_order_b.data
+diff total_order_a.data total_order_b.data >> one_machine.diff
 
 echo "compare dag"
-diff dag_a.data dag_b.data
+diff dag_a.data dag_b.data >> one_machine.diff
+
+if [ -s  one_machine.diff ]; then
+  cat one_machine.diff
+else
+  echo -e "1.1 single txn one machine validate: \033[32m PASSED \033[0m"
+fi
 
 echo "clean tmp file"
-rm -r balance_* total_order_* dag_*
+rm -r balance_* total_order_* dag_* one_machine.diff
+
+
 
 echo ""
-echo "2.1 multi txn one machine locally"
+echo -e "\033[31m 2.1 multi txn one machine locally \033[0m"
 
 iri_pid=`ps aux|awk '/java/ && !/awk/ {print $2}'`
 if [ -n "$iri_pid" ]; then
@@ -174,14 +196,20 @@ curl -s -X GET http://127.0.0.1:5000/get_dag -H 'Content-Type: application/json'
 sleep 2
 
 echo "compare balance between the two execution:"
-diff balance_a.data balance_b.data 
+diff balance_a.data balance_b.data > one_machine.diff
 
 echo "compare total order"
-diff total_order_a.data total_order_b.data
+diff total_order_a.data total_order_b.data >> one_machine.diff
 
 echo "compare dag"
-diff dag_a.data dag_b.data
+diff dag_a.data dag_b.data >> one_machine.diff
 
-echo "clean tmp file"
+if [ -s  one_machine.diff ]; then
+  cat one_machine.diff
+else
+  echo -e "2.1 multi txns one machine validate: \033[32m PASSED \033[0m"
+fi
+
+echo "clean up tmp file ..."
 rm -r balance_* total_order_* dag_*
 

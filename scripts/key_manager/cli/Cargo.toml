@@ -1,0 +1,22 @@
+[package]
+name = "keymgr"
+version = "0.1.0"
+
+[dependencies]
+docopt = "0.8"
+env_logger = "0.4"
+keylib = { git = "https://github.com/Conflux-Chain/conflux-parity-deps.git", package = "ethkey" }
+panic_hook = { git = "https://github.com/Conflux-Chain/conflux-parity-deps.git" }
+parity-wordlist="1.2"
+rustc-hex = "1.0"
+serde = "1.0"
+serde_derive = "1.0"
+threadpool = "1.7"
+
+[[bin]]
+name = "keymgr"
+path = "src/main.rs"
+doc = false
+
+[workspace] 
+members = [] 

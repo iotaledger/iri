@@ -54,7 +54,7 @@ public class PrunedTransactionProviderImplTest {
         
         Hash[] hashes = new Hash[size];
         for (int i=0; i<size; i++) {
-            hashes[i] = TransactionTestUtils.getRandomTransactionHash();
+            hashes[i] = TransactionTestUtils.getTransactionHash();
             provider.addTransaction(hashes[i]);
             
             if (provider.containsTransaction(hashes[i])){
@@ -64,7 +64,7 @@ public class PrunedTransactionProviderImplTest {
         
         hashes = new Hash[size];
         for (int i=0; i<size; i++) {
-            hashes[i] = TransactionTestUtils.getRandomTransactionHash();
+            hashes[i] = TransactionTestUtils.getTransactionHash();
             if (provider.containsTransaction(hashes[i])){
                 contains++;
             }
@@ -79,12 +79,12 @@ public class PrunedTransactionProviderImplTest {
         int size = 100;
         Hash[] hashes = new Hash[size];
         for (int i=0; i<size; i++) {
-            hashes[i] = TransactionTestUtils.getRandomTransactionHash();
+            hashes[i] = TransactionTestUtils.getTransactionHash();
             provider.addTransaction(hashes[i]);
         }
         
         for (int i=0; i<10000*10; i++) {
-            provider.addTransaction(TransactionTestUtils.getRandomTransactionHash());
+            provider.addTransaction(TransactionTestUtils.getTransactionHash());
         }
 
         // by now, we have added 10 full filters, so the first 100 should not exist anymore (deleted)

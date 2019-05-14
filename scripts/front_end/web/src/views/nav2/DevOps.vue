@@ -5,7 +5,7 @@
 <script>
     export default {
         data() {
-            return {opsUrl: this.ConfigUrls.OPS}
+            return {opsUrl: this.Servers.serverList.opsServer}
         },
         methods: {}
     }

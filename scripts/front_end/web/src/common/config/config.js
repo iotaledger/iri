@@ -36,9 +36,6 @@ export default {
             GET: "GET",
             POST: "POST"
         };
-        Vue.prototype.ConfigUrls = {
-            OPS: "http://140.143.187.24"
-        };
         Vue.prototype.Servers = {
             deployType: [
                 {
@@ -71,7 +68,8 @@ export default {
                 }
             ],
             serverList: {
-                deploymentServer: "http://192.144.152.140:5001"
+                deploymentServer: "http://13.229.201.108:8080",
+                opsServer: "http://13.229.201.108:5001"
             }
         }
     }

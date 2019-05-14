@@ -3,6 +3,7 @@ package com.iota.iri.service.transactionpruning.async;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
@@ -69,6 +70,11 @@ public class AsyncTransactionPruner implements TransactionPruner {
     private SpentAddressesService spentAddressesService;
 
     /**
+     * Used to check whether an address is already persisted in the persistence layer.
+     */
+    private SpentAddressesProvider spentAddressesProvider;
+
+    /**
      * Manager for the tips (required for removing pruned transactions from this manager).
      */
     private TipsViewModel tipsViewModel;
@@ -129,12 +135,15 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * @return the initialized instance itself to allow chaining
      */
     public AsyncTransactionPruner init(Tangle tangle, SnapshotProvider snapshotProvider,
-                                       SpentAddressesService spentAddressesService, TipsViewModel tipsViewModel,
+                                       SpentAddressesService spentAddressesService,
+                                       SpentAddressesProvider spentAddressesProvider,
+                                       TipsViewModel tipsViewModel,
                                        SnapshotConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.spentAddressesService = spentAddressesService;
+        this.spentAddressesProvider = spentAddressesProvider;
         this.tipsViewModel = tipsViewModel;
         this.config = config;
 
@@ -157,6 +166,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
         job.setTransactionPruner(this);
         job.setPrunedProvider(prunedTransactionProvider);
         job.setSpentAddressesService(spentAddressesService);
+        job.setSpentAddressesProvider(spentAddressesProvider);
         job.setTangle(tangle);
         job.setTipsViewModel(tipsViewModel);
         job.setSnapshot(snapshotProvider.getInitialSnapshot());

@@ -1,6 +1,7 @@
 package com.iota.iri.network.replicator;
 
 import com.iota.iri.network.TCPNeighbor;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,8 +105,15 @@ class ReplicatorSinkProcessor implements Runnable {
                                                 while (crc32String.length() < CRC32_BYTES) {
                                                     crc32String = "0"+crc32String;
                                                 }
-                                                out.write(message.array());
-                                                out.write(crc32String.getBytes());
+
+                                                if (replicatorSinkPool.node.optimizeNetworkEnabled) {
+                                                    byte[] both = (byte[]) ArrayUtils.addAll(bytes, crc32String.getBytes());
+                                                    out.write(both);
+                                                } else {
+                                                    out.write(message.array());
+                                                    out.write(crc32String.getBytes());
+                                                }
+
                                                 out.flush();
                                                 neighbor.incSentTransactions();
                                             } catch (IOException e2) {

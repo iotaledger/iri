@@ -552,8 +552,70 @@ public class Node {
         }
     }
 
-    public void preProcessReceivedOptimizedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
+    private void preProcessReceivedBroadcastHash(byte[] receivedData, Neighbor neighbor) {
+        boolean cached = false;
 
+        Hash hash = HashFactory.TRANSACTION.create(receivedData, broadcastFlag.length(), reqHashSize);
+
+        //check if cached
+        synchronized (recentSeenBytes) {
+            cached = recentSeenBytes.containValue(hash);
+        }
+
+        if (cached) {
+            log.debug("Received broadcast hash {}, have seen.", hash);
+        } else if(((LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH")).hasBlock(hash)) {
+            log.debug("Received broadcast hash {}, found in db", hash);
+        } else {
+            log.debug("Received unkown broadcast hash {}, request", hash);
+            try {
+                transactionRequester.requestTransaction(hash, neighbor, false);
+            } catch (Exception e) {
+                log.error("Error adding transaction to request.", e);
+            }
+        }
+    }
+
+    private void preProcessReceivedRequestHash(byte[] receivedData, Neighbor neighbor) {
+
+        //Request bytes
+        Hash requestedHash = HashFactory.TRANSACTION.create(receivedData, requestFlag.length(), reqHashSize);
+
+        log.debug("received request hash {} from {}", requestedHash, neighbor == null?null:neighbor.getAddress());
+
+        //add request to reply queue (requestedHash, neighbor)
+        addReceivedDataToReplyQueue(requestedHash, neighbor);
+    }
+
+    public void preProcessReceivedOptimizedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
+        boolean addressMatch = false;
+        boolean cached = false;
+
+        for (final Neighbor neighbor : getNeighbors()) {
+            addressMatch = neighbor.matches(senderAddress);
+            if (addressMatch) {
+                //Validate transaction
+                neighbor.incAllTransactions();
+
+                if (receivedData.length == transactionSize) {
+                    try {
+                        preProcessReceivedTransaction(receivedData, neighbor);
+                    } catch (RuntimeException e) {
+                        break;
+                    }
+                } else if (receivedData.length == broadcastHashSize) {
+                    preProcessReceivedBroadcastHash(receivedData, neighbor);
+                } else if (receivedData.length == requestHashSize) {
+                    preProcessReceivedRequestHash(receivedData, neighbor);
+                }
+
+                break;
+            }
+        }
+
+        if (!addressMatch && configuration.isTestnet()) {
+            addNeighborFromReceivedData(senderAddress, uriScheme);
+        }
     }
 
     public void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
@@ -652,7 +714,7 @@ public class Node {
                 //transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
                 if(((LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH")).hasBlock(requestedHash)) {
                     transactionViewModel = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(requestedHash.bytes(), 0, reqHashSize));
-                    log.info("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
+                    log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
                 }
             } catch (Exception e) {
                 log.error("Error while searching for transaction.", e);
@@ -725,7 +787,7 @@ public class Node {
 
         synchronized (packet) {
             if (optimizeNetworkEnabled) {
-                if (packet == sendingTransaction) {
+                if (packet.equals(sendingTransaction)) {
                     //log.info("Sending transaction {} to {}...", transactionViewModel.getHash(), neighbor.getAddress());
                     System.arraycopy(transactionViewModel.getBytes(), 0, packet.getData(), 0, TransactionViewModel.SIZE);
                     neighbor.send(packet);

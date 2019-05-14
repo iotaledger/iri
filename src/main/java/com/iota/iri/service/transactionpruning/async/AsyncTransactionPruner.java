@@ -5,6 +5,7 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
+import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJob;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
@@ -111,6 +112,11 @@ public class AsyncTransactionPruner implements TransactionPruner {
     private final Map<Class<? extends TransactionPrunerJob>, JobQueue> jobQueues = new HashMap<>();
 
     /**
+     * Provider for managing transactions we delete from the database in an optimized data structure
+     */
+    private PrunedTransactionProvider prunedTransactionProvider;
+
+    /**
      * This method initializes the instance and registers its dependencies.<br />
      * <br />
      * It simply stores the passed in values in their corresponding private properties.<br />
@@ -158,6 +164,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
     @Override
     public void addJob(TransactionPrunerJob job) throws TransactionPruningException {
         job.setTransactionPruner(this);
+        job.setPrunedProvider(prunedTransactionProvider);
         job.setSpentAddressesService(spentAddressesService);
         job.setSpentAddressesProvider(spentAddressesProvider);
         job.setTangle(tangle);

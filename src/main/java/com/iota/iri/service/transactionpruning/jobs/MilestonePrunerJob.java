@@ -15,6 +15,7 @@ import com.iota.iri.utils.dag.DAGHelper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -240,6 +241,10 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
             });
 
             getTangle().deleteBatch(elementsToDelete);
+            getPrunedProvider().addTransactionBatch(elementsToDelete
+                    .stream()
+                    .map(a -> (Hash) a.low)
+                    .collect(Collectors.toList()));
         } catch(Exception e) {
             throw new TransactionPruningException("failed to cleanup milestone #" + getCurrentIndex(), e);
         }

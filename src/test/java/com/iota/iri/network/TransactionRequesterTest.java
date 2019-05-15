@@ -5,7 +5,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,7 +21,6 @@ import static org.junit.Assert.*;
 public class TransactionRequesterTest {
     private static Tangle tangle = new Tangle();
     private static SnapshotProvider snapshotProvider;
-    private MessageQ mq;
 
     @Before
     public void setUp() throws Exception {
@@ -81,7 +79,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void popEldestTransactionToRequest() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         // Add some Txs to the pool and see if the method pops the eldest one
         Hash eldest = getRandomTransactionHash();
         txReq.requestTransaction(eldest, false);
@@ -102,7 +100,7 @@ public class TransactionRequesterTest {
                 getRandomTransactionHash(),
                 getRandomTransactionHash()
         ));
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < 3; i++) {
@@ -123,7 +121,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void nonMilestoneCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -136,7 +134,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void milestoneCapacityNotLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -149,7 +147,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void mixedCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 4 ; i++) {

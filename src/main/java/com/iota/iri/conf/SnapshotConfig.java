@@ -76,6 +76,16 @@ public interface SnapshotConfig extends Config {
      */
     String getSpentAddressesDbLogPath();
 
+    /**
+     * @return {@value Descriptions#PRUNED_TRANSACTIONS_DB_PATH}
+     */
+    String getPrunedTransactionsDbPath();
+    
+    /**
+     * @return {@value Descriptions#PRUNED_TRANSACTIONS_DB_LOG_PATH}
+     */
+    String getPrunedTransactionsDbLogPath();
+    
     interface Descriptions {
 
         String LOCAL_SNAPSHOTS_ENABLED = "Flag that determines if local snapshots are enabled.";
@@ -94,5 +104,8 @@ public interface SnapshotConfig extends Config {
                 "from previous epochs";
         String SPENT_ADDRESSES_DB_PATH = "The folder where the spent addresses DB saves its data.";
         String SPENT_ADDRESSES_DB_LOG_PATH = "The folder where the spent addresses DB saves its logs.";
+        String PRUNED_TRANSACTIONS_DB_PATH = "The folder where the pruned transactions DB saves its data.";
+        String PRUNED_TRANSACTIONS_DB_LOG_PATH = "The folder where the pruned transactions DB saves its logs.";
     }
+
 }

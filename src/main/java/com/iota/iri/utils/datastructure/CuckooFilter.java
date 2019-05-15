@@ -1,5 +1,7 @@
 package com.iota.iri.utils.datastructure;
 
+import java.util.BitSet;
+
 /**
  * The Cuckoo Filter is a probabilistic data structure that supports fast set membership testing.
  *
@@ -83,4 +85,10 @@ public interface CuckooFilter {
      * @return the amount of stored items
      */
     int size();
+
+    /**
+     * This method returns a copy of all the bits that make up this filter
+     * @return The ilter bits
+     */
+    BitSet getFilterData();
 }

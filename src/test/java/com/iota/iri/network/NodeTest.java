@@ -41,7 +41,7 @@ public class NodeTest {
 
         // set up class under test
         nodeConfig = Mockito.mock(NodeConfig.class);
-        classUnderTest = new Node(null, null, null, null, null, null, nodeConfig);
+        classUnderTest = new Node(null, null, null, null, null, null, nodeConfig, null);
 
         // verify config calls in Node constructor
         verify(nodeConfig).getRequestHashSize();

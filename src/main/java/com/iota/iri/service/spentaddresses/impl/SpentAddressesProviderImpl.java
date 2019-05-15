@@ -54,8 +54,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
                     {{put("spent-addresses", SpentAddress.class);}}, null);
             this.rocksDBPersistenceProvider.init();
             readPreviousEpochsSpentAddresses();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new SpentAddressesException("There is a problem with accessing stored spent addresses", e);
         }
         return this;

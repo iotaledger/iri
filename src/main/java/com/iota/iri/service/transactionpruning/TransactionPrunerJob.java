@@ -121,6 +121,20 @@ public interface TransactionPrunerJob {
      * @param transactionPrunerJobStatus new execution status of the job
      */
     void setStatus(TransactionPrunerJobStatus transactionPrunerJobStatus);
+    
+    /**
+     * Getter for the pruned transaction maintainer.
+     *
+     * @return pruned transaction maintainer of the job.
+     */
+    PrunedTransactionProvider getPrunedProvider();
+    
+    /**
+     * Setter for the pruned transaction maintainer.
+     *
+     * @param prunedTransactionProvider pruned transaction maintainer of the job
+     */
+    void setPrunedProvider(PrunedTransactionProvider prunedTransactionProvider);
 
     /**
      * This method processes the cleanup job and performs the actual pruning.

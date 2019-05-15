@@ -11,6 +11,7 @@ import java.util.BitSet;
  * This class implements the basic contract of the {@link CuckooFilter}.
  */
 public class CuckooFilterImpl implements CuckooFilter {
+    
     /**
      * The amount of times we try to kick elements when inserting before we consider the index to be too full.
      */
@@ -116,6 +117,38 @@ public class CuckooFilterImpl implements CuckooFilter {
         this.capacity = tableSize * bucketSize + 1;
 
         cuckooFilterTable = new CuckooFilterTable(tableSize, bucketSize, fingerPrintSize);
+    }
+    
+    /**
+     * Advanced constructor that allows for fine tuning of the desired filter.
+     *
+     * It first saves a reference to the hash function and then checks the parameters - the finger print size cannot
+     * be bigger than 128 bits because SHA1 generates 160 bits and we use 128 of that for the fingerprint and the rest
+     * for the index.
+     *
+     * After verifying that the passed in parameters are reasonable, we calculate the required size of the
+     * {@link CuckooFilterTable} by increasing the table size exponentially until we can fit the desired item count with
+     * a load factor of <= 0.955. Finally we create the {@link CuckooFilterTable} that will hold our data.
+     *
+     * NOTE: The actual size will be slightly bigger since the size has to be a power of 2 and take the optimal load
+     *       factor of 0.955 into account.
+     *
+     * @param itemCount the minimum amount of items that should fit into the filter
+     * @param bucketSize the amount of items that can be stored in each bucket
+     * @param fingerPrintSize the amount of bits per fingerprint (it has to be bigger than 0 and smaller than 128)
+     * @param filterData The data this filter is initialized with. Must match with the parameters
+     * @throws IllegalArgumentException if the finger print size is too small or too big
+     * @throws InternalError if the SHA1 hashing function can not be found with this java version [should never happen]
+     */
+    public CuckooFilterImpl(int itemCount, int bucketSize, int fingerPrintSize, BitSet filterData) throws IllegalArgumentException,
+            InternalError {
+
+        this(itemCount, bucketSize, fingerPrintSize);
+        
+        if (cuckooFilterTable.data.size() != filterData.size()) {
+            throw new IllegalArgumentException("Filter data does not match filter parameters");
+        }
+        cuckooFilterTable.data = BitSet.valueOf(filterData.toByteArray());
     }
 
     /**
@@ -433,6 +466,11 @@ public class CuckooFilterImpl implements CuckooFilter {
 
         // do a simple conversion of the byte array to a BitSet of the desired length
         return BitSetUtils.convertByteArrayToBitSet(hash, 4, fingerPrintSize);
+    }
+
+    @Override
+    public BitSet getFilterData() {
+        return (BitSet) cuckooFilterTable.data.clone();
     }
 
     /**

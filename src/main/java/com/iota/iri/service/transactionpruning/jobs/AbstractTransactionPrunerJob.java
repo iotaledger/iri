@@ -4,6 +4,7 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
+import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJob;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
@@ -48,6 +49,11 @@ public abstract class AbstractTransactionPrunerJob implements TransactionPrunerJ
      * Holds a reference to the last local or global snapshot that acts as a starting point for the state of ledger.
      */
     private Snapshot snapshot;
+
+    /**
+     * Holds a reference to the provider of pruned transactions, which we will use for speeding up old references checks
+     */
+    private PrunedTransactionProvider prunedTransactionProvider;
 
     /**
      * {@inheritDoc}
@@ -138,7 +144,23 @@ public abstract class AbstractTransactionPrunerJob implements TransactionPrunerJ
     public void setStatus(TransactionPrunerJobStatus status) {
         this.status = status;
     }
-
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PrunedTransactionProvider getPrunedProvider() {
+        return prunedTransactionProvider;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPrunedProvider(PrunedTransactionProvider prunedTransactionProvider) {
+        this.prunedTransactionProvider = prunedTransactionProvider;
+    }
+    
     /**
      * {@inheritDoc}
      */

@@ -55,10 +55,10 @@ public class TransactionValidatorTest {
 
   @Test
   public void testMinMwm() throws InterruptedException {
-    txValidator.init(false, 5);
+    txValidator.init(false, 5, null);
     assertTrue(txValidator.getMinWeightMagnitude() == 13);
     txValidator.shutdown();
-    txValidator.init(false, MAINNET_MWM);
+    txValidator.init(false, MAINNET_MWM, null);
   }
 
   @Test

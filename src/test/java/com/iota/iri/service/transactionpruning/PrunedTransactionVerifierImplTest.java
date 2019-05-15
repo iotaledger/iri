@@ -3,6 +3,8 @@ package com.iota.iri.service.transactionpruning;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import static org.mockito.Mockito.when;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -10,11 +12,14 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.mockito.stubbing.Answer;
 
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.transactionpruning.impl.PrunedTransactionProviderImpl;
@@ -47,8 +52,8 @@ public class PrunedTransactionVerifierImplTest {
     
     @Before
     public void setUp() throws PrunedTransactionException {
-        Mockito.when(config.getPrunedTransactionsDbPath()).thenReturn(dbFolder.getRoot().getAbsolutePath());
-        Mockito.when(config.getPrunedTransactionsDbLogPath()).thenReturn(logFolder.getRoot().getAbsolutePath());
+        when(config.getPrunedTransactionsDbPath()).thenReturn(dbFolder.getRoot().getAbsolutePath());
+        when(config.getPrunedTransactionsDbLogPath()).thenReturn(logFolder.getRoot().getAbsolutePath());
 
         verifier = new PrunedTransactionVerifierImpl(provider, requester);
     }
@@ -60,7 +65,7 @@ public class PrunedTransactionVerifierImplTest {
 
     @Test
     public void isPossiblyPrunedTest() throws PrunedTransactionException {
-        Mockito.when(provider.containsTransaction(A)).thenReturn(true);
+        when(provider.containsTransaction(A)).thenReturn(true);
         
         assertTrue("A should be seen as pruned", verifier.isPossiblyPruned(A));
         assertFalse("B should not be seen as pruned", verifier.isPossiblyPruned(B));
@@ -75,22 +80,51 @@ public class PrunedTransactionVerifierImplTest {
     }
     
     @Test
-    public void completePruneCheckTest() throws PrunedTransactionException {
+    public void completePruneCheckTest() throws Exception {
         // 10 hashes in the pruner is enough to verify
         // 0 -> 1 -> 3 -> 7
         //        -> 4 -> 8
         //      2 -> 5 -> 9
         //        -> 6
             
-        /* This makes no sense to do now, will continue after PR #1363
         TransactionViewModel[] tvms = new TransactionViewModel[10];
-        tvms[9] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getRandomTransactionTrits());
-        tvms[8] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getRandomTransactionTrits());
-        tvms[7] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getRandomTransactionTrits());
-        tvms[6] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getRandomTransactionTrits());
+        tvms[9] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getTransactionTrits());
+        tvms[8] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getTransactionTrits());
+        tvms[7] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getTransactionTrits());
+        tvms[6] = TransactionTestUtils.createTransactionFromTrits(TransactionTestUtils.getTransactionTrits());
            
-        tvms[5] = TransactionTestUtils.createTransactionWithTrunkAndBranch(TransactionTestUtils., trunk, branch)
-         */
+        tvms[5] = c(TransactionTestUtils.getTransactionTritsWithTrunkAndBranch(tvms[9].getHash(), tvms[9].getHash()));
+        tvms[4] = c(TransactionTestUtils.getTransactionTritsWithTrunkAndBranch(tvms[8].getHash(), tvms[8].getHash()));
+        tvms[3] = c(TransactionTestUtils.getTransactionTritsWithTrunkAndBranch(tvms[7].getHash(), tvms[7].getHash()));
+        
+        tvms[2] = c(TransactionTestUtils.getTransactionTritsWithTrunkAndBranch(tvms[5].getHash(), tvms[6].getHash()));
+        tvms[1] = c(TransactionTestUtils.getTransactionTritsWithTrunkAndBranch(tvms[3].getHash(), tvms[4].getHash()));
+        
+        tvms[0] = c(TransactionTestUtils.getTransactionTritsWithTrunkAndBranch(tvms[1].getHash(), tvms[2].getHash()));
+        
+        // Mock network request/response on the transactions
+        for (TransactionViewModel tvm : tvms) {
+            Mockito.doAnswer(new Answer<Void>() {
+                public Void answer(InvocationOnMock invocation) {
+                    try {
+                        verifier.submitTransaction(tvm);
+                    } catch (PrunedTransactionException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                }
+            }).when(requester).requestTransaction(tvm.getHash(), false);
+            
+            // Mock as pruned
+            when(provider.containsTransaction(tvm.getHash())).thenReturn(true);
+        }
+        
+        // Requests are handled directly (DFS), so it should mark pruned!
+        assertTrue("After checking 10 transactions, hash should be marked as pruned", 
+                verifier.isPruned(tvms[0].getHash()));
     }
     
+    private TransactionViewModel c(byte[] trits) {
+        return TransactionTestUtils.createTransactionFromTrits(trits);
+    }
 }

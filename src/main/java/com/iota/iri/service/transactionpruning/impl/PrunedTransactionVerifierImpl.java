@@ -70,7 +70,11 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
         }
         
         if (!prunedHashTest.containsKey(hash)) {
-            initializeVerify(hash);
+            try {
+                initializeVerify(hash);
+            } catch (Exception e) {
+                throw new PrunedTransactionException("Failed to initialize pruned lookup", e);
+            }
         }
         
         return prunedHashTest.get(hash) >= PRUNED_CERTAIN; 
@@ -99,14 +103,16 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
                 return;
             }
             
-            List<Hash> parents = addParentForChild(parent, child);
+            List<Hash> parents = getParentsFor(child);
             
             // It could that they already got referenced through another tx
             try {
                 if (!parents.contains(receivedTransactionViewModel.getBranchTransactionHash())){
+                    parents.add(receivedTransactionViewModel.getBranchTransactionHash());
                     request(receivedTransactionViewModel.getBranchTransactionHash());
                 }
                 if (!parents.contains(receivedTransactionViewModel.getTrunkTransactionHash())){
+                    parents.add(receivedTransactionViewModel.getTrunkTransactionHash());
                     request(receivedTransactionViewModel.getTrunkTransactionHash());
                 }
             } catch (Exception e) {
@@ -139,6 +145,13 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
     }
 
     private List<Hash> addParentForChild(Hash parent, Hash child) {
+        List<Hash> list = getParentsFor(child);
+        
+        list.add(parent);
+        return list;
+    }
+
+    private List<Hash> getParentsFor(Hash child) {
         if (parents == null) {
             parents = new HashMap<>();
         }
@@ -150,14 +163,13 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
             list = new LinkedList<>();
             parents.put(child, list);
         }
-        
-        list.add(parent);
         return list;
     }
     
-    private void initializeVerify(Hash hash) {
+    private void initializeVerify(Hash hash) throws Exception {
         addParentForChild(hash, hash);
         prunedHashTest.put(hash, 1);
+        request(hash);
     }
     
     private Hash getChildForParent(Hash parent) {

@@ -12,6 +12,11 @@ import com.iota.iri.service.transactionpruning.PrunedTransactionException;
 import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
 import com.iota.iri.service.transactionpruning.PrunedTransactionVerifier;
 
+/**
+ * Verifies the pruned state of a transaction hash by checking each parent the transaction references
+ * This is done until one transaction is found not to be pruned, or 10 transactions referencing this hash 
+ * are found to be pruned.
+ */
 public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier {
     
     private static final int PRUNED_CERTAIN = 10;
@@ -31,12 +36,16 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
     private Map<Hash, List<Hash>> parents;
     
     /**
-     * Map of requested tx and our certainty it beeing pruned
+     * Map of requested tx and our certainty it being pruned
      */
     private Map<Hash, Integer> prunedHashTest;
 
-
-
+    /**
+     * Creates a pruned transaction verifier
+     * 
+     * @param provider The provider we use to check for a pruned transaction
+     * @param requester Used to request transaction parents of a hash for verifying the pruned state
+     */
     public PrunedTransactionVerifierImpl(PrunedTransactionProvider provider, TransactionRequester requester) {
         this.provider = provider;
         this.requester = requester;
@@ -48,8 +57,8 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
     /**
      * Should be called before adding the transaction hash to ensure the initial hash is pruned
      *  
-     * @return
-     * @throws PrunedTransactionException 
+     * @return <code>true</code> if it could be pruned, <code>false</code> if it definitely wasn't pruned
+     * @throws PrunedTransactionException If the provider fails to check the transaction
      */
     @Override
     public boolean isPossiblyPruned(Hash hash) throws PrunedTransactionException {
@@ -89,7 +98,7 @@ public class PrunedTransactionVerifierImpl implements PrunedTransactionVerifier 
         Hash parent = receivedTransactionViewModel.getHash();
         Hash child = getChildForParent(parent);
         if (child == null || isPruned(child)) {
-            // We succeeded in the meantime.
+            // We succeeded in the meantime or we were not waiting for this at all
             return;
         }
         

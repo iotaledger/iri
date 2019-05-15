@@ -20,10 +20,8 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 
 import static com.iota.iri.TransactionTestUtils.getRandomTransaction;
 import static com.iota.iri.TransactionTestUtils.get9Transaction;
@@ -53,9 +51,6 @@ public class TransactionRequesterWorkerImplTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private static SnapshotProvider snapshotProvider;
     
-    @Mock
-    private static MessageQ messageQ;
-    
     private static TransactionRequester requester;
     private static TransactionRequesterWorkerImpl worker;
 
@@ -70,7 +65,7 @@ public class TransactionRequesterWorkerImplTest {
 
     @Before
     public void before() {
-        requester = new TransactionRequester(tangle, snapshotProvider, messageQ);
+        requester = new TransactionRequester(tangle, snapshotProvider);
         
         worker = new TransactionRequesterWorkerImpl();
         worker.init(tangle, requester, tipsVM, node);

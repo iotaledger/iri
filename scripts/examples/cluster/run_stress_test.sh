@@ -16,26 +16,28 @@ DATA=$3
 if [ ${TOPOLOGY} != "4_circle" -a ${TOPOLOGY} != "4_clique" -a ${TOPOLOGY} != "7_circle" -a ${TOPOLOGY} != "7_clique" -a ${TOPOLOGY} != "7_bridge" -a ${TOPOLOGY} != "7_star" ];
 then
     echo "configure 3" ${TOPOLOGY} ${DATA}
-    sudo cp conf_info/nginx/nginx3.conf /etc/nginx/nginx.conf
+    sudo cp conf_info/nginx/aws/nginx3.conf /etc/nginx/nginx.conf
 elif [ ${TOPOLOGY} != "3_clique" -a ${TOPOLOGY} != "7_circle" -a ${TOPOLOGY} != "7_clique" -a ${TOPOLOGY} != "7_bridge" -a ${TOPOLOGY} != "7_star" ];
 then
     echo "configure 4 "${TOPOLOGY} ${DATA}
-    sudo cp conf_info/nginx/nginx4.conf /etc/nginx/nginx.conf
+    sudo cp conf_info/nginx/aws/nginx4.conf /etc/nginx/nginx.conf
 elif [ ${TOPOLOGY} != "4_clique" -a ${TOPOLOGY} != "4_circle" -a ${TOPOLOGY} != "3_clique" ];
 then
     echo "configure 7" ${TOPOLOGY} ${DATA}
-    sudo cp conf_info/nginx/nginx7.conf /etc/nginx/nginx.conf
+    sudo cp conf_info/nginx/aws/nginx7.conf /etc/nginx/nginx.conf
 fi
 sudo nginx -s stop
 sleep 2
+sudo nginx
 # generate data
 sudo python data_generate.py ${DATA}
 echo "run bootstrapping"
 sudo sed 's/NUM_CALL/500/g' PerformanceTestDAG2TM_TPS.jmx | sudo tee   PerformanceTest.jmx >  /dev/null
 sudo sed 's/NUM_THREAD/1/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx > /dev/null
-sudo sed 's/PORT/5000/g' PerformanceTest1.jmx | sudo tee   PerformanceTest.jmx > /dev/null
+sudo sed 's/PORT/5001/g' PerformanceTest1.jmx | sudo tee   PerformanceTest.jmx > /dev/null
 sudo sed 's/DATA/data/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx > /dev/null
-sudo ${JM_HOME}/jmeter -n -t PerformanceTest1.jmx
+sudo sed 's/put_cache/put_file/g' PerformanceTest1.jmx | sudo tee PerformanceTest.jmx > /dev/null
+sudo ${JM_HOME}/jmeter -n -t PerformanceTest.jmx
 
 echo "run experiment"
 sudo sed 's/NUM_CALL/'${DATA}'/g' PerformanceTestDAG2TM_TPS.jmx | sudo tee   PerformanceTest.jmx >  /dev/null
@@ -44,5 +46,3 @@ sudo sed 's/PORT/80/g' PerformanceTest1.jmx | sudo tee   PerformanceTest.jmx >  
 sudo sed 's/DATA/data1/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx >  /dev/null
 sudo ${JM_HOME}/jmeter -n -t PerformanceTest1.jmx
 sleep 20
-# configure iri
-#python server_deploy_batch.py clear $2

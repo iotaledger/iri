@@ -1,4 +1,4 @@
-defaults: &db_1
+defaults: &stitching_tests_config_files
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Stitching_tests_db.tar
   db_checksum: ac987dc8e61e37d6420e78da18c4cf94671f51e8014b4dd593f36bbd4fb0cfc1
   iri_args: ['--testnet-coordinator',
@@ -8,7 +8,9 @@ defaults: &db_1
   '--milestone-start',
   '2',
   '--testnet-no-coo-validation',
-  '--testnet'
+  'true',
+  '--testnet',
+  'true'
   ]
 
   
@@ -18,7 +20,7 @@ seeds: # For internal use by the regression system.
 
 nodes:
   nodeA: #name
-    <<: *db_1
+    <<: *stitching_tests_config_files
   
   nodeB:
-    <<: *db_1
+    <<: *stitching_tests_config_files

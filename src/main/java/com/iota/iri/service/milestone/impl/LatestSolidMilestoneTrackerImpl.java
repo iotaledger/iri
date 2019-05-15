@@ -14,7 +14,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
-import com.iota.iri.zmq.MessageQ;
 
 import java.util.concurrent.TimeUnit;
 
@@ -66,11 +65,6 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private LedgerService ledgerService;
 
     /**
-     * Holds a reference to the ZeroMQ interface that allows us to emit messages for external recipients.<br />
-     */
-    private MessageQ messageQ;
-
-    /**
      * Holds a reference to the manager of the background worker.<br />
      */
     private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
@@ -108,19 +102,17 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * @param milestoneService contains the important business logic when dealing with milestones
      * @param ledgerService the manager for
      * @param latestMilestoneTracker the manager that keeps track of the latest milestone
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @return the initialized instance itself to allow chaining
      */
     public LatestSolidMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
             MilestoneService milestoneService, LedgerService ledgerService,
-            LatestMilestoneTracker latestMilestoneTracker, MessageQ messageQ) {
+            LatestMilestoneTracker latestMilestoneTracker) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.milestoneService = milestoneService;
         this.ledgerService = ledgerService;
         this.latestMilestoneTracker = latestMilestoneTracker;
-        this.messageQ = messageQ;
 
         return this;
     }
@@ -277,8 +269,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
         if (prevSolidMilestoneIndex != latestMilestoneIndex) {
             log.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + latestMilestoneIndex);
 
-            messageQ.publish("lmsi %d %d", prevSolidMilestoneIndex, latestMilestoneIndex);
-            messageQ.publish("lmhs %s", latestMilestoneHash);
+            tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, latestMilestoneIndex);
+            tangle.publish("lmhs %s", latestMilestoneHash);
         }
     }
 

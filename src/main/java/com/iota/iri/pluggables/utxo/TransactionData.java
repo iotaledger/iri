@@ -88,6 +88,7 @@ public class TransactionData {
                     for (Txn txn: batchTxns.txn_content) {
                         transactions.add(txn);
                         putIndex(txn, (TransactionHash)one.low);
+                        addTxn(txn);
                     }
 
                 }

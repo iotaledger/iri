@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/triasteam/StreamNet/document/pictures/StreamNet.png" alt="StreamNet Logo" title="StreamNet"/></p>
+<p align="center"><img src="https://github.com/triasteam/StreamNet/blob/dev/document/pictures/StreamNet.png" alt="StreamNet Logo" title="StreamNet"/></p>
 
 [![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iotaledger/iri&amp;utm_campaign=Badge_Grade)

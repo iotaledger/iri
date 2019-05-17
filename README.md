@@ -103,4 +103,12 @@ Please refere [[Performance tunning]](https://github.com/triasteam/iri/blob/dev/
 
 ## 2.2 Cluster deployment 
 
-Please refere [[Cluster deployment]](https://github.com/triasteam/iri/blob/dev/scripts/examples/cluster/README.md) for details of how to deploy multiple nodes. 
+Please refer [[Cluster deployment]](https://github.com/triasteam/iri/blob/dev/scripts/examples/cluster/README.md) for details of how to deploy multiple nodes.
+
+## 2.3 Frontend deployment
+
+Please refer [[Frontend deployment]](https://github.com/triasteam/StreamNet/blob/dev/scripts/front_end/web/README.md) for details of how to deploy the frontend
+
+## 2.4 Portainer deployment 
+
+Please refer [[Portainer deployment]](https://github.com/triasteam/StreamNet/blob/dev/document/iota_deploy/portainer-deploy-info.md) for details of how to leverage the portainer to manage containers

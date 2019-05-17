@@ -41,20 +41,25 @@ def stress_experiment():
         print("[ERROR] topology are needed.", file=sys.stderr)
         return 'error'
     topology = req_json[u'topology']
-    image_tag = req_json[u'image_tag']
-    exp_data = req_json[u'stress_data']
-    if topology == 'all_topology':
+    ptype = req_json[u'type']
+    if topology == u'all_topology':
         try:
-            shcmd('run.sh',image_tag)
+            enableflag = req_json[u'flag']
+            image_tag = req_json[u'image_tag']
+            print(topology, image_tag, enableflag,ptype)
+            file_log = "stress_test_total.log"
+            shcmd('run_test.sh',image_tag,enableflag,ptype,_out=file_log,_bg=True)
             return 'sucess'
         except Exception:
             return 'false'
     else:
         try:
-	    print("stress test begin")
+            exp_data = req_json[u'stress_data']
+            print("stress test begin")
             file_log = "stress_test.log"
-            shcmd('run_stress_test.sh',topology,image_tag,exp_data,_out=file_log,_bg=True)
-	    return 'sucess'
+            print("input param %s %s %s"%(topology,exp_data,ptype))
+            shcmd('run_stress_test.sh',topology,exp_data,ptype,_out=file_log,_bg=True)
+            return 'sucess'
         except Exception:
             return 'false'
 

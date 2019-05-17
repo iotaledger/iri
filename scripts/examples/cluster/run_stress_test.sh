@@ -12,7 +12,8 @@ sleep 60
 
 # restart nginx
 TOPOLOGY=$1
-DATA=$3
+DATA=$2
+TYPE=$3
 if [ ${TOPOLOGY} != "4_circle" -a ${TOPOLOGY} != "4_clique" -a ${TOPOLOGY} != "7_circle" -a ${TOPOLOGY} != "7_clique" -a ${TOPOLOGY} != "7_bridge" -a ${TOPOLOGY} != "7_star" ];
 then
     echo "configure 3" ${TOPOLOGY} ${DATA}
@@ -44,5 +45,6 @@ sudo sed 's/NUM_CALL/'${DATA}'/g' PerformanceTestDAG2TM_TPS.jmx | sudo tee   Per
 sudo sed 's/NUM_THREAD/2/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx >  /dev/null
 sudo sed 's/PORT/80/g' PerformanceTest1.jmx | sudo tee   PerformanceTest.jmx >  /dev/null
 sudo sed 's/DATA/data1/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx >  /dev/null
-sudo ${JM_HOME}/jmeter -n -t PerformanceTest1.jmx
+sudo sed 's/put_cache/'${TYPE}'/g' PerformanceTest1.jmx | sudo tee PerformanceTest.jmx > /dev/null
+sudo ${JM_HOME}/jmeter -n -t PerformanceTest.jmx
 sleep 20

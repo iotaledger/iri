@@ -111,4 +111,4 @@ Please refer [[Frontend deployment]](https://github.com/triasteam/StreamNet/blob
 
 ## 2.4 Portainer deployment 
 
-Please refer [[Portainer deploymnet]](https://github.com/triasteam/StreamNet/blob/dev/document/iota_deploy/portainer-deploy-info.md) for details of how to leverage the portainer to manage containers
+Please refer [[Portainer deployment]](https://github.com/triasteam/StreamNet/blob/dev/document/iota_deploy/portainer-deploy-info.md) for details of how to leverage the portainer to manage containers

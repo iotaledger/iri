@@ -104,7 +104,7 @@ public class Iota {
     public final Node node;
     public final UDPReceiver udpReceiver;
     public final Replicator replicator;
-    public final IotaConfig configuration;
+    private final IotaConfig configuration;
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
 

@@ -127,14 +127,13 @@ public class API {
 
     //Package Private For Testing
     final Map<ApiCommand, Function<Map<String, Object>, AbstractResponse>> commandRoute;
-    
-    
+
     private RestConnector connector;
 
     /**
      * Starts loading the IOTA API, parameters do not have to be initialized.
      * 
-     * @param configuration 
+     * @param configuration Holds IRI configuration parameters.
      * @param ixi If a command is not in the standard API, 
      *            we try to process it as a Nashorn JavaScript module through {@link IXI}
      * @param transactionRequester Service where transactions get requested
@@ -650,26 +649,16 @@ public class API {
       **/
     @Document(name="storeTransactions")
     public AbstractResponse storeTransactionsStatement(List<String> trytes) throws Exception {
-        final List<TransactionViewModel> elements = new LinkedList<>();
-        byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
-        for (final String trytesPart : trytes) {
-            //validate all trytes
-            Converter.trits(trytesPart, txTrits, 0);
-            final TransactionViewModel transactionViewModel = transactionValidator.validateTrits(txTrits,
-                    transactionValidator.getMinWeightMagnitude());
-            elements.add(transactionViewModel);
-        }
-
+        final List<TransactionViewModel> elements = convertTrytes(trytes);
         for (final TransactionViewModel transactionViewModel : elements) {
             //store transactions
             if(transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot())) {
-                transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+                transactionViewModel.setArrivalTime(System.currentTimeMillis());
                 transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "sender");
             }
         }
-        
         return AbstractResponse.createEmptyResponse();
     }
 
@@ -1076,16 +1065,7 @@ public class API {
       **/
     @Document(name="broadcastTransactions")
     public AbstractResponse broadcastTransactionsStatement(List<String> trytes) {
-        final List<TransactionViewModel> elements = new LinkedList<>();
-        byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
-        for (final String tryte : trytes) {
-            //validate all trytes
-            Converter.trits(tryte, txTrits, 0);
-            final TransactionViewModel transactionViewModel = transactionValidator.validateTrits(
-                    txTrits, transactionValidator.getMinWeightMagnitude());
-
-            elements.add(transactionViewModel);
-        }
+        final List<TransactionViewModel> elements = convertTrytes(trytes);
         for (final TransactionViewModel transactionViewModel : elements) {
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
@@ -1707,4 +1687,18 @@ public class API {
             }
         };
     }
+
+    private List<TransactionViewModel> convertTrytes(List<String> trytes) {
+        final List<TransactionViewModel> elements = new LinkedList<>();
+        byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        for (final String trytesPart : trytes) {
+            //validate all trytes
+            Converter.trits(trytesPart, txTrits, 0);
+            final TransactionViewModel transactionViewModel = transactionValidator.validateTrits(txTrits,
+                    transactionValidator.getMinWeightMagnitude());
+            elements.add(transactionViewModel);
+        }
+        return elements;
+    }
+
 }

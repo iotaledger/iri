@@ -12,7 +12,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.longThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class APITest {
@@ -40,11 +45,12 @@ public class APITest {
         api.storeTransactionsStatement(Collections.singletonList("FOO"));
 
         verify(transaction).setArrivalTime(longThat(this::isCloseToCurrentMillis));
+
     }
 
     private boolean isCloseToCurrentMillis(Long arrival) {
         long now = System.currentTimeMillis();
-        return arrival > now - 1000 && arrival < now;
+        return arrival > now - 1000 && arrival <= now;
     }
 
 }

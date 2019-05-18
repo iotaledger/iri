@@ -21,7 +21,12 @@ import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.longThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NodeTest {
@@ -82,7 +87,7 @@ public class NodeTest {
 
     private boolean isCloseToCurrentMillis(Long arrival) {
         long now = System.currentTimeMillis();
-        return arrival > now - 1000 && arrival < now;
+        return arrival > now - 1000 && arrival <= now;
     }
 
 

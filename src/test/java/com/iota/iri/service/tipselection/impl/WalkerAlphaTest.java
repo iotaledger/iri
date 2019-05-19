@@ -58,7 +58,8 @@ public class WalkerAlphaTest {
         tangle.init();
 
         TailFinder tailFinder = Mockito.mock(TailFinder.class);
-        Mockito.when(tailFinder.findTail(Mockito.any(Hash.class))).then(args -> Optional.of(args.getArgument(0)));
+        Mockito.when(tailFinder.findTail(Mockito.any(Hash.class)))
+                .then(args -> Optional.of(args.getArgument(0)));
         walker = new WalkerAlpha(tailFinder, tangle, new Random(1), new MainnetConfig());
     }
 

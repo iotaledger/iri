@@ -7,17 +7,18 @@
 \KwIn{ Graph $G=<B, g, P, E>$ }
 
     \While {Node is running}{
-        \uIf{Received or Generate block $b$}{
+        \uIf{Generate block $b$}{
+            Broadcast $b$ to neighbors \;
+        } 
+        \uIf{Receive block $b$}{
             $h \gets Hash(b)$ \;
             $cache[h] \gets b$ \;
             Broadcast $h$ to neighbors \;
         } 
-
-        \uIf{Received request of $h$ from neighbor $n$ }{
+        \uIf{Received request $h$ from neighbor $n$ }{
             $b \gets cache[h]$ \;
             Send $b$ to $n$ \;
         } 
-
         \uIf{Received hash $h$ from neighbor $n$}{
             $b \gets cache[h]$ \;
             \uIf{ $b = NULL $ } {  
@@ -26,7 +27,7 @@
         } 
     }
 
-\caption{{ Gossip Algorithm.}}
+\caption{{ The Direct Signal Gossip Algorithm.}}
 \label{algo:gossip}
 \end{algorithm}
 \DecMargin{1em}

@@ -215,7 +215,7 @@ public class TransactionViewModel {
 
     /**
      * Converts the given byte array to the a new trit array of length {@value TRINARY_SIZE}.
-     *
+     * 
      * @param transactionBytes The byte array to be converted to trits
      * @return The trit conversion of the byte array
      */
@@ -318,7 +318,7 @@ public class TransactionViewModel {
 
     /**
      * Deletes the {@link Transaction} object from the database
-     *
+     * 
      * @param tangle The tangle reference for the database
      * @throws Exception Thrown if there is an error removing the object
      */
@@ -435,7 +435,7 @@ public class TransactionViewModel {
 
     /**
      * Sets the {@link Transaction#arrivalTime}.
-     *
+     * 
      * @param time The time to be set in the {@link Transaction}
      */
     public void setArrivalTime(long time) {
@@ -609,7 +609,7 @@ public class TransactionViewModel {
      * Updates the {@link Transaction#validity} in the database.
      *
      * The validity can be one of three states: <tt>1: Valid; -1: Invalid; 0: Unknown</tt>
-     *
+     * 
      * @param tangle The tangle reference for the database
      * @param initialSnapshot snapshot that acts as genesis
      * @param validity The state of validity that the {@link Transaction} will be updated to
@@ -634,7 +634,7 @@ public class TransactionViewModel {
 
     /**
      * Creates an array copy of the signature message fragment of the {@link Transaction} and returns it.
-     *
+     * 
      * @return The signature message fragment in array format.
      */
     public byte[] getSignature() {
@@ -801,7 +801,7 @@ public class TransactionViewModel {
 
     /**
      * Updates the {@link Transaction#height}.
-     *
+     * 
      * @param height The new height of the {@link Transaction}
      */
     private void updateHeight(long height) throws Exception {
@@ -841,7 +841,7 @@ public class TransactionViewModel {
 
     /**
      * Updates the {@link Transaction#sender}.
-     *
+     * 
      * @param sender The sender of the {@link Transaction}
      */
     public void updateSender(String sender) throws Exception {
@@ -882,3 +882,4 @@ public class TransactionViewModel {
         return "transaction " + hash.toString();
     }
 }
+

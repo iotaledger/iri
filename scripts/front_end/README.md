@@ -5,27 +5,30 @@
 download -> install -> run mysql on you machine
 
 loggin with root to create trias user create databases and grant privileges
-```
+```bash  
+mysql -u root
 create user 'trias'@'%' identified by '123456';
 create database trias_cli;
 create database trias;
+grant all privileges on trias.* to trias@'%';
+grant all privileges on trias_cli.* to trias@'%';
 ```
 
 source tables into database
-```
+```bash
 cd scripts/front_end/trias-oauth/oauth-server/src/main/resources/db/
-mysql mysql -u trias -p trias
+mysql -u trias -p trias
 source trias_server-init.sql
 
 cd scripts/front_end/trias-oauth/oauth-resource/src/main/resources/db 
-mysql mysql -u trias -p trias_cli
+mysql -u trias -p trias_cli
 source trias_cli-init.sql 
 ```
 
 ### OAuth server / client set up
 
 start oauth and oauth cli
-```
+```bash
 cd scripts/front_end/trias-oauth/oauth-resource/target/
 java -jar oauth-resource-1.0-SNAPSHOT.jar 
 
@@ -122,3 +125,4 @@ npm run build
         You should use your own nginx root config
 ## License
 [MIT](http://opensource.org/licenses/MIT)
+

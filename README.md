@@ -107,7 +107,7 @@ Please refer [[Cluster deployment]](https://github.com/triasteam/iri/blob/dev/sc
 
 ## 2.3 Frontend deployment
 
-Please refer [[Frontend deployment]](https://github.com/triasteam/StreamNet/blob/dev/scripts/front_end/web/README.md) for details of how to deploy the frontend
+Please refer [[Frontend deployment]](https://github.com/triasteam/StreamNet/blob/dev/scripts/front_end/README.md) for details of how to deploy the frontend
 
 ## 2.4 Portainer deployment 
 

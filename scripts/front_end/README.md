@@ -16,6 +16,7 @@ grant all privileges on trias_cli.* to trias@'%';
 
 source tables into database
 ```bash
+mvn package
 cd scripts/front_end/trias-oauth/oauth-server/src/main/resources/db/
 mysql -u trias -p trias
 source trias_server-init.sql

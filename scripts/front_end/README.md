@@ -1,6 +1,45 @@
-## To start
+## OAuth configuration
 
-This is a project template for [vue-cli](https://github.com/vuejs/vue-cli)
+### mysql set up
+
+download -> install -> run mysql on you machine
+
+loggin with root to create trias user create databases and grant privileges
+```bash  
+mysql -u root
+create user 'trias'@'%' identified by '123456';
+create database trias_cli;
+create database trias;
+grant all privileges on trias.* to trias@'%';
+grant all privileges on trias_cli.* to trias@'%';
+```
+
+source tables into database
+```bash
+mvn package
+cd scripts/front_end/trias-oauth/oauth-server/src/main/resources/db/
+mysql -u trias -p trias
+source trias_server-init.sql
+
+cd scripts/front_end/trias-oauth/oauth-resource/src/main/resources/db 
+mysql -u trias -p trias_cli
+source trias_cli-init.sql 
+```
+
+### OAuth server / client set up
+
+start oauth and oauth cli
+```bash
+cd scripts/front_end/trias-oauth/oauth-resource/target/
+java -jar oauth-resource-1.0-SNAPSHOT.jar 
+
+cd scripts/front_end/trias-oauth/oauth-server/target 
+java -jar oauth-server-1.0-SNAPSHOT.jar
+```
+
+## To start server
+
+This document is based ontemplate for [vue-cli](https://github.com/vuejs/vue-cli)
 
 ``` bash
 # install dependencies
@@ -87,3 +126,4 @@ npm run build
         You should use your own nginx root config
 ## License
 [MIT](http://opensource.org/licenses/MIT)
+

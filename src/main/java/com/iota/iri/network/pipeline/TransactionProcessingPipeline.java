@@ -96,7 +96,7 @@ public class TransactionProcessingPipeline {
     public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
             SnapshotProvider snapshotProvider, TransactionRequester txRequester, TipsViewModel tipsViewModel,
             LatestMilestoneTracker latestMilestoneTracker) {
-        this.recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes(), config.getpDropCacheEntry());
+        this.recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
                 snapshotProvider, recentlySeenBytesCache, txRequester);

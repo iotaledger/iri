@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * The {@link FIFOCache} is a simple FIFO cache which removes entries at the front of the queue when the capacity is
- * reached. The {@link FIFOCache} might also randomly drop entries defined as per the given drop rate.
+ * reached.
  * 
  * @param <K> the key type
  * @param <V> the value type
@@ -22,19 +22,15 @@ public class FIFOCache<K, V> {
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
     private final int capacity;
-    private final double dropRate;
     private LinkedHashMap<K, V> map;
-    private final SecureRandom rnd = new SecureRandom();
 
     /**
      * Creates a new {@link FIFOCache}.
      * 
      * @param capacity the maximum capacity of the cache
-     * @param dropRate the rate at which to randomly drop entries
      */
-    public FIFOCache(int capacity, double dropRate) {
+    public FIFOCache(int capacity) {
         this.capacity = capacity;
-        this.dropRate = dropRate;
         this.map = new LinkedHashMap<>();
     }
 

@@ -8,6 +8,7 @@
                        @change="chooseDeployTopology">
                 <el-option
                         v-for="item in deployType"
+                        v-if="!item.experiment"
                         :key="item.name"
                         :label="item.name"
                         :value="item.value"

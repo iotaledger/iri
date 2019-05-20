@@ -65,12 +65,20 @@ export default {
                 {
                     name: "7_star",
                     value: "7_star"
+                },
+                {
+                    name: "all_topology",
+                    value: "all_topology",
+                    experiment: true
                 }
             ],
             serverList: {
                 deploymentServer: "http://13.229.201.108:8080",
                 opsServer: "http://13.229.201.108:5001"
             }
-        }
-    }
+        };
+
+        Vue.prototype.oauthResource = "http://localhost:9081/trias-resource";
+    },
+    oauthResource : "http://localhost:9081/trias-resource"
 }

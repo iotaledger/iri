@@ -28,6 +28,15 @@
             <el-input v-model="form.dataCount" type="number" class="input-small" @change="setTotalCount" min="0"/>
         </el-form-item>
         <el-form-item>
+            <div class="label-div">
+                <label>Use Cache:</label>
+            </div>
+            <el-radio-group v-model="form.flag" @change="setFlag">
+                <el-radio label="true">true</el-radio>
+                <el-radio label="false">false</el-radio>
+            </el-radio-group>
+        </el-form-item>
+        <el-form-item>
             <el-button type="success" @click="deploy">Start Stress</el-button>
         </el-form-item>
     </el-form>
@@ -42,7 +51,8 @@
                 form: {
                     deployTopology: "",
                     fileVersion: "",
-                    dataCount: 0
+                    dataCount: 0,
+                    flag: "true"
                 },
                 deployType: this.Servers.deployType
             }
@@ -62,6 +72,9 @@
                 }
                 requestData.stress_data = val;
             },
+            setFlag(val) {
+                requestData.type = val === "true"?"put_cache":"put_file";
+            },
             deploy() {
                 if (!requestData.topology || !requestData.image_tag || requestData.stress_data * 1 === 0) {
                     this.$alert("Please input the correct parameters", this.messageOption.warning);
@@ -71,13 +84,14 @@
                 request.requestUrl = this.Servers.serverList.deploymentServer + "/stress_experiment";
                 request.requestData = JSON.stringify(requestData);
                 request.requestMethod = this.requestMethod.POST;
+                request.type =
                 this.$confirm("Are you sure to post stress data?", "Tips", {
                     type: "warning",
                     confirmButtonText: "OK",
                     cancelButtonText: "Cancel"
                 }).then(() => {
                     this.axios.post("/api/QueryNodeDetail", request).then((res) => {
-                        this.$alert("Success",this.messageOption.success);
+                        this.$alert("Success", this.messageOption.success);
                         console.log(res);
                     }).catch((err) => {
                         console.error(err);

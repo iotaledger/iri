@@ -12,9 +12,10 @@
   "dependencies": {
     "axios": "^0.15.3",
     "echarts": "^3.8.5",
-    "font-awesome": "^4.7.0",
     "element-ui": "^2.7.2",
+    "font-awesome": "^4.7.0",
     "jquery": "^3.3.1",
+    "js-cookie": "^2.2.0",
     "nprogress": "^0.2.0",
     "viz.js": "^1.8.0",
     "vue": "^2.2.2",

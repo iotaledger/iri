@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?> <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.trias.resouce.mapper.UserInfoMapper">
+	<resultMap type="com.trias.resouce.model.Resource"
+		id="userResource">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="root_name" property="rootName" jdbcType="VARCHAR" />
+		<result column="path" property="path" jdbcType="VARCHAR" />
+		<result column="description" property="description"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getResourceByUserRole" resultMap="userResource"
+		parameterType="java.util.List">
+		select
+		c.id,
+		c.root_name,
+		c.path,
+		c.description
+		from trias_role a inner join trias_role_resource b on a.id = b.role_id
+		inner join trias_resource c on b.resource_id = c.id
+		where c.del_flag = 0 and a.role_type in 
+		<foreach collection="roleList" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		
+	</select>
+</mapper>

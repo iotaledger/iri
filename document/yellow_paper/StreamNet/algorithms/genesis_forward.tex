@@ -10,7 +10,9 @@
         \uIf{$\exists b'$ satisties (1)}{
             $g' \gets b'$ \;
             $G' \gets induceGraph(G, g') $ \;
-            UpdateScore(G', g')\;
+            ParentScore(G', g')\;
+            Score(G', g')\;
+            TopOrder(G', g')\;
             $G \gets G'$ \;
         } 
     }

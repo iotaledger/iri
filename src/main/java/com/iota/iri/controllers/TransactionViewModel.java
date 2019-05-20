@@ -258,9 +258,10 @@ public class TransactionViewModel {
      * @param tangle The tangle reference for the database
      * @param initialSnapshot snapshot that acts as genesis
      * @param item The string identifying the purpose of the update
+     * @return True if the update was successful, False if it failed
      * @throws Exception Thrown if any of the metadata fails to fetch, or if the database update fails
      */
-    public void update(Tangle tangle, Snapshot initialSnapshot, String item) throws Exception {
+    public boolean update(Tangle tangle, Snapshot initialSnapshot, String item) throws Exception {
         getAddressHash();
         getTrunkTransactionHash();
         getBranchTransactionHash();
@@ -270,9 +271,9 @@ public class TransactionViewModel {
         setAttachmentData();
         setMetadata();
         if (initialSnapshot.hasSolidEntryPoint(hash)) {
-            return;
+            return false;
         }
-        tangle.update(transaction, hash, item);
+        return tangle.update(transaction, hash, item);
     }
 
     /**

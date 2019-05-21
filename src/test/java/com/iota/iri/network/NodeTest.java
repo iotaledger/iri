@@ -10,13 +10,14 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -24,12 +25,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.longThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class NodeTest {
+
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private NodeConfig nodeConfig;
     @Mock

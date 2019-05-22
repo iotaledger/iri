@@ -56,8 +56,9 @@ import org.slf4j.LoggerFactory;
  * <p>
  *     Validation of a transaction is the process by which other devices choose the transaction.
  *     This is done via a {@link TipSelector} algorithm, after which the transaction performs
- *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips. <br/>
- *
+ *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips.
+ * </p>
+ * <p>
  *     As many other transactions repeat this process on top of each other,
  *     validation of the transaction in question slowly builds up enough verifications.
  *     Eventually this will reach a minimum acceptable verification threshold.
@@ -154,8 +155,10 @@ public class Iota {
     }
 
     /**
+     * <p>
      * Adds all database providers, and starts initialization of our services.
-     * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.<br/>
+     * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.
+     * </p>
      * After this function, incoming and outbound transaction processing has started.
      *
      * @throws Exception If along the way a service fails to initialize.

@@ -32,6 +32,7 @@ do
             echo "configure 7" ${TOPOLOGY} ${DATA}
             sudo cp conf_info/nginx/aws/nginx7.conf /etc/nginx/nginx.conf
         fi
+	ps -ef|grep jmeter | grep -v grep | awk "{print \$2}"|xargs kill -9
         sudo nginx -s stop
         sleep 2
         sudo nginx
@@ -55,7 +56,6 @@ do
 
         # run bootstrapping
         echo "run bootstrapping"
-	ps -ef|grep jmeter | grep -v grep | awk "{print \$2}"|xargs kill -9
         sudo sed 's/NUM_CALL/500/g' PerformanceTestDAG2TM_TPS.jmx | sudo tee   PerformanceTest.jmx >  /dev/null
         sudo sed 's/NUM_THREAD/1/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx > /dev/null
         sudo sed 's/PORT/5001/g' PerformanceTest1.jmx | sudo tee   PerformanceTest.jmx > /dev/null

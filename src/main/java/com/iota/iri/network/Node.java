@@ -581,7 +581,7 @@ public class Node {
      * Does the same as {@link #sendPacket(DatagramPacket, TransactionViewModel, Neighbor)} but defaults to using the
      * same internal {@link #sendingPacket} as all the other methods in this class, which allows external callers to
      * send packets that are in "sync" (sending is synchronized over the packet object) with the rest of the methods
-     * used in this class.<br />
+     * used in this class.
      *
      * @param transactionViewModel the transaction that shall be sent
      * @param neighbor the neighbor that should receive the packet
@@ -765,7 +765,7 @@ public class Node {
     }
 
     private long getBytesDigest(byte[] receivedData) {
-        return recentSeenBytesHashFunction.hashBytes(receivedData);
+        return recentSeenBytesHashFunction.hashBytes(receivedData, 0, TransactionViewModel.SIZE);
     }
 
     // helpers methods

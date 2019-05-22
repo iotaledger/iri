@@ -7,7 +7,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
   * 
-  * Every response that the IRI API gives is a child of this class.<br/>
+  * Every response that the IRI API gives is a child of this class.
+  * 
   * Duration for every response is recorded automatically during the processing of a request.
   *
   **/

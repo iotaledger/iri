@@ -296,7 +296,7 @@ public class Converter {
      *     every 2 Trytes are converted to a ASCII character.
      * </p>
      *
-     * @param trytes Trytes string
+     * @param input Trytes string
      * @return ASCII string.
      */
     public static String trytesToAscii(String input) {

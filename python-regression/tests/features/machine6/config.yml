@@ -18,6 +18,8 @@ default_args: &args
 default_ixi: &ixi
   ['IXI/LocalSnapshots.ixi']
 
+java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
+
 defaults: &db_full
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_All_Files.tar
   db_checksum: 4628789811b4ccbcc3cd898debff0e1b256a1cfdd636c7b5e1beb43fed461091

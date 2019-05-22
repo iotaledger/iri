@@ -150,6 +150,22 @@ def issue_multiple_transactions(step, num_transactions, node):
     logger.info("Transactions generated and stored")
 
 
+@step(r'milestone (\d+) is issued')
+def issue_a_milestone(step, index):
+    """
+    This method issues a milestone with a given index.
+
+    :param index: The index of the milestone you are issuing
+    """
+    node = world.config['nodeId']
+    address = static.TEST_BLOWBALL_COO
+    api = api_utils.prepare_api_call(node)
+
+    logger.info('Issuing milestone {}'.format(index))
+    milestone = milestones.issue_milestone(address, api, index)
+    milestones.update_latest_milestone(world.config, node, milestone)
+
+
 @step(r'a milestone is issued with index (\d+) and references')
 def issue_a_milestone_with_reference(step, index):
     """
@@ -158,6 +174,7 @@ def issue_a_milestone_with_reference(step, index):
     a responseList for "findTransactions".
 
     :param index: The index of the milestone you are issuing
+    :param step.hashes: Contains a reference pointer for list of transactions to get a reference from
     """
     node = world.config['nodeId']
     address = static.TEST_BLOWBALL_COO
@@ -167,9 +184,20 @@ def issue_a_milestone_with_reference(step, index):
     logger.info('Issuing milestone {}'.format(index))
     milestone = milestones.issue_milestone(address, api, index, reference_transaction)
 
-    if 'latestMilestone' not in world.config:
-        world.config['latestMilestone'] = {}
+    milestones.update_latest_milestone(world.config, node, milestone)
 
-    milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
-    milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
-    world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
+
+@step(r'the next (\d+) milestones are issued')
+def issue_several_milestones(step, num_milestones):
+    node = world.config['nodeId']
+    api = api_utils.prepare_api_call(node)
+
+    latest_milestone_index = int(api.get_node_info()['latestSolidSubtangleMilestoneIndex'])
+    logger.info('Latest Milestone Index: {}'.format(latest_milestone_index))
+    start_index = latest_milestone_index + 1
+    end_index = start_index + int(num_milestones)
+
+    for index in range(start_index, end_index):
+        issue_a_milestone(step, index)
+
+

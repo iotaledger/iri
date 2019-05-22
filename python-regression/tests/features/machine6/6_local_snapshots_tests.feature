@@ -77,3 +77,29 @@ Feature: Test Bootstrapping With LS
       |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue      |
 
     Then the response for "checkConsistency" should return null
+
+
+  Scenario: Check addresses spent from after pruning
+    Ensures that a node with a spent address registers that the address is spent from both before and after the
+    transaction has been pruned from the DB.
+
+    # Check that addresses were spent from before pruning
+    Given "wereAddressesSpentFrom" is called on "nodeE" with:
+      |keys                       |values                   |type             |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type             |
+      |addresses                  |True                     |boolList         |
+
+    When the next 100 milestones are issued
+
+    # Check that addresses were spent after transaction have been pruned
+    And "wereAddressesSpentFrom" is called on "nodeE" with:
+      |keys                       |values                   |type             |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type             |
+      |addresses                  |True                     |boolList         |
+

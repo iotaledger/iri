@@ -12,7 +12,7 @@ sudo chmod 777 PerformanceTest1.jmx
 TYPE=$3
 echo $TYPE
 for TOPOLOGY in 3_clique 4_circle 4_clique 7_circle 7_clique 7_bridge 7_star;
-#for TOPOLOGY in 7_circle;
+#for TOPOLOGY in 3_clique;
 #for DATA in 2500 5000 7500 10000;
 do
     for DATA in 2500 5000 7500 10000;
@@ -51,17 +51,18 @@ do
         # configure topology
         sudo cp conf_info/topology/aws/${TOPOLOGY} topology.txt
         python server_deploy_batch.py add
-        sleep 30
+        sleep 60
 
         # run bootstrapping
         echo "run bootstrapping"
+	ps -ef|grep jmeter | grep -v grep | awk "{print \$2}"|xargs kill -9
         sudo sed 's/NUM_CALL/500/g' PerformanceTestDAG2TM_TPS.jmx | sudo tee   PerformanceTest.jmx >  /dev/null
         sudo sed 's/NUM_THREAD/1/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx > /dev/null
         sudo sed 's/PORT/5001/g' PerformanceTest1.jmx | sudo tee   PerformanceTest.jmx > /dev/null
         sudo sed 's/DATA/data/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx > /dev/null
         sudo sed 's/put_cache/put_file/g' PerformanceTest1.jmx | sudo tee PerformanceTest.jmx > /dev/null
         sudo ${JM_HOME}/jmeter -n -t PerformanceTest.jmx
-        sleep 2
+        sleep 10
 
         # run experiment
         echo "run experiment"
@@ -71,6 +72,11 @@ do
         sudo sed 's/DATA/data1/g' PerformanceTest.jmx | sudo tee   PerformanceTest1.jmx >  /dev/null
         sudo sed 's/put_cache/'${TYPE}'/g' PerformanceTest1.jmx | sudo tee PerformanceTest.jmx > /dev/null
         sudo ${JM_HOME}/jmeter -n -t PerformanceTest.jmx
+        sleep 2
+
+
+        # configure iri
+        python server_deploy_batch.py clear $1
         sleep  300
     done
 done

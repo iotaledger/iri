@@ -7,6 +7,7 @@ import ch.qos.logback.core.Appender;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import org.junit.After;
 import org.junit.Before;
@@ -81,7 +82,12 @@ public class NodeTest {
     @Test
     public void whenProcessReceivedDataSetArrivalTimeToCurrentMillis() throws Exception {
         Node node = new Node(null, mock(SnapshotProvider.class), mock(TransactionValidator.class), null, null, null, mock(NodeConfig.class));
+
         TransactionViewModel transaction = mock(TransactionViewModel.class);
+        // It is important to stub the getHash method here because processReceivedData will broadcast the transaction.
+        // This might sometimes (concurrency issue) lead to a NPE in the process receiver thread.
+        // See executor.submit(spawnProcessReceivedThread()) -> Node.weightQueue -> transaction.getHash().bytes()[i]
+        when(transaction.getHash()).thenReturn(Hash.NULL_HASH);
         when(transaction.store(any(), any())).thenReturn(true);
         Neighbor neighbor = mock(Neighbor.class, Answers.RETURNS_SMART_NULLS);
 

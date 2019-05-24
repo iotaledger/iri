@@ -3,11 +3,19 @@ package com.iota.iri.ellipticcurve.utils;
 import com.iota.iri.ellipticcurve.Math;
 import com.iota.iri.ellipticcurve.*;
 import io.ipfs.multibase.Base58;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class EcdsaUtils {
 
@@ -202,6 +210,60 @@ public class EcdsaUtils {
 
         public String errMessage(){
             return message;
+        }
+    }
+
+    public static String getSortedStringFrom(JSONObject json){
+        StringWriter w = new StringWriter();
+        synchronized (w.getBuffer()){
+            write(w, json);
+        }
+        return w.toString();
+    }
+
+    static Writer write(Writer writer, JSONObject json)
+            throws JSONException {
+        try {
+            boolean commanate = false;
+            final int length = json.length();
+            writer.write('{');
+
+            if (length == 1) {
+                final Map.Entry<String,?> entry = json.toMap().entrySet().iterator().next();
+                writeValue(writer, entry.getKey(), entry.getValue());
+            } else if (length != 0) {
+                //按字符排序
+                List<String> keys = new ArrayList<>(json.toMap().keySet());
+                Collections.sort(keys);
+                for (final String key : keys) {
+                    if (commanate) {
+                        writer.write(',');
+                    }
+                    writeValue(writer, key, json.get(key));
+                    commanate = true;
+                }
+            }
+            writer.write('}');
+            return writer;
+        } catch (IOException exception) {
+            throw new JSONException(exception);
+        }
+    }
+
+    static void writeValue(Writer writer, String key, Object value) throws IOException {
+        writer.write(JSONObject.quote(key));
+        writer.write(':');
+        if (value == null || value.equals(null)){
+            writer.write("null");
+        }
+        else if(value instanceof Number){
+            writer.write(JSONObject.numberToString((Number) value));
+        }
+        else if(value instanceof String){
+            JSONObject.quote(value.toString(), writer);
+        }
+        else{
+            throw new RuntimeException("unknown transaction field type:" + value.getClass());
         }
     }
 }

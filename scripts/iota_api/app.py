@@ -12,6 +12,7 @@ from collections import deque
 import StringIO
 import gzip
 from iota import TryteString
+from key_manager.signmessage import sign_input_message
 
 cf = ConfigParser.ConfigParser()
 cf.read("conf")
@@ -37,6 +38,12 @@ lock = threading.Lock()
 if (enable_ipfs == True and enable_compression == True) or (enable_batching == False and enable_compression == True):
     print("Error configure!", file=sys.stderr)
     sys.exit(-1)
+
+def sign_message(data,address, base58_priv_key):
+    message = json.dumps(data, sort_keys=True)
+    signature = sign_input_message(address, message, base58_priv_key)
+    data['sign'] = signature
+    return json.dumps(data)
 
 def compress_str(data):
     if enable_compression == True:
@@ -150,15 +157,19 @@ def get_balance():
 
 @app.route('/put_file', methods=['POST'])
 def put_file():
+
+    address = '14dD6ygPi5WXdwwBTt1FBZK3aD8uDem1FY'
+    base58_priv_key = 'L41XHGJA5QX43QRG3FEwPbqD5BYvy6WxUxqAMM9oQdHJ5FcRHcGk'
+
     req_json = request.get_json()
 
     if req_json is None:
         return 'error'
 
     if not req_json.has_key(u'tag'):
-        send(json.dumps(req_json, sort_keys=True))
+        send(sign_message(req_json, address, base58_priv_key))
     else:
-        send(json.dumps(req_json, sort_keys=True), tag=req_json[u'tag'])
+        send(sign_message(req_json, address, base58_priv_key), tag=req_json[u'tag'])
 
     return 'ok'
 

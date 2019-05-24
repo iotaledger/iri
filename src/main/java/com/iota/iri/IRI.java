@@ -122,9 +122,9 @@ public class IRI {
             ixi = new IXI(iota);
             api = new API(iota.configuration, ixi, iota.transactionRequester,
                     iota.spentAddressesService, iota.tangle, iota.bundleValidator,
-                    iota.snapshotProvider, iota.ledgerService, iota.node, iota.tipsSelector,
+                    iota.snapshotProvider, iota.ledgerService, iota.neighborRouter, iota.tipsSelector,
                     iota.tipsViewModel, iota.transactionValidator,
-                    iota.latestMilestoneTracker);
+                    iota.latestMilestoneTracker, iota.txPipeline);
             shutdownHook();
 
             try {

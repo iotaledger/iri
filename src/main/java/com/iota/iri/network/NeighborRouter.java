@@ -113,9 +113,9 @@ public class NeighborRouter {
         this.config = config;
 
         // reduce the coordinator address to its byte encoded representation
-        byte[] tritsEncodedCooAddress = new byte[config.getCoordinator().length()
+        byte[] tritsEncodedCooAddress = new byte[config.getCoordinator().toString().length()
                 * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
-        Converter.trits(config.getCoordinator(), tritsEncodedCooAddress, 0);
+        Converter.trits(config.getCoordinator().toString(), tritsEncodedCooAddress, 0);
         byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         Converter.bytes(tritsEncodedCooAddress, byteEncodedCooAddress);
     }

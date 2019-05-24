@@ -1,5 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
@@ -48,7 +49,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * Snapshot index that is used to verify the builtin snapshot signature.
      */
-    private static final int SNAPSHOT_INDEX = 10;
+    private static final int SNAPSHOT_INDEX = 12;
 
     /**
      * Logger for this class allowing us to dump debug and status messages.
@@ -62,7 +63,8 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      *       snapshot multiple times while creating their own version of the LocalSnapshotManager, we cache the instance
      *       here so they don't have to rebuild it from the scratch every time (massively speeds up the unit tests).
      */
-    private static SnapshotImpl builtinSnapshot = null;
+    @VisibleForTesting
+    static SnapshotImpl builtinSnapshot = null;
 
     /**
      * Holds Snapshot related configuration parameters.
@@ -340,7 +342,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private SnapshotState readSnapshotStateFromJAR(String snapshotStateFilePath) throws SnapshotException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(SnapshotProviderImpl.class.getResourceAsStream(snapshotStateFilePath))))) {
             return readSnapshotState(reader);
-        } catch (IOException e) {
+        } catch (NullPointerException | IOException e) {
             throw new SnapshotException("failed to read the snapshot file from JAR at " + snapshotStateFilePath, e);
         }
     }

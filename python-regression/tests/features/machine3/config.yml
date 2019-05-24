@@ -1,4 +1,4 @@
-defaults: &db_1
+defaults: &blowball_tests_config_files
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Blowball_Tests_db.tar
   db_checksum: 0e9017ee8e6bef601dd68f08200d4ff2290701d0e903da518097620fa8adb092
   iri_args: ['--testnet-coordinator',
@@ -8,7 +8,9 @@ defaults: &db_1
   '--milestone-start',
   '2',
   '--testnet-no-coo-validation',
-  '--testnet'
+  'true',
+  '--testnet',
+  'true'
   ]
 
 seeds: # For internal use by the regression system. 
@@ -17,20 +19,20 @@ seeds: # For internal use by the regression system.
 
 nodes:
   nodeA: #name
-    <<: *db_1
+    <<: *blowball_tests_config_files
   
   nodeB:
-    <<: *db_1
+    <<: *blowball_tests_config_files
 
   nodeC:
-    <<: *db_1
+    <<: *blowball_tests_config_files
 
   nodeD:
-    <<: *db_1
+    <<: *blowball_tests_config_files
 
   nodeE:
-    <<: *db_1
+    <<: *blowball_tests_config_files
 
   nodeF:
-    <<: *db_1
+    <<: *blowball_tests_config_files
 

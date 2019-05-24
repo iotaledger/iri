@@ -63,7 +63,6 @@ public class MilestoneServiceImpl implements MilestoneService {
      */
     private MilestoneConfig config;
 
-
     private BundleValidator bundleValidator;
 
     /**

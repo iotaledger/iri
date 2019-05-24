@@ -72,7 +72,7 @@ public class TangleMockUtils {
             address = TransactionTestUtils.nextWord(address);
             Converter.trits(address, trits, TransactionViewModel.ADDRESS_TRINARY_OFFSET);
             if (tx != null) {
-                TransactionTestUtils.getTransactionTritsWithTrunkAndBranch(trits, tx.getHash(), Hash.NULL_HASH);
+                TransactionTestUtils.getTransactionTritsWithTrunkAndBranchTrits(trits, tx.getHash(), Hash.NULL_HASH);
             }
             TransactionTestUtils.setLastIndex(trits, lastIndex);
             TransactionTestUtils.setCurrentIndex(trits, currentIndex--);
@@ -111,7 +111,7 @@ public class TangleMockUtils {
      * This transaction is returned when the hash is asked to load in the tangle object
      * 
      * @param tangle mocked tangle object that shall retrieve a milestone object when being queried for it
-     * @param hash
+     * @param hash transaction hash
      * @return The newly created (empty) transaction
      */
     public static Transaction mockTransaction(Tangle tangle, Hash hash) {

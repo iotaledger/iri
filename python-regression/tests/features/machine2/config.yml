@@ -1,0 +1,21 @@
+defaults: &transaction_tests_config_files
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Transactions_Tests_db.tar
+  db_checksum: 756237276479da4b01deaa0c1211ca65a4c8ec6f081452ea7e8153648c53bd67
+  iri_args: ['--testnet-coordinator',
+  'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
+  '--milestone-start',
+  '0',
+  '--testnet-no-coo-validation',
+  'true',
+  '--testnet',
+  'true',
+  '--snapshot',
+  './snapshot.txt'
+  ]
+
+nodes:
+  nodeA: #name
+    <<: *transaction_tests_config_files
+
+  nodeB:
+    <<: *transaction_tests_config_files

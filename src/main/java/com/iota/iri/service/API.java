@@ -753,7 +753,7 @@ public class API {
      * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
      * </p>
      * <p>
-     * This API call returns a list of boolean values in the same order as the submitted transactions.<br/>
+     * This API call returns a list of boolean values in the same order as the submitted transactions.
      * Boolean values will be <tt>true</tt> for confirmed transactions, otherwise <tt>false</tt>.
      * </p>
      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid

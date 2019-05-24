@@ -15,11 +15,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * <p>
  * Creates a manager for the local snapshots, that takes care of automatically creating local snapshots when the defined
- * intervals have passed.<br />
- * <br />
+ * intervals have passed.
+ * </p>
+ * <p>
  * It incorporates a background worker that periodically checks if a new snapshot is due (see {@link
- * #start(LatestMilestoneTracker)} and {@link #shutdown()}).<br />
+ * #start(LatestMilestoneTracker)} and {@link #shutdown()}).
+ * </p>
  */
 public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     /**
@@ -74,15 +77,18 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
     /**
-     * This method initializes the instance and registers its dependencies.<br />
-     * <br />
-     * It simply stores the passed in values in their corresponding private properties.<br />
-     * <br />
+     * <p>
+     * This method initializes the instance and registers its dependencies.
+     * </p>
+     * <p>
+     * It simply stores the passed in values in their corresponding private properties.
+     * </p>
+     * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
      *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
      *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
-     *       <br />
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * </p>
      *       {@code localSnapshotManager = new LocalSnapshotManagerImpl().init(...);}
      *
      * @param snapshotProvider data provider for the snapshots that are relevant for the node

@@ -45,7 +45,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getNeighbors()).thenReturn(configNeighbors);
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(15600);
-        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
+        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH);
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
 
         neighborRouter.init(nodeConfigA, transactionRequester, txPipeline);
@@ -82,7 +82,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(17000);
         Mockito.when(nodeConfigA.getMaxNeighbors()).thenReturn(1);
-        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
+        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH);
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigA.getMwm()).thenReturn(1);
         neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
@@ -93,7 +93,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigB.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(18000);
         Mockito.when(nodeConfigB.getMaxNeighbors()).thenReturn(1);
-        Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
+        Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH);
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigB.getMwm()).thenReturn(1);
         neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
@@ -150,7 +150,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(19000);
         Mockito.when(nodeConfigA.getMaxNeighbors()).thenReturn(1);
-        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
+        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH);
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigA.isAutoTetheringEnabled()).thenReturn(true);
         Mockito.when(nodeConfigA.getMwm()).thenReturn(1);
@@ -162,7 +162,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigB.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(20000);
         Mockito.when(nodeConfigB.getMaxNeighbors()).thenReturn(1);
-        Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
+        Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH);
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigB.isAutoTetheringEnabled()).thenReturn(true);
         Mockito.when(nodeConfigB.getMwm()).thenReturn(1);

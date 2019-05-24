@@ -1,7 +1,7 @@
 package com.iota.iri.service.dto;
 
-import com.iota.iri.network.Neighbor;
-import com.iota.iri.network.TCPNeighbor;
+import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ public class GetNeighborsResponseTest {
     public void setUp() throws Exception {
         InetAddress inetAddress = InetAddress.getByAddress("test.test", new byte[]{10, 0, 0, 1});
         InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 8888);
-        Neighbor neighbor = new TCPNeighbor(inetSocketAddress, true);
+        Neighbor neighbor = new NeighborImpl<>(null, null, inetAddress.getHostAddress(), inetSocketAddress.getPort(), null);
         neighbors = Collections.singletonList(neighbor);
     }
 

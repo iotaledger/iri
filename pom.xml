@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.6.1-RELEASE</version>
+    <version>1.7.0-DEV-${version.number}</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -18,17 +18,26 @@
     <properties>
         <java-version>1.8</java-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javadoc-version>3.0.1</javadoc-version>
+        <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>1.4.26.Final</undertow.version>
         <jacoco.version>0.7.9</jacoco.version>
+        <version.number>${git.commit.id.abbrev}</version.number>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
              configLocation attribute on every maven goal. -->
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+        
+        <md-doclet-group>com.github.iotaledger</md-doclet-group>
+        <md-doclet-artifact>java-md-doclet</md-doclet-artifact>
+        <md-doclet-version>master-SNAPSHOT</md-doclet-version>
     </properties>
 
     <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
         <repository>
             <id>sonatype-oss-public</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
@@ -89,7 +98,7 @@
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
-            <version>5.7.3</version>
+            <version>5.17.2</version>
         </dependency>
 
         <!-- json support -->
@@ -103,7 +112,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.6</version>
+            <version>2.9.8</version>
         </dependency>
 
         <!-- undertow server -->
@@ -124,6 +133,19 @@
             <artifactId>undertow-websockets-jsr</artifactId>
             <version>${undertow.version}</version>
         </dependency>
+        
+        <!-- RESTEasy Undertow Integration -->
+        <dependency>
+		    <groupId>org.jboss.resteasy</groupId>
+		    <artifactId>resteasy-undertow</artifactId>
+		    <version>3.6.3.Final</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.jboss.resteasy</groupId>
+		    <artifactId>resteasy-jackson-provider</artifactId>
+		    <version>3.6.3.Final</version>
+		</dependency>
 
         <!-- test dependencies -->
 
@@ -201,11 +223,30 @@
             <version>1.21</version>
             <scope>test</scope>
         </dependency>
+        
+        <dependency>
+            <groupId>${md-doclet-group}</groupId>
+            <artifactId>${md-doclet-artifact}</artifactId>
+            <version>${md-doclet-version}</version>
+        </dependency>
 
         <dependency>
             <groupId>pl.touk</groupId>
             <artifactId>throwing-function</artifactId>
             <version>1.3</version>
+        </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/com.google.guava/guava-testlib -->
+		<dependency>
+		    <groupId>com.google.guava</groupId>
+		    <artifactId>guava</artifactId>
+		    <version>23.0</version>
+		</dependency>
+
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>zero-allocation-hashing</artifactId>
+            <version>0.8</version>
         </dependency>
 
     </dependencies>
@@ -222,6 +263,36 @@
                     <testSource>${java-version}</testSource>
                     <testTarget>${java-version}</testTarget>
                     <useIncrementalCompilation>false</useIncrementalCompilation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <generateGitPropertiesFile>false</generateGitPropertiesFile><!-- somehow necessary. otherwise the variables are not available in the pom -->
+                </configuration>
+            </plugin>
+            <!-- Controls how jar is being created -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
             <!-- The javadoc plugin can be called by running "mvn javadoc:javadoc" and will generate the classic javadoc
@@ -345,7 +416,7 @@
                                             commons-io:commons-io:2.5:jar:null:compile:2852e6e05fbb95076fc091f6d1780f1f8fe35e0f
                                         </urn>
                                         <urn>
-                                            org.rocksdb:rocksdbjni:5.7.3:jar:null:compile:421b44ad957a2b6cce5adedc204db551831b553d
+                                            org.rocksdb:rocksdbjni:5.17.2:jar:null:compile:bca52276cabe91a3b97cc18e50fa2eabc2986f58
                                         </urn>
                                         <urn>
                                             com.google.code.gson:gson:2.8.1:jar:null:compile:02a8e0aa38a2e21cb39e2f5a7d6704cbdc941da0
@@ -385,6 +456,14 @@
                                         </urn>
                                         <urn>
                                             pl.touk:throwing-function:1.3:jar:null:compile:32947866b8754295efde73ee7d39ea29a247a2b5
+                                        </urn>
+                                        
+                                        <urn>
+                                            org.jboss.resteasy:resteasy-undertow:3.6.3.Final:jar:null:compile:b5d9d0e709de777b87d72927b405a2e88d39d1fa
+                                        </urn>
+                                        
+                                        <urn>
+                                            org.jboss.resteasy:resteasy-jackson-provider:3.6.3.Final:jar:null:compile:5e999c6a9d18b6f0492ea44765403de164fb4abf
                                         </urn>
 
                                         <!-- A check for the rules themselves -->
@@ -503,7 +582,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.4</version>
+                        <version>${javadoc-version}</version>
                         <configuration>
                             <show>private</show>
                             <nohelp>true</nohelp>
@@ -642,10 +721,7 @@
             </plugin>
 
             <!-- The javadoc for the report can be called by running "mvn site" and will generate the the iota
-                 documentation in Markdown format. To compile this report you need the iri-mdx-doclet files from:
-                 https://github.com/iotaledger/iri-mdx-doclet. Follow the documentation on the github site to compile
-                 and install the iri-mdx-doclet locally in your maven repository.
-
+                 documentation in Markdown format.
                  Note: If you need the classic api documentation run "mvn javadoc:javadoc" instead.
                  -->
             <plugin>
@@ -656,21 +732,25 @@
                     <reportSet>
                         <id>javadoc</id>
                         <configuration>
-                            <!-- This dependency can be found at: https://github.com/iotaledger/iri-mdx-doclet -->
-                            <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
-                            <sourcepath>src/main/java</sourcepath>
-                            <useStandardDocletOptions>false</useStandardDocletOptions>
-                            <destDir>mdx</destDir>
-                            <additionalOptions>
-                                <additionalOption>-version "${project.version}"</additionalOption>
-                            </additionalOptions>
-                            <quiet>true</quiet>
-                            <docletArtifact>
-                                <groupId>com.iota</groupId>
-                                <artifactId>mdxdoclet</artifactId>
-                                <version>0.1</version>
-                            </docletArtifact>
-                        </configuration>
+                            <!-- This dependency can be found at: https://github.com/iotaledger/java-md-doclet -->
+		                    <doclet>org.iota.mddoclet.MDDoclet</doclet>
+		                    <sourcepath>src/main/java</sourcepath>
+		                    <useStandardDocletOptions>false</useStandardDocletOptions>
+		                    <additionalOptions>
+		                        <additionalOption>-version "${project.version}"</additionalOption>
+		                        <additionalOption>-classeslist "API"</additionalOption>
+		                        <additionalOption>-template "iri"</additionalOption>
+		                        <additionalOption>
+                                    -repolink "${project.scm.url}blob/master/src/main/java/"
+                                </additionalOption>
+		                    </additionalOptions>
+		                    <quiet>true</quiet>
+		                    <docletArtifact>
+		                        <groupId>${md-doclet-group}</groupId>
+                                <artifactId>${md-doclet-artifact}</artifactId>
+                                <version>${md-doclet-version}</version>
+		                    </docletArtifact>
+		                </configuration>
                         <reports>
                             <report>javadoc</report>
                         </reports>

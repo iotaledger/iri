@@ -2,7 +2,7 @@ package com.iota.iri.service.dto;
 
 /**
  * 
- * This class represents the API error for accessing a command when it is not allowed by this Node.
+ * This class represents the API error for accessing a command when it is not allowed by this node.
  * 
  */
 public class AccessLimitedResponse extends AbstractResponse {

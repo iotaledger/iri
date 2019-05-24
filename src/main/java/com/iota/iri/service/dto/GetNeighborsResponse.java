@@ -2,31 +2,21 @@ package com.iota.iri.service.dto;
 
 import com.iota.iri.network.neighbor.NeighborMetrics;
 import com.iota.iri.network.neighbor.NeighborState;
-import com.iota.iri.service.API;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Contains information about the result of a successful {@code getNeighbors} API call.
- * See {@link API#getNeighborsStatement} for how this response is created.
+ * See {@link GetNeighborsResponse#create(Collection)} for how this response is created.
+ *
  */
 public class GetNeighborsResponse extends AbstractResponse {
 
     /**
      * The neighbors you are connected with, as well as their activity counters.
-     * This includes the following statistics:
-     * <ol>
-     * <li>address</li>
-     * <li>connectionType</li>
-     * <li>numberOfAllTransactions</li>
-     * <li>numberOfRandomTransactionRequests</li>
-     * <li>numberOfNewTransactions</li>
-     * <li>numberOfInvalidTransactions</li>
-     * <li>numberOfSentTransactions</li>
-     * <li>numberOfStaleTransactions</li>
-     * </ol>
      *
-     * @see {@link Neighbor}
+     * @see Neighbor
      */
     private Neighbor[] neighbors;
 
@@ -41,7 +31,7 @@ public class GetNeighborsResponse extends AbstractResponse {
     /**
      * Creates a new {@link GetNeighborsResponse}
      *
-     * @param elements {@link com.iota.iri.network.Neighbor}
+     * @param elements {@link com.iota.iri.network.neighbor.Neighbor}
      * @return an {@link GetNeighborsResponse} filled all neighbors and their activity.
      */
     public static AbstractResponse create(final Collection<com.iota.iri.network.neighbor.Neighbor> elements) {
@@ -59,163 +49,93 @@ public class GetNeighborsResponse extends AbstractResponse {
     /**
      * A plain DTO of an iota neighbor.
      */
-    static class Neighbor {
+    @SuppressWarnings("unused")
+    public static class Neighbor {
 
+        /**
+         * The address of your neighbor.
+         */
         private String address;
+
+        /**
+         * The origin domain or IP address of the given neighbor.
+         */
         private String domain;
-        public long numberOfAllTransactions,
-                numberOfRandomTransactionRequests,
-                numberOfNewTransactions,
-                numberOfInvalidTransactions,
-                numberOfStaleTransactions,
-                numberOfSentTransactions,
-                numberOfUnknownMsgTypePackets,
-                numberOfIncompatiblePackets,
-                numberOfInvalidMsgLengthPackets,
-                numberOfDroppedSentPackets;
-        public String connectionType;
-        public boolean connected;
-
-        /**
-         * The address of your neighbor
-         *
-         * @return the address
-         */
-        public String getAddress() {
-            return address;
-        }
-
-        /**
-         * The domain of your neighbor
-         *
-         * @return the domain
-         */
-        public String getDomain() {
-            return domain;
-        }
 
         /**
          * Number of all transactions sent (invalid, valid, already-seen)
-         *
-         * @return the number
          */
-        public long getNumberOfAllTransactions() {
-            return numberOfAllTransactions;
-        }
+        private long numberOfAllTransactions;
+
+        /**
+         * Random tip requests which were sent.
+         */
+        private long numberOfRandomTransactionRequests;
 
         /**
          * New transactions which were transmitted.
-         *
-         * @return the number
          */
-        public long getNumberOfNewTransactions() {
-            return numberOfNewTransactions;
-        }
+        private long numberOfNewTransactions;
 
         /**
          * Invalid transactions your neighbor has sent you.
          * These are transactions with invalid signatures or overall schema.
-         *
-         * @return the number
          */
-        public long getNumberOfInvalidTransactions() {
-            return numberOfInvalidTransactions;
-        }
+        private long numberOfInvalidTransactions;
 
         /**
          * Stale transactions your neighbor has sent you.
          * These are transactions with a timestamp older than your latest snapshot.
-         *
-         * @return the number
          */
-        public long getNumberOfStaleTransactions() {
-            return numberOfStaleTransactions;
-        }
+        private long numberOfStaleTransactions;
 
         /**
-         * Amount of transactions send through your neighbor
-         *
-         * @return the number
+         * Amount of transactions send to your neighbor.
          */
-        public long getNumberOfSentTransactions() {
-            return numberOfSentTransactions;
-        }
+        private long numberOfSentTransactions;
 
         /**
          * Amount of packets with an unknown message type.
-         *
-         * @return the number
          */
-        public long getNumberOfUnknownMsgTypePackets() {
-            return numberOfUnknownMsgTypePackets;
-        }
+        private long numberOfUnknownMsgTypePackets;
 
         /**
          * Amount of incompatible packets received.
-         *
-         * @return the number
          */
-        public long getNumberOfIncompatiblePackets() {
-            return numberOfIncompatiblePackets;
-        }
+        private long numberOfIncompatiblePackets;
 
         /**
          * Amount of packets received with an invalid message length.
-         *
-         * @return the number
          */
-        public long getNumberOfInvalidMsgLengthPackets() {
-            return numberOfInvalidMsgLengthPackets;
-        }
-
-        /**
-         * Amount of packets received where a random transaction is requested.
-         *
-         * @return the number
-         */
-        public long getNumberOfRandomTransactionRequests() {
-            return numberOfRandomTransactionRequests;
-        }
+        private long numberOfInvalidMsgLengthPackets;
 
         /**
          * Amount of packets dropped from the neighbor's send queue as it was full.
-         *
-         * @return the number
          */
-        public long getNumberOfDroppedSentPackets() {
-            return numberOfDroppedSentPackets;
-        }
+        private long numberOfDroppedSentPackets;
 
         /**
-         * The method type your neighbor is using to connect (TCP / UDP)
-         *
-         * @return the connection type
+         * The transport protocol used to the neighbor.
          */
-        public String getConnectionType() {
-            return connectionType;
-        }
+        private String connectionType;
 
         /**
-         * Whether the neighbor is connected or not
-         *
-         * @return whether the neighbor is connected or not
+         * Whether the node is currently connected.
          */
-        public String isConnected() {
-            return connectionType;
-        }
+        public boolean connected;
 
         /**
-         * Creates a new Neighbor DTO from a Neighbor network instance
+         * Creates a new Neighbor DTO from a Neighbor network instance.
          *
          * @param neighbor the neighbor currently connected to this node
          * @return a new instance of {@link Neighbor}
          */
         public static Neighbor createFrom(com.iota.iri.network.neighbor.Neighbor neighbor) {
             Neighbor ne = new Neighbor();
+            NeighborMetrics metrics = neighbor.getMetrics();
             int port = neighbor.getRemoteServerSocketPort();
             ne.address = neighbor.getHostAddressAndPort();
             ne.domain = neighbor.getDomain();
-            NeighborMetrics metrics = neighbor.getMetrics();
             ne.numberOfAllTransactions = metrics.getAllTransactionsCount();
             ne.numberOfInvalidTransactions = metrics.getInvalidTransactionsCount();
             ne.numberOfStaleTransactions = metrics.getStaleTransactionsCount();
@@ -229,6 +149,112 @@ public class GetNeighborsResponse extends AbstractResponse {
             ne.connectionType = "tcp";
             ne.connected = neighbor.getState() == NeighborState.READY_FOR_MESSAGES;
             return ne;
+        }
+
+        /**
+         *
+         * {@link #address}
+         */
+        public String getAddress() {
+            return address;
+        }
+
+        /**
+         * {@link #domain}
+         */
+        public String getDomain() {
+            return domain;
+        }
+
+        /**
+         *
+         * {@link #numberOfAllTransactions}
+         */
+        public long getNumberOfAllTransactions() {
+            return numberOfAllTransactions;
+        }
+
+        /**
+         *
+         * {@link #numberOfNewTransactions}
+         */
+        public long getNumberOfNewTransactions() {
+            return numberOfNewTransactions;
+        }
+
+        /**
+         *
+         * {@link #numberOfInvalidTransactions}
+         */
+        public long getNumberOfInvalidTransactions() {
+            return numberOfInvalidTransactions;
+        }
+
+        /**
+         *
+         * {@link #numberOfStaleTransactions}
+         */
+        public long getNumberOfStaleTransactions() {
+            return numberOfStaleTransactions;
+        }
+
+        /**
+         *
+         * {@link #numberOfSentTransactions}
+         */
+        public long getNumberOfSentTransactions() {
+            return numberOfSentTransactions;
+        }
+
+        /**
+         *
+         * {@link #numberOfRandomTransactionRequests}
+         */
+        public long getNumberOfRandomTransactionRequests() {
+            return numberOfRandomTransactionRequests;
+        }
+
+        /**
+         * {@link #numberOfUnknownMsgTypePackets}
+         */
+        public long getNumberOfUnknownMsgTypePackets() {
+            return numberOfUnknownMsgTypePackets;
+        }
+
+        /**
+         * {@link #numberOfIncompatiblePackets}
+         */
+        public long getNumberOfIncompatiblePackets() {
+            return numberOfIncompatiblePackets;
+        }
+
+        /**
+         * {@link #numberOfInvalidMsgLengthPackets}
+         */
+        public long getNumberOfInvalidMsgLengthPackets() {
+            return numberOfInvalidMsgLengthPackets;
+        }
+
+        /**
+         * {@link #numberOfDroppedSentPackets}
+         */
+        public long getNumberOfDroppedSentPackets() {
+            return numberOfDroppedSentPackets;
+        }
+        
+        /**
+         * {@link #connected}
+         */
+        public boolean isConnected(){
+            return connected;
+        }
+
+        /**
+         *
+         * {@link #connectionType}
+         */
+        public String getConnectionType() {
+            return connectionType;
         }
     }
 }

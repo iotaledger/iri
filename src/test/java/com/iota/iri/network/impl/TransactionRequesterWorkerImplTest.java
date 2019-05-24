@@ -9,7 +9,6 @@ import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,7 +21,11 @@ import org.mockito.junit.MockitoRule;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getTransaction;
+import static com.iota.iri.TransactionTestUtils.get9Transaction;
+import static com.iota.iri.TransactionTestUtils.buildTransaction;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -31,13 +34,13 @@ public class TransactionRequesterWorkerImplTest {
     
     //Good
     private static final TransactionViewModel TVMRandomNull = new TransactionViewModel(
-            getRandomTransaction(), Hash.NULL_HASH);
+            getTransaction(), Hash.NULL_HASH);
     private static final TransactionViewModel TVMRandomNotNull = new TransactionViewModel(
-            getRandomTransaction(), getRandomTransactionHash());
+            getTransaction(), getTransactionHash());
     private static final TransactionViewModel TVMAll9Null = new TransactionViewModel(
             get9Transaction(), Hash.NULL_HASH);
     private static final TransactionViewModel TVMAll9NotNull = new TransactionViewModel(
-            get9Transaction(), getRandomTransactionHash()); 
+            get9Transaction(), getTransactionHash()); 
     
     //Bad
     private static final TransactionViewModel TVMNullNull = new TransactionViewModel((Transaction)null, Hash.NULL_HASH); 
@@ -47,9 +50,6 @@ public class TransactionRequesterWorkerImplTest {
     
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private static SnapshotProvider snapshotProvider;
-    
-    @Mock
-    private static MessageQ messageQ;
     
     private static TransactionRequester requester;
     private static TransactionRequesterWorkerImpl worker;
@@ -65,7 +65,7 @@ public class TransactionRequesterWorkerImplTest {
 
     @Before
     public void before() {
-        requester = new TransactionRequester(tangle, snapshotProvider, messageQ);
+        requester = new TransactionRequester(tangle, snapshotProvider);
         
         worker = new TransactionRequesterWorkerImpl();
         Mockito.when(neighborRouter.getConnectedNeighbors()).thenReturn(new ConcurrentHashMap<>());
@@ -142,7 +142,7 @@ public class TransactionRequesterWorkerImplTest {
     }
     
     private void addRequest() throws Exception {
-        Hash randomHash = getRandomTransactionHash();
+        Hash randomHash = getTransactionHash();
         TangleMockUtils.mockTransaction(tangle, randomHash);
         requester.requestTransaction(randomHash, false);
     }

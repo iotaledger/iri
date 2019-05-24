@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -88,7 +89,7 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
@@ -266,7 +267,7 @@ public class TransactionValidator {
 
                         if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
                             transactionRequester.requestTransaction(hashPointer, milestone);
-                            break;
+                            continue;
                         }
                     } else {
                         nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
@@ -315,7 +316,7 @@ public class TransactionValidator {
      * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
      * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
      */
-    //Package private for testing
+    @VisibleForTesting
     void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
@@ -448,7 +449,7 @@ public class TransactionValidator {
         return approovee.isSolid();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }

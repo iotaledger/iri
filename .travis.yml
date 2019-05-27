@@ -11,11 +11,8 @@ addons:
     - jq
 
 matrix:
-  include:
-    - language: go
-      go: 1.11.x
-    - language: java
-      jdk: oraclejdk8
+  allow_failures:
+    - jdk: oraclejdk9
 
 install:
   # install python env
@@ -40,6 +37,9 @@ install:
       && cd go-ipfs/
       && sudo ./install.sh
       && cd ..
+  # update go version
+    - gimme 1.11.5
+    - source ~/.gimme/envs/go1.11.5.env
 
 before_script:
   - ipfs init

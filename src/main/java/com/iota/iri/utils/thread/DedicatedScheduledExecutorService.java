@@ -6,49 +6,56 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.*;
 
 /**
+ * <p>
  * This class represents a {@link ScheduledExecutorService} that is associated with one specific task for which it
- * provides automatic logging capabilities<br />
- * <br />
+ * provides automatic logging capabilities.
+ * </p>
+ * <p>
  * It informs the user about its lifecycle using the logback loggers used by IRI. In addition it offers "silent" methods
  * of the {@link ScheduledExecutorService} that do not throw {@link Exception}s when we try to start the same task
  * multiple times. This is handy for implementing the "start" and "shutdown" methods of the background workers of IRI
  * that would otherwise have to take care of not starting the same task more than once (when trying to be robust against
- * coding errors or tests that start the same thread multiple times).<br />
+ * coding errors or tests that start the same thread multiple times).
+ * </p>
  */
 public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorService {
     /**
-     * Default logger for this class allowing us to dump debug and status messages.<br />
-     * <br />
+     * Default logger for this class allowing us to dump debug and status messages.
+     * <p>
      * Note: The used logger can be overwritten by providing a different logger in the constructor (to have transparent
-     *       log messages that look like they are coming from a different source).<br />
+     *       log messages that look like they are coming from a different source).
+     * </p>
      */
     private static final Logger DEFAULT_LOGGER = LoggerFactory.getLogger(DedicatedScheduledExecutorService.class);
 
     /**
-     * Holds a reference to the logger that is used to emit messages.<br />
+     * Holds a reference to the logger that is used to emit messages.
      */
     private final Logger logger;
 
     /**
-     * Holds the name of the thread that gets started by this class and that gets printed in the log messages.<br />
+     * Holds the name of the thread that gets started by this class and that gets printed in the log messages.
      */
     private final String threadName;
 
     /**
-     * Flag indicating if we want to issue debug messages (for example whenever a task gets started and finished).<br />
+     * Flag indicating if we want to issue debug messages (for example whenever a task gets started and finished).
      */
     private final boolean debug;
 
     /**
+     * <p>
      * Creates a {@link ScheduledExecutorService} that is associated with one specific task for which it provides
-     * automatic logging capabilities (using the provided thread name).<br />
-     * <br />
+     * automatic logging capabilities (using the provided thread name).
+     * </p>
+     * <p>
      * It informs the user about its lifecycle using the logback loggers used by IRI. In addition it offers "silent"
      * methods of the {@link ScheduledExecutorService} that do not throw {@link Exception}s when we try to start the
      * same task multiple times. This is handy for implementing the "start" and "shutdown" methods of the background
      * workers of IRI that would otherwise have to take care of not starting the same task more than once (when trying
-     * to be robust against coding errors or tests that start the same thread multiple times).<br />
-     * <br />
+     * to be robust against coding errors or tests that start the same thread multiple times).
+     * </p>
+     * <p>
      * <pre>
      *     <code>Example:
      *
@@ -82,7 +89,8 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
      *         [main] INFO  MilestoneSolidifier - [Milestone Solidifier] Stopped (after #4 executions) ...
      *     </code
      * </pre>
-     *
+     * </p>
+     * 
      * @param threadName name of the thread (or null if we want to disable the automatic logging - exceptions will
      *                   always be logged)
      * @param logger logback logger that shall be used for the origin of the log messages
@@ -98,7 +106,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * Does the same as {@link #DedicatedScheduledExecutorService(String, Logger, boolean)} but defaults to the
-     * {@link #DEFAULT_LOGGER} for the log messages.<br />
+     * {@link #DEFAULT_LOGGER} for the log messages.
      *
      * @param threadName name of the thread (or null if we want to disable the automatic logging - exceptions will
      *                   always be logged)
@@ -110,7 +118,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * Does the same as {@link #DedicatedScheduledExecutorService(String, Logger, boolean)} but defaults to false
-     * for the debug flag.<br />
+     * for the debug flag.
      *
      * @param threadName name of the thread (or null if we want to disable the automatic logging - exceptions will
      *                   always be logged)
@@ -121,11 +129,14 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
+     * <p>
      * Does the same as {@link #DedicatedScheduledExecutorService(String, Logger, boolean)} but defaults to {@code null}
-     * for the thread name (which causes only error messages to be printed - unless debug is true).<br />
-     * <br />
+     * for the thread name (which causes only error messages to be printed - unless debug is true).
+     * </p>
+     * <p>
      * Note: This is for example used by the {@link com.iota.iri.utils.log.interval.IntervalLogger} which does not want
-     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.<br />
+     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.
+     * </p>
      *
      * @param logger logback logger that shall be used for the origin of the log messages
      * @param debug debug flag that indicates if every "run" should be accompanied with a log message
@@ -136,7 +147,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * Does the same as {@link #DedicatedScheduledExecutorService(String, Logger, boolean)} but defaults to the
-      {@link #DEFAULT_LOGGER} for the log messages and false for the debug flag.<br />
+      {@link #DEFAULT_LOGGER} for the log messages and false for the debug flag.
      *
      * @param threadName name of the thread (or null if we want to disable the automatic logging - exceptions will
      *                   always be logged)
@@ -146,13 +157,16 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
+     * <p>
      * Does the same as {@link #DedicatedScheduledExecutorService(String, Logger, boolean)} but defaults to {@code null}
      * for the thread name (which causes only error messages to be printed - unless debug is true) and and false for the
-     * debug flag.<br />
-     * <br />
+     * debug flag.
+     * </p>
+     * <p>
      * Note: This is for example used by the {@link com.iota.iri.utils.log.interval.IntervalLogger} which does not want
-     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.<br />
-     *
+     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.
+     * </p>
+     * 
      * @param logger logback logger that shall be used for the origin of the log messages
      */
     public DedicatedScheduledExecutorService(Logger logger) {
@@ -160,12 +174,15 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
+     * <p>
      * Does the same as {@link #DedicatedScheduledExecutorService(String, Logger, boolean)} but defaults to {@code null}
      * for the thread name (which causes only error messages to be printed - unless debug is true) and the
-     * {@link #DEFAULT_LOGGER} for the log messages.<br />
-     * <br />
+     * {@link #DEFAULT_LOGGER} for the log messages.
+     * </p>
+     * <p>
      * Note: This is for example used by the {@link com.iota.iri.utils.log.interval.IntervalLogger} which does not want
-     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.<br />
+     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.
+     * </p>
      *
      * @param debug debug flag that indicates if every "run" should be accompanied with a log message
      */
@@ -174,19 +191,22 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
+     * <p>
      * Does the same as {@link #DedicatedScheduledExecutorService(String, Logger, boolean)} but defaults to {@code null}
      * for the thread name (which causes only error messages to be printed), the {@link #DEFAULT_LOGGER} for the log
-     * messages and {@code false} for the debug flag.<br />
-     * <br />
+     * messages and {@code false} for the debug flag.
+     * </p>
+     * <p>
      * Note: This is for example used by the {@link com.iota.iri.utils.log.interval.IntervalLogger} which does not want
-     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.<br />
+     *       to inform the user when scheduling a log output, but which still needs the "only run one task" logic.
+     * </p>
      */
     public DedicatedScheduledExecutorService() {
         this(null, DEFAULT_LOGGER, false);
     }
 
     /**
-     * This method is the getter for the name of the thread that gets created by this service.<br />
+     * This method is the getter for the name of the thread that gets created by this service.
      *
      * @return it simply returns the private property of {@link #threadName}.
      */
@@ -198,10 +218,14 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * This method shows a message whenever a task gets successfully scheduled.<br />
-     * <br />
+     * 
+     * <p>
+     * This method shows a message whenever a task gets successfully scheduled.
+     * </p>
+     * <p>
      * We only show the scheduling message if debugging is enabled or a thread name was defined when creating this
-     * {@link DedicatedScheduledExecutorService} (to not pollute the CLI with meaningless messages).<br />
+     * {@link DedicatedScheduledExecutorService} (to not pollute the CLI with meaningless messages).
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      */
@@ -216,17 +240,23 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * This method shows a message whenever a task starts to be processed.<br />
-     * <br />
+     * 
+     * <p>
+     * This method shows a message whenever a task starts to be processed.
+     * </p>
+     * <p>
      * We only show the starting message if debug is enabled or if it is the first start of the task in a named
      * {@link DedicatedScheduledExecutorService} (display it like it would be a {@link Thread} with one start message
-     * and one stop message - to not pollute the CLI with meaningless messages).<br />
-     * <br />
+     * and one stop message - to not pollute the CLI with meaningless messages).
+     * </p>
+     * <p>
      * To increase the information available for debugging, we change the thread name to the one that initiated the
-     * start (rather than the randomly assigned one from the executor service) before printing the start message.<br />
-     * <br />
+     * start (rather than the randomly assigned one from the executor service) before printing the start message.
+     * </p>
+     * <p>
      * After the start message was printed, we set the name of the {@link Thread} that will consequently be used for log
-     * messages from the task itself.<br />
+     * messages from the task itself.
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      */
@@ -249,15 +279,20 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * {@inheritDoc}
+     * 
+     * <p>
      * This method shows a message when the task finishes its execution (can happen multiple times for recurring
-     * tasks).<br />
-     * <br />
+     * tasks).
+     * </p>
+     * <p>
      * We only show the finishing message if debug is enabled and if no error occurred (otherwise the
-     * {@link #onCompleteTask(TaskDetails, Throwable)} callback will give enough information about the crash).<br />
-     * <br />
+     * {@link #onCompleteTask(TaskDetails, Throwable)} callback will give enough information about the crash).
+     * </p>
+     * <p>
      * To be consistent with the start message, we change the thread name to the one that initiated the task (this also
      * makes it easier to distinguish log messages that are emitted by the "real" logic of the task from the "automated"
-     * messages about its lifecycle).<br />
+     * messages about its lifecycle).
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @param error the exception that caused this task to terminate or {@code null} if it terminated normally
@@ -275,10 +310,14 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * This method shows an information about the intent to cancel the task.<br />
-     * <br />
+     * 
+     * <p>
+     * This method shows an information about the intent to cancel the task.
+     * </p>
+     * <p>
      * We only show the cancel message if debugging is enabled or a thread name was defined when creating this
-     * {@link DedicatedScheduledExecutorService} (to not pollute the CLI with meaningless messages).<br />
+     * {@link DedicatedScheduledExecutorService} (to not pollute the CLI with meaningless messages).
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      */
@@ -293,15 +332,21 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * {@inheritDoc}
+     * 
+     * <p>
      * This method shows a stopped message whenever it finally terminates (and doesn't get launched again in case of
-     * recurring tasks).<br />
-     * <br />
+     * recurring tasks).
+     * </p>
+     * <p>
      * We only show the stopped message if debug is enabled, an exception occurred (always show unexpected errors) or if
      * we have a named {@link DedicatedScheduledExecutorService} (to not pollute the CLI with meaningless
-     * messages).<br />
+     * messages).
+     * </p>
+     * <p>
      * If the completion of the task was not caused by an outside call to cancel it, we change the thread name to the
      * one that initiated the task (this makes it easier to distinguish log messages that are emitted by the "real"
-     * logic of the task from the "automated" messages about its lifecycle).<br />
+     * logic of the task from the "automated" messages about its lifecycle).
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @param error the exception that caused this task to terminate or {@code null} if it terminated normally
@@ -329,10 +374,13 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     //region PRIVATE UTILITY METHODS ///////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * This method is a utility method that prints the schedule message of the task.<br />
-     * <br />
+     * <p>
+     * This method is a utility method that prints the schedule message of the task.
+     * </p>
+     * <p>
      * It constructs the matching message by passing the task details into the
-     * {@link #buildScheduledMessage(TaskDetails)} method.<br />
+     * {@link #buildScheduledMessage(TaskDetails)} method.
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      */
@@ -341,10 +389,13 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
-     * This method is a utility method that prints the started message of the task.<br />
-     * <br />
+     * <p>
+     * This method is a utility method that prints the started message of the task.
+     * </p>
+     * <p>
      * It constructs the message by passing the details into the {@link #buildStartedMessage(TaskDetails)} and printing
-     * it through the logger.<br />
+     * it through the logger.
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      */
@@ -353,10 +404,13 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
-     * This method is a utility method that prints the finished message of the task.<br />
-     * <br />
+     * <p>
+     * This method is a utility method that prints the finished message of the task.
+     * </p>
+     * <p>
      * It constructs the message by passing the details into the {@link #buildFinishedMessage(TaskDetails)} and printing
-     * it through the logger.<br />
+     * it through the logger.
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      */
@@ -365,10 +419,13 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
-     * This method is a utility method that prints the stop message of the task.<br />
-     * <br />
+     * <p>
+     * This method is a utility method that prints the stop message of the task.
+     * </p>
+     * <p>
      * It constructs the message by passing the details into the {@link #buildStopMessage(TaskDetails)} and printing
-     * it through the logger.<br />
+     * it through the logger.
+     * </p>
      *
      * @param taskDetails metadata holding the relevant information of the task
      */
@@ -377,12 +434,15 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
-     * This method is a utility method that prints the stopped message of the task.<br />
-     * <br />
+     * <p>
+     * This method is a utility method that prints the stopped message of the task.
+     * </p>
+     * <p>
      * It constructs the message by passing the details into the {@link #buildStoppedMessage(TaskDetails, Throwable)}
      * and printing it through the logger. If an error occurred we use the error channel and append the error to
-     * get a stack trace of what happened.<br />
-     *
+     * get a stack trace of what happened.
+     * </p>
+     * 
      * @param taskDetails metadata holding the relevant information of the task
      * @param error the exception that caused the task to be stopped
      */
@@ -396,10 +456,13 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
     }
 
     /**
-     * This method is a utility method that generates the thread name that is used in the log messages.<br />
-     * <br />
+     * <p>
+     * This method is a utility method that generates the thread name that is used in the log messages.
+     * </p>
+     * <p>
      * It simply returns the thread name (if one is set) or generates a name if this
-     * {@link DedicatedScheduledExecutorService} is "unnamed".<br />
+     * {@link DedicatedScheduledExecutorService} is "unnamed".
+     * </p>
      *
      * @return the thread name that is used in the log messages
      */
@@ -411,7 +474,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * This method creates the schedule message of the task by first building the temporal parts of the message and
-     * then appending them to the actual message.<br />
+     * then appending them to the actual message.
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @return the schedule message that can be used with the logger
@@ -435,7 +498,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * This method creates the started message of the task by simply extracting the relevant information from the
-     * {@code taskDetails} and concatenating them to the actual message.<br />
+     * {@code taskDetails} and concatenating them to the actual message.
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @return the started message that can be used with the logger
@@ -449,7 +512,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * This method creates the finished message of the task by simply extracting the relevant information from the
-     * {@code taskDetails} and concatenating them to the actual message.<br />
+     * {@code taskDetails} and concatenating them to the actual message.
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @return the finished message that can be used with the logger
@@ -463,7 +526,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * This method creates the stop message of the task by simply extracting the relevant information from the
-     * {@code taskDetails} and concatenating them to the actual message.<br />
+     * {@code taskDetails} and concatenating them to the actual message.
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @return the stop message that can be used with the logger
@@ -475,12 +538,15 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
                                                          : "Cancelling Start [" + printableThreadName + "] ...";
     }
 
-    /**
+    /** 
+     * <p>
      * This method creates the stopped message of the task by simply extracting the relevant information from the
-     * {@code taskDetails} and concatenating them to the actual message.<br />
-     * <br />
-     * We differentiate between different termination ways by giving different reasons in the message.<br />
-     *
+     * {@code taskDetails} and concatenating them to the actual message.
+     * </p>
+     * <p>
+     * We differentiate between different termination ways by giving different reasons in the message.
+     * </p>
+     * 
      * @param taskDetails metadata holding the relevant information of the task
      * @return the stop message that can be used with the logger
      */
@@ -500,7 +566,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * This method is a utility method that builds the message fragment which expresses the delay of the scheduled
-     * task.<br />
+     * task.
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @return the message fragment which expresses the delay of the scheduled task
@@ -515,7 +581,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * This method is a utility method that builds the message fragment which expresses the interval of the scheduled
-     * task.<br />
+     * task.
      *
      * @param taskDetails metadata holding the relevant information of the task
      * @return the message fragment which expresses the interval of the scheduled task
@@ -530,7 +596,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
 
     /**
      * This method is a utility method that creates a human readable abbreviation of the provided
-     * {@link TimeUnit}.<br />
+     * {@link TimeUnit}.
      *
      * @param unit the time unit used for the values in the {@link TaskDetails}
      * @return a human readable abbreviation of the provided {@link TimeUnit}

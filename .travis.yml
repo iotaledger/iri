@@ -17,6 +17,9 @@ addons:
     - jq
 
 matrix:
+  include:
+    - language: go
+      go: 1.12.x
   allow_failures:
     - jdk: oraclejdk9
 

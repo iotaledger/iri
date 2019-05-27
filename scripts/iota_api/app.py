@@ -102,6 +102,8 @@ def get_cache():
     if enable_batching is False:
         return
 
+    address = '14dD6ygPi5WXdwwBTt1FBZK3aD8uDem1FY'
+    base58_priv_key = 'L41XHGJA5QX43QRG3FEwPbqD5BYvy6WxUxqAMM9oQdHJ5FcRHcGk'
     global cache_lock
     with cache_lock:
         nums = min(len(txn_cache), BATCH_SIZE)
@@ -125,7 +127,7 @@ def get_cache():
         tr_txs = json.dumps(tr_list)
         tx_txs = json.dumps(tx_list)
         if num_tx != 0:
-            send(tx_txs, num_tx, 'TX')
+            send(sign_message(tx_txs, address, base58_priv_key), num_tx, 'TX')
         if num_tr != 0:
             send(tr_txs, num_tr, 'TR')
 

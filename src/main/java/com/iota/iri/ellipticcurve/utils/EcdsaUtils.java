@@ -61,7 +61,7 @@ public class EcdsaUtils {
             return new ValidRes(false, error);
         }
 
-        String generateAddress = generateAddress(publicKey, signature1, isCompressed);
+        String generateAddress = generateAddress(publicKey, isCompressed);
         if (!generateAddress.equals(address)){
             String error = String.format("valid address failed, expect:%s, actural :%s", address, generateAddress);
             return new ValidRes(false, error);
@@ -101,7 +101,7 @@ public class EcdsaUtils {
         return publicKey;
     }
 
-    private static String generateAddress(PublicKey publicKey, Signature signature, Boolean isCompressed) throws NoSuchAlgorithmException {
+    public static String generateAddress(PublicKey publicKey, Boolean isCompressed) throws NoSuchAlgorithmException {
         Point point = publicKey.point;
         ByteString xStr = BinaryAscii.stringFromNumber(point.x, Curve.secp256k1.length());
         ByteString yStr = BinaryAscii.stringFromNumber(point.y, Curve.secp256k1.length());

@@ -34,12 +34,6 @@ install:
     - sudo pip install sh
     - sudo pip install six --upgrade
     - sudo pip install ecdsa
-  # install ipfs
-    - wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz
-      && tar xf go-ipfs_v0.4.18_linux-amd64.tar.gz
-      && cd go-ipfs/
-      && sudo ./install.sh
-      && cd ..
   # update go version
     - gimme 1.11.5
     - source ~/.gimme/envs/go1.11.5.env

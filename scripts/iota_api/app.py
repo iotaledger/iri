@@ -21,6 +21,7 @@ iota_seed = cf.get("iota", "seed")
 enable_ipfs = cf.getboolean("iota", "enableIpfs")
 enable_compression = cf.getboolean("iota", "enableCompression")
 enable_batching = cf.getboolean("iota", "enableBatching")
+enable_crypto = cf.getboolean("iota", "enableCrypto")
 listen_port = cf.get("iota", "listenPort")
 listen_address = cf.get("iota", "listenAddress")
 cache = IotaCache(iota_addr, iota_seed)
@@ -40,7 +41,7 @@ if (enable_ipfs == True and enable_compression == True) or (enable_batching == F
     sys.exit(-1)
 
 def sign_message(data,address, base58_priv_key):
-    if enable_ipfs is False and enable_batching is True:
+    if enable_crypto is True:
         message = json.dumps(data, sort_keys=True)
         signature = sign_input_message(address, message.replace(' ', ''), base58_priv_key)
         data['sign'] = signature

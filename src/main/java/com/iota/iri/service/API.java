@@ -245,22 +245,20 @@ public class API {
                     String message;
                     if (request.get("message") instanceof Map){
                         message = (String) request.get("message").toString();
-                        //验证签名
-                        if (message.indexOf("sign") > 0){
-                            if(!verifySign(address, message)){
-                                log.error("verify sign failed!");
-                                return AbstractResponse.createEmptyResponse();
-                            }
-
-                        }
-                    }else{
+                    } else{
                         message = (String) request.get("message");
                     }
 
-                    //FIXME address不足81位补9
+                    if (message.indexOf("sign") > 0){
+                        if(!verifySign(address, message)){
+                            log.error("Failed to verify signature!");
+                            return AbstractResponse.createEmptyResponse();
+                        }
+                    }
+
                     address = Converter.asciiToTrytes(address);
-                    if(address.length() < 81){
-                        address = address.concat(StringUtils.repeat('9', 81 - address.length()));
+                    if(address.length() < 81) {
+                        address = StringUtils.rightPad(address, 81, '9');
                     }
                     AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
@@ -1649,7 +1647,7 @@ public class API {
         JSONObject content = new JSONObject(contentStr);
         String signature = (String) content.remove("sign");
         String message = EcdsaUtils.getSortedStringFrom(content);
-        System.out.println("message : " + message);
+        log.debug("[message] {}", message);
         return doVerifySign(address, signature, message);
     }
 
@@ -1657,8 +1655,7 @@ public class API {
         try {
             EcdsaUtils.ValidRes res = EcdsaUtils.verifyMessage(sign, message, address);
             if (!res.verifyResult()){
-                //valid failed, print log
-                log.error(String.format("validate sign failed for : %s", res.errMessage()));
+                log.error(String.format("Signatire verification failed for : %s", res.errMessage()));
             }
             return res.verifyResult();
         } catch (NoSuchAlgorithmException e) {

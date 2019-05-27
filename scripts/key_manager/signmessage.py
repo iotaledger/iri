@@ -369,6 +369,41 @@ def verify_input_message(address, message, signature):
     
     return verify_message(address, signature, message)
 
+def generate_address(base58_priv_key):
+    compressed = True
+    if base58_priv_key[0] == 'L' or base58_priv_key[0] == 'K':
+        compressed = True
+    elif base58_priv_key[0] == '5':
+        compressed = False
+    else:
+        raise BaseException("error: private must start with 5 if uncompressed or L/K for compressed")
+    encoded_priv_key_bytes = b58decode(base58_priv_key, None)
+    encoded_priv_key_hex_string = encoded_priv_key_bytes.encode('hex')
+
+    secret_hex_string = ''
+    if base58_priv_key[0] == 'L' or base58_priv_key[0] == 'K':
+        assert len(encoded_priv_key_hex_string) == 76
+        # strip leading 0x08, 0x01 compressed flag, checksum
+        secret_hex_string = encoded_priv_key_hex_string[2:-10]
+    elif base58_priv_key[0] == '5':
+        assert len(encoded_priv_key_hex_string) == 74
+        # strip leading 0x08 and checksum
+        secret_hex_string = encoded_priv_key_hex_string[2:-8]
+    else:
+        raise BaseException("error: private must start with 5 if uncompressed or L/K for compressed")
+    if VERBOSE: print 'secret_hex_string:\n', secret_hex_string
+    secret = int(secret_hex_string, 16)
+
+    checksum = Hash(encoded_priv_key_bytes[:-4])[:4].encode('hex')
+    if VERBOSE: print 'checksum:\n', checksum
+    assert checksum == encoded_priv_key_hex_string[-8:] #make sure private key is valid
+    if VERBOSE: print 'secret:\n', secret
+    private_key = ecdsa.SigningKey.from_secret_exponent( secret, SECP256k1 )
+    public_key = private_key.get_verifying_key()
+    address = public_key_to_bc_address(encode_point(public_key, compressed))
+    return address
+
+
 def main():
     argv = sys.argv
     if argv[1] == "sign":
@@ -379,4 +414,5 @@ def main():
 
 if __name__ == '__main__':
     #test_sign_messages()
-    main()
+    # main()
+    print generate_address('L41XHGJA5QX43QRG3FEwPbqD5BYvy6WxUxqAMM9oQdHJ5FcRHcGk')

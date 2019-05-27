@@ -3,6 +3,7 @@ addr = http://localhost:14700
 seed = EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9Q
 enableIpfs = False 
 enableBatching = False 
+enableCrypto = False
 enableCompression = False
 listenPort = 6000
 listenAddress = 0.0.0.0

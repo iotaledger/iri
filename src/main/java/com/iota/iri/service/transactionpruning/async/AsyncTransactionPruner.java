@@ -304,7 +304,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * @throws TransactionPruningException if anything goes wrong while persisting the state
      */
     private void saveStateNow() throws TransactionPruningException {
-        try {
+/*        try {
             AtomicInteger jobsPersisted = new AtomicInteger(0);
 
             Files.write(
@@ -328,7 +328,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
             }
         } catch(Exception e) {
             throw new TransactionPruningException("failed to write the state file", e);
-        }
+        } */
     }
 
     /**

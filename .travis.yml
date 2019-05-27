@@ -33,7 +33,7 @@ install:
     - sudo apt-get install python-pip
     - sudo pip install ipfsapi
     - sudo pip install flask
-    - sudo pip install pyOpenSSL
+    - sudo pip install -U pyOpenSSL
     - sudo pip install pyota
     - sudo pip install mock
     - sudo pip install cryptography==2.5

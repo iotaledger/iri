@@ -43,6 +43,9 @@ install:
       && cd go-ipfs/
       && sudo ./install.sh
       && cd ..
+  # update go version
+    - gimme 1.11.5
+    - source ~/.gimme/envs/go1.11.5.env
 
 before_script:
   - ipfs init

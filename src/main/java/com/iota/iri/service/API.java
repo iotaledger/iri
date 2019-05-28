@@ -252,15 +252,16 @@ public class API {
                                 return AbstractResponse.createEmptyResponse();
                             }
 
-                            address = Converter.asciiToTrytes(address);
-                            if(address.length() < 81){
-                                address = address.concat(StringUtils.repeat('9', 81 - address.length()));
-                            }
                         }
                     }else{
                         message = (String) request.get("message");
                     }
 
+                    //FIXME address不足81位补9
+                    address = Converter.asciiToTrytes(address);
+                    if(address.length() < 81){
+                        address = address.concat(StringUtils.repeat('9', 81 - address.length()));
+                    }
                     AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
                 }

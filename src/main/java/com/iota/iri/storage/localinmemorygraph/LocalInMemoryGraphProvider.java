@@ -601,11 +601,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             return cachedTotalOrder;
         }
 //        FIXME 止血，如果使用genesis前推功能，历史TotalOrder也应该合并在内。
-//        List<Hash> totalOrder = tangle.getTotalOrder();
-//        if (CollectionUtils.isNotEmpty(totalOrder)){
-//            return totalOrder;
-//        }
-        List<Hash> totalOrder = confluxOrder(getPivot(getGenesis()));
+        List<Hash> totalOrder = tangle.getTotalOrder();
+        if (CollectionUtils.isNotEmpty(totalOrder)){
+            return totalOrder;
+        }
+        totalOrder = confluxOrder(getPivot(getGenesis()));
         cachedTotalOrder = totalOrder;
         tangle.storeTotalOrder(totalOrder);
         return totalOrder;

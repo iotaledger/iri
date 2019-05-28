@@ -954,7 +954,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
-        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
+        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
 
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;

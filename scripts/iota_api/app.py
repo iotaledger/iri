@@ -41,7 +41,7 @@ if (enable_ipfs == True and enable_compression == True) or (enable_batching == F
 
 def sign_message(data,address, base58_priv_key):
     message = json.dumps(data, sort_keys=True)
-    signature = sign_input_message(address, message, base58_priv_key)
+    signature = sign_input_message(address, message.replace(' ', ''), base58_priv_key)
     data['sign'] = signature
     return json.dumps(data)
 
@@ -121,13 +121,13 @@ def get_cache():
                 tr_list.append(tx)
                 num_tr += 1
             elif req_json[u'tag'] == 'TX':
-                tx_list.append(tx)
+                tx_list.append(sign_message(req_json, address, base58_priv_key))
                 num_tx += 1
 
         tr_txs = json.dumps(tr_list)
         tx_txs = json.dumps(tx_list)
         if num_tx != 0:
-            send(sign_message(tx_txs, address, base58_priv_key), num_tx, 'TX')
+            send(tx_txs, num_tx, 'TX')
         if num_tr != 0:
             send(tr_txs, num_tr, 'TR')
 

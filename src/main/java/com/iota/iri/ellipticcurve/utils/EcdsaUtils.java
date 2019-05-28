@@ -211,6 +211,11 @@ public class EcdsaUtils {
         public String errMessage(){
             return message;
         }
+
+        @Override
+        public String toString(){
+            return aBoolean + ":" + message;
+        }
     }
 
     public static String getSortedStringFrom(JSONObject json){

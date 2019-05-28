@@ -1454,7 +1454,7 @@ public class API {
      * @param message The message to store
      * @param tag     The tag to store, by default is TX
      **/
-    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
+    private synchronized AbstractResponse storeMessageStatement(String address, final String message, final String tag) throws Exception {
         long tStart = System.currentTimeMillis();
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
@@ -1522,6 +1522,10 @@ public class API {
         Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
         final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
 
+        address = Converter.asciiToTrytes(address);
+        if(address.length() < 81){
+            address = address.concat(StringUtils.repeat('9', 81 - address.length()));
+        }
         List<String> transactions = new ArrayList<>();
         for (int i = 0; i < txCount; i++) {
             String tx;

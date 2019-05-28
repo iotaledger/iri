@@ -245,6 +245,18 @@ public class API {
                     String message;
                     if (request.get("message") instanceof Map){
                         message = (String) request.get("message").toString();
+                        //验证签名
+                        if (message.indexOf("sign") > 0){
+                            if(!verifySign(address, message)){
+                                log.error("verify sign failed!");
+                                return AbstractResponse.createEmptyResponse();
+                            }
+
+                            address = Converter.asciiToTrytes(address);
+                            if(address.length() < 81){
+                                address = address.concat(StringUtils.repeat('9', 81 - address.length()));
+                            }
+                        }
                     }else{
                         message = (String) request.get("message");
                     }
@@ -1454,7 +1466,7 @@ public class API {
      * @param message The message to store
      * @param tag     The tag to store, by default is TX
      **/
-    private synchronized AbstractResponse storeMessageStatement(String address, final String message, final String tag) throws Exception {
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
         long tStart = System.currentTimeMillis();
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
@@ -1488,11 +1500,6 @@ public class API {
             // skip 'YYYYMMDD' in tag
             switch (tag.substring(8)){
                 case "TX" :
-                    //验证签名
-                    if(!verifySign(address, message)){
-                        log.error("verify sign failed!");
-                        return AbstractResponse.createEmptyResponse();
-                    }
                     processed = IotaIOUtils.processBatchTxnMsg(message);
                     if (processed == null) {
                         log.error("Special process failed!");
@@ -1522,10 +1529,6 @@ public class API {
         Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
         final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
 
-        address = Converter.asciiToTrytes(address);
-        if(address.length() < 81){
-            address = address.concat(StringUtils.repeat('9', 81 - address.length()));
-        }
         List<String> transactions = new ArrayList<>();
         for (int i = 0; i < txCount; i++) {
             String tx;

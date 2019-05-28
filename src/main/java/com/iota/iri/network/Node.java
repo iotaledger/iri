@@ -58,7 +58,7 @@ public class Node {
     // If 'null', it means the transaction is from user's input.
     // If not null, it means the transaction is from the specific Neighbor.
     private final ConcurrentLinkedQueue<Pair<TransactionViewModel, Neighbor>> broadcastQueue = new ConcurrentLinkedQueue<>();
-    private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> receiveQueue = weightQueueTxPair();
+    private final ConcurrentLinkedQueue<Pair<TransactionViewModel, Neighbor>> receiveQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentSkipListSet<Pair<Hash, Neighbor>> replyQueue = weightQueueHashPair();
 
 
@@ -621,7 +621,7 @@ public class Node {
     public void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
         receiveQueue.add(new ImmutablePair<>(receivedTransactionViewModel, neighbor));
         if (receiveQueue.size() > RECV_QUEUE_SIZE) {
-            receiveQueue.pollLast();
+            receiveQueue.poll();
         }
 
     }
@@ -635,7 +635,7 @@ public class Node {
 
 
     public void processReceivedDataFromQueue() {
-        final Pair<TransactionViewModel, Neighbor> receivedData = receiveQueue.pollFirst();
+        final Pair<TransactionViewModel, Neighbor> receivedData = receiveQueue.poll();
         if (receivedData != null) {
             processReceivedData(receivedData.getLeft(), receivedData.getRight());
         }

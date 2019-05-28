@@ -81,9 +81,10 @@ Nginx \cite{nedelcu2010nginx} is used to evenly and randomly distribute the requ
 To test the block generation rate, we set each block in StreamNet to have only one transaction.
 And the performance on this configuration is as Figure~\ref{single_txn} shows.
 To begin with, as the size of the cluster grows, the network as a whole will witness little performance loss on all of the data scales. 
-In the experiment, we can also see that with the growth of the data, the reduction of the TPS ratio is less than the ratio of the growth of the data (1-2 times as opposed to 4 times).
+In the experiment, we can also see that with the growth of the data, the average TPS on most of the configurations have grown a little bit (there are definitely outliers that need our time to triage), 
+this is because the genesis forwarding algorithm needs some ramp up time to get to the stable growth stage. 
 Considering the system is dealing a growing graph instead of a chain, and the complexity analysis in the previous section,
-our streaming algorithm shed the light on how to deal with the complexity of the growing DAG.
+the experiment clearly shows that our streaming algorithm shed the light on how to deal with the growing DAG.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -100,12 +101,11 @@ our streaming algorithm shed the light on how to deal with the complexity of the
 \subsubsection {Bundle transaction test}
 
 By default, each block in StreamNet will support bundle transaction. 
-Each block will contain 20 transactions.
-And the performance on this configuration is as Figure~\ref{multi_txn} shows.
-In this experiment, we can see weak scaling effect on every data set, as the performance will grow with the size of the clusters.
-This is because of the batching, the total number of the blocks that needs to be calculated is becoming less, and there will be less network message passing.
-In addition, the effect of network topology still holds, as the more complex the network structure, the less efficiently it will perform.
-In the bundle transaction test, we see much less performance thrashing because there are much less number of blocks passed in the network. 
+We set each bundle to contain 20 transactions and for each block there are approximately 3 transactions included.
+The performance on this configuration is as Figure~\ref{multi_txn} shows.
+In this experiment, we can see that the performance (TPS) comparing with the block test improved more than twice. 
+This is because there will be less POW works to be done.
+In addition, with growth of the data we do not witness obvious performance down turn. But there are some performance thrashing in the experiment, which needs more study. 
 
 \begin{figure}[!ht]
 \begin{center}

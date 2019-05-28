@@ -57,7 +57,7 @@ public class Node {
     // `Neighbor` in broadcastQueue stands for where the transaction is from.
     // If 'null', it means the transaction is from user's input.
     // If not null, it means the transaction is from the specific Neighbor.
-    private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> broadcastQueue = weightQueueTxPair();
+    private final ConcurrentLinkedQueue<Pair<TransactionViewModel, Neighbor>> broadcastQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> receiveQueue = weightQueueTxPair();
     private final ConcurrentSkipListSet<Pair<Hash, Neighbor>> replyQueue = weightQueueHashPair();
 
@@ -357,14 +357,14 @@ public class Node {
                 if(checkIfReady(model)) {
                     persistBundle(h);
                 } else { // put missing block into request queue
-                    List<Hash> missingHashes = getMissingHash(model);
+                    /*List<Hash> missingHashes = getMissingHash(model);
                     for(Hash req : missingHashes) {
                         try {
                             transactionRequester.requestTransaction(req, null, false);
                         } catch(Exception e) {
                             log.error("Something wrong goes here {}", e.getStackTrace().toString());
                         }
-                    }
+                    }*/
                 }
                 break; // only get the first
             }
@@ -820,7 +820,7 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    final Pair<TransactionViewModel, Neighbor> broadcastData = broadcastQueue.pollFirst();
+                    final Pair<TransactionViewModel, Neighbor> broadcastData = broadcastQueue.poll();
                     if (broadcastData != null) {
                         TransactionViewModel transactionViewModel = broadcastData.getLeft();
                         Neighbor from = broadcastData.getRight();
@@ -921,9 +921,7 @@ public class Node {
                     processReceivedDataFromQueue();
                     if(count++==500) {
                         checkPersist();
-                        if (optimizeNetworkEnabled) {
-                            checkAlreadyPersisted();
-                        }
+                        checkAlreadyPersisted();
                         count = 0;
                     }
                     Thread.sleep(1);
@@ -1005,7 +1003,7 @@ public class Node {
     public void broadcast(final TransactionViewModel transactionViewModel, Neighbor from) {
         broadcastQueue.add(new ImmutablePair<>(transactionViewModel, from));
         if (broadcastQueue.size() > BROADCAST_QUEUE_SIZE) {
-            broadcastQueue.pollLast();
+            broadcastQueue.poll();
         }
     }
 

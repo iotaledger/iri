@@ -1152,7 +1152,7 @@ public class API {
       * @param trytes the list of transaction
       **/
     public void broadcastTransactionsStatement(final List<String> trytes) {
-        final List<TransactionViewModel> elements = new LinkedList<>();
+        final List<TransactionViewModel> elements = new ArrayList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes) {
             //validate all trytes
@@ -1160,7 +1160,9 @@ public class API {
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits, instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
-        for (final TransactionViewModel transactionViewModel : elements) {
+        for(int i = elements.size() -1 ; i>= 0; i--) {
+        //for (final TransactionViewModel transactionViewModel : elements) {
+            final TransactionViewModel transactionViewModel = elements.get(i);
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             instance.node.broadcast(transactionViewModel, null);

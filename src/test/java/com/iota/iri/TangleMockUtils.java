@@ -17,25 +17,31 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 /**
- * Contains utilities that help to mock the retrieval of database entries from the tangle.<br />
- * <br />
+ * Contains utilities that help to mock the retrieval of database entries from the tangle.
+ * 
+ * <p>
  * Mocking the tangle allows us to write unit tests that perform much faster than spinning up a new database for every
- * test.<br />
+ * test.
+ * </p>
  */
 public class TangleMockUtils {
     //region [mockMilestone] ///////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Registers a {@link Milestone} in the mocked tangle that can consequently be accessed by the tested classes.<br />
-     * <br />
+     * <p>
+     * Registers a {@link Milestone} in the mocked tangle that can consequently be accessed by the tested classes.
+     * </p>
+     * <p>
      * It first creates the {@link Milestone} with the given details and then mocks the retrieval methods of the tangle
      * to return this object. In addition to mocking the specific retrieval method for the given hash, we also mock the
      * retrieval method for the "latest" entity so the mocked tangle returns the elements in the order that they were
-     * mocked / created (which allows the mocked tangle to behave just like a normal one).<br />
-     * <br />
+     * mocked / created (which allows the mocked tangle to behave just like a normal one).
+     * </p>
+     * <p>
      * Note: We return the mocked object which allows us to set additional fields or modify it after "injecting" it into
-     *       the mocked tangle.<br />
-     *
+     *       the mocked tangle.
+     * </p>
+     * 
      * @param tangle mocked tangle object that shall retrieve a milestone object when being queried for it
      * @param hash transaction hash of the milestone
      * @param index milestone index of the milestone

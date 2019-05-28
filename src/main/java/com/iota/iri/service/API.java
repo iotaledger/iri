@@ -27,6 +27,7 @@ import com.iota.iri.service.restserver.RestConnector;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.impl.TipSelectionCancelledException;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
@@ -41,6 +42,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -130,6 +132,8 @@ public class API {
     
     
     private RestConnector connector;
+
+    private final ExecutorService tipSelExecService = Executors.newSingleThreadExecutor(r -> new Thread(r, "tip-selection"));
 
     /**
      * Starts loading the IOTA API, parameters do not have to be initialized.
@@ -596,7 +600,17 @@ public class API {
             throw new IllegalStateException(INVALID_SUBTANGLE);
         }
 
-        List<Hash> tips = tipsSelector.getTransactionsToApprove(depth, reference);
+        Future<List<Hash>> tipSelection = null;
+        List<Hash> tips;
+        try {
+            tipSelection = tipSelExecService.submit(() -> tipsSelector.getTransactionsToApprove(depth, reference));
+            tips = tipSelection.get(configuration.getTipSelectionTimeoutSec(), TimeUnit.SECONDS);
+        } catch (TimeoutException ex) {
+            // interrupt the tip-selection thread so that it aborts
+            tipSelection.cancel(true);
+            throw new TipSelectionCancelledException(String.format("tip-selection exceeded timeout of %d seconds",
+                    configuration.getTipSelectionTimeoutSec()));
+        }
 
         if (log.isDebugEnabled()) {
             gatherStatisticsOnTipSelection();
@@ -1440,6 +1454,7 @@ public class API {
      * Does not remove the instance, so the server may be restarted without having to recreate it.
      */
     public void shutDown() {
+        tipSelExecService.shutdownNow();
         if (connector != null) {
             connector.stop();
         }

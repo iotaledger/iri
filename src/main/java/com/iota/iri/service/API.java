@@ -602,15 +602,14 @@ public class API {
 
         Future<List<Hash>> tipSelection = null;
         List<Hash> tips;
-        try{
+        try {
             tipSelection = tipSelExecService.submit(() -> tipsSelector.getTransactionsToApprove(depth, reference));
             tips = tipSelection.get(configuration.getTipSelectionTimeoutSec(), TimeUnit.SECONDS);
-        }catch(TimeoutException ex){
+        } catch (TimeoutException ex) {
             // interrupt the tip-selection thread so that it aborts
             tipSelection.cancel(true);
-            throw new TipSelectionCancelledException(
-                    String.format("tip-selection exceeded timeout of %d seconds",
-                            configuration.getTipSelectionTimeoutSec()));
+            throw new TipSelectionCancelledException(String.format("tip-selection exceeded timeout of %d seconds",
+                    configuration.getTipSelectionTimeoutSec()));
         }
 
         if (log.isDebugEnabled()) {

@@ -559,18 +559,13 @@ public class SnapshotServiceImpl implements SnapshotService {
     private boolean isOrphaned(Tangle tangle, TransactionViewModel transaction,
             TransactionViewModel referenceTransaction, Set<Hash> processedTransactions) throws SnapshotException {
 
-        long arrivalTime = transaction.getArrivalTime() / 1000L;
-        if (arrivalTime > referenceTransaction.getTimestamp()) {
-            return false;
-        }
-
         AtomicBoolean nonOrphanedTransactionFound = new AtomicBoolean(false);
         try {
             DAGHelper.get(tangle).traverseApprovers(
                     transaction.getHash(),
                     currentTransaction -> !nonOrphanedTransactionFound.get(),
                     currentTransaction -> {
-                        if (arrivalTime > referenceTransaction.getTimestamp()) {
+                        if (currentTransaction.getArrivalTime() / 1000L > referenceTransaction.getTimestamp()) {
                             nonOrphanedTransactionFound.set(true);
                         }
                     },

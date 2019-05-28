@@ -40,10 +40,13 @@ if (enable_ipfs == True and enable_compression == True) or (enable_batching == F
     sys.exit(-1)
 
 def sign_message(data,address, base58_priv_key):
-    message = json.dumps(data, sort_keys=True)
-    signature = sign_input_message(address, message.replace(' ', ''), base58_priv_key)
-    data['sign'] = signature
-    return json.dumps(data)
+    if enable_ipfs is False and enable_batching is True:
+        message = json.dumps(data, sort_keys=True)
+        signature = sign_input_message(address, message.replace(' ', ''), base58_priv_key)
+        data['sign'] = signature
+        return json.dumps(data, sort_keys=True)
+    else:
+        return json.dumps(data, sort_keys=True)
 
 def compress_str(data):
     if enable_compression == True:

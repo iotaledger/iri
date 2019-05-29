@@ -132,8 +132,12 @@ public class NeighborRouter {
 
     private void initNeighbors() {
         // parse URIs
-        config.getNeighbors().stream().distinct().map(NeighborRouter::parseURI).filter(Optional::isPresent)
-                .map(Optional::get).forEach(uri -> reconnectPool.add(uri));
+        config.getNeighbors().stream()
+                .distinct()
+                .map(NeighborRouter::parseURI)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(uri -> reconnectPool.add(uri));
     }
 
     /**

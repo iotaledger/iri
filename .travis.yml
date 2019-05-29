@@ -1,3 +1,9 @@
+language: java
+jdk:
+  - oraclejdk8
+  #- openjdk8
+  #- oraclejdk9
+
 cache:
   apt: true
   directories:
@@ -9,10 +15,6 @@ addons:
   apt:
     packages:
     - jq
-
-matrix:
-  allow_failures:
-    - jdk: oraclejdk9
 
 install:
   # install python env

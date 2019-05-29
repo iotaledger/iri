@@ -11,8 +11,6 @@ import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.Handshake;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.utils.thread.ThreadIdentifier;
-import com.iota.iri.utils.thread.ThreadUtils;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -23,9 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.openhft.hashing.LongHashFunction;
@@ -44,12 +40,12 @@ import org.slf4j.LoggerFactory;
 public class NeighborRouter {
 
     private static final Logger log = LoggerFactory.getLogger(NeighborRouter.class);
-    private static final String protocolPrefix = "tcp://";
+    private static final String PROTOCOL_PREFIX = "tcp://";
 
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     private static final SecureRandom rnd = new SecureRandom();
-    private final ThreadIdentifier neighborRouterThreadIdentifier = new ThreadIdentifier("Neighbor Router");
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "Neighbor Router"));
 
     // external
     private IotaConfig config;
@@ -59,38 +55,52 @@ public class NeighborRouter {
     // internal
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
+    private static final LongHashFunction TX_CACHE_DIGEST_HASH_FUNC = LongHashFunction.xx();
 
-    // a mapping of host address + port (identity) to fully handshaked/connected neighbor
+    /**
+     * a mapping of host address + port (identity) to fully handshaked/connected neighbor
+     */
     private ConcurrentHashMap<String, Neighbor> connectedNeighbors = new ConcurrentHashMap<>();
 
-    // neighbors which we want to connect to. entries are added upon initialization
-    // of the NeighborRouter, when a neighbor is added through addNeighbors and
-    // when a connection attempt failed.
+    /**
+     * neighbors which we want to connect to. entries are added upon initialization of the NeighborRouter, when a
+     * neighbor is added through addNeighbors and when a connection attempt failed.
+     */
     private Set<URI> reconnectPool = new CopyOnWriteArraySet<>();
 
-    // contains the IP addresses of neighbors which are allowed to connect to us.
-    // we use two sets as we allow multiple connections from a single IP address.
+    /**
+     * contains the IP addresses of neighbors which are allowed to connect to us. we use two sets as we allow multiple
+     * connections from a single IP address.
+     */
     private Set<String> hostsWhitelist = new HashSet<>();
 
-    // contains the mapping of IP addresses to their domain names.
-    // this is used to map an initialized connection to the domain which was defined
-    // in the configuration or added on addNeighbors, to ensure, that a reconnect attempt
-    // to the given neighbor is done through the resolved IP address of the origin domain.
+    /**
+     * contains the mapping of IP addresses to their domain names. this is used to map an initialized connection to the
+     * domain which was defined in the configuration or added on addNeighbors, to ensure, that a reconnect attempt to
+     * the given neighbor is done through the resolved IP address of the origin domain.
+     */
     private Map<String, String> ipToDomainMapping = new HashMap<>();
 
-    // contains the IP address + port as declared in the configuration file
-    // plus subsequent entries added by addNeighbors.
-    // the identity of a neighbor is its IP address and its own server socket port.
+    /**
+     * contains the IP address + port as declared in the configuration file plus subsequent entries added by
+     * addNeighbors. the identity of a neighbor is its IP address and its own server socket port.
+     */
     private Set<String> allowedNeighbors = new HashSet<>();
 
-    // used to silently drop connections. contains plain IP addresses
+    /**
+     * used to silently drop connections. contains plain IP addresses
+     */
     private Set<String> hostsBlacklist = new CopyOnWriteArraySet<>();
 
-    // used to force the selection loop to reconnect to wanted neighbors
+    /**
+     * used to force the selection loop to reconnect to wanted neighbors
+     */
     private AtomicBoolean forceReconnectAttempt = new AtomicBoolean(false);
 
-    // used to match against neighbor's coordinator address to cancel the connection
-    // in case it doesn't match this node's own configured coordinator address
+    /**
+     * used to match against neighbor's coordinator address to cancel the connection in case it doesn't match this
+     * node's own configured coordinator address
+     */
     private byte[] byteEncodedCooAddress;
 
     /**
@@ -130,7 +140,7 @@ public class NeighborRouter {
      * Starts a dedicated thread for the {@link NeighborRouter} and then starts the routing mechanism.
      */
     public void start() {
-        ThreadUtils.spawnThread(this::route, neighborRouterThreadIdentifier);
+        executor.execute(this::route);
     }
 
     /**
@@ -279,6 +289,8 @@ public class NeighborRouter {
                                             closeNeighborConnection(channel, identity, selector);
                                         }
                                         continue;
+                                    default:
+                                        // bytes were written to the channel
                                 }
                             } catch (IOException ex) {
                                 log.error("unable to send message to neighbor {}", identity);
@@ -306,9 +318,12 @@ public class NeighborRouter {
                                                 srvKey.interestOps(0);
                                             }
                                         }
+                                    default:
+                                        // do nothing
                                 }
                             } catch (IOException ex) {
-                                log.error("unable to read message from neighbor {}", identity);
+                                log.error("unable to read message from neighbor {}, reason: {}", identity,
+                                        ex.getMessage());
                                 closeNeighborConnection(channel, identity, selector);
                                 addToReconnectPool(neighbor);
                             }
@@ -319,7 +334,7 @@ public class NeighborRouter {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("error occurred in the neighbor router", e);
         } finally {
             try {
                 if (selector != null) {
@@ -333,13 +348,11 @@ public class NeighborRouter {
                     serverSocketChannel.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("error occurred while trying to gracefully shutdown the neighbor router", e);
             }
             log.info("neighbor router stopped");
         }
     }
-
-    private static LongHashFunction txCacheDigestHashFunc = LongHashFunction.xx();
 
     /**
      * Computes the digest of the given transaction data.
@@ -348,7 +361,7 @@ public class NeighborRouter {
      * @return The the digest of the transaction data
      */
     public static long getTxCacheDigest(byte[] txBytes) {
-        return txCacheDigestHashFunc.hashBytes(txBytes);
+        return TX_CACHE_DIGEST_HASH_FUNC.hashBytes(txBytes);
     }
 
     /**
@@ -358,23 +371,24 @@ public class NeighborRouter {
      * The neighbor is only added to the 'reconnect pool' if the neighbor was ready to send/process messages.
      * 
      * @param neighbor the neighbor to attempt to reconnect to
+     * @return whether the neighbor got added to the reconnect pool or not
      */
-    private void addToReconnectPool(Neighbor neighbor) {
+    private boolean addToReconnectPool(Neighbor neighbor) {
         if (neighbor.getState() != NeighborState.READY_FOR_MESSAGES) {
-            return;
+            return false;
         }
         // try to pull out the origin domain which was used to establish
         // the connection with this neighbor
         String domain = ipToDomainMapping.get(neighbor.getHostAddress());
-        URI reconnectURI = null;
+        URI reconnectURI;
         if (domain != null) {
             reconnectURI = URI
-                    .create(String.format("%s%s:%d", protocolPrefix, domain, neighbor.getRemoteServerSocketPort()));
+                    .create(String.format("%s%s:%d", PROTOCOL_PREFIX, domain, neighbor.getRemoteServerSocketPort()));
         } else {
-            reconnectURI = URI.create(String.format("%s%s", protocolPrefix, neighbor.getHostAddressAndPort()));
+            reconnectURI = URI.create(String.format("%s%s", PROTOCOL_PREFIX, neighbor.getHostAddressAndPort()));
         }
         log.info("adding {} to the reconnect pool", reconnectURI);
-        reconnectPool.add(reconnectURI);
+        return reconnectPool.add(reconnectURI);
     }
 
     /**
@@ -382,16 +396,20 @@ public class NeighborRouter {
      * identity.
      * 
      * @param neighbor the neighbor to remove from the reconnect pool
+     * @return whether the neighbor was removed from the reconnect pool or not
      */
-    private void removeFromReconnectPool(Neighbor neighbor) {
-        URI raw = URI.create(String.format("%s%s", protocolPrefix, neighbor.getHostAddressAndPort()));
-        reconnectPool.remove(raw);
+    private boolean removeFromReconnectPool(Neighbor neighbor) {
+        URI raw = URI.create(String.format("%s%s", PROTOCOL_PREFIX, neighbor.getHostAddressAndPort()));
+        boolean removedByURI = reconnectPool.remove(raw);
         String domain = neighbor.getDomain();
         if (domain != null) {
             URI withDomain = URI
-                    .create(String.format("%s%s:%d", protocolPrefix, domain, neighbor.getRemoteServerSocketPort()));
-            reconnectPool.remove(withDomain);
+                    .create(String.format("%s%s:%d", PROTOCOL_PREFIX, domain, neighbor.getRemoteServerSocketPort()));
+            if (reconnectPool.remove(withDomain)) {
+                return true;
+            }
         }
+        return removedByURI;
     }
 
     /**
@@ -402,6 +420,7 @@ public class NeighborRouter {
      * <li>the handshaking is faulty, meaning that a non handshaking packet was sent</li>
      * <li>{@link BaseIotaConfig#getMaxNeighbors()} has been reached</li>
      * <li>the neighbor has a different coordinator address set as we do</li>
+     * <li>the neighbor uses a different minimum weight magnitude than we do</li>
      * <li>a non matching server socket port was communicated in the handshaking packet</li>
      * <li>the neighbor is already connected (checked by the identity)</li>
      * <li>the identity is not known (missing in {@link NeighborRouter#allowedNeighbors})</li>
@@ -411,7 +430,7 @@ public class NeighborRouter {
      * @param neighbor The {@link Neighbor} to finalize the handshaking with
      * @param channel  The associated {@link SocketChannel} of the {@link Neighbor}
      * @return whether the handshaking was successful
-     * @throws IOException
+     * @throws IOException thrown when reading the handshake packet fails
      */
     private boolean finalizeHandshake(String identity, Neighbor neighbor, SocketChannel channel) throws IOException {
         Handshake handshake = neighbor.handshake();
@@ -434,7 +453,7 @@ public class NeighborRouter {
         }
 
         // check whether same MWM is used
-        if(handshake.getMWM() != config.getMwm()){
+        if (handshake.getMWM() != config.getMwm()) {
             log.error("dropping handshaked connection to neighbor {} as it uses a different MWM ({} instead of {})",
                     identity, handshake.getMWM(), config.getMwm());
             closeNeighborConnection(channel, null, selector);
@@ -455,14 +474,14 @@ public class NeighborRouter {
         // check whether the remote server socket port from the origin URI
         // actually corresponds to the port advertised in the handshake packet
         int originPort = neighbor.getRemoteServerSocketPort();
-        if (originPort != Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT && originPort != handshake.getServerSocketPort()) {
-            log.info(
-                    "dropping handshaked connection from {} as neighbor advertised wrong server socket port (wanted {}, got {})",
-                    identity, originPort, handshake.getServerSocketPort());
+        int handshakePort = handshake.getServerSocketPort();
+        if (originPort != Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT && originPort != handshakePort) {
+            log.warn("dropping handshaked connection from {} as neighbor advertised "
+                    + "wrong server socket port (wanted {}, got {})", identity, originPort, handshakePort);
             closeNeighborConnection(channel, null, selector);
             return false;
         }
-        neighbor.setRemoteServerSocketPort(handshake.getServerSocketPort());
+        neighbor.setRemoteServerSocketPort(handshakePort);
 
         // check if neighbor is already connected
         String newIdentity = neighbor.getHostAddressAndPort();
@@ -631,25 +650,22 @@ public class NeighborRouter {
         try {
             channel.close();
         } catch (IOException e) {
-            return;
-        }
-        // re-register the server socket for incoming connections as we will have a new slot open
-        if (availableNeighborSlotsFilled()) {
-            SelectionKey key = serverSocketChannel.keyFor(selector);
-            if (key != null) {
-                key.interestOps(SelectionKey.OP_ACCEPT);
-            }
+            log.error("error while closing connection: {}", e.getMessage());
         }
         if (identity == null) {
             return;
         }
         if (connectedNeighbors.remove(identity) != null) {
             log.info("removed neighbor {} from connected neighbors", identity);
+            // re-register the server socket for incoming connections as we will have a new slot open
+            if (availableNeighborSlotsFilled()) {
+                serverSocketChannel.keyFor(selector).interestOps(SelectionKey.OP_ACCEPT);
+            }
         }
     }
 
     private boolean availableNeighborSlotsFilled() {
-        // while this check if not thread-safe, initiated connections will be dropped
+        // while this check is not thread-safe, initiated connections will be dropped
         // when their handshaking was done but already all neighbor slots are filled
         return connectedNeighbors.size() >= config.getMaxNeighbors();
     }
@@ -699,8 +715,8 @@ public class NeighborRouter {
         }
 
         // remove the neighbor from connection attempts
-        reconnectPool.remove(optUri.get());
-        URI rawURI = URI.create(String.format("%s%s:%d", protocolPrefix, inetAddr.getAddress().getHostAddress(),
+        reconnectPool.remove(neighborURI);
+        URI rawURI = URI.create(String.format("%s%s:%d", PROTOCOL_PREFIX, inetAddr.getAddress().getHostAddress(),
                 neighborURI.getPort()));
         reconnectPool.remove(rawURI);
 
@@ -746,13 +762,8 @@ public class NeighborRouter {
      * @return true if the URI is valid, false if not
      */
     public static boolean isURIValid(final URI uri) {
-        if (uri == null) {
-            log.error("Cannot read URI schema, please check neighbor config!");
-            return false;
-        }
-
         if (!uri.getScheme().equals("tcp")) {
-            log.error("'{}' is not a valid URI schema", uri);
+            log.error("'{}' is not a valid URI schema, only TCP ({}) is supported", uri, PROTOCOL_PREFIX);
             return false;
         }
         return true;
@@ -787,7 +798,7 @@ public class NeighborRouter {
      * @return The connected neighbors.
      */
     public Map<String, Neighbor> getConnectedNeighbors() {
-        return connectedNeighbors;
+        return Collections.unmodifiableMap(connectedNeighbors);
     }
 
     /**
@@ -835,6 +846,6 @@ public class NeighborRouter {
      */
     public void shutdown() {
         shutdown.set(true);
-        ThreadUtils.stopThread(neighborRouterThreadIdentifier);
+        executor.shutdownNow();
     }
 }

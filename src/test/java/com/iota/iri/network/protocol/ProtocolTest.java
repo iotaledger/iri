@@ -14,23 +14,11 @@ import static org.junit.Assert.*;
 public class ProtocolTest {
 
     @Test
-    public void parsingHeaderWithIncompatibleProtocolVersionThrows() {
-        try {
-            ByteBuffer buf = (ByteBuffer) ByteBuffer.allocate(1).put((byte) 123).flip();
-            Protocol.parseHeader(buf);
-        } catch (Exception e) {
-            assertThat(e, IsInstanceOf.instanceOf(IncompatibleProtocolVersionException.class));
-            return;
-        }
-        fail("expected an exception to be thrown");
-    }
-
-    @Test
     public void parsingHeaderWithUnknownMessageTypeThrows() {
         try {
-            ByteBuffer buf = ByteBuffer.allocate(2);
-            buf.put((byte) 1);
+            ByteBuffer buf = ByteBuffer.allocate(3);
             buf.put((byte) 123);
+            buf.putShort((short) 500);
             buf.flip();
             Protocol.parseHeader(buf);
         } catch (Exception e) {
@@ -43,8 +31,7 @@ public class ProtocolTest {
     @Test
     public void parsingHeaderWithTooBigAdvertisedLengthThrows() {
         try {
-            ByteBuffer buf = ByteBuffer.allocate(4);
-            buf.put((byte) 1);
+            ByteBuffer buf = ByteBuffer.allocate(3);
             buf.put(ProtocolMessage.HANDSHAKE.getTypeID());
             buf.putShort((short) (ProtocolMessage.HANDSHAKE.getMaxLength() + 1));
             buf.flip();
@@ -60,8 +47,7 @@ public class ProtocolTest {
     public void parseHeader() {
         ProtocolHeader header = null;
         try {
-            ByteBuffer buf = ByteBuffer.allocate(4);
-            buf.put((byte) 1);
+            ByteBuffer buf = ByteBuffer.allocate(3);
             buf.put(ProtocolMessage.HANDSHAKE.getTypeID());
             buf.putShort((ProtocolMessage.HANDSHAKE.getMaxLength()));
             buf.flip();
@@ -71,7 +57,6 @@ public class ProtocolTest {
         }
         assertEquals(ProtocolMessage.HANDSHAKE.getTypeID(), header.getMessageType().getTypeID());
         assertEquals(ProtocolMessage.HANDSHAKE.getMaxLength(), header.getMessageLength());
-        assertEquals(Protocol.PROTOCOL_VERSION, header.getVersion());
     }
 
     @Test
@@ -79,16 +64,19 @@ public class ProtocolTest {
         char ownSourcePort = (char) 15600;
         long now = System.currentTimeMillis();
         byte[] byteEncodedCooAddress = Hash.NULL_HASH.bytes();
-        ByteBuffer buf = Protocol.createHandshakePacket(ownSourcePort, byteEncodedCooAddress, (byte)1);
-        assertEquals(1, buf.get());
+        ByteBuffer buf = Protocol.createHandshakePacket(ownSourcePort, byteEncodedCooAddress, (byte) 1);
         assertEquals(ProtocolMessage.HANDSHAKE.getTypeID(), buf.get());
-        assertEquals(ProtocolMessage.HANDSHAKE.getMaxLength(), buf.getShort());
+        int maxLength = ProtocolMessage.HANDSHAKE.getMaxLength();
+        assertEquals((maxLength - (maxLength - 60) + Protocol.SUPPORTED_PROTOCOL_VERSIONS.length), buf.getShort());
         assertEquals(ownSourcePort, buf.getChar());
         assertTrue(now <= buf.getLong());
         byte[] actualCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         buf.get(actualCooAddress);
         assertArrayEquals(byteEncodedCooAddress, actualCooAddress);
         assertEquals(1, buf.get());
+        byte[] supportedVersions = new byte[Protocol.SUPPORTED_PROTOCOL_VERSIONS.length];
+        buf.get(supportedVersions);
+        assertArrayEquals(Protocol.SUPPORTED_PROTOCOL_VERSIONS, supportedVersions);
     }
 
     private int nonEmptySigPartBytesCount = 1000;
@@ -118,7 +106,6 @@ public class ProtocolTest {
         final int expectedMessageSize = Transaction.SIZE - truncationBytesCount
                 + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH;
         assertEquals(Protocol.PROTOCOL_HEADER_BYTES_LENGTH + expectedMessageSize, buf.capacity());
-        assertEquals(Protocol.PROTOCOL_VERSION, buf.get());
         assertEquals(ProtocolMessage.TRANSACTION_GOSSIP.getTypeID(), buf.get());
         assertEquals(expectedMessageSize, buf.getShort());
     }

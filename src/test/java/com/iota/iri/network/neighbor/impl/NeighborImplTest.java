@@ -41,8 +41,7 @@ public class NeighborImplTest {
     private final static int txMessageMaxSize = ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength();
 
     private ByteBuffer createEmptyTxPacket() {
-        ByteBuffer buf = ByteBuffer.allocate(4 + txMessageMaxSize);
-        buf.put(Protocol.PROTOCOL_VERSION);
+        ByteBuffer buf = ByteBuffer.allocate(3 + txMessageMaxSize);
         buf.put(ProtocolMessage.TRANSACTION_GOSSIP.getTypeID());
         buf.putShort(ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength());
         buf.put(new byte[txMessageMaxSize]);

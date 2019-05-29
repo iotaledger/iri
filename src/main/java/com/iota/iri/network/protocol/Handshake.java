@@ -21,6 +21,7 @@ public class Handshake {
     private byte[] byteEncodedCooAddress;
     private int mwm;
     private State state = State.INIT;
+    private byte[] supportedVersions;
 
     /**
      * Parses the given message into a {@link Handshake} object.
@@ -37,6 +38,10 @@ public class Handshake {
         handshake.setByteEncodedCooAddress(byteEncodedCooAddress);
         handshake.setMWM(msg.get());
         handshake.setState(Handshake.State.OK);
+        // extract supported versions
+        byte[] supportedVersions = new byte[msg.remaining()];
+        msg.get(supportedVersions);
+        handshake.setSupportedVersions(supportedVersions);
         return handshake;
     }
 
@@ -128,5 +133,77 @@ public class Handshake {
      */
     public void setMWM(int mwm) {
         this.mwm = mwm;
+    }
+
+    /**
+     * Gets the supported versions.
+     * 
+     * @return the supported versions
+     */
+    public byte[] getSupportedVersions() {
+        return supportedVersions;
+    }
+
+    /**
+     * Sets the supported versions.
+     * 
+     * @param supportedVersions the supported versions to set
+     */
+    public void setSupportedVersions(byte[] supportedVersions) {
+        this.supportedVersions = supportedVersions;
+    }
+
+    /**
+     * Returns the highest supported protocol version by the neighbor or a negative number indicating the highest
+     * protocol version the neighbor would have supported but which our node doesn't.
+     * 
+     * @param ownSupportedVersions the versions our own node supports
+     * @return a positive integer defining the highest supported protocol version and a negative integer indicating the
+     *         highest supported version by the given neighbor but which is not supported by us
+     */
+    public int isNeighborSupported(byte[] ownSupportedVersions) {
+        int highestSupportedVersion = 0;
+        for (int i = 0; i < ownSupportedVersions.length; i++) {
+            // max check up to advertised versions by the neighbor
+            if (i > supportedVersions.length - 1) {
+                break;
+            }
+
+            // get versions matched by both
+            byte supported = (byte) (supportedVersions[i] & ownSupportedVersions[i]);
+
+            // none supported
+            if (supported == 0) {
+                continue;
+            }
+
+            // iterate through all bits and find highest (more to the right is higher)
+            int highest = 0;
+            for (int j = 0; j < 8; j++) {
+                if (((supported << j) & 0b10000000) == 0b10000000) {
+                    highest = j + 1;
+                }
+            }
+            highestSupportedVersion = highest + (i * 8);
+        }
+
+        // if the highest version is still 0, it means that we don't support
+        // any protocol version the neighbor supports
+        if (highestSupportedVersion == 0) {
+            // grab last byte denoting the highest versions
+            byte lastVersionsByte = supportedVersions[supportedVersions.length - 1];
+            // find highest version
+            int highest = 0;
+            for (int j = 0; j < 8; j++) {
+                if (((lastVersionsByte << j) & 0b10000000) == 0b10000000) {
+                    highest = j + 1;
+                }
+            }
+            int highestSupportedVersionByNeighbor = highest + ((supportedVersions.length - 1) * 8);
+            // negate to indicate that we don't actually support it
+            return -highestSupportedVersionByNeighbor;
+        }
+
+        return highestSupportedVersion;
     }
 }

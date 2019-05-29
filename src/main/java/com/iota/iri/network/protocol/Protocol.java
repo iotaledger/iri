@@ -14,9 +14,9 @@ public class Protocol {
      */
     public final static byte PROTOCOL_VERSION = 1;
     /**
-     * The amount of bytes dedicated for the protocol version in the packet header.
+     * The supported protocol versions by this node.
      */
-    public final static byte HEADER_VERSION_BYTES_LENGTH = 1;
+    public final static byte[] SUPPORTED_PROTOCOL_VERSIONS = { (byte) 0b10000000 };
     /**
      * The amount of bytes dedicated for the message type in the packet header.
      */
@@ -28,7 +28,7 @@ public class Protocol {
     /**
      * The amount of bytes making up the protocol packet header.
      */
-    public final static byte PROTOCOL_HEADER_BYTES_LENGTH = HEADER_VERSION_BYTES_LENGTH + HEADER_TLV_LENGTH_BYTES_LENGTH
+    public final static byte PROTOCOL_HEADER_BYTES_LENGTH = HEADER_TLV_LENGTH_BYTES_LENGTH
             + HEADER_TLV_TYPE_BYTES_LENGTH;
 
     /**
@@ -54,17 +54,10 @@ public class Protocol {
      * @param buf the buffer to parse
      * @return the parsed {@link ProtocolHeader}
      * @throws UnknownMessageTypeException           thrown when the advertised message type is unknown
-     * @throws IncompatibleProtocolVersionException  thrown when the protocol header contains an incompatible protocol
-     *                                               version
      * @throws InvalidProtocolMessageLengthException thrown when the advertised message length is invalid
      */
-    public static ProtocolHeader parseHeader(ByteBuffer buf) throws UnknownMessageTypeException,
-            IncompatibleProtocolVersionException, InvalidProtocolMessageLengthException {
-        byte version = buf.get();
-        if (version != PROTOCOL_VERSION) {
-            throw new IncompatibleProtocolVersionException(String.format(
-                    "got packet with incompatible protocol version v%d (current is v%d)", version, PROTOCOL_VERSION));
-        }
+    public static ProtocolHeader parseHeader(ByteBuffer buf)
+            throws UnknownMessageTypeException, InvalidProtocolMessageLengthException {
 
         // extract type of message
         byte type = buf.get();
@@ -81,7 +74,7 @@ public class Protocol {
                     "advertised length: %d bytes; max length: %d bytes", advertisedMsgLength, protoMsg.getMaxLength()));
         }
 
-        return new ProtocolHeader(version, protoMsg, advertisedMsgLength);
+        return new ProtocolHeader(protoMsg, advertisedMsgLength);
     }
 
     /**
@@ -90,14 +83,17 @@ public class Protocol {
      * @param ownSourcePort the node's own server socket port number
      * @return a {@link ByteBuffer} containing the handshake packet
      */
-    public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress, byte ownUsedMWM) {
-        ByteBuffer buf = ByteBuffer
-                .allocate(ProtocolMessage.HEADER.getMaxLength() + ProtocolMessage.HANDSHAKE.getMaxLength());
-        addProtocolHeader(buf, ProtocolMessage.HANDSHAKE);
+    public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress,
+            byte ownUsedMWM) {
+        short maxLength = ProtocolMessage.HANDSHAKE.getMaxLength();
+        final short payloadLengthBytes = (short) (maxLength - (maxLength - 60) + SUPPORTED_PROTOCOL_VERSIONS.length);
+        ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
+        addProtocolHeader(buf, ProtocolMessage.HANDSHAKE, payloadLengthBytes);
         buf.putChar(ownSourcePort);
         buf.putLong(System.currentTimeMillis());
         buf.put(ownByteEncodedCooAddress);
         buf.put(ownUsedMWM);
+        buf.put(SUPPORTED_PROTOCOL_VERSIONS);
         buf.flip();
         return buf;
     }
@@ -138,7 +134,6 @@ public class Protocol {
      * @param payloadLengthBytes the message length
      */
     private static void addProtocolHeader(ByteBuffer buf, ProtocolMessage protoMsg, short payloadLengthBytes) {
-        buf.put(PROTOCOL_VERSION);
         buf.put(protoMsg.getTypeID());
         buf.putShort(payloadLengthBytes);
     }

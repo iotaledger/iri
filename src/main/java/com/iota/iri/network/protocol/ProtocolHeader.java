@@ -5,30 +5,18 @@ package com.iota.iri.network.protocol;
  */
 public class ProtocolHeader {
 
-    private byte version;
     private ProtocolMessage protoMsg;
     private short messageLength;
 
     /**
      * Creates a new protocol header.
-     * 
-     * @param version       the version used by the node
+     *
      * @param protoMsg      the message type
      * @param messageLength the message length
      */
-    public ProtocolHeader(byte version, ProtocolMessage protoMsg, short messageLength) {
-        this.version = version;
+    public ProtocolHeader(ProtocolMessage protoMsg, short messageLength) {
         this.protoMsg = protoMsg;
         this.messageLength = messageLength;
-    }
-
-    /**
-     * Gets the protocol version.
-     * 
-     * @return the protocol version
-     */
-    public int getVersion() {
-        return version;
     }
 
     /**

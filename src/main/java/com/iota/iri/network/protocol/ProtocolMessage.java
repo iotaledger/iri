@@ -5,7 +5,7 @@ package com.iota.iri.network.protocol;
  */
 public enum ProtocolMessage {
     /**
-     * The message header sent in each message denoting the TLV fields and used protocol version.
+     * The message header sent in each message denoting the TLV fields.
      */
     HEADER((byte) 0, (short) Protocol.PROTOCOL_HEADER_BYTES_LENGTH, false),
     /**
@@ -15,8 +15,10 @@ public enum ProtocolMessage {
      * - time at which the packet was sent (8 bytes)
      * - own used byte encoded coordinator address (49 bytes)
      * - own used MWM (1 byte)
+     * - supported protocol versions. we need up to 32 bytes to represent 256 possible protocol
+     *   versions. only up to N bytes are used to communicate the highest supported version.
      */
-    HANDSHAKE((byte) 1, (short) 60, false),
+    HANDSHAKE((byte) 1, (short) 92, true),
     /**
      * The transaction payload + requested transaction hash gossipping packet. In reality most of this packets won't
      * take up their full 1604 bytes as the signature message fragment of the tx is truncated.

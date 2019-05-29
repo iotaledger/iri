@@ -472,6 +472,17 @@ public class NeighborRouter {
             return false;
         }
 
+        // check whether we support the supported protocol versions by the neighbor
+        int supportedVersion = handshake.isNeighborSupported(Protocol.SUPPORTED_PROTOCOL_VERSIONS);
+        if (supportedVersion <= 0) {
+            log.error(
+                    "dropping handshaked connection to neighbor {} as its highest supported protocol version {} is not supported",
+                    identity, Math.abs(supportedVersion));
+            closeNeighborConnection(channel, null, selector);
+            return false;
+        }
+        neighbor.setProtocolVersion(supportedVersion);
+
         // after a successful handshake, the neighbor's server socket port is initialized
         // and thereby the identity of the neighbor is now fully distinguishable
 
@@ -503,8 +514,8 @@ public class NeighborRouter {
             return false;
         }
 
-        log.info("neighbor connection to {} is ready for messages [latency {} ms]", newIdentity,
-                System.currentTimeMillis() - handshake.getSentTimestamp());
+        log.info("neighbor connection to {} is ready for messages [latency {} ms, protocol version {}]", newIdentity,
+                System.currentTimeMillis() - handshake.getSentTimestamp(), supportedVersion);
 
         // the neighbor is now ready to process actual protocol messages
         neighbor.setState(NeighborState.READY_FOR_MESSAGES);

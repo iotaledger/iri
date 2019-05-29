@@ -109,4 +109,18 @@ public interface Neighbor {
      */
     NeighborMetrics getMetrics();
 
+    /**
+     * Sets the protocol version to use to communicate with this {@link Neighbor}.
+     * 
+     * @param version the protocol version to use
+     */
+    void setProtocolVersion(int version);
+
+    /**
+     * The protocol version used to communicate with the {@link Neighbor}.
+     * 
+     * @return the protocol version
+     */
+    int getProtocolVersion();
+
 }

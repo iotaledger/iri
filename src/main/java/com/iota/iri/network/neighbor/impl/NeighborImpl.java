@@ -49,6 +49,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private String domain;
     private String hostAddress;
     private int remoteServerSocketPort;
+    private int protocolVersion;
 
     // we need the reference to the channel in order to register it for
     // write interests once messages to send are available.
@@ -103,10 +104,6 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                 } catch (UnknownMessageTypeException e) {
                     log.error("unknown message type received from {}", getHostAddressAndPort());
                     metrics.incrUnknownMessageTypePacketsCount();
-                    return bytesRead;
-                } catch (IncompatibleProtocolVersionException e) {
-                    log.error("{} is incompatible due to protocol version mismatch", getHostAddressAndPort());
-                    metrics.incrIncompatiblePacketsCount();
                     return bytesRead;
                 } catch (InvalidProtocolMessageLengthException e) {
                     log.error("{} is trying to send a message with an invalid length for the given message type",
@@ -239,6 +236,16 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     @Override
     public NeighborMetrics getMetrics() {
         return metrics;
+    }
+
+    @Override
+    public void setProtocolVersion(int protocolVersion) {
+        this.protocolVersion = protocolVersion;
+    }
+
+    @Override
+    public int getProtocolVersion() {
+        return protocolVersion;
     }
 
     /**

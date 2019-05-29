@@ -10,7 +10,7 @@ COPY . .
 COPY ./entrypoint.sh /go/src/app
 RUN go get github.com/awalterschulze/gographviz  \
  && go get github.com/kylelemons/go-gypsy/yaml  \
- && go get github.com/wunder3605/pagerank
+ && go get github.com/triasteam/pagerank
 RUN pip install -r requirements.txt
 RUN chmod +x modify_yaml_file.py
 ENTRYPOINT ["/go/src/app/entrypoint.sh"]

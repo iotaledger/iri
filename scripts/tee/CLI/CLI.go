@@ -12,7 +12,7 @@ import (
 	"net/http"
 	url2 "net/url"
 	"os"
-	"github.com/wunder3605/pagerank"
+	"github.com/triasteam/pagerank"
 	"sort"
 	"strconv"
 	"strings"

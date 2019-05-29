@@ -115,4 +115,5 @@ Please refer [[Portainer deployment]](https://github.com/triasteam/StreamNet/blo
 
 # 3. Team
 
-[Junqing Wang](https://wunder3605.github.io/), [Zhaoming Yin](https://stplaydog.github.io/) 
+[Zhaoming Yin](https://stplaydog.github.io/), [Junqing Wang](https://wunder3605.github.io/), [Yahui Wang](https://wangyh2016.github.io/wangyahui.github.io/)
+[Haifeng Li](https://lihaifeng111.github.io/lihaifeng.github.io/)

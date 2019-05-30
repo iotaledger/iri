@@ -362,7 +362,6 @@ def sign_input_message(address, message, base58_priv_key):
     message = 'test message'
     base58_priv_key = 'L41XHGJA5QX43QRG3FEwPbqD5BYvy6WxUxqAMM9oQdHJ5FcRHcGk'
     #"""
-    
     compressed = True
     if base58_priv_key[0] == 'L' or base58_priv_key[0] == 'K':
         compressed = True

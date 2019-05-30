@@ -208,7 +208,9 @@ def sign_message(private_key, message, compressed=False):
     public_key = private_key.get_verifying_key()
     signature = private_key.sign_digest( Hash( msg_magic( message ) ), sigencode = ecdsa.util.sigencode_string )
     address = public_key_to_bc_address(encode_point(public_key, compressed))
-    assert public_key.verify_digest( signature, Hash( msg_magic( message ) ), sigdecode = ecdsa.util.sigdecode_string)
+    v = public_key.verify_digest( signature, Hash( msg_magic( message ) ), sigdecode = ecdsa.util.sigdecode_string)
+    if not v:
+        raise BaseException("error: verify digest error.")
     for i in range(4):
         nV = 27 + i
         if compressed:
@@ -218,7 +220,7 @@ def sign_message(private_key, message, compressed=False):
             if verify_message( address, sig, message):
                 break
         except Exception:
-            continue
+            print('warn: sign failed %d times with private_key:%s, message:%s, compressed:%s' % (nV,private_key,message,compressed))
     else:
         raise BaseException("error: cannot sign message")
 
@@ -290,7 +292,7 @@ def sign_message_with_secret(secret, message, compressed=False):
             if verify_message( address, sig, message):
                 break
         except Exception:
-            continue
+            print('warn: sign failed %d times with secret:%s, message:%s, compressed:%s' % (nV,secret,message,compressed))
     else:
         raise BaseException("error: cannot sign message")
 
@@ -303,11 +305,13 @@ def sign_message_with_private_key(base58_priv_key, message, compressed=True):
     
     secret_hex_string = ''
     if base58_priv_key[0] == 'L' or base58_priv_key[0] == 'K':
-        assert len(encoded_priv_key_hex_string) == 76
+        if not len(encoded_priv_key_hex_string) == 76:
+            raise BaseException("error: length of uncompressed hex private key is not 76")
         # strip leading 0x08, 0x01 compressed flag, checksum
         secret_hex_string = encoded_priv_key_hex_string[2:-10]
     elif base58_priv_key[0] == '5':
-        assert len(encoded_priv_key_hex_string) == 74
+        if not len(encoded_priv_key_hex_string) == 74:
+            raise BaseException("error: length of compressed hex private key is not 74")
         # strip leading 0x08 and checksum
         secret_hex_string = encoded_priv_key_hex_string[2:-8]
     else:
@@ -318,7 +322,8 @@ def sign_message_with_private_key(base58_priv_key, message, compressed=True):
     
     checksum = Hash(encoded_priv_key_bytes[:-4])[:4].encode('hex')
     if VERBOSE: print 'checksum:\n', checksum
-    assert checksum == encoded_priv_key_hex_string[-8:] #make sure private key is valid
+    if not checksum == encoded_priv_key_hex_string[-8:]: #make sure private key is valid
+        raise BaseException("error: checksum error.")
     if VERBOSE: print 'secret:\n', secret
     return sign_message_with_secret(secret, message, compressed)
 
@@ -365,7 +370,6 @@ def sign_input_message(address, message, base58_priv_key):
         compressed = False
     else:
         raise BaseException("error: private must start with 5 if uncompressed or L/K for compressed")
-    
     return sign_and_verify(base58_priv_key, message, address, compressed)
 
 

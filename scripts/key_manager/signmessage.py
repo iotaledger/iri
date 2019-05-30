@@ -113,7 +113,7 @@ def legendre_symbol(a, p):
     Euler's criterion. p is a prime, a is
     relatively prime to p (if p divides
     a, then a|p = 0)
-    
+
     Returns 1 if a has a square root modulo
     p, -1 otherwise.
     """

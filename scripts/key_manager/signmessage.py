@@ -23,7 +23,7 @@ _Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8L
 curve_secp256k1 = ecdsa.ellipticcurve.CurveFp( _p, _a, _b )
 generator_secp256k1 = ecdsa.ellipticcurve.Point( curve_secp256k1, _Gx, _Gy, _r )
 oid_secp256k1 = (1,3,132,0,10)
-SECP256k1 = ecdsa.curves.Curve("SECP256k1", curve_secp256k1, generator_secp256k1, oid_secp256k1 ) 
+SECP256k1 = ecdsa.curves.Curve("SECP256k1", curve_secp256k1, generator_secp256k1, oid_secp256k1)
 
 addrtype = 0
 
@@ -216,11 +216,13 @@ def sign_message(private_key, message, compressed=False):
         sig = base64.b64encode( chr(nV) + signature )
         try:
             if verify_message( address, sig, message):
-                return sig
-        except:
+                break
+        except Exception:
             continue
     else:
         raise BaseException("error: cannot sign message")
+
+    return sig
 
 def verify_message(address, signature, message):
     """ See http://www.secg.org/download/aid-780/sec1-v2.pdf for the math """
@@ -275,7 +277,10 @@ def sign_message_with_secret(secret, message, compressed=False):
     signature = private_key.sign_digest( Hash( msg_magic( message ) ), sigencode = ecdsa.util.sigencode_string )
     address = public_key_to_bc_address(encode_point(public_key, compressed))
     if VERBOSE: print 'address:\n', address
-    assert public_key.verify_digest( signature, Hash( msg_magic( message ) ), sigdecode = ecdsa.util.sigdecode_string)
+    verify_result = public_key.verify_digest( signature, Hash( msg_magic( message ) ), sigdecode = ecdsa.util.sigdecode_string)
+    if not verify_result:
+        raise BaseException('error: verify digest error.')
+
     for i in range(4):
         nV = 27 + i
         if compressed:
@@ -283,11 +288,13 @@ def sign_message_with_secret(secret, message, compressed=False):
         sig = base64.b64encode( chr(nV) + signature )
         try:
             if verify_message( address, sig, message):
-                return sig
-        except:
+                break
+        except Exception:
             continue
     else:
         raise BaseException("error: cannot sign message")
+
+    return sig
 
 
 def sign_message_with_private_key(base58_priv_key, message, compressed=True):
@@ -318,7 +325,10 @@ def sign_message_with_private_key(base58_priv_key, message, compressed=True):
 
 def sign_and_verify(wifPrivateKey, message, bitcoinaddress, compressed=True):
     sig = sign_message_with_private_key(wifPrivateKey, message, compressed)
-    assert verify_message(bitcoinaddress, sig, message)
+    verify_result = verify_message(bitcoinaddress, sig, message)
+    if not verify_result:
+        raise BaseException("error: verify error.")
+
     if VERBOSE: print 'verify_message:', verify_message(bitcoinaddress, sig, message)
     return sig
 
@@ -366,7 +376,6 @@ def verify_input_message(address, message, signature):
     message = 'test message'
     signature = 'IPn9bbEdNUp6+bneZqE2YJbq9Hv5aNILq9E5eZoMSF3/fBX4zjeIN6fpXfGSGPrZyKfHQ/c/kTSP+NIwmyTzMfk='
     #"""
-    
     return verify_message(address, signature, message)
 
 def generate_address(base58_priv_key):
@@ -382,11 +391,15 @@ def generate_address(base58_priv_key):
 
     secret_hex_string = ''
     if base58_priv_key[0] == 'L' or base58_priv_key[0] == 'K':
-        assert len(encoded_priv_key_hex_string) == 76
+        len_assert = len(encoded_priv_key_hex_string) == 76
+        if not len_assert:
+            raise BaseException("error: length of uncompressed hex private key is not 76.")
         # strip leading 0x08, 0x01 compressed flag, checksum
         secret_hex_string = encoded_priv_key_hex_string[2:-10]
     elif base58_priv_key[0] == '5':
-        assert len(encoded_priv_key_hex_string) == 74
+        len_assert = len(encoded_priv_key_hex_string) == 74
+        if not len_assert:
+            raise BaseException("error: length of compressed hex private key is not 74. ")
         # strip leading 0x08 and checksum
         secret_hex_string = encoded_priv_key_hex_string[2:-8]
     else:
@@ -396,7 +409,8 @@ def generate_address(base58_priv_key):
 
     checksum = Hash(encoded_priv_key_bytes[:-4])[:4].encode('hex')
     if VERBOSE: print 'checksum:\n', checksum
-    assert checksum == encoded_priv_key_hex_string[-8:] #make sure private key is valid
+    if not checksum == encoded_priv_key_hex_string[-8:]: #make sure private key is valid
+        raise BaseException("error: checksum checked failed.")
     if VERBOSE: print 'secret:\n', secret
     private_key = ecdsa.SigningKey.from_secret_exponent( secret, SECP256k1 )
     public_key = private_key.get_verifying_key()

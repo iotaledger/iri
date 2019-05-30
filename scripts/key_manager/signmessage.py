@@ -56,7 +56,7 @@ def modular_sqrt(a, p):
         return p
     elif p % 4 == 3:
         return pow(a, (p + 1) / 4, p)
-    
+
     # Partition p-1 to s * 2^e for an odd s (i.e.
     # reduce all the powers of 2 from p-1)
     #
@@ -72,13 +72,13 @@ def modular_sqrt(a, p):
     n = 2
     while legendre_symbol(n, p) != -1:
         n += 1
-        
+
     # Here be dragons!
     # Read the paper "Square roots from 1; 24, 51,
     # 10 to Dan Shanks" by Ezra Brown for more
     # information
     #
-    
+
     # x is a guess of the square root that gets better
     # with each iteration.
     # b is the "fudge factor" - by how much we're off
@@ -92,7 +92,7 @@ def modular_sqrt(a, p):
     b = pow(a, s, p)
     g = pow(n, s, p)
     r = e
-    
+
     while True:
         t = b
         m = 0
@@ -100,16 +100,14 @@ def modular_sqrt(a, p):
             if t == 1:
                 break
             t = pow(t, 2, p)
-            
         if m == 0:
             return x
-        
         gs = pow(g, 2 ** (r - m - 1), p)
         g = (gs * gs) % p
         x = (x * gs) % p
         b = (b * g) % p
         r = m
-        
+
 def legendre_symbol(a, p):
     """ Compute the Legendre symbol a|p using
     Euler's criterion. p is a prime, a is
@@ -154,23 +152,23 @@ def b58decode(v, length):
     long_value = 0L
     for (i, c) in enumerate(v[::-1]):
         long_value += __b58chars.find(c) * (__b58base**i)
-    
+
     result = ''
     while long_value >= 256:
         div, mod = divmod(long_value, 256)
         result = chr(mod) + result
         long_value = div
     result = chr(long_value) + result
-    
+
     nPad = 0
     for c in v:
         if c == __b58chars[0]: nPad += 1
         else: break
-    
+
     result = chr(0)*nPad + result
     if length is not None and len(result) != length:
         return None
-    
+
     return result
 
 def msg_magic(message):
@@ -274,7 +272,7 @@ def verify_message(address, signature, message):
 
 def sign_message_with_secret(secret, message, compressed=False):
     private_key = ecdsa.SigningKey.from_secret_exponent( secret, curve = SECP256k1 )
-    
+
     public_key = private_key.get_verifying_key()
     signature = private_key.sign_digest( Hash( msg_magic( message ) ), sigencode = ecdsa.util.sigencode_string )
     address = public_key_to_bc_address(encode_point(public_key, compressed))
@@ -302,7 +300,7 @@ def sign_message_with_secret(secret, message, compressed=False):
 def sign_message_with_private_key(base58_priv_key, message, compressed=True):
     encoded_priv_key_bytes = b58decode(base58_priv_key, None)
     encoded_priv_key_hex_string = encoded_priv_key_bytes.encode('hex')
-    
+
     secret_hex_string = ''
     if base58_priv_key[0] == 'L' or base58_priv_key[0] == 'K':
         if not len(encoded_priv_key_hex_string) == 76:
@@ -316,10 +314,10 @@ def sign_message_with_private_key(base58_priv_key, message, compressed=True):
         secret_hex_string = encoded_priv_key_hex_string[2:-8]
     else:
         raise BaseException("error: private must start with 5 if uncompressed or L/K for compressed")
-    
+
     if VERBOSE: print 'secret_hex_string:\n', secret_hex_string
     secret = int(secret_hex_string, 16)
-    
+
     checksum = Hash(encoded_priv_key_bytes[:-4])[:4].encode('hex')
     if VERBOSE: print 'checksum:\n', checksum
     if not checksum == encoded_priv_key_hex_string[-8:]: #make sure private key is valid
@@ -348,7 +346,7 @@ def test_sign_messages():
     print 'sig:\n', sign_and_verify(wif1, msg1, addressCompressesed1) # good
     #print 'sig:\n', sign_and_verify(wif1, msg1, addressUncompressesed1) # bad
     #print 'sig:\n', sign_and_verify(wif1, msg1, addressCompressesed1, False) # bad
-    
+
     print 'sig:\n', sign_and_verify(compressedPrivKey1, msg1, addressCompressesed1) # good
     print 'sig:\n', sign_and_verify(compressedPrivKey1, msg1, addressUncompressesed1, False) # good
     #print 'sig:\n', sign_and_verify(compressedPrivKey1, msg1, addressUncompressesed1) # bad

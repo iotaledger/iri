@@ -113,7 +113,7 @@ Please refer [[Frontend deployment]](https://github.com/triasteam/StreamNet/blob
 
 Please refer [[Portainer deployment]](https://github.com/triasteam/StreamNet/blob/dev/document/iota_deploy/portainer-deploy-info.md) for details of how to leverage the portainer to manage containers
 
-# 3. Team
+# 3  Team
 
 [Zhaoming Yin](https://stplaydog.github.io/), [Junqing Wang](https://wunder3605.github.io/), [Yahui Wang](https://wangyh2016.github.io/wangyahui.github.io/)
 [Haifeng Li](https://lihaifeng111.github.io/lihaifeng.github.io/)

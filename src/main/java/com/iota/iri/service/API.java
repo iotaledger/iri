@@ -806,13 +806,24 @@ public class API {
       **/
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
-        List<Hash> hashes = new ArrayList<>();
-        for(int i=trytes.size()-1; i>=0; i--) {
+        List<TransactionViewModel> elements = new ArrayList<>();
+
+        for(int i=0; i<trytes.size(); i++) {
             String trytesPart = trytes.get(i);
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+            elements.add(transactionViewModel);
+        }
+
+        storeTransactionViews(elements);
+    }
+
+    public void storeTransactionViews(List<TransactionViewModel> elements) throws Exception {
+        List<Hash> hashes = new ArrayList<>();
+        for(int i=elements.size()-1; i>=0; i--){
+            final TransactionViewModel transactionViewModel = elements.get(i);
             hashes.add(transactionViewModel.getHash());
 
             if(transactionViewModel.store(instance.tangle)) {
@@ -823,26 +834,6 @@ public class API {
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, "sender");
-            }
-
-            if(BaseIotaConfig.getInstance().getWASMSupport()) {
-                // execute branch
-                TransactionViewModel branch = transactionViewModel.getBranchTransaction(instance.tangle);
-                String branchTagVal = new String(branch.getTagValue().toString()).substring(18,20);
-                if(branchTagVal.equals("MB") || branchTagVal.equals("KB")) {
-                    String msg = Converter.trytes(branch.getSignature());
-                    log.info("execute contract: {}", msg);
-                    executeContract(msg, branchTagVal);
-                }
-
-                // execute trunk
-                TransactionViewModel trunk = transactionViewModel.getTrunkTransaction(instance.tangle);
-                String trunkTagVal = new String(trunk.getTagValue().toString()).substring(18,20);
-                if(trunkTagVal.equals("MB") || trunkTagVal.equals("KB")) {
-                    String msg = Converter.trytes(trunk.getSignature());
-                    log.info("execute contract: {}", msg);
-                    executeContract(msg, trunkTagVal);
-                }
             }
         }
         TransactionData.getInstance().batchPutIndex(hashes);
@@ -1151,8 +1142,8 @@ public class API {
       *
       * @param trytes the list of transaction
       **/
-    public void broadcastTransactionsStatement(final List<String> trytes) {
-        final List<TransactionViewModel> elements = new ArrayList<>();
+    public List<TransactionViewModel> broadcastTransactionsStatement(final List<String> trytes) {
+        List<TransactionViewModel> elements = new ArrayList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes) {
             //validate all trytes
@@ -1167,6 +1158,7 @@ public class API {
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             instance.node.broadcast(transactionViewModel, null);
         }
+        return elements;
     }
 
     private AbstractResponse getStreamNetBalanceStatement(final List<String> addresses) {
@@ -1570,11 +1562,11 @@ public class API {
 
         long tPow = System.currentTimeMillis();
 
-        broadcastTransactionsStatement(powResult);
+        List<TransactionViewModel> elements = broadcastTransactionsStatement(powResult);
 
         long tBroadCast = System.currentTimeMillis();
 
-        storeTransactionsStatement(powResult);
+        storeTransactionViews(elements);
 
         long tStore = System.currentTimeMillis();
 

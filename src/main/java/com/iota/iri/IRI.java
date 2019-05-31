@@ -1,5 +1,7 @@
 package com.iota.iri;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
@@ -118,13 +120,12 @@ public class IRI {
             String version = IotaUtils.getIriVersion();
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, version);
 
-            iota = new Iota(config);
-            ixi = new IXI(iota);
-            api = new API(config, ixi, iota.transactionRequester,
-                    iota.spentAddressesService, iota.tangle, iota.bundleValidator,
-                    iota.snapshotProvider, iota.ledgerService, iota.node, iota.tipsSelector,
-                    iota.tipsViewModel, iota.transactionValidator,
-                    iota.latestMilestoneTracker);
+            Injector injector = Guice.createInjector(new InjectionConfiguration(config));
+
+            iota = injector.getInstance(Iota.class);
+            ixi = injector.getInstance(IXI.class);
+            api = injector.getInstance(API.class);
+
             shutdownHook();
 
             try {

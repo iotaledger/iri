@@ -5,7 +5,6 @@ import com.iota.iri.conf.MilestoneConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
@@ -38,17 +37,17 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesServiceImpl.class);
 
-    private Tangle tangle;
+    private final Tangle tangle;
 
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
-    private SpentAddressesProvider spentAddressesProvider;
+    private final SpentAddressesProvider spentAddressesProvider;
 
-    private TailFinder tailFinder;
+    private final TailFinder tailFinder;
 
-    private MilestoneConfig config;
+    private final MilestoneConfig config;
 
-    private BundleValidator bundleValidator;
+    private final BundleValidator bundleValidator;
 
     private final ExecutorService asyncSpentAddressesPersistor =
             IotaUtils.createNamedSingleThreadExecutor("Persist Spent Addresses Async");
@@ -59,9 +58,8 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
      * @param tangle                 Tangle object which is used to load models of addresses
      * @param snapshotProvider       {@link SnapshotProvider} to find the genesis, used to verify tails
      * @param spentAddressesProvider Provider for loading/saving addresses to a database.
-     * @return this instance
      */
-    public SpentAddressesServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
+    public SpentAddressesServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider,
                                           SpentAddressesProvider spentAddressesProvider, BundleValidator bundleValidator,
                                           MilestoneConfig config) {
         this.tangle = tangle;
@@ -70,8 +68,6 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         this.bundleValidator = bundleValidator;
         this.tailFinder = new TailFinderImpl(tangle);
         this.config = config;
-
-        return this;
     }
 
 

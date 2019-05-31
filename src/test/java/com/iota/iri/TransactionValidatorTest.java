@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -17,8 +18,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import static com.iota.iri.TransactionTestUtils.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TransactionValidatorTest {
 
@@ -34,15 +34,15 @@ public class TransactionValidatorTest {
     dbFolder.create();
     logFolder.create();
     tangle = new Tangle();
-    snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+    snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+    snapshotProvider.init();
     tangle.addPersistenceProvider(
         new RocksDBPersistenceProvider(
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
-    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
-    txValidator.setMwm(false, MAINNET_MWM);
+    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, false, MAINNET_MWM);
   }
 
   @AfterClass
@@ -54,11 +54,9 @@ public class TransactionValidatorTest {
   }
 
   @Test
-  public void testMinMwm() throws InterruptedException {
-    txValidator.init(false, 5);
-    assertTrue(txValidator.getMinWeightMagnitude() == 13);
-    txValidator.shutdown();
-    txValidator.init(false, MAINNET_MWM);
+  public void testMinMwm() {
+    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, false, 5);
+    assertEquals("Expected testnet minimum minWeightMagnitude", 13, transactionValidator.getMinWeightMagnitude());
   }
 
   @Test

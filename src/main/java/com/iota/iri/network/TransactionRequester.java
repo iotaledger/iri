@@ -31,6 +31,7 @@ public class TransactionRequester {
     private final Object syncObj = new Object();
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
+    private final double configuredPRemoveRequest;
 
     /**
      * Create {@link TransactionRequester} for receiving transactions from the tangle.
@@ -38,15 +39,16 @@ public class TransactionRequester {
      * @param tangle used to request transaction
      * @param snapshotProvider that allows to retrieve the {@link Snapshot} instances that are relevant for the node
      */
-    public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider) {
+    public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider, double pRemoveRequest) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
+        this.configuredPRemoveRequest = pRemoveRequest;
     }
 
-    public void init(double pRemoveRequest) {
+    public void init() {
         if(!initialized) {
             initialized = true;
-            P_REMOVE_REQUEST = pRemoveRequest;
+            P_REMOVE_REQUEST = configuredPRemoveRequest;
         }
     }
 

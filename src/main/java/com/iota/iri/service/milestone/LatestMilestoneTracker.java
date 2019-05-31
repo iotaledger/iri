@@ -98,4 +98,9 @@ public interface LatestMilestoneTracker {
      * This method stops the background worker that updates the latest milestones.
      */
     void shutdown();
+
+    /**
+     * Initializes the latest milestone tracker by getting the latest milestone.
+     */
+    void init();
 }

@@ -33,4 +33,11 @@ public interface SpentAddressesProvider {
      */
     void saveAddressesBatch(Collection<Hash> addressHashes) throws SpentAddressesException;
 
+    /**
+     * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
+     *
+     * @throws SpentAddressesException if we failed to create a file at the designated location
+     */
+    void init() throws SpentAddressesException;
+
 }

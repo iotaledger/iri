@@ -1,33 +1,29 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.TransactionRequesterWorker;
 import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
-import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
-import com.iota.iri.service.milestone.impl.*;
+import com.iota.iri.service.ledger.LedgerService;
+import com.iota.iri.service.milestone.*;
+import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
-import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
-import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
-import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.*;
-import com.iota.iri.service.tipselection.impl.*;
-import com.iota.iri.service.transactionpruning.TransactionPruningException;
-import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
+import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 
-import java.security.SecureRandom;
 import java.util.List;
 
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
@@ -70,101 +66,108 @@ import org.slf4j.LoggerFactory;
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
-    public final SpentAddressesProviderImpl spentAddressesProvider;
+    private final SpentAddressesProvider spentAddressesProvider;
 
-    public final SpentAddressesServiceImpl spentAddressesService;
+    private final SpentAddressesService spentAddressesService;
 
-    public final SnapshotProviderImpl snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
-    public final SnapshotServiceImpl snapshotService;
+    private final SnapshotService snapshotService;
 
-    public final LocalSnapshotManagerImpl localSnapshotManager;
+    private final LocalSnapshotManager localSnapshotManager;
 
-    public final MilestoneServiceImpl milestoneService;
+    private final MilestoneService milestoneService;
 
-    public final LatestMilestoneTrackerImpl latestMilestoneTracker;
+    private final LatestMilestoneTracker latestMilestoneTracker;
 
-    public final LatestSolidMilestoneTrackerImpl latestSolidMilestoneTracker;
+    private final LatestSolidMilestoneTracker latestSolidMilestoneTracker;
 
-    public final SeenMilestonesRetrieverImpl seenMilestonesRetriever;
+    private final SeenMilestonesRetriever seenMilestonesRetriever;
 
-    public final LedgerServiceImpl ledgerService = new LedgerServiceImpl();
+    private final LedgerService ledgerService;
 
-    public final AsyncTransactionPruner transactionPruner;
+    private final TransactionPruner transactionPruner;
 
-    public final MilestoneSolidifierImpl milestoneSolidifier;
+    private final MilestoneSolidifier milestoneSolidifier;
 
-    public final TransactionRequesterWorkerImpl transactionRequesterWorker;
+    private final TransactionRequesterWorker transactionRequesterWorker;
 
-    public final BundleValidator bundleValidator;
+    private final BundleValidator bundleValidator;
 
-    public final Tangle tangle;
-    public final TransactionValidator transactionValidator;
-    public final TipsSolidifier tipsSolidifier;
-    public final TransactionRequester transactionRequester;
-    public final Node node;
-    public final UDPReceiver udpReceiver;
-    public final Replicator replicator;
+    private final Tangle tangle;
+    private final TransactionValidator transactionValidator;
+    private final TipsSolidifier tipsSolidifier;
+    private final TransactionRequester transactionRequester;
+    public final Node node; // used in test
+    private final UDPReceiver udpReceiver;
+    private final Replicator replicator;
     private final IotaConfig configuration;
-    public final TipsViewModel tipsViewModel;
-    public final TipSelector tipsSelector;
+    private final TipsViewModel tipsViewModel;
+    private final TipSelector tipsSelector;
 
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
      *
      * @param configuration Information about how this node will be configured.
-     * @throws TransactionPruningException If the TransactionPruner could not restore its state.
-     * @throws SnapshotException If the Snapshot fails to initialize.
-     *                           This can happen if the snapshot signature is invalid or the file cannot be read.
+     *
      */
-    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException, SpentAddressesException {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, TransactionRequesterWorker transactionRequesterWorker, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TipsSolidifier tipsSolidifier, TransactionRequester transactionRequester, Node node, UDPReceiver udpReceiver, Replicator replicator, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
         this.configuration = configuration;
 
-        // new refactored instances
-        spentAddressesProvider = new SpentAddressesProviderImpl();
-        spentAddressesService = new SpentAddressesServiceImpl();
-        snapshotProvider = new SnapshotProviderImpl();
-        snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = configuration.getLocalSnapshotsEnabled()
-                             ? new LocalSnapshotManagerImpl()
-                             : null;
-        milestoneService = new MilestoneServiceImpl();
-        latestMilestoneTracker = new LatestMilestoneTrackerImpl();
-        latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
-        seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
-        milestoneSolidifier = new MilestoneSolidifierImpl();
-        transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
-                          ? new AsyncTransactionPruner()
-                          : null;
-        transactionRequesterWorker = new TransactionRequesterWorkerImpl();
+        this.ledgerService = ledgerService;
+        this.spentAddressesProvider = spentAddressesProvider;
+        this.spentAddressesService = spentAddressesService;
+        this.snapshotProvider = snapshotProvider;
+        this.snapshotService = snapshotService;
+        this.localSnapshotManager = localSnapshotManager;
+        this.milestoneService = milestoneService;
+        this.latestMilestoneTracker = latestMilestoneTracker;
+        this.latestSolidMilestoneTracker = latestSolidMilestoneTracker;
+        this.seenMilestonesRetriever = seenMilestonesRetriever;
+        this.milestoneSolidifier = milestoneSolidifier;
+        this.transactionPruner = transactionPruner;
+        this.transactionRequesterWorker = transactionRequesterWorker;
+        // legacy classes
+        this.bundleValidator = bundleValidator;
+        this.tangle = tangle;
+        this.tipsViewModel = tipsViewModel;
+        this.transactionRequester = transactionRequester;
+        this.transactionValidator = transactionValidator;
+        this.node = node;
+        this.replicator = replicator;
+        this.udpReceiver = udpReceiver;
+        this.tipsSolidifier = tipsSolidifier;
+        this.tipsSelector = tipsSelector;
+    }
 
-        // legacy code
-        bundleValidator = new BundleValidator();
-        tangle = new Tangle();
-        tipsViewModel = new TipsViewModel();
-        transactionRequester = new TransactionRequester(tangle, snapshotProvider);
-        transactionValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester);
-        node = new Node(tangle, snapshotProvider, transactionValidator, transactionRequester, tipsViewModel,
-                latestMilestoneTracker, configuration);
-        replicator = new Replicator(node, configuration);
-        udpReceiver = new UDPReceiver(node, configuration);
-        tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel, configuration);
-        tipsSelector = createTipSelector(configuration);
-
-        injectDependencies();
+    private void initDependencies() throws SnapshotException, SpentAddressesException {
+        //snapshot provider must be initialized first
+        //because we check whether spent addresses data exists
+        snapshotProvider.init();
+        spentAddressesProvider.init();
+        latestMilestoneTracker.init();
+        seenMilestonesRetriever.init();
+        if (transactionPruner != null) {
+            transactionPruner.init();
+        }
     }
 
     /**
      * <p>
-     * Adds all database providers, and starts initialization of our services.
+     * Initializes the latest snapshot and
+     * adds all database providers, and starts initialization of our services.
      * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.
      * </p>
      * After this function, incoming and outbound transaction processing has started.
      *
+     * @throws SnapshotException If the Snapshot fails to initialize.
+     *                           This can happen if the snapshot signature is invalid or the file cannot be read.
      * @throws Exception If along the way a service fails to initialize.
      *                   Most common cause is a file read or database error.
      */
     public void init() throws Exception {
+        initDependencies(); // remainder of injectDependencies method (contained init code)
+
         initializeTangle();
         tangle.init();
 
@@ -178,9 +181,9 @@ public class Iota {
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
 
-        transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
+        transactionValidator.init();
         tipsSolidifier.init();
-        transactionRequester.init(configuration.getpRemoveRequest());
+        transactionRequester.init();
         udpReceiver.init();
         replicator.init();
         node.init();
@@ -197,31 +200,6 @@ public class Iota {
         if (transactionPruner != null) {
             transactionPruner.start();
         }
-    }
-
-    private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
-        //snapshot provider must be initialized first
-        //because we check whether spent addresses data exists
-        snapshotProvider.init(configuration);
-        spentAddressesProvider.init(configuration);
-        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, configuration);
-        snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
-        if (localSnapshotManager != null) {
-            localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
-        }
-        milestoneService.init(tangle, snapshotProvider, snapshotService, bundleValidator, configuration);
-        latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
-                configuration);
-        latestSolidMilestoneTracker.init(tangle, snapshotProvider, milestoneService, ledgerService,
-                latestMilestoneTracker);
-        seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
-        milestoneSolidifier.init(snapshotProvider, transactionValidator);
-        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
-                bundleValidator);
-        if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, tipsViewModel, configuration);
-        }
-        transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }
 
     private void rescanDb() throws Exception {
@@ -300,13 +278,4 @@ public class Iota {
         }
     }
 
-    private TipSelector createTipSelector(TipSelConfig config) {
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
-                latestMilestoneTracker);
-        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
-        TailFinder tailFinder = new TailFinderImpl(tangle);
-        Walker walker = new WalkerAlpha(tailFinder, tangle, new SecureRandom(), config);
-        return new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
-                walker, config);
-    }
 }

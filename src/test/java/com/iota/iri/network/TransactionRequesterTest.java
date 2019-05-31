@@ -1,5 +1,6 @@
 package com.iota.iri.network;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -24,7 +25,8 @@ public class TransactionRequesterTest {
 
     @Before
     public void setUp() throws Exception {
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider.init();
     }
 
     @After
@@ -79,7 +81,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void popEldestTransactionToRequest() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
         // Add some Txs to the pool and see if the method pops the eldest one
         Hash eldest = getTransactionHash();
         txReq.requestTransaction(eldest, false);
@@ -100,7 +102,7 @@ public class TransactionRequesterTest {
                 getTransactionHash(),
                 getTransactionHash()
         ));
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < 3; i++) {
@@ -121,7 +123,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void nonMilestoneCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -134,7 +136,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void milestoneCapacityNotLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -147,7 +149,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void mixedCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 4 ; i++) {

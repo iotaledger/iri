@@ -49,7 +49,8 @@ public class TransactionViewModelTest {
                 Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider.init();
     }
 
     @After

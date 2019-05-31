@@ -33,18 +33,14 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
 
     private RocksDBPersistenceProvider rocksDBPersistenceProvider;
 
-    private SnapshotConfig config;
+    private final SnapshotConfig config;
 
-    /**
-     * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
-     *
-     * @param config The snapshot configuration used for file location
-     * @return the current instance
-     * @throws SpentAddressesException if we failed to create a file at the designated location
-     */
-    public SpentAddressesProviderImpl init(SnapshotConfig config)
-            throws SpentAddressesException {
-        this.config = config;
+    public SpentAddressesProviderImpl(SnapshotConfig configuration) {
+        this.config = configuration;
+    }
+
+    @Override
+    public void init() throws SpentAddressesException {
         try {
             this.rocksDBPersistenceProvider = new RocksDBPersistenceProvider(
                     config.getSpentAddressesDbPath(),
@@ -58,7 +54,6 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         catch (Exception e) {
             throw new SpentAddressesException("There is a problem with accessing stored spent addresses", e);
         }
-        return this;
     }
 
     private void readPreviousEpochsSpentAddresses() throws SpentAddressesException {

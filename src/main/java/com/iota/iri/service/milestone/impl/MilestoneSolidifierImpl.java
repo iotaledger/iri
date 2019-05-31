@@ -57,12 +57,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the TransactionValidator which allows us to issue solidity checks.
      */
-    private TransactionValidator transactionValidator;
+    private final TransactionValidator transactionValidator;
 
     /**
      * Holds a reference to the manager of the background worker.
@@ -104,29 +104,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private Map.Entry<Hash, Integer> youngestMilestoneInQueue = null;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code milestoneSolidifier = new MilestoneSolidifierImpl().init(...);}
-     *
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param transactionValidator TransactionValidator instance that is used by the node
-     * @return the initialized instance itself to allow chaining
      */
-    public MilestoneSolidifierImpl init(SnapshotProvider snapshotProvider, TransactionValidator transactionValidator) {
+    public MilestoneSolidifierImpl(SnapshotProvider snapshotProvider, TransactionValidator transactionValidator) {
         this.snapshotProvider = snapshotProvider;
         this.transactionValidator = transactionValidator;
-
-        return this;
     }
 
     /**

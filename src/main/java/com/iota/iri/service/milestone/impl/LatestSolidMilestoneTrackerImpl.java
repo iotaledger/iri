@@ -44,28 +44,28 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     /**
      * Holds the Tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots that the node uses (for the ledger
      * state).
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the service instance containing the business logic of the milestone package.
      */
-    private MilestoneService milestoneService;
+    private final MilestoneService milestoneService;
 
     /**
      * Holds a reference to the manager that keeps track of the latest milestone.
      */
-    private LatestMilestoneTracker latestMilestoneTracker;
+    private final LatestMilestoneTracker latestMilestoneTracker;
 
     /**
      * Holds a reference to the service that contains the logic for applying milestones to the ledger state.
      */
-    private LedgerService ledgerService;
+    private final LedgerService ledgerService;
 
     /**
      * Holds a reference to the manager of the background worker.
@@ -89,38 +89,20 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private int repairBackoffCounter = 0;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl().init(...);}
-     *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
      * @param milestoneService contains the important business logic when dealing with milestones
      * @param ledgerService the manager for
      * @param latestMilestoneTracker the manager that keeps track of the latest milestone
-     * @return the initialized instance itself to allow chaining
      */
-    public LatestSolidMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
+    public LatestSolidMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider,
             MilestoneService milestoneService, LedgerService ledgerService,
             LatestMilestoneTracker latestMilestoneTracker) {
-
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.milestoneService = milestoneService;
         this.ledgerService = ledgerService;
         this.latestMilestoneTracker = latestMilestoneTracker;
-
-        return this;
     }
 
     @Override

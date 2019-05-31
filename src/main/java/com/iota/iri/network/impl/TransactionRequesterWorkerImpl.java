@@ -48,22 +48,22 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
     /**
      * The Tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * The manager for the requested transactions that allows us to access the request queue.
      */
-    private TransactionRequester transactionRequester;
+    private final TransactionRequester transactionRequester;
 
     /**
      * Manager for the tips (required for selecting the random tips).
      */
-    private TipsViewModel tipsViewModel;
+    private final TipsViewModel tipsViewModel;
 
     /**
      * The network manager of the node.
      */
-    private Node node;
+    private final Node node;
 
     /**
      * The manager of the background task.
@@ -72,33 +72,17 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
             "Transaction Requester", log);
 
     /**
-     * <p>
-     * Initializes the instance and registers its dependencies.
-     * It simply stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code transactionRequesterWorker = new TransactionRequesterWorkerImpl().init(...);}
-     *
      * @param tangle Tangle object which acts as a database interface
      * @param transactionRequester manager for the requested transactions
      * @param tipsViewModel the manager for the tips
      * @param node the network manager of the node
-     * @return the initialized instance itself to allow chaining
      */
-    public TransactionRequesterWorkerImpl init(Tangle tangle, TransactionRequester transactionRequester,
+    public TransactionRequesterWorkerImpl(Tangle tangle, TransactionRequester transactionRequester,
             TipsViewModel tipsViewModel, Node node) {
-
         this.tangle = tangle;
         this.transactionRequester = transactionRequester;
         this.tipsViewModel = tipsViewModel;
         this.node = node;
-
-        return this;
     }
 
     /**

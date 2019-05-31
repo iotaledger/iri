@@ -38,7 +38,8 @@ public class RatingOneTest {
     @BeforeClass
     public static void setUp() throws Exception {
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider.init();
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider( new RocksDBPersistenceProvider(

@@ -5,7 +5,6 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneException;
 import com.iota.iri.service.milestone.MilestoneService;
@@ -53,28 +52,28 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     /**
      * Holds the Tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots that the node uses (for faster
      * bootstrapping).
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Service class containing the business logic of the milestone package.
      */
-    private MilestoneService milestoneService;
+    private final MilestoneService milestoneService;
 
     /**
      * Holds a reference to the manager that takes care of solidifying milestones.
      */
-    private MilestoneSolidifier milestoneSolidifier;
+    private final MilestoneSolidifier milestoneSolidifier;
 
     /**
      * Holds the coordinator address which is used to filter possible milestone candidates.
      */
-    private Hash coordinatorAddress;
+    private final Hash coordinatorAddress;
 
     /**
      * Holds a reference to the manager of the background worker.
@@ -115,41 +114,24 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     private boolean initialized = false;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It simply stores the passed in values in their corresponding private properties and bootstraps the latest
-     * milestone with values for the latest milestone that can be found quickly.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code latestMilestoneTracker = new LatestMilestoneTrackerImpl().init(...);}
-     *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
      * @param milestoneService contains the important business logic when dealing with milestones
      * @param milestoneSolidifier manager that takes care of solidifying milestones
      * @param config configuration object which allows us to determine the important config parameters of the node
-     * @return the initialized instance itself to allow chaining
      */
-    public LatestMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier, IotaConfig config) {
-
+    public LatestMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider, MilestoneService milestoneService,
+                                      MilestoneSolidifier milestoneSolidifier, IotaConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
+        this.coordinatorAddress = config.getCoordinator();
+    }
 
-        coordinatorAddress = config.getCoordinator();
-
+    @Override
+    public void init() {
         bootstrapLatestMilestoneValue();
-
-        return this;
     }
 
     /**

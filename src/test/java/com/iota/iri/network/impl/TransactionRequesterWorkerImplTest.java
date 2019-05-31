@@ -1,5 +1,6 @@
 package com.iota.iri.network.impl;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -65,10 +66,8 @@ public class TransactionRequesterWorkerImplTest {
 
     @Before
     public void before() {
-        requester = new TransactionRequester(tangle, snapshotProvider);
-        
-        worker = new TransactionRequesterWorkerImpl();
-        worker.init(tangle, requester, tipsVM, node);
+        requester = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
+        worker = new TransactionRequesterWorkerImpl(tangle, requester, tipsVM, node);
     }
     
     @After

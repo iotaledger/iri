@@ -346,6 +346,14 @@ public class TransactionViewModel {
         return transaction.lastIndex;
     }
 
+    public void setCurrentIndex(long idx) {
+        transaction.currentIndex = idx;
+    }
+
+    public void setLastIndex(long idx) {
+        transaction.lastIndex = idx;
+    }
+
     public byte[] getSignature() {
         return Arrays.copyOfRange(trits(), SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
     }

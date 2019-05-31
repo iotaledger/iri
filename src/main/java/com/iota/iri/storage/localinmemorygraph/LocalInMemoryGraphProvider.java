@@ -380,6 +380,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                         parentScore.put(vet, (double)(lastIndex-currentIndex+1));
                     }
                     freshScore = false;
+                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {	
+                    score.put(vet, 1.0 / (score.size() + 1));	
+                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);	
+                    centrality.setScore(score);	
+                    score = centrality.compute();	
+                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet, 1.0);	
                 }
             }
         } catch (Exception e) {

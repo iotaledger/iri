@@ -36,9 +36,6 @@ public class ReplyStageTest {
     private Tangle tangle;
 
     @Mock
-    private TransactionValidator transactionValidator;
-
-    @Mock
     private NeighborRouter neighborRouter;
 
     @Mock
@@ -86,7 +83,7 @@ public class ReplyStageTest {
                 SampleTransaction.SAMPLE_TRANSACTION);
 
         ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
-                snapshotProvider, recentlySeenBytesCache, transactionRequester, random);
+                snapshotProvider, recentlySeenBytesCache, random);
         ReplyPayload replyPayload = new ReplyPayload(neighbor, Hash.NULL_HASH);
         ProcessingContext ctx = new ProcessingContext(replyPayload);
         stage.process(ctx);
@@ -106,7 +103,7 @@ public class ReplyStageTest {
                 SampleTransaction.SAMPLE_TRANSACTION);
 
         ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
-                snapshotProvider, recentlySeenBytesCache, transactionRequester, random);
+                snapshotProvider, recentlySeenBytesCache, random);
         ReplyPayload replyPayload = new ReplyPayload(neighbor, SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
         ProcessingContext ctx = new ProcessingContext(replyPayload);
         stage.process(ctx);
@@ -115,29 +112,6 @@ public class ReplyStageTest {
             Mockito.verify(random, Mockito.never()).nextDouble();
             Mockito.verify(neighborRouter).gossipTransactionTo(Mockito.any(), Mockito.any());
             Mockito.verify(recentlySeenBytesCache).put(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
-                    SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
-
-    @Test
-    public void usingASuppliedRequestedHashButNotHavingItWillPutItInTheRequestQueue() {
-        Mockito.when(random.nextDouble()).thenReturn(0.4);
-        Mockito.when(nodeConfig.getpPropagateRequest()).thenReturn(0.5);
-
-        TangleMockUtils.mockTransaction(tangle, SampleTransaction.CURL_HASH_OF_SAMPLE_TX, null);
-
-        ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
-                snapshotProvider, recentlySeenBytesCache, transactionRequester, random);
-        ReplyPayload replyPayload = new ReplyPayload(neighbor, SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
-        ProcessingContext ctx = new ProcessingContext(replyPayload);
-        stage.process(ctx);
-
-        try {
-            Mockito.verify(transactionRequester).requestTransaction(SampleTransaction.CURL_HASH_OF_SAMPLE_TX, false);
-            Mockito.verify(neighborRouter, Mockito.never()).gossipTransactionTo(Mockito.any(), Mockito.any());
-            Mockito.verify(recentlySeenBytesCache, Mockito.never()).put(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
                     SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
         } catch (Exception e) {
             fail(e.getMessage());

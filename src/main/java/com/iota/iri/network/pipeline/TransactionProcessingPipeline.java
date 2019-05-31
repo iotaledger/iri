@@ -87,19 +87,17 @@ public class TransactionProcessingPipeline {
      * @param txValidator            The transaction validator to validate incoming transactions with
      * @param tangle                 The {@link Tangle} database to use to store and load transactions.
      * @param snapshotProvider       The {@link SnapshotProvider} to use to store transactions with.
-     * @param txRequester            The {@link TransactionRequester} used to put in not known transactions to request
-     *                               in
      * @param tipsViewModel          The {@link TipsViewModel} to load tips from in the reply stage
      * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
      *                               reply stage
      */
     public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
-            SnapshotProvider snapshotProvider, TransactionRequester txRequester, TipsViewModel tipsViewModel,
+            SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
             LatestMilestoneTracker latestMilestoneTracker) {
         this.recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
-                snapshotProvider, recentlySeenBytesCache, txRequester);
+                snapshotProvider, recentlySeenBytesCache);
         this.broadcastStage = new BroadcastStage(neighborRouter);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
         this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider);

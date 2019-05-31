@@ -39,9 +39,6 @@ public class TransactionProcessingPipelineTest {
     private SnapshotProvider snapshotProvider;
 
     @Mock
-    private TransactionRequester transactionRequester;
-
-    @Mock
     private TipsViewModel tipsViewModel;
 
     @Mock
@@ -112,8 +109,8 @@ public class TransactionProcessingPipelineTest {
     @Test
     public void processingAValidNewTransactionFlowsThroughTheEntirePipeline() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
-                tipsViewModel, latestMilestoneTracker);
+        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
+                latestMilestoneTracker);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -130,7 +127,8 @@ public class TransactionProcessingPipelineTest {
         ImmutablePair<ProcessingContext<ReplyPayload>,
                 ProcessingContext<ReceivedPayload>> divergePaypload = new ImmutablePair<>(replyCtx, receivedCtx);
         Mockito.when(validationStage.process(validationCtx)).thenReturn(divergeToReplyAndReceivedCtx);
-        Mockito.when(divergeToReplyAndReceivedCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.MULTIPLE);
+        Mockito.when(divergeToReplyAndReceivedCtx.getNextStage())
+                .thenReturn(TransactionProcessingPipeline.Stage.MULTIPLE);
         Mockito.when(divergeToReplyAndReceivedCtx.getPayload()).thenReturn(divergePaypload);
 
         // mock received
@@ -157,8 +155,8 @@ public class TransactionProcessingPipelineTest {
     @Test
     public void processingAKnownTransactionOnlyFlowsToTheReplyStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
-                tipsViewModel, latestMilestoneTracker);
+        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
+                latestMilestoneTracker);
 
         // inject mocks
         pipeline.setPreProcessStage(preProcessStage);
@@ -191,8 +189,8 @@ public class TransactionProcessingPipelineTest {
     public void processingAValidNewTransactionNotOriginatingFromANeighborFlowsThroughTheCorrectStages()
             throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
-                tipsViewModel, latestMilestoneTracker);
+        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
+                latestMilestoneTracker);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -237,8 +235,8 @@ public class TransactionProcessingPipelineTest {
     @Test
     public void anInvalidNewTransactionStopsBeingProcessedAfterTheValidationStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
-                tipsViewModel, latestMilestoneTracker);
+        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
+                latestMilestoneTracker);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);

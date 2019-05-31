@@ -220,8 +220,8 @@ public class Iota {
         }
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, neighborRouter);
         neighborRouter.init(configuration, transactionRequester, txPipeline);
-        txPipeline.init(neighborRouter, configuration, transactionValidator, tangle, snapshotProvider,
-                transactionRequester, tipsViewModel, latestMilestoneTracker);
+        txPipeline.init(neighborRouter, configuration, transactionValidator, tangle, snapshotProvider, tipsViewModel,
+                latestMilestoneTracker);
         tipRequester.init(neighborRouter, tangle, latestMilestoneTracker, transactionRequester);
     }
 

@@ -32,7 +32,6 @@ public class ReplyStage {
     private NeighborRouter neighborRouter;
     private Tangle tangle;
     private NodeConfig config;
-    private TransactionRequester txRequester;
     private TipsViewModel tipsViewModel;
     private LatestMilestoneTracker latestMilestoneTracker;
     private SnapshotProvider snapshotProvider;
@@ -49,14 +48,12 @@ public class ReplyStage {
      * @param latestMilestoneTracker the {@link LatestMilestoneTracker} to load the latest milestone from
      * @param snapshotProvider       the {@link SnapshotProvider} to check the latest solid milestone from
      * @param recentlySeenBytesCache the {@link FIFOCache} to use to cache the replied transaction
-     * @param txRequester            the {@link TransactionRequester} to put in transaction which are requested but not
-     *                               available on the node to request them from other neighbors
      * @param rnd                    the {@link SecureRandom} used to get random values to randomize chances for not
      *                               replying at all or not requesting a not stored requested transaction from neighbors
      */
     public ReplyStage(NeighborRouter neighborRouter, NodeConfig config, Tangle tangle, TipsViewModel tipsViewModel,
             LatestMilestoneTracker latestMilestoneTracker, SnapshotProvider snapshotProvider,
-            FIFOCache<Long, Hash> recentlySeenBytesCache, TransactionRequester txRequester, SecureRandom rnd) {
+            FIFOCache<Long, Hash> recentlySeenBytesCache, SecureRandom rnd) {
         this.neighborRouter = neighborRouter;
         this.config = config;
         this.tangle = tangle;
@@ -64,7 +61,6 @@ public class ReplyStage {
         this.latestMilestoneTracker = latestMilestoneTracker;
         this.snapshotProvider = snapshotProvider;
         this.recentlySeenBytesCache = recentlySeenBytesCache;
-        this.txRequester = txRequester;
         this.rnd = rnd;
     }
 
@@ -78,12 +74,10 @@ public class ReplyStage {
      * @param latestMilestoneTracker the {@link LatestMilestoneTracker} to load the latest milestone from
      * @param snapshotProvider       the {@link SnapshotProvider} to check the latest solid milestone from
      * @param recentlySeenBytesCache the {@link FIFOCache} to use to cache the replied transaction
-     * @param txRequester            the {@link TransactionRequester} to put in transaction which are requested but not
-     *                               available on the node to request them from other neighbors
      */
     public ReplyStage(NeighborRouter neighborRouter, NodeConfig config, Tangle tangle, TipsViewModel tipsViewModel,
             LatestMilestoneTracker latestMilestoneTracker, SnapshotProvider snapshotProvider,
-            FIFOCache<Long, Hash> recentlySeenBytesCache, TransactionRequester txRequester) {
+            FIFOCache<Long, Hash> recentlySeenBytesCache) {
         this.neighborRouter = neighborRouter;
         this.config = config;
         this.tangle = tangle;
@@ -91,7 +85,6 @@ public class ReplyStage {
         this.latestMilestoneTracker = latestMilestoneTracker;
         this.snapshotProvider = snapshotProvider;
         this.recentlySeenBytesCache = recentlySeenBytesCache;
-        this.txRequester = txRequester;
     }
 
     /**
@@ -156,18 +149,6 @@ public class ReplyStage {
             e.printStackTrace();
         }
 
-        // if we don't have the requested transaction (not a random tip) and the propagation
-        // chance gets hit, we put the requested transaction into our own request queue.
-        if (hashOfRequestedTx.equals(Hash.NULL_HASH) || rnd.nextDouble() >= config.getpPropagateRequest()) {
-            return ctx;
-        }
-
-        try {
-            // we don't have the requested tx, so we add it to our own request queue
-            txRequester.requestTransaction(hashOfRequestedTx, false);
-        } catch (Exception e) {
-            log.error("error adding requested tx to own request queue", e);
-        }
         return ctx;
     }
 

@@ -93,11 +93,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //Tip Selection
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
+    protected int tipSelectionTimeoutSec = Defaults.TIP_SELECTION_TIMEOUT_SEC;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
-    
+
     //Tip Solidification
     protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
-    
+
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
 
@@ -546,8 +547,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
             SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
     protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
         if (localSnapshotsPruningDelay < Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
-            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least " 
-                    + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
+            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least "
+                    + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN
                     + "(found " + localSnapshotsPruningDelay +")");
         }
 
@@ -827,19 +828,30 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setAlpha(double alpha) {
         this.alpha = alpha;
     }
-    
+
+    @Override
+    public int getTipSelectionTimeoutSec() {
+        return tipSelectionTimeoutSec;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--tip-selection-timeout-sec", description = TipSelConfig.Descriptions.TIP_SELECTION_TIMEOUT_SEC)
+    protected void setTipSelectionTimeoutSec(int tipSelectionTimeoutSec) {
+        this.tipSelectionTimeoutSec = tipSelectionTimeoutSec;
+    }
+
     @Override
     public boolean isTipSolidifierEnabled() {
         return tipSolidifierEnabled;
     }
 
     @JsonProperty
-    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER, 
+    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER,
         arity = 1)
     protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
         this.tipSolidifierEnabled = tipSolidifierEnabled;
     }
-    
+
     @Override
     public int getBelowMaxDepthTransactionLimit() {
         return maxAnalyzedTransactions;
@@ -924,7 +936,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //TipSel
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
-        
+        int TIP_SELECTION_TIMEOUT_SEC = 60;
+
         //Tip solidification
         boolean TIP_SOLIDIFIER_ENABLED = true;
 
@@ -941,8 +954,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
-        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
-        
+        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
+
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
@@ -951,7 +964,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
         String SPENT_ADDRESSES_DB_PATH = "spent-addresses-db";
         String SPENT_ADDRESSES_DB_LOG_PATH = "spent-addresses-log";
-        
+
         String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";

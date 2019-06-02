@@ -29,7 +29,7 @@ public class RecursiveWeightCalculator implements RatingCalculator {
     public final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
     
-    private Map<Hash, Collection<Hash>> txToDirectApprovers = new HashMap<>();
+    private Map<Hash, ArrayDeque<Hash>> txToDirectApprovers = new HashMap<>();
 
     /**
      * Constructor for Recursive Weight Calculator
@@ -55,7 +55,7 @@ public class RecursiveWeightCalculator implements RatingCalculator {
     
     private void calculateRatingDfs(Hash entryPoint, UnIterableMap<HashId, Integer> hashWeight) throws Exception {
         Deque<Hash> stack = new ArrayDeque<>();
-        Map<Hash, Collection<Hash>> txToDirectApprovers = new HashMap<>();
+        Map<Hash, ArrayDeque<Hash>> txToDirectApprovers = new HashMap<>();
 
         stack.push(entryPoint);
         while (CollectionUtils.isNotEmpty(stack)) {
@@ -82,7 +82,7 @@ public class RecursiveWeightCalculator implements RatingCalculator {
     private int getRating(Hash hash, Set<HashId> seenHashes) throws Exception {
         int weight = 1;
 
-        Collection<Hash> approvers = getTxDirectApproversHashes(hash, txToDirectApprovers);
+        ArrayDeque<Hash> approvers = getTxDirectApproversHashes(hash, txToDirectApprovers);
         for (Hash approver : approvers) {
             if (!seenHashes.contains(approver)) {
                 seenHashes.add(approver);
@@ -100,14 +100,14 @@ public class RecursiveWeightCalculator implements RatingCalculator {
         return txApp;
     }
     
-    private Collection<Hash> getTxDirectApproversHashes(Hash txHash,  Map<Hash, Collection<Hash>> txToDirectApprovers) 
+    private ArrayDeque<Hash> getTxDirectApproversHashes(Hash txHash,  Map<Hash, ArrayDeque<Hash>> txToDirectApprovers) 
             throws Exception {
         
-        Collection<Hash> txApprovers = txToDirectApprovers.get(txHash);
+        ArrayDeque<Hash> txApprovers = txToDirectApprovers.get(txHash);
         if (txApprovers == null) {
             ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
             Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
-            txApprovers = new HashSet<>(appHashes.size());
+            txApprovers = new ArrayDeque<>(appHashes.size());
             for (Hash appHash : appHashes) {
                 //if not genesis (the tx that confirms itself)
                 if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(appHash)) {

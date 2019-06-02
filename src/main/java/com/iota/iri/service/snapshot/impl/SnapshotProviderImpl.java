@@ -84,6 +84,10 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      */
     private Snapshot latestSnapshot;
 
+    /**
+     * Implements the snapshot provider interface.
+     * @param configuration Snapshot configuration properties.
+     */
     public SnapshotProviderImpl(SnapshotConfig configuration) {
         this.config = configuration;
     }

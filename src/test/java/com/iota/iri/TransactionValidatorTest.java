@@ -18,7 +18,9 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import static com.iota.iri.TransactionTestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TransactionValidatorTest {
 
@@ -73,7 +75,7 @@ public class TransactionValidatorTest {
   }
 
   @Test
-  public void validateBytesWithNewCurl() throws Exception {
+  public void validateBytesWithNewCurl() {
     byte[] trits = getTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);

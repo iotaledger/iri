@@ -35,6 +35,10 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
 
     private final SnapshotConfig config;
 
+    /**
+     * Implements the spent addresses provider interface.
+     * @param configuration Holds properties that are relevant for accessing the spent addresses.
+     */
     public SpentAddressesProviderImpl(SnapshotConfig configuration) {
         this.config = configuration;
     }

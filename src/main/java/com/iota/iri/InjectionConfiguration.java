@@ -15,8 +15,16 @@ import com.iota.iri.service.API;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
-import com.iota.iri.service.milestone.*;
-import com.iota.iri.service.milestone.impl.*;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.milestone.SeenMilestonesRetriever;
+import com.iota.iri.service.milestone.impl.LatestMilestoneTrackerImpl;
+import com.iota.iri.service.milestone.impl.LatestSolidMilestoneTrackerImpl;
+import com.iota.iri.service.milestone.impl.MilestoneServiceImpl;
+import com.iota.iri.service.milestone.impl.MilestoneSolidifierImpl;
+import com.iota.iri.service.milestone.impl.SeenMilestonesRetrieverImpl;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
@@ -27,8 +35,16 @@ import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
 import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
-import com.iota.iri.service.tipselection.*;
-import com.iota.iri.service.tipselection.impl.*;
+import com.iota.iri.service.tipselection.EntryPointSelector;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.TailFinder;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
+import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
+import com.iota.iri.service.tipselection.impl.TailFinderImpl;
+import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
+import com.iota.iri.service.tipselection.impl.WalkerAlpha;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.storage.Tangle;
@@ -90,7 +106,7 @@ public class InjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    LedgerService provideLedgerService(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,  MilestoneService milestoneService, SpentAddressesService spentAddressesService, BundleValidator bundleValidator) {
+    LedgerService provideLedgerService(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService, MilestoneService milestoneService, SpentAddressesService spentAddressesService, BundleValidator bundleValidator) {
         return new LedgerServiceImpl(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService, bundleValidator);
     }
 
@@ -173,7 +189,7 @@ public class InjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     TipSelector provideTipSelector(Tangle tangle, SnapshotProvider snapshotProvider,
-                                            LatestMilestoneTracker latestMilestoneTracker, LedgerService ledgerService) {
+                                   LatestMilestoneTracker latestMilestoneTracker, LedgerService ledgerService) {
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
                 latestMilestoneTracker);
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);

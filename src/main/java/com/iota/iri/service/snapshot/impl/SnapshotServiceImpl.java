@@ -87,6 +87,12 @@ public class SnapshotServiceImpl implements SnapshotService {
      */
     private final SnapshotConfig config;
 
+    /**
+     * Implements the snapshot service. See interface for more information.
+     * @param tangle acts as a database interface.
+     * @param snapshotProvider gives us access to the relevant snapshots.
+     * @param config configuration with snapshot specific settings.
+     */
     public SnapshotServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;

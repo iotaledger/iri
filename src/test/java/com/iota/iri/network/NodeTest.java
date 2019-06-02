@@ -4,26 +4,37 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.longThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class NodeTest {
+
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
+
     @Mock
     private NodeConfig nodeConfig;
     @Mock
@@ -40,7 +51,7 @@ public class NodeTest {
         logger.addAppender(mockAppender);
 
         // set up class under test
-        nodeConfig = Mockito.mock(NodeConfig.class);
+        nodeConfig = mock(NodeConfig.class);
         classUnderTest = new Node(null, null, null, null, null, null, nodeConfig);
 
         // verify config calls in Node constructor
@@ -65,6 +76,30 @@ public class NodeTest {
         verify(mockAppender).doAppend(captorLoggingEvent.capture());
         final ILoggingEvent loggingEvent = captorLoggingEvent.getValue();
         assertThat("Loglevel must be info", loggingEvent.getLevel(), is(Level.INFO));
-        assertThat("Invalid log message", loggingEvent.getFormattedMessage(),is("Ignoring DNS Refresher Thread... DNS_RESOLUTION_ENABLED is false"));
+        assertThat("Invalid log message", loggingEvent.getFormattedMessage(), is("Ignoring DNS Refresher Thread... DNS_RESOLUTION_ENABLED is false"));
     }
+
+    @Test
+    public void whenProcessReceivedDataSetArrivalTimeToCurrentMillis() throws Exception {
+        Node node = new Node(null, mock(SnapshotProvider.class), mock(TransactionValidator.class), null, null, null, mock(NodeConfig.class));
+
+        TransactionViewModel transaction = mock(TransactionViewModel.class);
+        // It is important to stub the getHash method here because processReceivedData will broadcast the transaction.
+        // This might sometimes (concurrency issue) lead to a NPE in the process receiver thread.
+        // See executor.submit(spawnProcessReceivedThread()) -> Node.weightQueue -> transaction.getHash().bytes()[i]
+        when(transaction.getHash()).thenReturn(Hash.NULL_HASH);
+        when(transaction.store(any(), any())).thenReturn(true);
+        Neighbor neighbor = mock(Neighbor.class, Answers.RETURNS_SMART_NULLS);
+
+        node.processReceivedData(transaction, neighbor);
+        verify(transaction).setArrivalTime(longThat(this::isCloseToCurrentMillis));
+    }
+
+    private boolean isCloseToCurrentMillis(Long arrival) {
+        long now = System.currentTimeMillis();
+        return arrival > now - 1000 && arrival <= now;
+    }
+
+
+
 }

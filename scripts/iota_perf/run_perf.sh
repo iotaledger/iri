@@ -26,7 +26,7 @@ sed -e 's/NUM_CALL/5000/g'  \
     -e 's/PORT/8080/g'      \
     -e 's/DATA/data1/g'     \
     -e 's/ACTION/put_cache/g' PerformanceTestDAG2TM_TPS.jmx > PerformanceTest1.jmx
-jmeter -n -t PerformanceTest.jmx
+jmeter -n -t PerformanceTest1.jmx
 
 sleep 30
 

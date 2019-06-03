@@ -426,6 +426,13 @@ public class TransactionViewModelTest {
             out[i] = (byte) (seed.nextInt(3) - 1);
         }
 
+        byte[] idx = new byte[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
+
+        System.arraycopy(idx, 0, out, TransactionViewModel.CURRENT_INDEX_TRINARY_OFFSET,
+                TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE);
+        System.arraycopy(idx, 0, out, TransactionViewModel.LAST_INDEX_TRINARY_OFFSET,
+                TransactionViewModel.LAST_INDEX_TRINARY_SIZE);
+
         return out;
     }
 

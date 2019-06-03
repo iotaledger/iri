@@ -248,7 +248,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                         degs.put(branch, 0);
                     }
                     updateTopologicalOrder(key, trunk, branch);
-                    updateScore(key);
+
+                    long currentIndex = model.getCurrentIndex();
+                    long lastIndex = model.getLastIndex();
+                    updateScore(key, currentIndex, lastIndex); //TODO check if updateScore works or not after [fix #85]
+
                 }finally {
                     graphLock.writeLock().unlock();
                 }
@@ -313,7 +317,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     degs.put(branch, 0);
                 }
 
-                updateScore(model.getHash());
+                long currentIndex = model.getCurrentIndex();
+                long lastIndex = model.getLastIndex();
+                updateScore(model.getHash(), currentIndex, lastIndex);
                 one = tangle.next(Transaction.class, one.low);
             }
             computeToplogicalOrder();
@@ -361,19 +367,25 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    private void updateScore(Hash vet) {
+    private void updateScore(Hash vet, long currentIndex, long lastIndex) {
         try {
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
-                    score = CumWeightScore.update(graph, score, vet);
-                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
+                    // TODO tunning these two functions
+                    if(currentIndex == 0) {
+                        score = CumWeightScore.update(graph, score, vet, lastIndex + 1);
+                        parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet, lastIndex + 1);
+                    } else {
+                        score.put(vet, (double)(lastIndex-currentIndex+1));
+                        parentScore.put(vet, (double)(lastIndex-currentIndex+1));
+                    }
                     freshScore = false;
-                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
-                    score.put(vet, 1.0 / (score.size() + 1));
-                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
-                    centrality.setScore(score);
-                    score = centrality.compute();
-                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
+                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {	
+                    score.put(vet, 1.0 / (score.size() + 1));	
+                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);	
+                    centrality.setScore(score);	
+                    score = centrality.compute();	
+                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet, 1.0);	
                 }
             }
         } catch (Exception e) {
@@ -600,7 +612,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         if(freshScore) {
             return cachedTotalOrder;
         }
-//        FIXME 止血，如果使用genesis前推功能，历史TotalOrder也应该合并在内。
+
         List<Hash> totalOrder = tangle.getTotalOrder();
         if (CollectionUtils.isNotEmpty(totalOrder)){
             return totalOrder;
@@ -892,6 +904,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return this.parentRevGraph;
     }
 
+    // TODO 1) need to have a unit test of this function
+    //      2) need to cache the total order as well
+    //      3) need to persist the total order into RocksDB
     public void induceGraphFromAncestor(Hash curAncestor) {
         Map<Hash, Set<Hash>> subGraph = new HashMap<>();
         Map<Hash, Set<Hash>> subRevGraph = new HashMap<>();

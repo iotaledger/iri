@@ -45,10 +45,13 @@ public class PreProcessStageTest {
         assertEquals(TransactionProcessingPipeline.Stage.HASHING, ctx.getNextStage());
         HashingPayload hashingPayload = (HashingPayload) ctx.getPayload();
 
-        assertEquals(neighbor, hashingPayload.getNeighbor().get());
-        assertEquals(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX, hashingPayload.getTxBytesDigest().get().longValue());
-        assertArrayEquals(SampleTransaction.TRITS_OF_SAMPLE_TX, hashingPayload.getTxTrits());
-        assertEquals(Hash.NULL_HASH, hashingPayload.getHashOfRequestedTx().get());
+        assertEquals("neighbor should still be the same", neighbor, hashingPayload.getNeighbor().get());
+        assertEquals("bytes digest of the tx should still be the same", SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
+                hashingPayload.getTxBytesDigest().get().longValue());
+        assertArrayEquals("tx trits should still be the same", SampleTransaction.TRITS_OF_SAMPLE_TX,
+                hashingPayload.getTxTrits());
+        assertEquals("requested hash should still be the same", Hash.NULL_HASH,
+                hashingPayload.getHashOfRequestedTx().get());
     }
 
     @Test
@@ -64,17 +67,18 @@ public class PreProcessStageTest {
                 .thenReturn(Hash.NULL_HASH);
 
         stage.process(ctx);
-        assertEquals(TransactionProcessingPipeline.Stage.REPLY, ctx.getNextStage());
+        assertEquals("should submit to reply stage next", TransactionProcessingPipeline.Stage.REPLY,
+                ctx.getNextStage());
         ReplyPayload replyPayload = (ReplyPayload) ctx.getPayload();
-        assertEquals(neighbor, replyPayload.getNeighbor());
-        assertEquals(Hash.NULL_HASH, replyPayload.getHashOfRequestedTx());
+        assertEquals("neighor should still be the same", neighbor, replyPayload.getNeighbor());
+        assertEquals("requested tx hash should still be the same", Hash.NULL_HASH, replyPayload.getHashOfRequestedTx());
     }
 
     @Test
     public void theTransactionsPayloadGetsExpanded() {
         PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache);
-        ByteBuffer truncatedTxGossipData = ByteBuffer
-                .allocate(SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES.length + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
+        ByteBuffer truncatedTxGossipData = ByteBuffer.allocate(
+                SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES.length + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
         truncatedTxGossipData.put(SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES);
         truncatedTxGossipData.put(new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH]);
         truncatedTxGossipData.flip();
@@ -85,10 +89,14 @@ public class PreProcessStageTest {
         ProcessingContext ctx = new ProcessingContext(null, payload);
         stage.process(ctx);
 
-        assertEquals(TransactionProcessingPipeline.Stage.HASHING, ctx.getNextStage());
+        assertEquals("should submit to hashing stage next", TransactionProcessingPipeline.Stage.HASHING,
+                ctx.getNextStage());
         HashingPayload hashingPayload = (HashingPayload) ctx.getPayload();
-        assertEquals(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX, hashingPayload.getTxBytesDigest().get().longValue());
-        assertArrayEquals(SampleTransaction.TRITS_OF_SAMPLE_TX, hashingPayload.getTxTrits());
-        assertEquals(Hash.NULL_HASH, hashingPayload.getHashOfRequestedTx().get());
+        assertEquals("bytes digest should still be the same", SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
+                hashingPayload.getTxBytesDigest().get().longValue());
+        assertArrayEquals("tx trits should still be the same", SampleTransaction.TRITS_OF_SAMPLE_TX,
+                hashingPayload.getTxTrits());
+        assertEquals("requested tx hash should still be the same", Hash.NULL_HASH,
+                hashingPayload.getHashOfRequestedTx().get());
     }
 }

@@ -40,9 +40,13 @@ public enum ProtocolMessage {
         lookup[2] = ProtocolMessage.TRANSACTION_GOSSIP;
     }
 
+    private byte typeID;
+    private short maxLength;
+    private boolean supportsDynamicLength;
+
     /**
      * Gets the {@link ProtocolMessage} corresponding to the given type id.
-     * 
+     *
      * @param typeID the type id of the message
      * @return the {@link ProtocolMessage} corresponding to the given type id or null
      */
@@ -52,10 +56,6 @@ public enum ProtocolMessage {
         }
         return lookup[typeID];
     }
-
-    private byte typeID;
-    private short maxLength;
-    private boolean supportsDynamicLength;
 
     /**
      * Gets the type id of the message.

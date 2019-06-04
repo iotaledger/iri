@@ -58,7 +58,7 @@ public class NeighborRouterTest {
         List<Neighbor> neighbors = neighborRouter.getNeighbors();
         for (Neighbor neighbor : neighbors) {
             String uri = String.format("tcp://%s", neighbor.getHostAddressAndPort());
-            assertTrue(configNeighbors.contains(uri));
+            assertTrue("should be in neighbors set from the config", configNeighbors.contains(uri));
         }
 
         neighborRouter.shutdown();
@@ -107,13 +107,13 @@ public class NeighborRouterTest {
 
         // A should be connected to B
         Map<String, Neighbor> connectedNeighborsA = neighborRouterA.getConnectedNeighbors();
-        assertEquals(1, connectedNeighborsA.size());
-        assertTrue(connectedNeighborsA.containsKey(neighborBIdentity));
+        assertEquals("should have one neighbor connected", 1, connectedNeighborsA.size());
+        assertTrue("neighbor B should be connected", connectedNeighborsA.containsKey(neighborBIdentity));
 
         // B should be connected to A
         Map<String, Neighbor> connectedNeighborsB = neighborRouterB.getConnectedNeighbors();
-        assertEquals(1, connectedNeighborsB.size());
-        assertTrue(connectedNeighborsB.containsKey(neighborAIdentity));
+        assertEquals("should have one neighbor connected", 1, connectedNeighborsB.size());
+        assertTrue("neighbor A should be connected", connectedNeighborsB.containsKey(neighborAIdentity));
 
         // shutdown A
         neighborRouterA.shutdown();
@@ -127,7 +127,8 @@ public class NeighborRouterTest {
 
         // should now be disconnected
         Thread.sleep(8000);
-        assertEquals(0, connectedNeighborsB.size());
+        assertEquals("should have no connected neighbors after the connection got dropped", 0,
+                connectedNeighborsB.size());
 
         neighborRouterB.shutdown();
         neighborRouterBThread.interrupt();
@@ -176,18 +177,18 @@ public class NeighborRouterTest {
         Thread.sleep(1000);
 
         // A should not have any neighbors
-        assertEquals(0, neighborRouterA.getConnectedNeighbors().size());
+        assertEquals("should not have any neighbors yet", 0, neighborRouterA.getConnectedNeighbors().size());
 
         // B should not have any neighbors
-        assertEquals(0, neighborRouterB.getConnectedNeighbors().size());
+        assertEquals("should not have any neighbors yet", 0, neighborRouterB.getConnectedNeighbors().size());
 
         neighborRouterA.addNeighbor(neighborBURI.toString());
 
         Thread.sleep(1000);
 
         // should now be connected with each other
-        assertEquals(1, neighborRouterA.getConnectedNeighbors().size());
-        assertEquals(1, neighborRouterB.getConnectedNeighbors().size());
+        assertEquals("neighbor B should be connected", 1, neighborRouterA.getConnectedNeighbors().size());
+        assertEquals("neighbor A should be connected", 1, neighborRouterB.getConnectedNeighbors().size());
 
         // shutdown A
         neighborRouterA.removeNeighbor(neighborBURI.toString());
@@ -199,8 +200,10 @@ public class NeighborRouterTest {
 
         Thread.sleep(1000);
 
-        assertEquals(0, neighborRouterA.getConnectedNeighbors().size());
-        assertEquals(0, neighborRouterB.getConnectedNeighbors().size());
+        assertEquals("should not have any connected neighbors anymore", 0,
+                neighborRouterA.getConnectedNeighbors().size());
+        assertEquals("should not have any connected neighbors anymore", 0,
+                neighborRouterB.getConnectedNeighbors().size());
 
         neighborRouterA.shutdown();
         neighborRouterAThread.interrupt();

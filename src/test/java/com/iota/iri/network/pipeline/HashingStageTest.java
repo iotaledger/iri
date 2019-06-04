@@ -24,6 +24,7 @@ public class HashingStageTest {
         }));
         stage.process(ctx);
 
-        assertEquals(TransactionProcessingPipeline.Stage.VALIDATION, ctx.getNextStage());
+        assertEquals("should submit the validation stage next", TransactionProcessingPipeline.Stage.VALIDATION,
+                ctx.getNextStage());
     }
 }

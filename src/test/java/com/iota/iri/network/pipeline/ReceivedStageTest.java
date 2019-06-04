@@ -51,10 +51,11 @@ public class ReceivedStageTest {
 
         Mockito.verify(tvm).setArrivalTime(Mockito.anyByte());
         Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
-        assertEquals(TransactionProcessingPipeline.Stage.BROADCAST, ctx.getNextStage());
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+                ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals(neighbor, broadcastPayload.getOriginNeighbor().get());
-        assertEquals(tvm, broadcastPayload.getTransactionViewModel());
+        assertEquals("neighbor is still the same", neighbor, broadcastPayload.getOriginNeighbor().get());
+        assertEquals("tvm is still the same", tvm, broadcastPayload.getTransactionViewModel());
     }
 
     @Test
@@ -69,10 +70,11 @@ public class ReceivedStageTest {
 
         Mockito.verify(tvm, Mockito.never()).setArrivalTime(Mockito.anyByte());
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
-        assertEquals(TransactionProcessingPipeline.Stage.BROADCAST, ctx.getNextStage());
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+                ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals(neighbor, broadcastPayload.getOriginNeighbor().get());
-        assertEquals(tvm, broadcastPayload.getTransactionViewModel());
+        assertEquals("neighbor should still be the same", neighbor, broadcastPayload.getOriginNeighbor().get());
+        assertEquals("tvm should still be the same", tvm, broadcastPayload.getTransactionViewModel());
     }
 
 }

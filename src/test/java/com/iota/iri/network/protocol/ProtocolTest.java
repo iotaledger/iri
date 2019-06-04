@@ -22,7 +22,7 @@ public class ProtocolTest {
             buf.flip();
             Protocol.parseHeader(buf);
         } catch (Exception e) {
-            assertThat(e, IsInstanceOf.instanceOf(UnknownMessageTypeException.class));
+            assertThat("because the message is unknown", e, IsInstanceOf.instanceOf(UnknownMessageTypeException.class));
             return;
         }
         fail("expected an exception to be thrown");
@@ -37,7 +37,8 @@ public class ProtocolTest {
             buf.flip();
             Protocol.parseHeader(buf);
         } catch (Exception e) {
-            assertThat(e, IsInstanceOf.instanceOf(InvalidProtocolMessageLengthException.class));
+            assertThat("because the length is invalid for the given message", e,
+                    IsInstanceOf.instanceOf(InvalidProtocolMessageLengthException.class));
             return;
         }
         fail("expected an exception to be thrown");
@@ -55,8 +56,10 @@ public class ProtocolTest {
         } catch (Exception e) {
             fail("didn't expect any exceptions");
         }
-        assertEquals(ProtocolMessage.HANDSHAKE.getTypeID(), header.getMessageType().getTypeID());
-        assertEquals(ProtocolMessage.HANDSHAKE.getMaxLength(), header.getMessageLength());
+        assertEquals("should be of type handshake message", ProtocolMessage.HANDSHAKE.getTypeID(),
+                header.getMessageType().getTypeID());
+        assertEquals("length should be of handshake message length", ProtocolMessage.HANDSHAKE.getMaxLength(),
+                header.getMessageLength());
     }
 
     @Test
@@ -65,18 +68,20 @@ public class ProtocolTest {
         long now = System.currentTimeMillis();
         byte[] byteEncodedCooAddress = Hash.NULL_HASH.bytes();
         ByteBuffer buf = Protocol.createHandshakePacket(ownSourcePort, byteEncodedCooAddress, (byte) 1);
-        assertEquals(ProtocolMessage.HANDSHAKE.getTypeID(), buf.get());
+        assertEquals("should be of type handshake message", ProtocolMessage.HANDSHAKE.getTypeID(), buf.get());
         int maxLength = ProtocolMessage.HANDSHAKE.getMaxLength();
-        assertEquals((maxLength - (maxLength - 60) + Protocol.SUPPORTED_PROTOCOL_VERSIONS.length), buf.getShort());
-        assertEquals(ownSourcePort, buf.getChar());
+        assertEquals("should have correct length",
+                (maxLength - (maxLength - 60) + Protocol.SUPPORTED_PROTOCOL_VERSIONS.length), buf.getShort());
+        assertEquals("should resolve to the correct source port", ownSourcePort, buf.getChar());
         assertTrue(now <= buf.getLong());
         byte[] actualCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         buf.get(actualCooAddress);
-        assertArrayEquals(byteEncodedCooAddress, actualCooAddress);
-        assertEquals(1, buf.get());
+        assertArrayEquals("should resolve to the correct coo address", byteEncodedCooAddress, actualCooAddress);
+        assertEquals("mwm should be correct", 1, buf.get());
         byte[] supportedVersions = new byte[Protocol.SUPPORTED_PROTOCOL_VERSIONS.length];
         buf.get(supportedVersions);
-        assertArrayEquals(Protocol.SUPPORTED_PROTOCOL_VERSIONS, supportedVersions);
+        assertArrayEquals("should resolve to correct supported protocol versions", Protocol.SUPPORTED_PROTOCOL_VERSIONS,
+                supportedVersions);
     }
 
     private int nonEmptySigPartBytesCount = 1000;
@@ -105,9 +110,10 @@ public class ProtocolTest {
         ByteBuffer buf = Protocol.createTransactionGossipPacket(tvm, Hash.NULL_HASH.bytes());
         final int expectedMessageSize = Transaction.SIZE - truncationBytesCount
                 + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH;
-        assertEquals(Protocol.PROTOCOL_HEADER_BYTES_LENGTH + expectedMessageSize, buf.capacity());
-        assertEquals(ProtocolMessage.TRANSACTION_GOSSIP.getTypeID(), buf.get());
-        assertEquals(expectedMessageSize, buf.getShort());
+        assertEquals("buffer should have the right capacity",
+                Protocol.PROTOCOL_HEADER_BYTES_LENGTH + expectedMessageSize, buf.capacity());
+        assertEquals("should be of type tx gossip message", ProtocolMessage.TRANSACTION_GOSSIP.getTypeID(), buf.get());
+        assertEquals("should have correct message length", expectedMessageSize, buf.getShort());
     }
 
     @Test
@@ -122,18 +128,18 @@ public class ProtocolTest {
 
         // stuff after signature message fragment should be intact
         for (int i = expandedTxData.length - 1; i >= Protocol.SIG_DATA_MAX_BYTES_LENGTH; i--) {
-            assertEquals(3, expandedTxData[i]);
+            assertEquals("non sig data should be intact", 3, expandedTxData[i]);
         }
 
         // bytes between truncated signature message fragment and rest should be 0s
         int expandedBytesCount = truncatedSize - Protocol.NON_SIG_TX_PART_BYTES_LENGTH;
         for (int i = Protocol.SIG_DATA_MAX_BYTES_LENGTH - 1; i > expandedBytesCount; i--) {
-            assertEquals(0, expandedTxData[i]);
+            assertEquals("expanded sig frag should be filled with zero at the right positions", 0, expandedTxData[i]);
         }
 
         // origin signature message fragment should be intact
         for (int i = 0; i < Protocol.SIG_DATA_MAX_BYTES_LENGTH - expandedBytesCount; i++) {
-            assertEquals(3, expandedTxData[i]);
+            assertEquals("origin sig frag should be intact", 3, expandedTxData[i]);
         }
     }
 
@@ -141,16 +147,19 @@ public class ProtocolTest {
     public void truncateTx() {
         byte[] originTxData = constructTransactionBytes();
         byte[] truncatedTx = Protocol.truncateTx(originTxData);
-        assertEquals(Transaction.SIZE - truncationBytesCount, truncatedTx.length);
+        assertEquals("should have the correct size after truncation", Transaction.SIZE - truncationBytesCount,
+                truncatedTx.length);
 
         for (int i = 0; i < nonEmptySigPartBytesCount; i++) {
-            assertEquals(sigFill, truncatedTx[i]);
+            assertEquals("non empty sig frag part should be intact", sigFill, truncatedTx[i]);
         }
         for (int i = truncatedTx.length - 1; i > truncatedTx.length - Protocol.NON_SIG_TX_PART_BYTES_LENGTH; i--) {
-            assertEquals(restFill, truncatedTx[i]);
+            assertEquals("non sig frag part should be intact", restFill, truncatedTx[i]);
         }
         for (int i = 0; i < truncatedTx.length; i++) {
-            assertNotEquals(emptyFill, truncatedTx[i]);
+            assertNotEquals(
+                    "truncated tx should not have zero bytes (given the non sig frag part not containing zero bytes)",
+                    emptyFill, truncatedTx[i]);
         }
     }
 }

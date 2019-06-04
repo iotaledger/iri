@@ -8,8 +8,6 @@ import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.neighbor.Neighbor;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -21,8 +19,6 @@ import static com.iota.iri.model.Hash.SIZE_IN_TRITS;
  * neighbor or not.
  */
 public class ValidationStage {
-
-    private static final Logger log = LoggerFactory.getLogger(ValidationStage.class);
 
     private TransactionValidator txValidator;
     private FIFOCache<Long, Hash> recentlySeenBytesCache;

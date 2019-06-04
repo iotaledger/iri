@@ -146,6 +146,8 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                 readState = ReadState.PARSE_HEADER;
                 msgReader = MessageReaderFactory.create(ProtocolMessage.HEADER, ProtocolMessage.HEADER.getMaxLength());
                 return bytesRead;
+            default:
+                // do nothing
         }
         return bytesRead;
     }

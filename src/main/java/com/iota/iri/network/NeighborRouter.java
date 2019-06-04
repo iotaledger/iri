@@ -179,7 +179,7 @@ public class NeighborRouter {
             long reconnectAttemptTimeout = TimeUnit.SECONDS.toMillis(config.getReconnectAttemptIntervalSeconds());
 
             while (!shutdown.get()) {
-                int selected = selector.select(reconnectAttemptTimeout);
+                selector.select(reconnectAttemptTimeout);
                 if (shutdown.get()) {
                     break;
                 }

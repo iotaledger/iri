@@ -50,11 +50,14 @@ public class ValidationStageTest {
         Mockito.verify(recentlySeenBytesCache).put(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
                 SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
 
-        assertEquals(TransactionProcessingPipeline.Stage.MULTIPLE, ctx.getNextStage());
+        assertEquals("should submit to multiple stages next", TransactionProcessingPipeline.Stage.MULTIPLE,
+                ctx.getNextStage());
         ImmutablePair<ProcessingContext,
                 ProcessingContext> ctxs = (ImmutablePair<ProcessingContext, ProcessingContext>) ctx.getPayload();
-        assertEquals(TransactionProcessingPipeline.Stage.REPLY, ctxs.getLeft().getNextStage());
-        assertEquals(TransactionProcessingPipeline.Stage.RECEIVED, ctxs.getRight().getNextStage());
+        assertEquals("should submit to reply stage next", TransactionProcessingPipeline.Stage.REPLY,
+                ctxs.getLeft().getNextStage());
+        assertEquals("should submit to received stage next", TransactionProcessingPipeline.Stage.RECEIVED,
+                ctxs.getRight().getNextStage());
     }
 
     @Test
@@ -72,10 +75,11 @@ public class ValidationStageTest {
         Mockito.verify(recentlySeenBytesCache).put(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
                 SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
 
-        assertEquals(TransactionProcessingPipeline.Stage.RECEIVED, ctx.getNextStage());
+        assertEquals("should submit to received stage next", TransactionProcessingPipeline.Stage.RECEIVED,
+                ctx.getNextStage());
         ReceivedPayload receivedPayload = (ReceivedPayload) ctx.getPayload();
-        assertFalse(receivedPayload.getNeighbor().isPresent());
-        assertNotNull(receivedPayload.getTransactionViewModel());
+        assertFalse("neighbor should not be present", receivedPayload.getNeighbor().isPresent());
+        assertNotNull("tvm should not be null", receivedPayload.getTransactionViewModel());
     }
 
     @Test
@@ -95,6 +99,6 @@ public class ValidationStageTest {
 
         Mockito.verify(transactionValidator).runValidation(Mockito.any(TransactionViewModel.class), Mockito.anyInt());
         Mockito.verify(neighborMetrics).incrInvalidTransactionsCount();
-        assertEquals(TransactionProcessingPipeline.Stage.ABORT, ctx.getNextStage());
+        assertEquals("should abort pipeline flow", TransactionProcessingPipeline.Stage.ABORT, ctx.getNextStage());
     }
 }

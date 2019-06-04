@@ -66,12 +66,13 @@ public class NeighborImplTest {
             }
         }, localAddr, Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT, pipeline);
 
-        assertEquals(NeighborState.HANDSHAKING, neighbor.getState());
+        assertEquals("should be in handshaking state", NeighborState.HANDSHAKING, neighbor.getState());
 
         try {
             Handshake handshake = neighbor.handshake();
-            assertEquals(Handshake.State.OK, handshake.getState());
-            assertEquals(serverSocketPort, handshake.getServerSocketPort());
+            assertEquals("should be ok after full handshake", Handshake.State.OK, handshake.getState());
+            assertEquals("should have gotten the correct port from the handshake", serverSocketPort,
+                    handshake.getServerSocketPort());
         } catch (IOException e) {
             fail("didnt expect an exception");
         }
@@ -91,11 +92,11 @@ public class NeighborImplTest {
             }
         }, localAddr, Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT, pipeline);
 
-        assertEquals(NeighborState.HANDSHAKING, neighbor.getState());
+        assertEquals("should be in handshaking state", NeighborState.HANDSHAKING, neighbor.getState());
 
         try {
             Handshake handshake = neighbor.handshake();
-            assertEquals(Handshake.State.FAILED, handshake.getState());
+            assertEquals("the handshake should have failed", Handshake.State.FAILED, handshake.getState());
         } catch (IOException e) {
             fail("didnt expect an exception");
         }
@@ -121,7 +122,7 @@ public class NeighborImplTest {
         neighbor.setState(NeighborState.READY_FOR_MESSAGES);
 
         try {
-            assertEquals(txMessageMaxSize, neighbor.read());
+            assertEquals("should read the entire message", txMessageMaxSize, neighbor.read());
         } catch (IOException e) {
             fail("didn't expect an exception");
         }
@@ -148,7 +149,7 @@ public class NeighborImplTest {
         neighbor.send(createEmptyTxPacket());
 
         try {
-            assertEquals(createEmptyTxPacket().capacity(), neighbor.write());
+            assertEquals("should have written the entire packet", createEmptyTxPacket().capacity(), neighbor.write());
         } catch (IOException e) {
             fail("didn't expect an exception");
         }
@@ -158,7 +159,7 @@ public class NeighborImplTest {
     public void writeWithNoMessageInTheSendQueueReturnsZero() {
         Neighbor neighbor = new NeighborImpl<>(selector, null, localAddr, serverSocketPort, pipeline);
         try {
-            assertEquals(0, neighbor.write());
+            assertEquals("should return zero when no message has to be sent", 0, neighbor.write());
         } catch (IOException e) {
             fail("didn't expect an exception");
         }
@@ -196,7 +197,8 @@ public class NeighborImplTest {
         neighbor.send(createEmptyTxPacket());
 
         Mockito.verify(selector).wakeup();
-        assertEquals(SelectionKey.OP_READ | SelectionKey.OP_WRITE, fakeSelectionKey.interestOps());
+        assertEquals("should be interested in read and write readiness", SelectionKey.OP_READ | SelectionKey.OP_WRITE,
+                fakeSelectionKey.interestOps());
     }
 
     @Test
@@ -204,6 +206,6 @@ public class NeighborImplTest {
         Neighbor neighbor = new NeighborImpl<>(selector, null, localAddr, serverSocketPort, pipeline);
         neighbor.setState(NeighborState.MARKED_FOR_DISCONNECT);
         neighbor.setState(NeighborState.READY_FOR_MESSAGES);
-        assertEquals(NeighborState.MARKED_FOR_DISCONNECT, neighbor.getState());
+        assertEquals("should be marked for disconnect", NeighborState.MARKED_FOR_DISCONNECT, neighbor.getState());
     }
 }

@@ -8,6 +8,7 @@ setup(name='IRI_PyRegression',
     install_requires=[
         'pyota',
         'aloe',
-        'pyyaml'    
-    ]       
-    )
+        'pyyaml',
+        ]
+      )
+

@@ -103,9 +103,10 @@ public class ReplyStage {
 
         if (hashOfRequestedTx.equals(Hash.NULL_HASH)) {
             try {
-                // don't reply to random tip requests if we are synchronized
-                if (snapshotProvider.getLatestSnapshot().getIndex() == latestMilestoneTracker
-                        .getLatestMilestoneIndex()) {
+                // don't reply to random tip requests if we are synchronized with a max delta of one
+                // to the newest milestone
+                if (snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker
+                        .getLatestMilestoneIndex() -1) {
                     return ctx;
                 }
                 // retrieve random tx

@@ -50,9 +50,9 @@ def api_method_is_called(step, api_call, node_name):
     api = api_utils.prepare_api_call(node_name)
     response = api_utils.fetch_call(api_call, api, options)
 
-    assert type(response) is dict, 'There may be something wrong with the response format: {}'.format(response)
     world.responses[api_call] = {}
     world.responses[api_call][node_name] = response
+    return response
 
 
 # This method is identical to the method above, but creates a new thread
@@ -215,5 +215,16 @@ def make_neighbors(step, node1, node2):
     neighbors.check_if_neighbors(neighbor_info[node2]['api'],
                                  neighbor_info[node2]['node_neighbors'], neighbor_info[node1]['address'])
 
+
+@step(r'"([^"]+)" is synced up to milestone (\d+)')
+def check_node_sync(step, node, milestone):
+    node_info = api_method_is_called(step, "getNodeInfo", node)
+    latestMilestone = node_info.get('latestMilestoneIndex')
+    latestSolidMilestone = node_info.get('latestSolidSubtangleMilestoneIndex')
+
+    assert latestMilestone == int(milestone), \
+        "Latest Milestone {} on {} is not the expected {}".format(latestMilestone, node, milestone)
+    assert latestSolidMilestone == int(milestone), \
+        "Latest Solid Milestone {} on {} is not the expected {}".format(latestSolidMilestone, node, milestone)
 
 

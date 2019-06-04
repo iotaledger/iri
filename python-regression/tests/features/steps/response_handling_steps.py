@@ -92,6 +92,12 @@ def check_response_for_value(step, api_call):
     logger.info('Response contained expected values')
 
 
+@step(r'the response for "([^"]*)" should return null')
+def check_if_null(step, api_call):
+    response = world.responses[api_call][world.config['nodeId']]
+    assert response is None, "Response is not null"
+
+
 @step(r'a response with the following is returned:')
 def compare_response(step):
     """

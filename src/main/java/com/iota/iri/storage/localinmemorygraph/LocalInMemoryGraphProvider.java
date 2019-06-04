@@ -39,6 +39,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     private HashMap<Integer, Set<Hash>> topOrder;
     private HashMap<Integer, Set<Hash>> topOrderStreaming;
 
+    Map<Hash, Set<Hash>> subGraph;
+    Map<Hash, Set<Hash>> subRevGraph;
+    Map<Hash, Hash> subParentGraph;
+    Map<Hash, Set<Hash>> subParentRevGraph;
+
     private Map<Hash, Integer> lvlMap;
     private HashMap<Hash, String> nameMap;
     private Map<Hash, Pair<Hash,Integer>> bundleMap;
@@ -50,6 +55,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     boolean freshScore;
     List<Hash> cachedTotalOrder;
+    List<Hash> stableOrder;
 
     private boolean available;
 
@@ -74,6 +80,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         parentScore = new ConcurrentHashMap<>();
         totalDepth = 0;
         freshScore = false;
+        stableOrder = new LinkedList<>();
     }
 
     //FIXME for debug
@@ -94,6 +101,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         lvlMap.clear();
         bundleMap.clear();
         bundleContent.clear();
+        stableOrder.clear();
     }
 
     public void init() throws Exception {
@@ -110,7 +118,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    private void loadAncestorGraph() {
+    private void loadAncestorGraph() throws Exception{
         Stack<Hash> ancestors = tangle.getAncestors();
         if (null == ancestors || CollectionUtils.isEmpty(ancestors)) {
             return;
@@ -608,9 +616,23 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return 0;
     }
 
+    private List<Hash> combineOrder() {
+        List<Hash> ret = new ArrayList<>();
+
+        for(int i=0; i<stableOrder.size(); i++) {
+            ret.add(stableOrder.get(i));
+        }
+
+        for(int i=0; i<cachedTotalOrder.size(); i++) {
+            ret.add(cachedTotalOrder.get(i));
+        }
+
+        return ret;
+    }
+
     public List<Hash> totalTopOrder() {
         if(freshScore) {
-            return cachedTotalOrder;
+            return combineOrder();
         }
 
         List<Hash> totalOrder = tangle.getTotalOrder();
@@ -620,7 +642,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         totalOrder = confluxOrder(getPivot(getGenesis()));
         cachedTotalOrder = totalOrder;
         tangle.storeTotalOrder(totalOrder);
-        return totalOrder;
+        return combineOrder();
     }
 
     public List<Hash> confluxOrder(Hash block) {
@@ -904,10 +926,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return this.parentRevGraph;
     }
 
-    // TODO 1) need to have a unit test of this function
-    //      2) need to cache the total order as well
-    //      3) need to persist the total order into RocksDB
-    public void induceGraphFromAncestor(Hash curAncestor) {
+    public void buildTempGraphs(List<Hash> totalOrderBefore, Hash curAncestor) {
+        subGraph.clear();
+        subRevGraph.clear();
+        subParentGraph.clear();
+        subParentRevGraph.clear();
+
         Map<Hash, Set<Hash>> subGraph = new HashMap<>();
         Map<Hash, Set<Hash>> subRevGraph = new HashMap<>();
         Map<Hash, Hash> subParentGraph = new HashMap<>();
@@ -963,7 +987,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }	
         subParentGraph.putIfAbsent(curAncestor, parentGraph.get(curAncestor));	
         subParentRevGraph.putIfAbsent(subParentGraph.get(curAncestor),new HashSet(){{add(curAncestor);}});
+    }
 
+    public void shiftTempGraphs() {
         graphLock.writeLock().lock();
         try {
             graph.clear();
@@ -983,6 +1009,55 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             graphLock.writeLock().unlock();
         }
         buildPivotChain();
+    }
+
+    // TODO 1) need to have a unit test of this function
+    //      2) need to cache the total order as well
+    //      3) need to persist the total order into RocksDB
+    public void induceGraphFromAncestor(Hash curAncestor) throws Exception{
+        List<Hash> totalOrderBefore = totalTopOrder();
+        buildTempGraphs(totalOrderBefore, curAncestor);
+        shiftTempGraphs();
+        List<Hash> totalOrderAfter = totalTopOrder();
+        insertStableTotalOrder(totalOrderBefore, totalOrderAfter);
+    }
+
+    // before: [A, B, C, D, E, F, G, H]
+    // after: [F, G, H]
+    // should append [A, B, C, D, E] to stable order
+    public void insertStableTotalOrder(List<Hash> before, List<Hash> after) throws Exception {
+        // check first
+        int checkPt = -1;
+        for(int i=0; i<before.size(); i++) {
+            if(before.get(i).equals(after.get(0))) {
+                if((i+after.size()) == before.size()-1) {
+                    throw new RuntimeException("after should be a substring of before");
+                } else {
+                    int j =0;
+                    while(j<after.size()) {
+                        if(!before.get(i+j).equals(after.get(j))) {
+                            throw new RuntimeException("after should be a substring of before");
+                        }
+                        j++;
+                    }
+                    checkPt = i;
+                    break;
+                }
+            }
+        }
+
+        if(checkPt == -1) {
+            throw new RuntimeException("after should be a substring of before");
+        }
+
+        // insert later
+        for(int i=0; i<checkPt; i++) {
+            stableOrder.add(before.get(i));
+        }
+    }
+
+    public List<Hash> getStableOrder() {
+        return stableOrder;
     }
 
     class AncestorEngine implements Runnable {
@@ -1037,7 +1112,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             return null;
         }
 
-        void refreshGraph() {
+        void refreshGraph() throws Exception {
            log.debug("=========begin to refresh ancestor node==========");
             long begin = System.currentTimeMillis();
             Stack<Hash> ancestors = tangle.getAncestors();

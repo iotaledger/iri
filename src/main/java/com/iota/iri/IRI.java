@@ -120,7 +120,7 @@ public class IRI {
 
             iota = new Iota(config);
             ixi = new IXI(iota);
-            api = new API(iota.configuration, ixi, iota.transactionRequester,
+            api = new API(config, ixi, iota.transactionRequester,
                     iota.spentAddressesService, iota.tangle, iota.bundleValidator,
                     iota.snapshotProvider, iota.ledgerService, iota.neighborRouter, iota.tipsSelector,
                     iota.tipsViewModel, iota.transactionValidator,
@@ -131,7 +131,7 @@ public class IRI {
                 iota.init();
                 //TODO redundant parameter but we will touch this when we refactor IXI
                 ixi.init(config.getIxiDir());
-                api.init(new RestEasy(iota.configuration));
+                api.init(new RestEasy(config));
                 log.info("IOTA Node initialised correctly.");
             } catch (Exception e) {
                 log.error("Exception during IOTA node initialisation: ", e);

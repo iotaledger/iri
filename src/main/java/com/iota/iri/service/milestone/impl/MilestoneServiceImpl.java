@@ -33,28 +33,31 @@ import static com.iota.iri.controllers.TransactionViewModel.OBSOLETE_TAG_TRINARY
 import static com.iota.iri.service.milestone.MilestoneValidity.*;
 
 /**
- * Creates a service instance that allows us to perform milestone specific operations.<br />
- * <br />
- * This class is stateless and does not hold any domain specific models.<br />
+ * <p>
+ * Creates a service instance that allows us to perform milestone specific operations.
+ * </p>
+ * <p>
+ * This class is stateless and does not hold any domain specific models.
+ * </p>
  */
 public class MilestoneServiceImpl implements MilestoneService {
     /**
-     * Holds the logger of this class.<br />
+     * Holds the logger of this class.
      */
     private final static Logger log = LoggerFactory.getLogger(MilestoneServiceImpl.class);
 
     /**
-     * Holds the tangle object which acts as a database interface.<br />
+     * Holds the tangle object which acts as a database interface.
      */
     private Tangle tangle;
 
     /**
-     * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
+     * Holds the snapshot provider which gives us access to the relevant snapshots.
      */
     private SnapshotProvider snapshotProvider;
 
     /**
-     * Holds a reference to the service instance of the snapshot package that allows us to rollback ledger states.<br />
+     * Holds a reference to the service instance of the snapshot package that allows us to roll back ledger states.
      */
     private SnapshotService snapshotService;
 
@@ -66,19 +69,24 @@ public class MilestoneServiceImpl implements MilestoneService {
     private BundleValidator bundleValidator;
 
     /**
-     * This method initializes the instance and registers its dependencies.<br />
-     * <br />
-     * It simply stores the passed in values in their corresponding private properties.<br />
-     * <br />
+     * <p>
+     * This method initializes the instance and registers its dependencies.
+     * </p>
+     * <p>
+     * It stores the passed in values in their corresponding private properties.
+     * </p>
+     * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
      *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
      *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
-     *       <br />
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * </p>
      *       {@code milestoneService = new MilestoneServiceImpl().init(...);}
-     *te
+     *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
+     * @param snapshotService service for modifying and generating snapshots
+     * @param bundleValidator Validator to use when checking milestones
      * @param config config with important milestone specific settings
      * @return the initialized instance itself to allow chaining
      */
@@ -98,10 +106,12 @@ public class MilestoneServiceImpl implements MilestoneService {
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * We first check the trivial case where the node was fully synced. If no processed solid milestone could be found
      * within the last two milestones of the node, we perform a binary search from present to past, which reduces the
-     * amount of database requests to a minimum (even with a huge amount of milestones in the database).<br />
+     * amount of database requests to a minimum (even with a huge amount of milestones in the database).
+     * </p>
      */
     @Override
     public Optional<MilestoneViewModel> findLatestProcessedSolidMilestoneInDatabase() throws MilestoneException {
@@ -144,10 +154,12 @@ public class MilestoneServiceImpl implements MilestoneService {
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * We redirect the call to {@link #resetCorruptedMilestone(int, Set)} while initiating the set of {@code
      * processedTransactions} with an empty {@link HashSet} which will ensure that we reset all found
-     * transactions.<br />
+     * transactions.
+     * </p>
      */
     @Override
     public void resetCorruptedMilestone(int index) throws MilestoneException {
@@ -257,11 +269,14 @@ public class MilestoneServiceImpl implements MilestoneService {
     //region [PRIVATE UTILITY METHODS] /////////////////////////////////////////////////////////////////////////////////
 
     /**
+     * <p>
      * Performs a binary search for the latest solid milestone which was already processed by the node and applied to
-     * the ledger state at some point in the past (i.e. before IRI got restarted).<br />
-     * <br />
+     * the ledger state at some point in the past (i.e. before IRI got restarted).
+     * </p>
+     * <p>
      * It searches from present to past using a binary search algorithm which quickly narrows down the amount of
-     * candidates even for big databases.<br />
+     * candidates even for big databases.
+     * </p>
      *
      * @param latestMilestone the latest milestone in the database (used to define the search range)
      * @return the latest solid milestone that was previously processed by IRI or an empty value if no previously
@@ -299,14 +314,16 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
-     * Determines the milestone in the middle of the range defined by {@code rangeStart} and {@code rangeEnd}.<br />
-     * <br />
+     * <p>
+     * Determines the milestone in the middle of the range defined by {@code rangeStart} and {@code rangeEnd}.
+     * </p>
+     * <p>
      * It is used by the binary search algorithm of {@link #findLatestProcessedSolidMilestoneInDatabase()}. It first
      * calculates the index that represents the middle of the range and then tries to find the milestone that is closest
-     * to this index.<br/>
-     * <br />
+     * to this index.
+     * </p>
      * Note: We start looking for younger milestones first, because most of the times the latest processed solid
-     *       milestone is close to the end.<br />
+     *       milestone is close to the end.
      *
      * @param rangeStart the milestone index representing the start of our search range
      * @param rangeEnd the milestone index representing the end of our search range
@@ -327,11 +344,14 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
-     * Checks if the milestone was applied to the ledger at some point in the past (before a restart of IRI).<br />
-     * <br />
+     * <p>
+     * Checks if the milestone was applied to the ledger at some point in the past (before a restart of IRI).
+     * </p>
+     * <p>
      * Since the {@code snapshotIndex} value is used as a flag to determine if the milestone was already applied to the
      * ledger, we can use it to determine if it was processed by IRI in the past. If this value is set we should also
-     * have a corresponding {@link StateDiff} entry in the database.<br />
+     * have a corresponding {@link StateDiff} entry in the database.
+     * </p>
      *
      * @param milestone the milestone that shall be checked
      * @return {@code true} if the milestone has been processed by IRI before and {@code false} otherwise
@@ -345,7 +365,7 @@ public class MilestoneServiceImpl implements MilestoneService {
 
     /**
      * This method implements the logic described by {@link #updateMilestoneIndexOfMilestoneTransactions(Hash, int)} but
-     * accepts some additional parameters that allow it to be reused by different parts of this service.<br />
+     * accepts some additional parameters that allow it to be reused by different parts of this service.
      *
      * @param milestoneHash the hash of the transaction
      * @param correctIndex the milestone index of the milestone that would be set if all transactions are marked
@@ -397,11 +417,14 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
-     * This method resets the {@code milestoneIndex} of a single transaction.<br />
-     * <br />
+     * <p>
+     * This method resets the {@code milestoneIndex} of a single transaction.
+     * </p>
+     * <p>
      * In addition to setting the corresponding value, we also publish a message to the ZeroMQ message provider, which
-     * allows external recipients to get informed about this change.<br />
-     *
+     * allows external recipients to get informed about this change.
+     * </p>
+     * 
      * @param transaction the transaction that shall have its {@code milestoneIndex} reset
      * @param index the milestone index that is set for the given transaction
      * @throws MilestoneException if anything unexpected happens while updating the transaction
@@ -422,15 +445,19 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
+     * <p>
      * This method prepares the update of the milestone index by checking the current {@code snapshotIndex} of the given
-     * transaction.<br />
-     * <br />
+     * transaction.
+     * </p>
+     * <p>
      * If the {@code snapshotIndex} is higher than the "correct one", we know that we applied the milestones in the
      * wrong order and need to reset the corresponding milestone that wrongly approved this transaction. We therefore
-     * add its index to the {@code corruptMilestones} set.<br />
-     * <br />
+     * add its index to the {@code corruptMilestones} set.
+     * </p>
+     * <p>
      * If the milestone does not have the new value set already we add it to the set of {@code transactionsToUpdate} so
-     * it can be updated by the caller accordingly.<br />
+     * it can be updated by the caller accordingly.
+     * </p>
      *
      * @param transaction the transaction that shall get its milestoneIndex updated
      * @param correctMilestoneIndex the milestone index that this transaction should be associated to (the index of the
@@ -452,11 +479,14 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
-     * This method patches the solid entry points if a back-referencing transaction is detected.<br />
-     * <br />
+     * <p>
+     * This method patches the solid entry points if a back-referencing transaction is detected.
+     * </p>
+     * <p>
      * While we iterate through the approvees of a milestone we stop as soon as we arrive at a transaction that has a
      * smaller {@code snapshotIndex} than the milestone. If this {@code snapshotIndex} is also smaller than the index of
-     * the milestone of our local snapshot, we have detected a back-referencing transaction.<br />
+     * the milestone of our local snapshot, we have detected a back-referencing transaction.
+     * </p>
      *
      * @param initialSnapshot the initial snapshot holding the solid entry points
      * @param transaction the transactions that was referenced by the processed milestone
@@ -470,12 +500,15 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
+     * <p>
      * This method is a utility method that checks if the transactions belonging to the potential milestone bundle have
-     * a valid structure (used during the validation of milestones).<br />
-     * <br />
+     * a valid structure (used during the validation of milestones).
+     * </p>
+     * <p>
      * It first checks if the bundle has enough transactions to conform to the given {@code securityLevel} and then
      * verifies that the {@code branchTransactionsHash}es are pointing to the {@code trunkTransactionHash} of the head
-     * transactions.<br />
+     * transactions.
+     * </p>
      *
      * @param bundleTransactions all transactions belonging to the milestone
      * @param securityLevel the security level used for the signature
@@ -494,17 +527,21 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
+     * <p>
      * This method does the same as {@link #resetCorruptedMilestone(int)} but additionally receives a set of {@code
      * processedTransactions} that will allow us to not process the same transactions over and over again while
-     * resetting additional milestones in recursive calls.<br />
-     * <br />
+     * resetting additional milestones in recursive calls.
+     * </p>
+     * <p>
      * It first checks if the desired {@code milestoneIndex} is reachable by this node and then triggers the reset
-     * by:<br />
-     * <br />
-     * 1. resetting the ledger state if it addresses a milestone before the current latest solid milestone<br />
-     * 2. resetting the {@code milestoneIndex} of all transactions that were confirmed by the current milestone<br />
-     * 3. deleting the corresponding {@link StateDiff} entry from the database<br />
-     *
+     * by:
+     * </p>
+     * <ol>
+     * <li>resetting the ledger state if it addresses a milestone before the current latest solid milestone</li>
+     * <li>resetting the {@code milestoneIndex} of all transactions that were confirmed by the current milestone</li>
+     * <li>deleting the corresponding {@link StateDiff} entry from the database</li>
+     * </ol>
+     * 
      * @param index milestone index that shall be reverted
      * @param processedTransactions a set of transactions that have been processed already
      * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone

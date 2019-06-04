@@ -53,14 +53,16 @@ import org.slf4j.LoggerFactory;
  * database exists on this node.
  * </p>
  * <p>
- * Validation of a transaction is the process by which other devices choose the transaction. This is done via a
- * {@link TipSelector} algorithm, after which the transaction performs the necessary proof-of-work in order to cast
- * their vote of confirmation/approval upon those tips. <br/>
- *
- * As many other transactions repeat this process on top of each other, validation of the transaction in question slowly
- * builds up enough verifications. Eventually this will reach a minimum acceptable verification threshold. This
- * threshold is determined by the recipient of the transaction. When this minimum threshold is reached, the transaction
- * is "confirmed".
+ *     Validation of a transaction is the process by which other devices choose the transaction.
+ *     This is done via a {@link TipSelector} algorithm, after which the transaction performs
+ *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips.
+ * </p>
+ * <p>
+ *     As many other transactions repeat this process on top of each other,
+ *     validation of the transaction in question slowly builds up enough verifications.
+ *     Eventually this will reach a minimum acceptable verification threshold.
+ *     This threshold is determined by the recipient of the transaction.
+ *     When this minimum threshold is reached, the transaction is "confirmed".
  * </p>
  *
  */
@@ -152,8 +154,10 @@ public class Iota {
     }
 
     /**
-     * Adds all database providers, and starts initialization of our services. According to the {@link IotaConfig}, data
-     * is optionally cleared, reprocessed and reverified.<br/>
+     * <p>
+     * Adds all database providers, and starts initialization of our services.
+     * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.
+     * </p>
      * After this function, incoming and outbound transaction processing has started.
      *
      * @throws Exception If along the way a service fails to initialize. Most common cause is a file read or database

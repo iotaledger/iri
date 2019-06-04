@@ -91,7 +91,7 @@ public class APIIntegrationTests {
             //create node
             iota = new Iota(configuration);
             ixi = new IXI(iota);
-            api = new API(iota.configuration, ixi, iota.transactionRequester,
+            api = new API(configuration, ixi, iota.transactionRequester,
                     iota.spentAddressesService, iota.tangle, iota.bundleValidator,
                     iota.snapshotProvider, iota.ledgerService, iota.neighborRouter, iota.tipsSelector,
                     iota.tipsViewModel, iota.transactionValidator,

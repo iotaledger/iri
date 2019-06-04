@@ -94,6 +94,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //Tip Selection
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
+    protected int tipSelectionTimeoutSec = Defaults.TIP_SELECTION_TIMEOUT_SEC;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
 
     //Tip Solidification
@@ -571,7 +572,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         if (localSnapshotsPruningDelay < Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
             throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least "
                     + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN
-                    + "(found " + localSnapshotsPruningDelay + ")");
+                    + "(found " + localSnapshotsPruningDelay +")");
         }
 
         this.localSnapshotsPruningDelay = localSnapshotsPruningDelay;
@@ -852,13 +853,24 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getTipSelectionTimeoutSec() {
+        return tipSelectionTimeoutSec;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--tip-selection-timeout-sec", description = TipSelConfig.Descriptions.TIP_SELECTION_TIMEOUT_SEC)
+    protected void setTipSelectionTimeoutSec(int tipSelectionTimeoutSec) {
+        this.tipSelectionTimeoutSec = tipSelectionTimeoutSec;
+    }
+
+    @Override
     public boolean isTipSolidifierEnabled() {
         return tipSolidifierEnabled;
     }
 
     @JsonProperty
     @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER,
-            arity = 1)
+        arity = 1)
     protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
         this.tipSolidifierEnabled = tipSolidifierEnabled;
     }
@@ -948,6 +960,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //TipSel
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
+        int TIP_SELECTION_TIMEOUT_SEC = 60;
 
         //Tip solidification
         boolean TIP_SOLIDIFIER_ENABLED = true;
@@ -965,7 +978,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
-        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
+        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
 
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;

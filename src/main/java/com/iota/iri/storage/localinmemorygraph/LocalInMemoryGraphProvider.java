@@ -39,10 +39,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     private HashMap<Integer, Set<Hash>> topOrder;
     private HashMap<Integer, Set<Hash>> topOrderStreaming;
 
-    Map<Hash, Set<Hash>> subGraph;
-    Map<Hash, Set<Hash>> subRevGraph;
-    Map<Hash, Hash> subParentGraph;
-    Map<Hash, Set<Hash>> subParentRevGraph;
+    public Map<Hash, Set<Hash>> subGraph;
+    public Map<Hash, Set<Hash>> subRevGraph;
+    public Map<Hash, Hash> subParentGraph;
+    public Map<Hash, Set<Hash>> subParentRevGraph;
 
     private Map<Hash, Integer> lvlMap;
     private HashMap<Hash, String> nameMap;
@@ -81,6 +81,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         totalDepth = 0;
         freshScore = false;
         stableOrder = new LinkedList<>();
+
+        subGraph = new ConcurrentHashMap<>();
+        subRevGraph = new ConcurrentHashMap<>();
+        subParentGraph = new ConcurrentHashMap<>();
+        subParentRevGraph = new ConcurrentHashMap<>();
     }
 
     //FIXME for debug
@@ -758,7 +763,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 return ancestors.peek();
             }
             for (Hash key : parentGraph.keySet()) {
-                if (!parentGraph.keySet().contains(parentGraph.get(key))) {
+                if (!parentGraph.keySet().contains(parentGraph.get(key))) { // FIXME this is too complicated
                     return key;
                 }
             }
@@ -931,11 +936,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         subRevGraph.clear();
         subParentGraph.clear();
         subParentRevGraph.clear();
-
-        Map<Hash, Set<Hash>> subGraph = new HashMap<>();
-        Map<Hash, Set<Hash>> subRevGraph = new HashMap<>();
-        Map<Hash, Hash> subParentGraph = new HashMap<>();
-        Map<Hash, Set<Hash>> subParentRevGraph = new HashMap<>();
         degs.clear();
 
         LinkedList<Hash> queue = new LinkedList<>();
@@ -989,6 +989,59 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         subParentRevGraph.putIfAbsent(subParentGraph.get(curAncestor),new HashSet(){{add(curAncestor);}});
     }
 
+    public void reserveTempGraphs(List<Hash> totalOrderBefore, Hash curAncestor) {
+        int start = 0;
+        for(int i=0; i<totalOrderBefore.size(); i++) {
+            if(totalOrderBefore.get(i).equals(curAncestor)) {
+                start = i;
+                break;
+            }
+        }
+
+        for(int i= start; i < totalOrderBefore.size(); i++) {
+            Hash vet = totalOrderBefore.get(i);
+            if(!subGraph.containsKey(vet)) {
+                Set<Hash> st = new HashSet<>(graph.get(totalOrderBefore.get(i)));
+                subGraph.put(vet, st);
+
+                Hash parent = parentGraph.get(vet);
+                subParentGraph.put(vet, parent);
+                if(!subParentRevGraph.containsKey(parent)) {
+                    subParentRevGraph.put(parent, new HashSet<>());
+                }
+                Set<Hash> ps = subParentRevGraph.get(parent);
+                ps.add(vet);
+                subParentRevGraph.put(parent, ps);
+
+                for(Hash h : st) {
+                    if(!subRevGraph.containsKey(h)) {
+                        subRevGraph.put(h, new HashSet<>());
+                    }
+                    Set<Hash> s = subRevGraph.get(h);
+                    s.add(vet);
+                    subRevGraph.put(h, s);
+                }
+            }
+        }
+        for(int i= start; i < totalOrderBefore.size(); i++) {
+            Hash vet = totalOrderBefore.get(i);
+            // rev
+            //System.out.println(nameMap.get(vet) );
+            if(revGraph.containsKey(vet)) {
+                Set<Hash> missed = revGraph.get(vet);
+                subRevGraph.put(vet, missed);
+                for(Hash h : missed) {
+                    if(!subGraph.containsKey(h)) {
+                        subGraph.put(h, new HashSet<>());
+                    }
+                    Set<Hash> st1 = subGraph.get(h);
+                    st1.add(vet);
+                    subGraph.put(h, st1);
+                }
+            }
+        }
+    }
+
     public void shiftTempGraphs() {
         graphLock.writeLock().lock();
         try {
@@ -1017,6 +1070,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public void induceGraphFromAncestor(Hash curAncestor) throws Exception{
         List<Hash> totalOrderBefore = totalTopOrder();
         buildTempGraphs(totalOrderBefore, curAncestor);
+        reserveTempGraphs(totalOrderBefore, curAncestor);
         shiftTempGraphs();
         List<Hash> totalOrderAfter = totalTopOrder();
         insertStableTotalOrder(totalOrderBefore, totalOrderAfter);

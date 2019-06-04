@@ -48,96 +48,7 @@ public class LocalInMemoryGraphAlgoTest {
         tangle1.addPersistenceProvider(provider1);
         tangle1.init();
     }
-/*
-    @Test
-    public void testStableOrder() throws Exception {
-        Hash A = getRandomTransactionHash();
-        Hash B = getRandomTransactionHash();
-        Hash C = getRandomTransactionHash();
-        Hash D = getRandomTransactionHash();
-        Hash E = getRandomTransactionHash();
-        Hash F = getRandomTransactionHash();
-        Hash G = getRandomTransactionHash();
-        Hash H = getRandomTransactionHash();
 
-        List<Hash> before = new LinkedList<>();
-        List<Hash> after = new LinkedList<>();
-        before.add(A);
-        before.add(B);
-        before.add(C);
-        before.add(D);
-        before.add(E);
-        before.add(F);
-        before.add(G);
-        before.add(H);
-
-        after.add(F);
-        after.add(G);
-        after.add(H);
-
-        provider1.insertStableTotalOrder(before, after);
-
-        List<Hash> stableOrder = provider1.getStableOrder();
-
-        Assert.assertEquals(5, stableOrder.size());
-        Assert.assertEquals(A, stableOrder.get(0));
-        Assert.assertEquals(B, stableOrder.get(1));
-        Assert.assertEquals(C, stableOrder.get(2));
-        Assert.assertEquals(D, stableOrder.get(3));
-        Assert.assertEquals(E, stableOrder.get(4));
-
-        boolean isThrow = false;
-        try {
-            List<Hash> after1 = new LinkedList<>();
-            after1.add(F);
-            after1.add(H);
-            provider1.insertStableTotalOrder(before, after1);
-        } catch(RuntimeException e) {
-            isThrow = true;
-        }
-        Assert.assertEquals(true, isThrow);
-
-        isThrow = false;
-        try {
-                Hash K = getRandomTransactionHash();
-                List<Hash> after1 = new LinkedList<>();
-                after1.add(K);
-                after1.add(F);
-                after1.add(G);
-                after1.add(H);
-                provider1.insertStableTotalOrder(before, after1);
-            } catch(RuntimeException e) {
-                isThrow = true;
-        }
-        Assert.assertEquals(true, isThrow);
-
-        isThrow = false;
-        try {
-                Hash K = getRandomTransactionHash();
-                List<Hash> after1 = new LinkedList<>();
-                after1.add(F);
-                after1.add(G);
-                after1.add(H);
-                after1.add(K);
-                provider1.insertStableTotalOrder(before, after1);
-            } catch(RuntimeException e) {
-                isThrow = true;
-        }
-        Assert.assertEquals(true, isThrow);
-
-        isThrow = false;
-        try {
-                Hash K = getRandomTransactionHash();
-                List<Hash> after1 = new LinkedList<>();
-                after1.add(F);
-                after1.add(G);
-                provider1.insertStableTotalOrder(before, after1);
-            } catch(RuntimeException e) {
-                isThrow = true;
-        }
-        Assert.assertEquals(true, isThrow);
-    }
-*/
     @Test
     public void testInduceSubGraph() throws Exception {
         TransactionViewModel A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P;
@@ -212,14 +123,96 @@ public class LocalInMemoryGraphAlgoTest {
         P.store(tangle1);
 
         List<Hash> order = provider1.totalTopOrder();
-        for(int i=0; i<order.size(); i++) {
-            System.out.println(tag.get(order.get(i)));
-        }
-        /*provider1.induceGraphFromAncestor(G.getHash());
+        Assert.assertEquals("A", tag.get(order.get(0)));
+        Assert.assertEquals("B", tag.get(order.get(1)));
+        Assert.assertEquals("D", tag.get(order.get(2)));
+        Assert.assertEquals("C", tag.get(order.get(3)));
+        Assert.assertEquals("G", tag.get(order.get(4)));
+        Assert.assertEquals("E", tag.get(order.get(5)));
+        Assert.assertEquals("F", tag.get(order.get(6)));
+        Assert.assertEquals("H", tag.get(order.get(7)));
+        Assert.assertEquals("I", tag.get(order.get(8)));
+        Assert.assertEquals("M", tag.get(order.get(9)));
+        Assert.assertEquals("N", tag.get(order.get(10)));
+
+        provider1.buildTempGraphs(order, G.getHash());
+        Assert.assertEquals(provider1.subGraph.size(), 7);
+
+        Assert.assertEquals(2, provider1.subGraph.get(L.getHash()).size());
+        Assert.assertEquals(2, provider1.subGraph.get(K.getHash()).size());
+        Assert.assertEquals(1, provider1.subGraph.get(J.getHash()).size());
+        Assert.assertEquals(2, provider1.subGraph.get(N.getHash()).size());
+        Assert.assertEquals(1, provider1.subGraph.get(M.getHash()).size());
+        Assert.assertEquals(1, provider1.subGraph.get(I.getHash()).size());
+        Assert.assertEquals(2, provider1.subGraph.get(G.getHash()).size());
+
+        Assert.assertEquals(null, provider1.subRevGraph.get(L.getHash()));
+        Assert.assertEquals(1, provider1.subRevGraph.get(K.getHash()).size());
+        Assert.assertEquals(2, provider1.subRevGraph.get(J.getHash()).size());
+        Assert.assertEquals(null, provider1.subRevGraph.get(N.getHash()));
+        Assert.assertEquals(1, provider1.subRevGraph.get(M.getHash()).size());
+        Assert.assertEquals(2, provider1.subRevGraph.get(I.getHash()).size());
+        Assert.assertEquals(3, provider1.subRevGraph.get(G.getHash()).size());
+        Assert.assertEquals(1, provider1.subRevGraph.get(C.getHash()).size());
+        Assert.assertEquals(1, provider1.subRevGraph.get(D.getHash()).size());
+
+        
+        Assert.assertEquals(K.getHash(), provider1.subParentGraph.get(L.getHash()));
+        Assert.assertEquals(G.getHash(), provider1.subParentGraph.get(K.getHash()));
+        Assert.assertEquals(M.getHash(), provider1.subParentGraph.get(N.getHash()));
+        Assert.assertEquals(I.getHash(), provider1.subParentGraph.get(M.getHash()));
+        Assert.assertEquals(G.getHash(), provider1.subParentGraph.get(I.getHash()));
+        Assert.assertEquals(D.getHash(), provider1.subParentGraph.get(G.getHash()));
+
+        
+        Assert.assertEquals(2, provider1.subParentRevGraph.get(G.getHash()).size());
+        Assert.assertEquals(1, provider1.subParentRevGraph.get(K.getHash()).size());
+        Assert.assertEquals(1, provider1.subParentRevGraph.get(I.getHash()).size());
+        Assert.assertEquals(1, provider1.subParentRevGraph.get(M.getHash()).size());
+        Assert.assertEquals(null, provider1.subParentRevGraph.get(N.getHash()));
+        Assert.assertEquals(null, provider1.subParentRevGraph.get(L.getHash()));
+        Assert.assertEquals(null, provider1.subParentRevGraph.get(J.getHash()));
+
+        provider1.reserveTempGraphs(order, G.getHash());
+ 
+        Stack<Hash> ancestors = new Stack<>();
+        ancestors.add(G.getHash());
+        provider1.storeAncestors(ancestors);
+
+        provider1.shiftTempGraphs();
+       
+        //System.out.println(tag.get(provider1.getGenesis()));
+        Assert.assertEquals(7.0, provider1.getScore(G.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getScore(K.getHash()), 0.001);
+        Assert.assertEquals(3.0, provider1.getScore(J.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getScore(L.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getScore(M.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getScore(N.getHash()), 0.001);
+        Assert.assertEquals(3.0, provider1.getScore(I.getHash()), 0.001);
+
+        Assert.assertEquals(6.0, provider1.getParentScore(G.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getParentScore(K.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getParentScore(J.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getParentScore(L.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getParentScore(M.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getParentScore(N.getHash()), 0.001);
+        Assert.assertEquals(3.0, provider1.getParentScore(I.getHash()), 0.001);
 
         List<Hash> order1 = provider1.totalTopOrder();
-        for(int i=0; i<order.size(); i++) {
-            System.out.println(tag.get(order1.get(i)));
-        }*/
+        Assert.assertEquals("G", tag.get(order1.get(0)));
+        Assert.assertEquals("E", tag.get(order1.get(1)));
+        Assert.assertEquals("F", tag.get(order1.get(2)));
+        Assert.assertEquals("H", tag.get(order1.get(3)));
+        Assert.assertEquals("I", tag.get(order1.get(4)));
+        Assert.assertEquals("M", tag.get(order1.get(5)));
+        Assert.assertEquals("N", tag.get(order1.get(6)));
+       
+        provider1.insertStableTotalOrder(order, order1);
+
+        List<Hash> stable = provider1.getStableOrder();
+        Assert.assertEquals("A", tag.get(stable.get(0)));
+        Assert.assertEquals("B", tag.get(stable.get(1)));
+        Assert.assertEquals("D", tag.get(stable.get(2)));
+        Assert.assertEquals("C", tag.get(stable.get(3)));
     }
 }

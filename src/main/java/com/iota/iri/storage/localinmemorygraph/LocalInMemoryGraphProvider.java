@@ -456,7 +456,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     }
                     // FIXME add parent score here
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
-                    System.out.println("why come here?");
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
                     score = centrality.compute();
                     // FIXME add parent score here

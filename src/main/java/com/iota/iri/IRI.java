@@ -5,7 +5,8 @@ import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.service.API;
-
+import com.iota.iri.utils.IotaUtils;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -14,6 +15,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +44,6 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.6.0-RELEASE";
 
     /**
      * The entry point of IRI.
@@ -60,6 +61,12 @@ public class IRI {
         IRILauncher.main(args);
     }
 
+    /**
+     * Reads the logging configuration file and logging level from system properties. You can set this values as
+     * arguments to the Java VM by passing <code>-Dlogback.configurationFile=/path/to/config.xml -Dlogging-level=DEBUG</code>
+     * to the Java VM. If no system properties are specified the logback default values and logging-level INFO will
+     * be used.
+     */
     private static void configureLogging() {
         String config = System.getProperty("logback.configurationFile");
         String level = System.getProperty("logging-level", "").toUpperCase();
@@ -108,18 +115,23 @@ public class IRI {
          */
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
-            log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, VERSION);
+            String version = IotaUtils.getIriVersion();
+            log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, version);
 
             iota = new Iota(config);
             ixi = new IXI(iota);
-            api = new API(iota, ixi);
+            api = new API(config, ixi, iota.transactionRequester,
+                    iota.spentAddressesService, iota.tangle, iota.bundleValidator,
+                    iota.snapshotProvider, iota.ledgerService, iota.node, iota.tipsSelector,
+                    iota.tipsViewModel, iota.transactionValidator,
+                    iota.latestMilestoneTracker);
             shutdownHook();
 
             try {
                 iota.init();
-                api.init();
                 //TODO redundant parameter but we will touch this when we refactor IXI
                 ixi.init(config.getIxiDir());
+                api.init(new RestEasy(config));
                 log.info("IOTA Node initialised correctly.");
             } catch (Exception e) {
                 log.error("Exception during IOTA node initialisation: ", e);
@@ -148,7 +160,7 @@ public class IRI {
             IotaConfig iotaConfig = null;
             String message = "Configuration is created using ";
             try {
-                boolean testnet = ArrayUtils.contains(args, Config.TESTNET_FLAG);
+                boolean testnet = isTestnet(args);
                 File configFile = chooseConfigFile(args);
                 if (configFile != null) {
                     iotaConfig = ConfigFactory.createFromFile(configFile, testnet);
@@ -178,6 +190,31 @@ public class IRI {
             return iotaConfig;
         }
 
+        /**
+         * We are connected to testnet when {@link Config#TESTNET_FLAG} is passed in program startup,
+         * following with <code>true</code>
+         * 
+         * @param args the list of program startup arguments
+         * @return <code>true</code> if this is testnet, otherwise <code>false</code>
+         */
+        private static boolean isTestnet(String[] args) {
+            int index = ArrayUtils.indexOf(args, Config.TESTNET_FLAG);
+            if (index != -1 && args.length > index+1) {
+                Boolean bool = BooleanUtils.toBooleanObject(args[index+1]);
+                return bool == null ? false : bool;
+            }
+            
+            return false;
+        }
+
+        /**
+         * Parses the command line arguments for a config file that can be provided by parameter <code>-c</code>
+         * or parameter <code>--config</code>. If no filename was provided we fall back to <code>iota.ini</code> file.
+         * If no <code>iota.ini</code> file can be found return null.
+         *
+         * @param args command line arguments passed to main method.
+         * @return File the chosen file to use as config, or null.
+         */
         private static File chooseConfigFile(String[] args) {
             int index = Math.max(ArrayUtils.indexOf(args, "-c"), ArrayUtils.indexOf(args, "--config"));
             if (index != -1) {

@@ -9,7 +9,6 @@ import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,14 +23,13 @@ import java.util.stream.Collectors;
 public class WalkerAlpha implements Walker {
 
     /**
-    * {@code alpha}: a positive number that controls the randomness of the walk. 
+    * {@code alpha}: a positive number that controls the randomness of the walk.
     * The closer it is to 0, the less bias the random walk will be.
     */
     private double alpha;
     private final Random random;
 
     private final Tangle tangle;
-    private final MessageQ messageQ;
     private final Logger log = LoggerFactory.getLogger(Walker.class);
 
     private final TailFinder tailFinder;
@@ -41,13 +39,11 @@ public class WalkerAlpha implements Walker {
      *
      * @param tailFinder instance of tailFinder, used to step from tail to tail in random walk.
      * @param tangle Tangle object which acts as a database interface
-     * @param messageQ ZMQ handle to publish telemetrics.
      * @param random a source of randomness.
      * @param config configurations to set internal parameters.
      */
-    public WalkerAlpha(TailFinder tailFinder, Tangle tangle, MessageQ messageQ, Random random, TipSelConfig config) {
+    public WalkerAlpha(TailFinder tailFinder, Tangle tangle, Random random, TipSelConfig config) {
         this.tangle = tangle;
-        this.messageQ = messageQ;
         this.tailFinder = tailFinder;
         this.random = random;
         this.alpha = config.getAlpha();
@@ -72,19 +68,22 @@ public class WalkerAlpha implements Walker {
         if (!walkValidator.isValid(entryPoint)) {
             throw new IllegalStateException("entry point failed consistency check: " + entryPoint.toString());
         }
-        
+
         Optional<Hash> nextStep;
         Deque<Hash> traversedTails = new LinkedList<>();
         traversedTails.add(entryPoint);
 
         //Walk
         do {
+            if(Thread.interrupted()){
+                throw new InterruptedException();
+            }
             nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
             nextStep.ifPresent(traversedTails::add);
          } while (nextStep.isPresent());
-        
+
         log.debug("{} tails traversed to find tip", traversedTails.size());
-        messageQ.publish("mctn %d", traversedTails.size());
+        tangle.publish("mctn %d", traversedTails.size());
 
         return traversedTails.getLast();
     }

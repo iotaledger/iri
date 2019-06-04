@@ -1,39 +1,47 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.IRI;
-import com.iota.iri.utils.IotaUtils;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.iota.iri.IRI;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
-/*
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
   Meaning that every field must have a getter that is prefixed with `get` unless it is a boolean and then it should be
   prefixed with `is`.
  */
 public abstract class BaseIotaConfig implements IotaConfig {
 
-    protected static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";
+    public static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";
 
     private boolean help;
-
+    private boolean testnet = false;
+    
     //API
     protected int port = Defaults.API_PORT;
     protected String apiHost = Defaults.API_HOST;
     protected List<String> remoteLimitApi = Defaults.REMOTE_LIMIT_API;
+    protected List<InetAddress> remoteTrustedApiHosts = Defaults.REMOTE_LIMIT_API_HOSTS;
     protected int maxFindTransactions = Defaults.MAX_FIND_TRANSACTIONS;
     protected int maxRequestsList = Defaults.MAX_REQUESTS_LIST;
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -68,22 +76,29 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double pPropagateRequest = Defaults.P_PROPAGATE_REQUEST;
 
     //ZMQ
-    protected boolean zmqEnabled = Defaults.ZMQ_ENABLED;
+    protected boolean zmqEnableTcp = Defaults.ZMQ_ENABLE_TCP;
+    protected boolean zmqEnableIpc = Defaults.ZMQ_ENABLE_IPC;
     protected int zmqPort = Defaults.ZMQ_PORT;
     protected int zmqThreads = Defaults.ZMQ_THREADS;
     protected String zmqIpc = Defaults.ZMQ_IPC;
     protected int qSizeNode = Defaults.QUEUE_SIZE;
     protected int cacheSizeBytes = Defaults.CACHE_SIZE_BYTES;
-
+    /**
+     * @deprecated This field was replaced by {@link #zmqEnableTcp} and {@link #zmqEnableIpc}. It is only needed
+     * for backward compatibility to --zmq-enabled parameter with JCommander.
+     */
+    @Deprecated
+    private boolean zmqEnabled;
 
     //Tip Selection
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
+    protected int tipSelectionTimeoutSec = Defaults.TIP_SELECTION_TIMEOUT_SEC;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
-    
+
     //Tip Solidification
     protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
-    
+
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
 
@@ -95,6 +110,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
+    protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
+    protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
 
     public BaseIotaConfig() {
         //empty constructor
@@ -105,11 +122,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //One can invoke help via INI file (feature/bug) so we always create JCommander even if args is empty
         JCommander jCommander = JCommander.newBuilder()
                 .addObject(this)
-                //This is in order to enable the `--conf` and `--testnet` option
+                //This is in order to enable the `--conf` option
                 .acceptUnknownOptions(true)
                 .allowParameterOverwriting(true)
                 //This is the first line of JCommander Usage
-                .programName("java -jar iri-" + IRI.VERSION + ".jar")
+                .programName("java -jar iri-" + IotaUtils.getIriVersion() + ".jar")
                 .build();
         if (ArrayUtils.isNotEmpty(args)) {
             jCommander.parse(args);
@@ -120,6 +137,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Override
     public boolean isHelp() {
         return help;
+    }
+    
+    @Override
+    public boolean isTestnet() {
+        return testnet;
+    }
+    
+    @JsonIgnore
+    @Parameter(names = {Config.TESTNET_FLAG}, description = Config.Descriptions.TESTNET, arity = 1)
+    protected void setTestnet(boolean testnet) {
+        this.testnet = testnet;
     }
 
     @JsonProperty
@@ -141,6 +169,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public String getApiHost() {
+        if (remote) {
+            return "0.0.0.0";
+        }
+        
         return apiHost;
     }
 
@@ -151,9 +183,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonIgnore
-    @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE)
+    @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE, arity = 1)
     protected void setRemote(boolean remote) {
-        this.apiHost = "0.0.0.0";
+        this.remote = remote;
     }
 
     @Override
@@ -165,6 +197,30 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--remote-limit-api"}, description = APIConfig.Descriptions.REMOTE_LIMIT_API)
     protected void setRemoteLimitApi(String remoteLimitApi) {
         this.remoteLimitApi = IotaUtils.splitStringToImmutableList(remoteLimitApi, SPLIT_STRING_TO_LIST_REGEX);
+    }
+
+    @Override
+    public List<InetAddress> getRemoteTrustedApiHosts() {
+        return remoteTrustedApiHosts;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--remote-trusted-api-hosts"}, description = APIConfig.Descriptions.REMOTE_TRUSTED_API_HOSTS)
+    public void setRemoteTrustedApiHosts(String remoteTrustedApiHosts) {
+        List<String> addresses = IotaUtils.splitStringToImmutableList(remoteTrustedApiHosts, SPLIT_STRING_TO_LIST_REGEX);
+        List<InetAddress> inetAddresses = addresses.stream().map(host -> {
+            try {
+                return InetAddress.getByName(host.trim());
+            } catch (UnknownHostException e) {
+                throw new ParameterException("Invalid value for --remote-trusted-api-hosts address: ", e);
+            }
+        }).collect(Collectors.toList());
+
+        // always make sure that localhost exists as trusted host
+        if(!inetAddresses.contains(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST)) {
+            inetAddresses.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+        }
+        this.remoteTrustedApiHosts = Collections.unmodifiableList(inetAddresses);
     }
 
     @Override
@@ -371,7 +427,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--revalidate"}, description = DbConfig.Descriptions.REVALIDATE)
+    @Parameter(names = {"--revalidate"}, description = DbConfig.Descriptions.REVALIDATE, arity = 1)
     protected void setRevalidate(boolean revalidate) {
         this.revalidate = revalidate;
     }
@@ -382,7 +438,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB)
+    @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB, arity = 1)
     protected void setRescanDb(boolean rescanDb) {
         this.rescanDb = rescanDb;
     }
@@ -491,8 +547,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
             SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
     protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
         if (localSnapshotsPruningDelay < Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
-            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least " 
-                    + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
+            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least "
+                    + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN
                     + "(found " + localSnapshotsPruningDelay +")");
         }
 
@@ -588,19 +644,79 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getMaxMilestoneIndex() {
+        return Defaults.MAX_MILESTONE_INDEX;
+    }
+
+    @Override
     public int getNumberOfKeysInMilestone() {
         return Defaults.NUM_KEYS_IN_MILESTONE;
     }
 
     @Override
-    public boolean isZmqEnabled() {
-        return zmqEnabled;
+    public String getSpentAddressesDbPath() {
+        return spentAddressesDbPath;
     }
 
     @JsonProperty
-    @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED)
+    @Parameter(names = {"--spent-addresses-db-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_PATH)
+    protected void setSpentAddressesDbPath(String spentAddressesDbPath) {
+        this.spentAddressesDbPath = spentAddressesDbPath;
+    }
+
+    @Override
+    public String getSpentAddressesDbLogPath() {
+        return spentAddressesDbLogPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--spent-addresses-db-log-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH)
+    protected void setSpentAddressesDbLogPath(String spentAddressesDbLogPath) {
+        this.spentAddressesDbLogPath = spentAddressesDbLogPath;
+    }
+
+    /**
+     * Checks if ZMQ is enabled.
+     * @return true if zmqEnableTcp or zmqEnableIpc is set.
+     */
+    @Override
+    public boolean isZmqEnabled() {
+        return zmqEnableTcp || zmqEnableIpc;
+    }
+
+    /**
+     * Activates ZMQ to listen on TCP and IPC.
+     * @deprecated Use {@link #setZmqEnableTcp(boolean) and/or {@link #setZmqEnableIpc(boolean)}} instead.
+     * @param zmqEnabled true if ZMQ should listen in TCP and IPC.
+     */
+    @Deprecated
+    @JsonProperty
+    @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED, arity = 1)
     protected void setZmqEnabled(boolean zmqEnabled) {
-        this.zmqEnabled = zmqEnabled;
+        this.zmqEnableTcp = zmqEnabled;
+        this.zmqEnableIpc = zmqEnabled;
+    }
+
+    @Override
+    public boolean isZmqEnableTcp() {
+        return zmqEnableTcp;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--zmq-enable-tcp", description = ZMQConfig.Descriptions.ZMQ_ENABLE_TCP, arity = 1)
+    public void setZmqEnableTcp(boolean zmqEnableTcp) {
+        this.zmqEnableTcp = zmqEnableTcp;
+    }
+
+    @Override
+    public boolean isZmqEnableIpc() {
+        return zmqEnableIpc;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--zmq-enable-ipc", description = ZMQConfig.Descriptions.ZMQ_ENABLE_IPC, arity = 1)
+    public void setZmqEnableIpc(boolean zmqEnableIpc) {
+        this.zmqEnableIpc = zmqEnableIpc;
     }
 
     @Override
@@ -612,6 +728,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--zmq-port", description = ZMQConfig.Descriptions.ZMQ_PORT)
     protected void setZmqPort(int zmqPort) {
         this.zmqPort = zmqPort;
+        this.zmqEnableTcp = true;
     }
 
     @Override
@@ -620,7 +737,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--zmq-threads", description = ZMQConfig.Descriptions.ZMQ_PORT)
+    @Parameter(names = "--zmq-threads", description = ZMQConfig.Descriptions.ZMQ_THREADS)
     protected void setZmqThreads(int zmqThreads) {
         this.zmqThreads = zmqThreads;
     }
@@ -634,6 +751,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--zmq-ipc", description = ZMQConfig.Descriptions.ZMQ_IPC)
     protected void setZmqIpc(String zmqIpc) {
         this.zmqIpc = zmqIpc;
+        this.zmqEnableIpc = true;
     }
 
     @Override
@@ -670,8 +788,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getCoordinator() {
+    public Hash getCoordinator() {
         return Defaults.COORDINATOR_ADDRESS;
+    }
+
+    @Override
+    public int getCoordinatorSecurityLevel() {
+        return Defaults.COORDINATOR_SECURITY_LEVEL;
+    }
+
+    @Override
+    public SpongeFactory.Mode getCoordinatorSignatureMode() {
+        return Defaults.COORDINATOR_SIGNATURE_MODE;
     }
 
     @Override
@@ -700,26 +828,38 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setAlpha(double alpha) {
         this.alpha = alpha;
     }
-    
+
+    @Override
+    public int getTipSelectionTimeoutSec() {
+        return tipSelectionTimeoutSec;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--tip-selection-timeout-sec", description = TipSelConfig.Descriptions.TIP_SELECTION_TIMEOUT_SEC)
+    protected void setTipSelectionTimeoutSec(int tipSelectionTimeoutSec) {
+        this.tipSelectionTimeoutSec = tipSelectionTimeoutSec;
+    }
+
     @Override
     public boolean isTipSolidifierEnabled() {
         return tipSolidifierEnabled;
     }
 
     @JsonProperty
-    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER, 
+    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER,
         arity = 1)
     protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
         this.tipSolidifierEnabled = tipSolidifierEnabled;
     }
-    
+
     @Override
     public int getBelowMaxDepthTransactionLimit() {
         return maxAnalyzedTransactions;
     }
 
     @JsonProperty
-    @Parameter(names = "--max-analyzed-transactions", description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
+    @Parameter(names = "--max-analyzed-transactions", 
+        description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
     protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
     }
@@ -735,11 +875,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.powThreads = powThreads;
     }
 
+    /**
+     * Represents the default values primarily used by the {@link BaseIotaConfig} field initialisation.
+     */
     public interface Defaults {
         //API
         int API_PORT = 14265;
         String API_HOST = "localhost";
         List<String> REMOTE_LIMIT_API = IotaUtils.createImmutableList("addNeighbors", "getNeighbors", "removeNeighbors", "attachToTangle", "interruptAttachingToTangle");
+        InetAddress REMOTE_LIMIT_API_DEFAULT_HOST = InetAddress.getLoopbackAddress();
+        List<InetAddress> REMOTE_LIMIT_API_HOSTS = IotaUtils.createImmutableList(REMOTE_LIMIT_API_DEFAULT_HOST);
         int MAX_FIND_TRANSACTIONS = 100_000;
         int MAX_REQUESTS_LIST = 1_000;
         int MAX_GET_TRYTES = 10_000;
@@ -783,14 +928,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Zmq
         int ZMQ_THREADS = 1;
+        boolean ZMQ_ENABLE_IPC = false;
         String ZMQ_IPC = "ipc://iri";
-        boolean ZMQ_ENABLED = false;
+        boolean ZMQ_ENABLE_TCP = false;
         int ZMQ_PORT = 5556;
 
         //TipSel
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
-        
+        int TIP_SELECTION_TIMEOUT_SEC = 60;
+
         //Tip solidification
         boolean TIP_SOLIDIFIER_ENABLED = true;
 
@@ -798,29 +945,35 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int POW_THREADS = 0;
 
         //Coo
-        String COORDINATOR_ADDRESS =
-                "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+                        "EQSAUZXULTTYZCLNJNTXQTQHOMOFZERHTCGTXOLTVAHKSA9OGAZDEKECURBRIXIJWNPFCQIOVFVVXJVD9");
+        int COORDINATOR_SECURITY_LEVEL = 2;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.KERL;
+        int NUM_KEYS_IN_MILESTONE = 23;
+        int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
-        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
-        
+        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
+
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
         int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
         int LOCAL_SNAPSHOTS_DEPTH = 100;
         int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
-        
+        String SPENT_ADDRESSES_DB_PATH = "spent-addresses-db";
+        String SPENT_ADDRESSES_DB_LOG_PATH = "spent-addresses-log";
+
         String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
                 "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
                         "/previousEpochsSpentAddresses3.txt";
-        long GLOBAL_SNAPSHOT_TIME = 1545469620;
-        int MILESTONE_START_INDEX = 933_210;
-        int NUM_KEYS_IN_MILESTONE = 20;
+        long GLOBAL_SNAPSHOT_TIME = 1554904800;
+        int MILESTONE_START_INDEX = 1050000;
         int MAX_ANALYZED_TXS = 20_000;
+
     }
 }

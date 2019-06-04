@@ -75,7 +75,7 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
         setIndex(index);
         setTimestamp(timestamp);
         setSolidEntryPoints(solidEntryPoints);
-        setSeenMilestones(new HashMap<>(seenMilestones));
+        setSeenMilestones(seenMilestones);
     }
 
     /**
@@ -234,7 +234,7 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
      */
     @Override
     public void setSeenMilestones(Map<Hash, Integer> seenMilestones) {
-        this.seenMilestones = seenMilestones;
+        this.seenMilestones = new ConcurrentHashMap<>(seenMilestones);
     }
 
     /**
@@ -250,7 +250,7 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
         setHash(newMetaData.getHash());
         setTimestamp(newMetaData.getTimestamp());
         setSolidEntryPoints(newMetaData.getSolidEntryPoints());
-        setSeenMilestones(new HashMap<>(newMetaData.getSeenMilestones()));
+        setSeenMilestones(newMetaData.getSeenMilestones());
     }
 
     @Override

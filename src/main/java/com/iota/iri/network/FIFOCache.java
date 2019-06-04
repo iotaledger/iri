@@ -1,8 +1,5 @@
 package com.iota.iri.network;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,8 +14,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @param <V> the value type
  */
 public class FIFOCache<K, V> {
-
-    private static final Logger log = LoggerFactory.getLogger(FIFOCache.class);
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
     private final int capacity;

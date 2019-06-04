@@ -4,6 +4,9 @@ import com.iota.iri.network.neighbor.NeighborMetrics;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Implements {@link NeighborMetrics} using {@link AtomicLong}s.
+ */
 public class NeighborMetricsImpl implements NeighborMetrics {
 
     private AtomicLong allTxsCount = new AtomicLong();

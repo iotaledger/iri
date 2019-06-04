@@ -15,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * {@link NeighborImpl} is an implementation of {@link Neighbor} using a {@link ByteChannel} as the source and
@@ -144,6 +143,8 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                         msgsRead++;
                         txPipeline.process(this, msg);
                         break;
+                    default:
+                        // do nothing
                 }
                 // reset
                 readState = ReadState.PARSE_HEADER;

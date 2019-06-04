@@ -1,8 +1,6 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.TransactionValidator;
-import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.crypto.batched.BatchedHasher;
@@ -11,7 +9,6 @@ import com.iota.iri.crypto.batched.HashRequest;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.FIFOCache;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -129,6 +126,8 @@ public class TransactionProcessingPipeline {
                         case HASHING:
                             hashAndValidate(ctx);
                             break;
+                        default:
+                            // do nothing
                     }
                 }
             } catch (InterruptedException e) {
@@ -155,6 +154,8 @@ public class TransactionProcessingPipeline {
                             break;
                         case ABORT:
                             break;
+                        default:
+                            // do nothing
                     }
                 }
             } catch (InterruptedException e) {
@@ -182,6 +183,8 @@ public class TransactionProcessingPipeline {
                         case BROADCAST:
                             broadcastStageQueue.put(ctx);
                             break;
+                        default:
+                            // do nothing
                     }
                 }
             } catch (InterruptedException e) {

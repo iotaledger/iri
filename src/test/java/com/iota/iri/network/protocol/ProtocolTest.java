@@ -13,6 +13,10 @@ import static org.junit.Assert.*;
 
 public class ProtocolTest {
 
+    private int nonEmptySigPartBytesCount = 1000;
+    private int truncationBytesCount = Protocol.SIG_DATA_MAX_BYTES_LENGTH - nonEmptySigPartBytesCount;
+    final private int sigFill = 3, restFill = 4, emptyFill = 0;
+
     @Test
     public void parsingHeaderWithUnknownMessageTypeThrows() {
         try {
@@ -83,10 +87,6 @@ public class ProtocolTest {
         assertArrayEquals("should resolve to correct supported protocol versions", Protocol.SUPPORTED_PROTOCOL_VERSIONS,
                 supportedVersions);
     }
-
-    private int nonEmptySigPartBytesCount = 1000;
-    private int truncationBytesCount = Protocol.SIG_DATA_MAX_BYTES_LENGTH - nonEmptySigPartBytesCount;
-    final private int sigFill = 3, restFill = 4, emptyFill = 0;
 
     private byte[] constructTransactionBytes() {
         byte[] originTxData = new byte[Transaction.SIZE];

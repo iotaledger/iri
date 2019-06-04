@@ -66,9 +66,9 @@ public class TransactionRequesterWorkerImplTest {
     @Before
     public void before() {
         requester = new TransactionRequester(tangle, snapshotProvider);
-        
+
         worker = new TransactionRequesterWorkerImpl();
-        Mockito.when(neighborRouter.getConnectedNeighbors()).thenReturn(new ConcurrentHashMap<>());
+        when(neighborRouter.getConnectedNeighbors()).thenReturn(new ConcurrentHashMap<>());
         worker.init(tangle, requester, tipsVM, neighborRouter);
     }
     

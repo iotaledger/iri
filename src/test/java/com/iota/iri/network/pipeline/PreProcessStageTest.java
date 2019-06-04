@@ -42,7 +42,7 @@ public class PreProcessStageTest {
         // the cache should be checked for the digest of the transaction
         Mockito.verify(recentlySeenBytesCache).get(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX);
 
-        assertEquals(TransactionProcessingPipeline.Stage.HASHING, ctx.getNextStage());
+        assertEquals("should submit to hashing stage next",TransactionProcessingPipeline.Stage.HASHING, ctx.getNextStage());
         HashingPayload hashingPayload = (HashingPayload) ctx.getPayload();
 
         assertEquals("neighbor should still be the same", neighbor, hashingPayload.getNeighbor().get());

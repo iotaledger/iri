@@ -464,6 +464,8 @@ public class API {
                 case SLOTS_FILLED:
                     log.info("Can't add neighbor {}: no more slots available for new neighbors", uriStr);
                     break;
+                default:
+                    // do nothing
             }
         }
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
@@ -500,6 +502,8 @@ public class API {
                 case UNKNOWN_NEIGHBOR:
                     log.info("Can't remove neighbor {}: neighbor is unknown", uriString);
                     break;
+                default:
+                    // do nothing
             }
 
         }

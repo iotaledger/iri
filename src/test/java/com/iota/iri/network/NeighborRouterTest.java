@@ -1,7 +1,6 @@
 package com.iota.iri.network;
 
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;

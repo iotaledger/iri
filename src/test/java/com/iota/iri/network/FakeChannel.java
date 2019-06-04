@@ -5,6 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.SelectorProvider;
 
+/**
+ * Used as a mock for network related tests.
+ */
 public class FakeChannel extends SelectableChannel implements ByteChannel {
 
     @Override
@@ -59,6 +62,6 @@ public class FakeChannel extends SelectableChannel implements ByteChannel {
 
     @Override
     protected void implCloseChannel() throws IOException {
-
+        // do nothing
     }
 }

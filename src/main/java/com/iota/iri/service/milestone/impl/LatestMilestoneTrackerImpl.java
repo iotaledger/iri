@@ -191,11 +191,6 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
 
     /**
      * {@inheritDoc}
-     * 
-     * <p>
-     * If we detect a milestone that is either {@code INCOMPLETE} or not solid, yet we hand it over to the
-     * {@link MilestoneSolidifier} that takes care of requesting the missing parts of the milestone bundle.
-     * </p>
      */
     @Override
     public boolean processMilestoneCandidate(TransactionViewModel transaction) throws MilestoneException {
@@ -224,11 +219,11 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     break;
 
                     case INCOMPLETE:
-                        milestoneSolidifier.add(transaction.getHash(), milestoneIndex);
-
-                        transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-
                         return false;
+
+                    case INVALID:
+                        // do not re-analyze anymore
+                        return true;
 
                     default:
                         // we can consider the milestone candidate processed and move on w/o farther action

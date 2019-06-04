@@ -48,6 +48,7 @@ public class LocalInMemoryGraphStableOrderTest {
         provider1 = new LocalInMemoryGraphProvider("", tangle1);
         tangle1.addPersistenceProvider(provider1);
         tangle1.init();
+        BaseIotaConfig.getInstance().setConfluxScoreAlgo("CUM_WEIGHT");
     }
 
     @Test

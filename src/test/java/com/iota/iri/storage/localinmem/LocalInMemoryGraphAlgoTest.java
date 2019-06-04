@@ -51,76 +51,76 @@ public class LocalInMemoryGraphAlgoTest {
 
     @Test
     public void testInduceSubGraph() throws Exception {
-        TransactionViewModel A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P;
-        A = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        B = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
-                A.getHash()), getRandomTransactionHash());
-        D = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
-                B.getHash()), getRandomTransactionHash());
-        C = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(D.getHash(),
-                B.getHash()), getRandomTransactionHash());
-        E = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(D.getHash(),
-                B.getHash()), getRandomTransactionHash());
-        F = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(E.getHash(),
-                B.getHash()), getRandomTransactionHash());
-        G = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(D.getHash(),
-                C.getHash()), getRandomTransactionHash());
-        H = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(E.getHash(),
-                F.getHash()), getRandomTransactionHash());
-        I = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(G.getHash(),
-                H.getHash()), getRandomTransactionHash());
-        J = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(C.getHash(),
-                G.getHash()), getRandomTransactionHash());
-        K = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(G.getHash(),
-                J.getHash()), getRandomTransactionHash());
-        L = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(K.getHash(),
-                J.getHash()), getRandomTransactionHash());
-        M = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(I.getHash(),
-                H.getHash()), getRandomTransactionHash());
-        N = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(M.getHash(),
-                I.getHash()), getRandomTransactionHash());
-        O = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
-                B.getHash()), getRandomTransactionHash());
-        P = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(O.getHash(),
-                C.getHash()), getRandomTransactionHash());
+        TransactionViewModel a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p;
+        a = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        b = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                a.getHash()), getRandomTransactionHash());
+        d = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
+                b.getHash()), getRandomTransactionHash());
+        c = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(d.getHash(),
+                b.getHash()), getRandomTransactionHash());
+        e = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(d.getHash(),
+                b.getHash()), getRandomTransactionHash());
+        f = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(e.getHash(),
+                b.getHash()), getRandomTransactionHash());
+        g = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(d.getHash(),
+                c.getHash()), getRandomTransactionHash());
+        h = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(e.getHash(),
+                f.getHash()), getRandomTransactionHash());
+        i = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(g.getHash(),
+                h.getHash()), getRandomTransactionHash());
+        j = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(c.getHash(),
+                g.getHash()), getRandomTransactionHash());
+        k = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(g.getHash(),
+                j.getHash()), getRandomTransactionHash());
+        l = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(k.getHash(),
+                j.getHash()), getRandomTransactionHash());
+        m = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(i.getHash(),
+                h.getHash()), getRandomTransactionHash());
+        n = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(m.getHash(),
+                i.getHash()), getRandomTransactionHash());
+        o = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                b.getHash()), getRandomTransactionHash());
+        p = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(o.getHash(),
+                c.getHash()), getRandomTransactionHash());
 
         HashMap<Hash, String> tag = new HashMap<Hash, String>();
 
-        tag.put(A.getHash(), "A");
-        tag.put(B.getHash(), "B");
-        tag.put(C.getHash(), "C");
-        tag.put(D.getHash(), "D");
-        tag.put(E.getHash(), "E");
-        tag.put(F.getHash(), "F");
-        tag.put(G.getHash(), "G");
-        tag.put(H.getHash(), "H");
-        tag.put(I.getHash(), "I");
-        tag.put(J.getHash(), "J");
-        tag.put(K.getHash(), "K");
-        tag.put(L.getHash(), "L");
-        tag.put(M.getHash(), "M");
-        tag.put(N.getHash(), "N");
-        tag.put(O.getHash(), "O");
-        tag.put(P.getHash(), "P");
+        tag.put(a.getHash(), "A");
+        tag.put(b.getHash(), "B");
+        tag.put(c.getHash(), "C");
+        tag.put(d.getHash(), "D");
+        tag.put(e.getHash(), "E");
+        tag.put(f.getHash(), "F");
+        tag.put(g.getHash(), "G");
+        tag.put(h.getHash(), "H");
+        tag.put(i.getHash(), "I");
+        tag.put(j.getHash(), "J");
+        tag.put(k.getHash(), "K");
+        tag.put(l.getHash(), "L");
+        tag.put(m.getHash(), "M");
+        tag.put(n.getHash(), "N");
+        tag.put(o.getHash(), "O");
+        tag.put(p.getHash(), "P");
 
         provider1.setNameMap(tag);
 
-        A.store(tangle1);
-        B.store(tangle1);
-        C.store(tangle1);
-        D.store(tangle1);
-        E.store(tangle1);
-        F.store(tangle1);
-        G.store(tangle1);
-        H.store(tangle1);
-        I.store(tangle1);
-        J.store(tangle1);
-        K.store(tangle1);
-        L.store(tangle1);
-        M.store(tangle1);
-        N.store(tangle1);
-        O.store(tangle1);
-        P.store(tangle1);
+        a.store(tangle1);
+        b.store(tangle1);
+        c.store(tangle1);
+        d.store(tangle1);
+        e.store(tangle1);
+        f.store(tangle1);
+        g.store(tangle1);
+        h.store(tangle1);
+        i.store(tangle1);
+        j.store(tangle1);
+        k.store(tangle1);
+        l.store(tangle1);
+        m.store(tangle1);
+        n.store(tangle1);
+        o.store(tangle1);
+        p.store(tangle1);
 
         List<Hash> order = provider1.totalTopOrder();
         Assert.assertEquals("A", tag.get(order.get(0)));
@@ -135,68 +135,68 @@ public class LocalInMemoryGraphAlgoTest {
         Assert.assertEquals("M", tag.get(order.get(9)));
         Assert.assertEquals("N", tag.get(order.get(10)));
 
-        provider1.buildTempGraphs(order, G.getHash());
+        provider1.buildTempGraphs(order, g.getHash());
         Assert.assertEquals(provider1.subGraph.size(), 7);
 
-        Assert.assertEquals(2, provider1.subGraph.get(L.getHash()).size());
-        Assert.assertEquals(2, provider1.subGraph.get(K.getHash()).size());
-        Assert.assertEquals(1, provider1.subGraph.get(J.getHash()).size());
-        Assert.assertEquals(2, provider1.subGraph.get(N.getHash()).size());
-        Assert.assertEquals(1, provider1.subGraph.get(M.getHash()).size());
-        Assert.assertEquals(1, provider1.subGraph.get(I.getHash()).size());
-        Assert.assertEquals(2, provider1.subGraph.get(G.getHash()).size());
+        Assert.assertEquals(2, provider1.subGraph.get(l.getHash()).size());
+        Assert.assertEquals(2, provider1.subGraph.get(k.getHash()).size());
+        Assert.assertEquals(1, provider1.subGraph.get(j.getHash()).size());
+        Assert.assertEquals(2, provider1.subGraph.get(n.getHash()).size());
+        Assert.assertEquals(1, provider1.subGraph.get(m.getHash()).size());
+        Assert.assertEquals(1, provider1.subGraph.get(i.getHash()).size());
+        Assert.assertEquals(2, provider1.subGraph.get(g.getHash()).size());
 
-        Assert.assertEquals(null, provider1.subRevGraph.get(L.getHash()));
-        Assert.assertEquals(1, provider1.subRevGraph.get(K.getHash()).size());
-        Assert.assertEquals(2, provider1.subRevGraph.get(J.getHash()).size());
-        Assert.assertEquals(null, provider1.subRevGraph.get(N.getHash()));
-        Assert.assertEquals(1, provider1.subRevGraph.get(M.getHash()).size());
-        Assert.assertEquals(2, provider1.subRevGraph.get(I.getHash()).size());
-        Assert.assertEquals(3, provider1.subRevGraph.get(G.getHash()).size());
-        Assert.assertEquals(1, provider1.subRevGraph.get(C.getHash()).size());
-        Assert.assertEquals(1, provider1.subRevGraph.get(D.getHash()).size());
-
-        
-        Assert.assertEquals(K.getHash(), provider1.subParentGraph.get(L.getHash()));
-        Assert.assertEquals(G.getHash(), provider1.subParentGraph.get(K.getHash()));
-        Assert.assertEquals(M.getHash(), provider1.subParentGraph.get(N.getHash()));
-        Assert.assertEquals(I.getHash(), provider1.subParentGraph.get(M.getHash()));
-        Assert.assertEquals(G.getHash(), provider1.subParentGraph.get(I.getHash()));
-        Assert.assertEquals(D.getHash(), provider1.subParentGraph.get(G.getHash()));
+        Assert.assertEquals(null, provider1.subRevGraph.get(l.getHash()));
+        Assert.assertEquals(1, provider1.subRevGraph.get(k.getHash()).size());
+        Assert.assertEquals(2, provider1.subRevGraph.get(j.getHash()).size());
+        Assert.assertEquals(null, provider1.subRevGraph.get(n.getHash()));
+        Assert.assertEquals(1, provider1.subRevGraph.get(m.getHash()).size());
+        Assert.assertEquals(2, provider1.subRevGraph.get(i.getHash()).size());
+        Assert.assertEquals(3, provider1.subRevGraph.get(g.getHash()).size());
+        Assert.assertEquals(1, provider1.subRevGraph.get(c.getHash()).size());
+        Assert.assertEquals(1, provider1.subRevGraph.get(d.getHash()).size());
 
         
-        Assert.assertEquals(2, provider1.subParentRevGraph.get(G.getHash()).size());
-        Assert.assertEquals(1, provider1.subParentRevGraph.get(K.getHash()).size());
-        Assert.assertEquals(1, provider1.subParentRevGraph.get(I.getHash()).size());
-        Assert.assertEquals(1, provider1.subParentRevGraph.get(M.getHash()).size());
-        Assert.assertEquals(null, provider1.subParentRevGraph.get(N.getHash()));
-        Assert.assertEquals(null, provider1.subParentRevGraph.get(L.getHash()));
-        Assert.assertEquals(null, provider1.subParentRevGraph.get(J.getHash()));
+        Assert.assertEquals(k.getHash(), provider1.subParentGraph.get(l.getHash()));
+        Assert.assertEquals(g.getHash(), provider1.subParentGraph.get(k.getHash()));
+        Assert.assertEquals(m.getHash(), provider1.subParentGraph.get(n.getHash()));
+        Assert.assertEquals(i.getHash(), provider1.subParentGraph.get(m.getHash()));
+        Assert.assertEquals(g.getHash(), provider1.subParentGraph.get(i.getHash()));
+        Assert.assertEquals(d.getHash(), provider1.subParentGraph.get(g.getHash()));
 
-        provider1.reserveTempGraphs(order, G.getHash());
+        
+        Assert.assertEquals(2, provider1.subParentRevGraph.get(g.getHash()).size());
+        Assert.assertEquals(1, provider1.subParentRevGraph.get(k.getHash()).size());
+        Assert.assertEquals(1, provider1.subParentRevGraph.get(i.getHash()).size());
+        Assert.assertEquals(1, provider1.subParentRevGraph.get(m.getHash()).size());
+        Assert.assertEquals(null, provider1.subParentRevGraph.get(n.getHash()));
+        Assert.assertEquals(null, provider1.subParentRevGraph.get(l.getHash()));
+        Assert.assertEquals(null, provider1.subParentRevGraph.get(j.getHash()));
+
+        provider1.reserveTempGraphs(order, g.getHash());
  
         Stack<Hash> ancestors = new Stack<>();
-        ancestors.add(G.getHash());
+        ancestors.add(g.getHash());
         provider1.storeAncestors(ancestors);
 
         provider1.shiftTempGraphs();
        
         //System.out.println(tag.get(provider1.getGenesis()));
-        Assert.assertEquals(7.0, provider1.getScore(G.getHash()), 0.001);
-        Assert.assertEquals(2.0, provider1.getScore(K.getHash()), 0.001);
-        Assert.assertEquals(3.0, provider1.getScore(J.getHash()), 0.001);
-        Assert.assertEquals(1.0, provider1.getScore(L.getHash()), 0.001);
-        Assert.assertEquals(2.0, provider1.getScore(M.getHash()), 0.001);
-        Assert.assertEquals(1.0, provider1.getScore(N.getHash()), 0.001);
-        Assert.assertEquals(3.0, provider1.getScore(I.getHash()), 0.001);
+        Assert.assertEquals(7.0, provider1.getScore(g.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getScore(k.getHash()), 0.001);
+        Assert.assertEquals(3.0, provider1.getScore(j.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getScore(l.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getScore(m.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getScore(n.getHash()), 0.001);
+        Assert.assertEquals(3.0, provider1.getScore(i.getHash()), 0.001);
 
-        Assert.assertEquals(6.0, provider1.getParentScore(G.getHash()), 0.001);
-        Assert.assertEquals(2.0, provider1.getParentScore(K.getHash()), 0.001);
-        Assert.assertEquals(1.0, provider1.getParentScore(J.getHash()), 0.001);
-        Assert.assertEquals(1.0, provider1.getParentScore(L.getHash()), 0.001);
-        Assert.assertEquals(2.0, provider1.getParentScore(M.getHash()), 0.001);
-        Assert.assertEquals(1.0, provider1.getParentScore(N.getHash()), 0.001);
-        Assert.assertEquals(3.0, provider1.getParentScore(I.getHash()), 0.001);
+        Assert.assertEquals(6.0, provider1.getParentScore(g.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getParentScore(k.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getParentScore(j.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getParentScore(l.getHash()), 0.001);
+        Assert.assertEquals(2.0, provider1.getParentScore(m.getHash()), 0.001);
+        Assert.assertEquals(1.0, provider1.getParentScore(n.getHash()), 0.001);
+        Assert.assertEquals(3.0, provider1.getParentScore(i.getHash()), 0.001);
 
         List<Hash> order1 = provider1.totalTopOrder();
         Assert.assertEquals("G", tag.get(order1.get(0)));

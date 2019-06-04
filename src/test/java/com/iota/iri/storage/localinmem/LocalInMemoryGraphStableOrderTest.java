@@ -52,88 +52,88 @@ public class LocalInMemoryGraphStableOrderTest {
 
     @Test
     public void testStableOrder() throws Exception {
-        Hash A = getRandomTransactionHash();
-        Hash B = getRandomTransactionHash();
-        Hash C = getRandomTransactionHash();
-        Hash D = getRandomTransactionHash();
-        Hash E = getRandomTransactionHash();
-        Hash F = getRandomTransactionHash();
-        Hash G = getRandomTransactionHash();
-        Hash H = getRandomTransactionHash();
+        Hash a = getRandomTransactionHash();
+        Hash b = getRandomTransactionHash();
+        Hash c = getRandomTransactionHash();
+        Hash d = getRandomTransactionHash();
+        Hash e = getRandomTransactionHash();
+        Hash f = getRandomTransactionHash();
+        Hash g = getRandomTransactionHash();
+        Hash h = getRandomTransactionHash();
 
         List<Hash> before = new LinkedList<>();
         List<Hash> after = new LinkedList<>();
-        before.add(A);
-        before.add(B);
-        before.add(C);
-        before.add(D);
-        before.add(E);
-        before.add(F);
-        before.add(G);
-        before.add(H);
+        before.add(a);
+        before.add(b);
+        before.add(c);
+        before.add(d);
+        before.add(e);
+        before.add(f);
+        before.add(g);
+        before.add(h);
 
-        after.add(F);
-        after.add(G);
-        after.add(H);
+        after.add(f);
+        after.add(g);
+        after.add(h);
 
         provider1.insertStableTotalOrder(before, after);
 
         List<Hash> stableOrder = provider1.getStableOrder();
 
         Assert.assertEquals(5, stableOrder.size());
-        Assert.assertEquals(A, stableOrder.get(0));
-        Assert.assertEquals(B, stableOrder.get(1));
-        Assert.assertEquals(C, stableOrder.get(2));
-        Assert.assertEquals(D, stableOrder.get(3));
-        Assert.assertEquals(E, stableOrder.get(4));
+        Assert.assertEquals(a, stableOrder.get(0));
+        Assert.assertEquals(b, stableOrder.get(1));
+        Assert.assertEquals(c, stableOrder.get(2));
+        Assert.assertEquals(d, stableOrder.get(3));
+        Assert.assertEquals(e, stableOrder.get(4));
 
         boolean isThrow = false;
         try {
             List<Hash> after1 = new LinkedList<>();
-            after1.add(F);
-            after1.add(H);
+            after1.add(f);
+            after1.add(h);
             provider1.insertStableTotalOrder(before, after1);
-        } catch(RuntimeException e) {
+        } catch(RuntimeException ex) {
             isThrow = true;
         }
         Assert.assertEquals(true, isThrow);
 
         isThrow = false;
         try {
-                Hash K = getRandomTransactionHash();
+                Hash k = getRandomTransactionHash();
                 List<Hash> after1 = new LinkedList<>();
-                after1.add(K);
-                after1.add(F);
-                after1.add(G);
-                after1.add(H);
+                after1.add(k);
+                after1.add(f);
+                after1.add(g);
+                after1.add(h);
                 provider1.insertStableTotalOrder(before, after1);
-            } catch(RuntimeException e) {
+            } catch(RuntimeException ex) {
                 isThrow = true;
         }
         Assert.assertEquals(true, isThrow);
 
         isThrow = false;
         try {
-                Hash K = getRandomTransactionHash();
+                Hash k = getRandomTransactionHash();
                 List<Hash> after1 = new LinkedList<>();
-                after1.add(F);
-                after1.add(G);
-                after1.add(H);
-                after1.add(K);
+                after1.add(f);
+                after1.add(g);
+                after1.add(h);
+                after1.add(k);
                 provider1.insertStableTotalOrder(before, after1);
-            } catch(RuntimeException e) {
+            } catch(RuntimeException ex) {
                 isThrow = true;
         }
         Assert.assertEquals(true, isThrow);
 
         isThrow = false;
         try {
-                Hash K = getRandomTransactionHash();
+                Hash k = getRandomTransactionHash();
                 List<Hash> after1 = new LinkedList<>();
-                after1.add(F);
-                after1.add(G);
+                after1.add(f);
+                after1.add(g);
                 provider1.insertStableTotalOrder(before, after1);
-            } catch(RuntimeException e) {
+            } catch(RuntimeException ex) {
                 isThrow = true;
         }
         Assert.assertEquals(true, isThrow);

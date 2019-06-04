@@ -53,10 +53,19 @@ public class Node {
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
-    private final ConcurrentSkipListSet<TransactionViewModel> broadcastQueue = weightQueue();
-    private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> receiveQueue = weightQueueTxPair();
-    private final ConcurrentSkipListSet<Pair<Hash, Neighbor>> replyQueue = weightQueueHashPair();
 
+    /**
+     * For some reason, there's no constructor in the PriorityBlockingQueue that allow us to create an instance
+     * defining just the comparator. The only options are: default constructor, constructor taking the capacity as an
+     * argument and constructor taking capacity and Comparator. (There's yet another one taking a collection as
+     * argument, but it's irrelevant for this example).
+     * Since we need a comparator, we also need to define the inital capacity, in order to use the constructor.
+     * Defining it below as 11, which is the same value defined in the {@link PriorityBlockingQueue} class.
+     */
+    private static final int PRIORITY_BLOCKING_QUEUE_DEFAULT_INITIAL_CAPACITY = 11;
+    private final PriorityBlockingQueue<TransactionViewModel> broadcastQueue = createBroadcastWeightQueue();
+    private final PriorityBlockingQueue<Pair<TransactionViewModel, Neighbor>> receiveQueue = createReceiveWeightQueueTxPair();
+    private final PriorityBlockingQueue<Pair<Hash, Neighbor>> replyQueue = createWeightQueueHashPair();
 
     private final DatagramPacket sendingPacket;
     private final DatagramPacket tipRequestingPacket;
@@ -399,7 +408,8 @@ public class Node {
     public void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
         receiveQueue.add(new ImmutablePair<>(receivedTransactionViewModel, neighbor));
         if (receiveQueue.size() > RECV_QUEUE_SIZE) {
-            receiveQueue.pollLast();
+            log.warn("Receive queue full. Transaction dropped. Consider increasing the Q_SIZE_NODE parameter. Current size: {}", RECV_QUEUE_SIZE);
+            receiveQueue.poll();
         }
 
     }
@@ -410,7 +420,8 @@ public class Node {
     public void addReceivedDataToReplyQueue(Hash requestedHash, Neighbor neighbor) {
         replyQueue.add(new ImmutablePair<>(requestedHash, neighbor));
         if (replyQueue.size() > REPLY_QUEUE_SIZE) {
-            replyQueue.pollLast();
+            log.warn("Reply queue full. Transaction dropped. Consider increasing the Q_SIZE_NODE parameter. Current size: {}", REPLY_QUEUE_SIZE);
+            replyQueue.poll();
         }
     }
 
@@ -419,7 +430,13 @@ public class Node {
      * {@link processReceivedData} on the pair.
      */
     public void processReceivedDataFromQueue() {
-        final Pair<TransactionViewModel, Neighbor> receivedData = receiveQueue.pollFirst();
+        Pair<TransactionViewModel, Neighbor> receivedData = null;
+        try {
+            receivedData = receiveQueue.take();
+        } catch (InterruptedException e) {
+            log.error("Error when trying to read from receive queue:", e);
+        }
+
         if (receivedData != null) {
             processReceivedData(receivedData.getLeft(), receivedData.getRight());
         }
@@ -430,7 +447,13 @@ public class Node {
      * {@link replyToRequest} on the pair.
      */
     public void replyToRequestFromQueue() {
-        final Pair<Hash, Neighbor> receivedData = replyQueue.pollFirst();
+        Pair<Hash, Neighbor> receivedData = null;
+        try {
+            receivedData = replyQueue.take();
+        } catch (InterruptedException e) {
+            log.error("Error when trying to read from reply queue:", e);
+        }
+
         if (receivedData != null) {
             replyToRequest(receivedData.getLeft(), receivedData.getRight());
         }
@@ -605,7 +628,8 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    final TransactionViewModel transactionViewModel = broadcastQueue.pollFirst();
+                    final TransactionViewModel transactionViewModel = broadcastQueue.take();
+
                     if (transactionViewModel != null) {
 
                         for (final Neighbor neighbor : neighbors) {
@@ -616,7 +640,8 @@ public class Node {
                             }
                         }
                     }
-                    Thread.sleep(PAUSE_BETWEEN_TRANSACTIONS);
+                } catch (InterruptedException e) {
+                    log.error("Error when trying to read from broadcast queue:", e);
                 } catch (final Exception e) {
                     log.error("Broadcaster Thread Exception:", e);
                 }
@@ -673,10 +698,8 @@ public class Node {
             log.info("Spawning Process Received Data Thread");
 
             while (!shuttingDown.get()) {
-
                 try {
                     processReceivedDataFromQueue();
-                    Thread.sleep(1);
                 } catch (final Exception e) {
                     log.error("Process Received Data Thread Exception:", e);
                 }
@@ -694,7 +717,6 @@ public class Node {
 
                 try {
                     replyToRequestFromQueue();
-                    Thread.sleep(1);
                 } catch (final Exception e) {
                     log.error("Reply To Request Thread Exception:", e);
                 }
@@ -703,9 +725,9 @@ public class Node {
         };
     }
 
-
-    private static ConcurrentSkipListSet<TransactionViewModel> weightQueue() {
-        return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
+    //TODO generalize these weightQueues
+    private static PriorityBlockingQueue<TransactionViewModel> createBroadcastWeightQueue() {
+        return new PriorityBlockingQueue<>(PRIORITY_BLOCKING_QUEUE_DEFAULT_INITIAL_CAPACITY, (transaction1, transaction2) -> {
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
                 for (int i = Hash.SIZE_IN_BYTES; i-- > 0; ) {
                     if (transaction1.getHash().bytes()[i] != transaction2.getHash().bytes()[i]) {
@@ -718,9 +740,8 @@ public class Node {
         });
     }
 
-    //TODO generalize these weightQueues
-    private static ConcurrentSkipListSet<Pair<Hash, Neighbor>> weightQueueHashPair() {
-        return new ConcurrentSkipListSet<Pair<Hash, Neighbor>>((transaction1, transaction2) -> {
+    private static PriorityBlockingQueue<Pair<Hash, Neighbor>> createWeightQueueHashPair() {
+        return new PriorityBlockingQueue<Pair<Hash, Neighbor>>(PRIORITY_BLOCKING_QUEUE_DEFAULT_INITIAL_CAPACITY, (transaction1, transaction2) -> {
             Hash tx1 = transaction1.getLeft();
             Hash tx2 = transaction2.getLeft();
 
@@ -734,8 +755,8 @@ public class Node {
         });
     }
 
-    private static ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> weightQueueTxPair() {
-        return new ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>>((transaction1, transaction2) -> {
+    private static PriorityBlockingQueue<Pair<TransactionViewModel, Neighbor>> createReceiveWeightQueueTxPair() {
+        return new PriorityBlockingQueue<Pair<TransactionViewModel, Neighbor>>(PRIORITY_BLOCKING_QUEUE_DEFAULT_INITIAL_CAPACITY, (transaction1, transaction2) -> {
             TransactionViewModel tx1 = transaction1.getLeft();
             TransactionViewModel tx2 = transaction2.getLeft();
 
@@ -755,7 +776,8 @@ public class Node {
     public void broadcast(final TransactionViewModel transactionViewModel) {
         broadcastQueue.add(transactionViewModel);
         if (broadcastQueue.size() > BROADCAST_QUEUE_SIZE) {
-            broadcastQueue.pollLast();
+            log.warn("Broadcast queue full. Transaction dropped. Consider increasing the Q_SIZE_NODE parameter. Current size: {}", BROADCAST_QUEUE_SIZE);
+            broadcastQueue.poll();
         }
     }
 

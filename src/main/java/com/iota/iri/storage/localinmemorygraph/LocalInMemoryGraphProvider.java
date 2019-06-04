@@ -526,6 +526,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 
+    public String printOrder(List<Hash> order) {
+        String ret = "";
+        for(Hash h : order) {
+            ret += IotaUtils.abbrieviateHash(h, 6) + "\n";
+        }
+        return ret;
+    }
+
 
     //FIXME for debug :: for graphviz visualization
     void printRevGraph(Map<Hash, Set<Hash>> revGraph) {
@@ -1001,7 +1009,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         for(int i= start; i < totalOrderBefore.size(); i++) {
             Hash vet = totalOrderBefore.get(i);
             if(!subGraph.containsKey(vet)) {
-                Set<Hash> st = new HashSet<>(graph.get(totalOrderBefore.get(i)));
+                Set<Hash> st = graph.get(totalOrderBefore.get(i));
                 subGraph.put(vet, st);
 
                 Hash parent = parentGraph.get(vet);
@@ -1025,8 +1033,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
         for(int i= start; i < totalOrderBefore.size(); i++) {
             Hash vet = totalOrderBefore.get(i);
-            // rev
-            //System.out.println(nameMap.get(vet) );
             if(revGraph.containsKey(vet)) {
                 Set<Hash> missed = revGraph.get(vet);
                 subRevGraph.put(vet, missed);
@@ -1043,24 +1049,19 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public void shiftTempGraphs() {
-        graphLock.writeLock().lock();
-        try {
-            graph.clear();
-            revGraph.clear();
-            parentGraph.clear();
-            parentRevGraph.clear();
+        graph.clear();
+        revGraph.clear();
+        parentGraph.clear();
+        parentRevGraph.clear();
 
-            graph = new ConcurrentHashMap<>(subGraph);
-            revGraph = new ConcurrentHashMap<>(subRevGraph);
-            parentGraph = new ConcurrentHashMap<>(subParentGraph);
-            parentRevGraph = new ConcurrentHashMap<>(subParentRevGraph);
+        graph = new ConcurrentHashMap<>(subGraph);
+        revGraph = new ConcurrentHashMap<>(subRevGraph);
+        parentGraph = new ConcurrentHashMap<>(subParentGraph);
+        parentRevGraph = new ConcurrentHashMap<>(subParentRevGraph);
 
-            topOrder.clear();
-            computeToplogicalOrder();
-            computeScore();
-        }finally {
-            graphLock.writeLock().unlock();
-        }
+        topOrder.clear();
+        computeToplogicalOrder();
+        computeScore();
         buildPivotChain();
     }
 
@@ -1068,12 +1069,39 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     //      2) need to cache the total order as well
     //      3) need to persist the total order into RocksDB
     public void induceGraphFromAncestor(Hash curAncestor) throws Exception{
-        List<Hash> totalOrderBefore = totalTopOrder();
-        buildTempGraphs(totalOrderBefore, curAncestor);
-        reserveTempGraphs(totalOrderBefore, curAncestor);
-        shiftTempGraphs();
-        List<Hash> totalOrderAfter = totalTopOrder();
-        insertStableTotalOrder(totalOrderBefore, totalOrderAfter);
+        graphLock.writeLock().lock();
+        String gBefore="", gAfter="", order1="", order2="";
+        try {
+            List<Hash> totalOrderBefore = confluxOrder(getPivot(getGenesis()));
+            gBefore = printGraph(graph, "DOT");
+            order1 = printOrder(totalOrderBefore);
+
+            buildTempGraphs(totalOrderBefore, curAncestor);
+            reserveTempGraphs(totalOrderBefore, curAncestor);
+            shiftTempGraphs();
+
+            gAfter = printGraph(graph, "DOT");
+            List<Hash> totalOrderAfter = confluxOrder(getPivot(getGenesis()));
+            order2 = printOrder(totalOrderAfter);
+
+            insertStableTotalOrder(totalOrderBefore, totalOrderAfter);
+        } catch(RuntimeException e) { 
+            BufferedWriter writer = new BufferedWriter(new FileWriter("before"+ ".dot"));
+            BufferedWriter writer1 = new BufferedWriter(new FileWriter("after" + ".dot"));
+            BufferedWriter writer2 = new BufferedWriter(new FileWriter("order1"));
+            BufferedWriter writer3 = new BufferedWriter(new FileWriter("order2"));
+            writer.write(gBefore);
+            writer1.write(gAfter);
+            writer2.write(order1);
+            writer3.write(order2);
+            writer.close();
+            writer1.close();
+            writer2.close();
+            writer3.close();
+            throw e;
+        } finally {
+            graphLock.writeLock().unlock();
+        }
     }
 
     // before: [A, B, C, D, E, F, G, H]
@@ -1167,6 +1195,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
 
         void refreshGraph() throws Exception {
+            Hash gen = getGenesis();
            log.debug("=========begin to refresh ancestor node==========");
             long begin = System.currentTimeMillis();
             Stack<Hash> ancestors = tangle.getAncestors();
@@ -1184,10 +1213,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 return;
             }
 
-            printAllGraph("before_" + ancestors.size(), curAncestor);
             ancestors = appendNewAncestor(ancestors, curAncestor);
             tangle.storeAncestors(ancestors);
-            induceGraphFromAncestor(curAncestor);
+
+            
+            if(!gen.equals(curAncestor)) {
+                induceGraphFromAncestor(curAncestor);
+            }
         }
 
         private void printAllGraph(String tag, Hash ancestor) {

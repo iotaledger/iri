@@ -11,17 +11,13 @@ import com.iota.iri.service.API;
 public class CheckConsistency extends AbstractResponse {
 
     /**
-     * The state of all the provided tails, which is set to {@code false} on the following checks<br/>
-     * <ol>
-     *     <li>Missing a reference transaction<li/>
-     *     <li>Invalid bundle<li/>
-     *     <li>Tails of tails are invalid<li/>
-     * </ol>
+     * States of the specified transactions in the same order as the values in the `tails` parameter. 
+     * A `true` value means that the transaction is consistent.
      */
     private boolean state;
     
     /**
-     * If state is {@code false}, this provides information on the cause of the inconsistency.
+     * If state is {@code false}, this contains information about why the transaction is inconsistent.
      */
     private String info;
 

@@ -10,6 +10,7 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.ResponseSpecBuilder;
@@ -83,20 +84,24 @@ public class APIIntegrationTests {
             logFolder.create();
 
             configuration = ConfigFactory.createIotaConfig(true);
-            String[] args = {"-p", portStr, "--testnet", "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
+            String[] args = {"-p", portStr, "--testnet", "true", "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
             configuration.parseConfigFromArgs(args);
 
             //create node
             iota = new Iota(configuration);
             ixi = new IXI(iota);
-            api = new API(iota, ixi);
+            api = new API(configuration, ixi, iota.transactionRequester,
+                    iota.spentAddressesService, iota.tangle, iota.bundleValidator,
+                    iota.snapshotProvider, iota.ledgerService, iota.node, iota.tipsSelector,
+                    iota.tipsViewModel, iota.transactionValidator,
+                    iota.latestMilestoneTracker);
 
             //init
             try {
                 iota.init();
                 iota.snapshotProvider.getInitialSnapshot().setTimestamp(0);
-                api.init();
+                api.init(new RestEasy(configuration));
                 ixi.init(IXIConfig.IXI_DIR);
             } catch (final Exception e) {
                 log.error("Exception during IOTA node initialisation: ", e);

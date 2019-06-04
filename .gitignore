@@ -6,6 +6,8 @@
 /.idea
 /bin
 /mainnetdb
+/spent-addresses-db
+/spent-addresses-log
 /mainnet.log
 /*.iml
 .classpath

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class WalkerAlpha implements Walker {
 
     /**
-    * {@code alpha}: a positive number that controls the randomness of the walk. 
+    * {@code alpha}: a positive number that controls the randomness of the walk.
     * The closer it is to 0, the less bias the random walk will be.
     */
     private double alpha;
@@ -68,17 +68,20 @@ public class WalkerAlpha implements Walker {
         if (!walkValidator.isValid(entryPoint)) {
             throw new IllegalStateException("entry point failed consistency check: " + entryPoint.toString());
         }
-        
+
         Optional<Hash> nextStep;
         Deque<Hash> traversedTails = new LinkedList<>();
         traversedTails.add(entryPoint);
 
         //Walk
         do {
+            if(Thread.interrupted()){
+                throw new InterruptedException();
+            }
             nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
             nextStep.ifPresent(traversedTails::add);
          } while (nextStep.isPresent());
-        
+
         log.debug("{} tails traversed to find tip", traversedTails.size());
         tangle.publish("mctn %d", traversedTails.size());
 

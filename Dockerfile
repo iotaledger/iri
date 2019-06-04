@@ -1,4 +1,4 @@
-FROM iotacafe/maven:3.5.4.oracle8u181.1.webupd8.1.1-1 as local_stage_build
+FROM iotacafe/maven:3.5.4.oracle8u181.1.webupd8.1.1-1@sha256:5e30eb28d778a65af2498bf1b7ef594adf046d44a8e4f7b32b326d8d10626e93 as local_stage_build
 MAINTAINER giorgio@iota.org
 
 WORKDIR /iri
@@ -7,7 +7,7 @@ COPY . /iri
 RUN mvn clean package
 
 # execution image
-FROM iotacafe/java:oracle8u181.1.webupd8.1-1
+FROM iotacafe/java:oracle8u181.1.webupd8.1-1@sha256:21b0fb1e5b5be7cd239a742238f346e076a46dc0003670cd50f079780288773f
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         jq curl socat \

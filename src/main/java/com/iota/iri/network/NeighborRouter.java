@@ -268,8 +268,8 @@ public class NeighborRouter {
                                 }
                             } catch (ConnectException ex) {
                                 log.info(
-                                        "couldn't establish connection to neighbor {}, will attempt to reconnect later",
-                                        identity);
+                                        "couldn't establish connection to neighbor {}, will attempt to reconnect later. reason: {}",
+                                        identity, ex.getMessage());
                                 closeNeighborConnection(channel, identity, selector);
                             }
                             continue;
@@ -297,7 +297,7 @@ public class NeighborRouter {
                                         // bytes were written to the channel
                                 }
                             } catch (IOException ex) {
-                                log.error("unable to send message to neighbor {}", identity);
+                                log.error("unable to send message to neighbor {}. reason: {}", identity, ex.getMessage());
                                 closeNeighborConnection(channel, identity, selector);
                                 addToReconnectPool(neighbor);
                                 continue;
@@ -326,7 +326,7 @@ public class NeighborRouter {
                                         // do nothing
                                 }
                             } catch (IOException ex) {
-                                log.error("unable to read message from neighbor {}, reason: {}", identity,
+                                log.error("unable to read message from neighbor {}. reason: {}", identity,
                                         ex.getMessage());
                                 closeNeighborConnection(channel, identity, selector);
                                 addToReconnectPool(neighbor);
@@ -560,7 +560,7 @@ public class NeighborRouter {
 
                 initNeighborConnection(neighborURI, inetAddr);
             } catch (IOException e) {
-                log.warn("unable to build socket for neighbor {}: {}", neighborURI, e.getMessage());
+                log.warn("unable to build socket for neighbor {}. reason: {}", neighborURI, e.getMessage());
             }
         });
     }
@@ -761,7 +761,7 @@ public class NeighborRouter {
         try {
             neighborURI = new URI(uri);
         } catch (URISyntaxException e) {
-            log.error("URI {} raised URI Syntax Exception", uri);
+            log.error("URI {} raised URI Syntax Exception. reason: {}", uri, e.getMessage());
             return Optional.empty();
         }
         if (!isURIValid(neighborURI)) {

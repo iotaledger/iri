@@ -16,7 +16,7 @@ public interface ProtocolConfig extends Config {
     /**
      * @return Descriptions#COORDINATOR
      */
-    public Hash getCoordinator();
+    Hash getCoordinator();
 
     /**
      * @return Descriptions#TRANSACTION_PACKET_SIZE

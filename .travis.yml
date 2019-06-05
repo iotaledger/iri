@@ -29,10 +29,8 @@ script:
   - git checkout -f $TRAVIS_BRANCH
   - git checkout $build_head
   - git merge $TRAVIS_BRANCH
-  - VERSION=$(mvn git-commit-id:revision help:evaluate -Dexpression=project.version | grep -E '^[0-9.]+')
-  - VERSION=${VERSION/DEV*/RELEASE}
+  - VERSION=$(mvn help:evaluate -Dexpression=project.version | grep -E '^[0-9.]+')
   - echo $VERSION
-  - mvn versions:set -DnewVersion=$VERSION
   #run jar sanity tests
   - mvn integration-test -Dlogging-level=INFO
   #jacoco prep (appends to mvn run)
@@ -61,7 +59,7 @@ deploy:
   api_key:
     secure: "j+KolvRrsinh6OTqjli1y5I4gdPdD5MT6RFahVRrznxtcb2t7y6x41PknkI/8BksxLJKKQ1f40L307Aquzih9FmLesWcrYrCOS/B40dlCc3uV8DEZKhZF+QWqvsDpZ0EfiluGFljqGpxwngb/miNObqQzQvzpdUXBpZcuzxgqziynJD6jt3TYbNn544m/i4cWbb++b1h2Bm+jwELzJcf6/CZ1TxUh49vdM4S6yTpvnKwg4NLeH6g8s9oYEN1iwYtQokGKlH/emBZDsqDtF4KH7kXPpEKTcho4nH504XWJpanVAQ02Pha4SAnyVu4rKiLH4e6v99xZOBLVTH/qkvlwzvkNYr2xS5q9T9G7DZBRE+oc2MIbcnuSkhHwrUcmf2Hc0zCIP4RLCXAUuVlNEmIQUKgTezVzaqaEQLsa+EFIoosS+8pT/kVnaLbwxrITUmgM246+gvzMcVg8SmyPvVj6iRxfR6spTd7V2M0ePdqWlCL8P9RY4YrtxR2yJ6/3C0XNf29t+s/r1jat8fwWp8Gf7GiCaJEYG9VO24Chhi+MZCKBJnmx5G/98zvLw3f6a1FsEGZrw9RhF2vJKK6sD3rIvNkUsYmf0OhM7bf0NceFMGTJ/mFzM/JX0OHMtIyAvUfyyPVbQkIHNcGBgQMZasx07K3fjcn2lqv4FbHVi3HbdM="
   file_glob: true
-  file: target/*RELEASE.jar*
+  file: target/*.jar*
   skip_cleanup: true
   before_deploy: openssl aes-256-cbc -K $encrypted_5a15fa813cca_key -iv $encrypted_5a15fa813cca_iv -in codesigning.asc.enc -out codesigning.asc -d && gpg --fast-import codesigning.asc
   deploy: mvn package -P build-extras -Dlogging-level=INFO

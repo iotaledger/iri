@@ -49,7 +49,7 @@ public class ReceivedStageTest {
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);
 
-        Mockito.verify(tvm).setArrivalTime(Mockito.anyByte());
+        Mockito.verify(tvm).setArrivalTime(Mockito.anyLong());
         Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
                 ctx.getNextStage());
@@ -68,7 +68,7 @@ public class ReceivedStageTest {
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);
 
-        Mockito.verify(tvm, Mockito.never()).setArrivalTime(Mockito.anyByte());
+        Mockito.verify(tvm, Mockito.never()).setArrivalTime(Mockito.anyLong());
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
                 ctx.getNextStage());

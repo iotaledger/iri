@@ -75,7 +75,7 @@ public class ReplyStageTest {
         Mockito.when(nodeConfig.getpReplyRandomTip()).thenReturn(0.5);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
         Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(snapshot);
-        Mockito.when(snapshot.getIndex()).thenReturn(9);
+        Mockito.when(snapshot.getIndex()).thenReturn(8);
         Mockito.when(latestMilestoneTracker.getLatestMilestoneIndex()).thenReturn(10);
         Mockito.when(transactionRequester.numberOfTransactionsToRequest()).thenReturn(1);
         Mockito.when(tipsViewModel.getRandomSolidTipHash()).thenReturn(SampleTransaction.CURL_HASH_OF_SAMPLE_TX);

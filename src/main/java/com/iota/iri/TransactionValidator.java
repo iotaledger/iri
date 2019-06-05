@@ -32,26 +32,6 @@ public class TransactionValidator {
     private static final long MAX_TIMESTAMP_FUTURE = 2L * 60L * 60L;
     private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1_000L;
 
-
-    /////////////////////////////////fields for solidification thread//////////////////////////////////////
-
-    private Thread newSolidThread;
-
-    /**
-     * If true use {@link #newSolidTransactionsOne} while solidifying. Else use {@link #newSolidTransactionsTwo}.
-     */
-    private final AtomicBoolean useFirst = new AtomicBoolean(true);
-    /**
-     * Is {@link #newSolidThread} shutting down
-     */
-    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
-    /**
-     * mutex for solidification
-     */
-    private final Object cascadeSync = new Object();
-    private final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
-    private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
-
     /**
      * Constructor for Tangle Validator
      *
@@ -72,11 +52,9 @@ public class TransactionValidator {
      * <ol>
      *     <li>Sets the minimum weight magnitude (MWM). POW on a transaction is validated by counting a certain
      *     number of consecutive 9s in the end of the transaction hash. The number of 9s is the MWM.</li>
-     *     <li>Starts the transaction solidification thread.</li>
      * </ol>
      *
      *
-     * @see #spawnSolidTransactionsPropagation()
      * @param testnet <tt>true</tt> if we are in testnet mode, this caps {@code mwm} to {@value #TESTNET_MWM_CAP}
      *                regardless of parameter input.
      * @param mwm minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the transaction
@@ -84,9 +62,6 @@ public class TransactionValidator {
      */
     public void init(boolean testnet, int mwm) {
         setMwm(testnet, mwm);
-
-        newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
-        newSolidThread.start();
     }
 
     @VisibleForTesting
@@ -97,16 +72,6 @@ public class TransactionValidator {
         if (!testnet){
             minWeightMagnitude = Math.max(minWeightMagnitude, TESTNET_MWM_CAP);
         }
-    }
-
-    /**
-     * Shutdown roots to tip solidification thread
-     * @throws InterruptedException
-     * @see #spawnSolidTransactionsPropagation()
-     */
-    public void shutdown() throws InterruptedException {
-        shuttingDown.set(true);
-        newSolidThread.join();
     }
 
     /**
@@ -283,75 +248,6 @@ public class TransactionValidator {
         return solid;
     }
 
-    public void addSolidTransaction(Hash hash) {
-        synchronized (cascadeSync) {
-            if (useFirst.get()) {
-                newSolidTransactionsOne.add(hash);
-            } else {
-                newSolidTransactionsTwo.add(hash);
-            }
-        }
-    }
-
-    /**
-     * Creates a runnable that runs {@link #propagateSolidTransactions()} in a loop every {@value #SOLID_SLEEP_TIME} ms
-     * @return runnable that is not started
-     */
-    private Runnable spawnSolidTransactionsPropagation() {
-        return () -> {
-            while(!shuttingDown.get()) {
-                propagateSolidTransactions();
-                try {
-                    Thread.sleep(SOLID_SLEEP_TIME);
-                } catch (InterruptedException e) {
-                    // Ignoring InterruptedException. Do not use Thread.currentThread().interrupt() here.
-                    log.error("Thread was interrupted: ", e);
-                }
-            }
-        };
-    }
-
-    /**
-     * Iterates over all currently known solid transactions. For each solid transaction, we find
-     * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
-     * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
-     */
-    @VisibleForTesting
-    void propagateSolidTransactions() {
-        Set<Hash> newSolidHashes = new HashSet<>();
-        useFirst.set(!useFirst.get());
-        //synchronized to make sure no one is changing the newSolidTransactions collections during addAll
-        synchronized (cascadeSync) {
-            //We are using a collection that doesn't get updated by other threads
-            if (useFirst.get()) {
-                newSolidHashes.addAll(newSolidTransactionsTwo);
-                newSolidTransactionsTwo.clear();
-            } else {
-                newSolidHashes.addAll(newSolidTransactionsOne);
-                newSolidTransactionsOne.clear();
-            }
-        }
-        Iterator<Hash> cascadeIterator = newSolidHashes.iterator();
-        while(cascadeIterator.hasNext() && !shuttingDown.get()) {
-            try {
-                Hash hash = cascadeIterator.next();
-                TransactionViewModel transaction = fromHash(tangle, hash);
-                Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
-                for(Hash h: approvers) {
-                    TransactionViewModel tx = fromHash(tangle, h);
-                    if(quietQuickSetSolid(tx)) {
-                        tx.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
-                        tipsViewModel.setSolid(h);
-                        addSolidTransaction(h);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Error while propagating solidity upwards", e);
-            }
-        }
-    }
-
-
     /**
      * Updates a transaction after it was stored in the tangle. Tells the node to not request the transaction anymore,
      * to update the live tips accordingly, and attempts to quickly solidify the transaction.
@@ -387,7 +283,6 @@ public class TransactionValidator {
         if(quickSetSolid(transactionViewModel)) {
             transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
             tipsViewModel.setSolid(transactionViewModel.getHash());
-            addSolidTransaction(transactionViewModel.getHash());
         }
     }
 
@@ -447,11 +342,6 @@ public class TransactionValidator {
             return false;
         }
         return approovee.isSolid();
-    }
-
-    @VisibleForTesting
-    boolean isNewSolidTxSetsEmpty () {
-        return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }
 
     /**

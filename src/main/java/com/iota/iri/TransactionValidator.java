@@ -396,7 +396,7 @@ public class TransactionValidator {
      * @param transactionViewModel transaction we try to solidify.
      * @return <tt>true</tt> if we managed to solidify, else <tt>false</tt>.
      */
-    private boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
+    public boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
         try {
             return quickSetSolid(transactionViewModel);
         } catch (Exception e) {

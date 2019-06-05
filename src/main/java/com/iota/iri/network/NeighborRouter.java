@@ -2,6 +2,8 @@ package com.iota.iri.network;
 
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.conf.NetworkConfig;
+import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.neighbor.Neighbor;
@@ -48,7 +50,8 @@ public class NeighborRouter {
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "Neighbor Router"));
 
     // external
-    private IotaConfig config;
+    private NetworkConfig networkConfig;
+    private ProtocolConfig protocolConfig;
     private TransactionRequester txRequester;
     private TransactionProcessingPipeline txPipeline;
 
@@ -113,26 +116,28 @@ public class NeighborRouter {
     /**
      * Initializes the dependencies of the {@link NeighborRouter}.
      * 
-     * @param config      Network related configuration parameters
+     * @param networkConfig      Network related configuration parameters
+     * @param protocolConfig     Protocol related configuration parameters
      * @param txRequester {@link TransactionRequester} instance to load hashes of requested transactions when gossiping
      * @param txPipeline  {@link TransactionProcessingPipeline} passed to newly created {@link Neighbor} instances
      */
-    public void init(IotaConfig config, TransactionRequester txRequester, TransactionProcessingPipeline txPipeline) {
+    public void init(NetworkConfig networkConfig, ProtocolConfig protocolConfig, TransactionRequester txRequester, TransactionProcessingPipeline txPipeline) {
         this.txRequester = txRequester;
         this.txPipeline = txPipeline;
-        this.config = config;
+        this.networkConfig = networkConfig;
+        this.protocolConfig = protocolConfig;
 
         // reduce the coordinator address to its byte encoded representation
-        byte[] tritsEncodedCooAddress = new byte[config.getCoordinator().toString().length()
+        byte[] tritsEncodedCooAddress = new byte[protocolConfig.getCoordinator().toString().length()
                 * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
-        Converter.trits(config.getCoordinator().toString(), tritsEncodedCooAddress, 0);
+        Converter.trits(protocolConfig.getCoordinator().toString(), tritsEncodedCooAddress, 0);
         byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         Converter.bytes(tritsEncodedCooAddress, byteEncodedCooAddress);
     }
 
     private void initNeighbors() {
         // parse URIs
-        config.getNeighbors().stream()
+        networkConfig.getNeighbors().stream()
                 .distinct()
                 .map(NeighborRouter::parseURI)
                 .filter(Optional::isPresent)
@@ -162,8 +167,8 @@ public class NeighborRouter {
             serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            InetSocketAddress tcpBindAddr = new InetSocketAddress(config.getNeighboringSocketAddress(),
-                    config.getNeighboringSocketPort());
+            InetSocketAddress tcpBindAddr = new InetSocketAddress(networkConfig.getNeighboringSocketAddress(),
+                    networkConfig.getNeighboringSocketPort());
             serverSocketChannel.socket().bind(tcpBindAddr);
             log.info("bound server TCP socket to {}", tcpBindAddr);
 
@@ -176,7 +181,7 @@ public class NeighborRouter {
             connectToWantedNeighbors();
 
             long lastReconnectAttempts = System.currentTimeMillis();
-            long reconnectAttemptTimeout = TimeUnit.SECONDS.toMillis(config.getReconnectAttemptIntervalSeconds());
+            long reconnectAttemptTimeout = TimeUnit.SECONDS.toMillis(networkConfig.getReconnectAttemptIntervalSeconds());
 
             while (!shutdown.get()) {
                 selector.select(reconnectAttemptTimeout);
@@ -217,8 +222,8 @@ public class NeighborRouter {
                             if (domain != null) {
                                 newNeighbor.setDomain(domain);
                             }
-                            newNeighbor.send(Protocol.createHandshakePacket((char) config.getNeighboringSocketPort(),
-                                    byteEncodedCooAddress, (byte) config.getMwm()));
+                            newNeighbor.send(Protocol.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
+                                    byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
                             log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
                             newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
                             continue;
@@ -262,8 +267,8 @@ public class NeighborRouter {
                                     key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                                     // add handshaking packet as the initial packet to send
                                     neighbor.send(
-                                            Protocol.createHandshakePacket((char) config.getNeighboringSocketPort(),
-                                                    byteEncodedCooAddress, (byte) config.getMwm()));
+                                            Protocol.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
+                                                    byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
                                     continue;
                                 }
                             } catch (ConnectException ex) {
@@ -457,9 +462,9 @@ public class NeighborRouter {
         }
 
         // check whether same MWM is used
-        if (handshake.getMWM() != config.getMwm()) {
+        if (handshake.getMWM() != protocolConfig.getMwm()) {
             log.error("dropping handshaked connection to neighbor {} as it uses a different MWM ({} instead of {})",
-                    identity, handshake.getMWM(), config.getMwm());
+                    identity, handshake.getMWM(), protocolConfig.getMwm());
             closeNeighborConnection(channel, null, selector);
             return false;
         }
@@ -508,7 +513,7 @@ public class NeighborRouter {
         }
 
         // check if the given host + server socket port combination is actually defined in the config/wanted
-        if (!config.isAutoTetheringEnabled() && !allowedNeighbors.contains(newIdentity)) {
+        if (!networkConfig.isAutoTetheringEnabled() && !allowedNeighbors.contains(newIdentity)) {
             log.info("dropping handshaked connection as neighbor from {} is not allowed to connect", newIdentity);
             closeNeighborConnection(channel, null, selector);
             return false;
@@ -639,7 +644,7 @@ public class NeighborRouter {
         }
         boolean whitelisted = hostsWhitelist.contains(ipAddress);
         if (!whitelisted) {
-            if (!config.isAutoTetheringEnabled()) {
+            if (!networkConfig.isAutoTetheringEnabled()) {
                 log.info("blacklisting/dropping new connection as neighbor from {} is not defined in the config",
                         ipAddress);
                 hostsBlacklist.add(ipAddress);
@@ -682,7 +687,7 @@ public class NeighborRouter {
     private boolean availableNeighborSlotsFilled() {
         // while this check is not thread-safe, initiated connections will be dropped
         // when their handshaking was done but already all neighbor slots are filled
-        return connectedNeighbors.size() >= config.getMaxNeighbors();
+        return connectedNeighbors.size() >= networkConfig.getMaxNeighbors();
     }
 
     /**
@@ -839,7 +844,7 @@ public class NeighborRouter {
             throws Exception {
         byte[] requestedHash = null;
         if (!useHashOfTVM) {
-            Hash hash = txRequester.transactionToRequest(rnd.nextDouble() < config.getpSelectMilestoneChild());
+            Hash hash = txRequester.transactionToRequest(rnd.nextDouble() < protocolConfig.getpSelectMilestoneChild());
             if (hash != null) {
                 requestedHash = hash.bytes();
             }

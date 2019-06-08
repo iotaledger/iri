@@ -32,5 +32,13 @@ public interface SpentAddressesProvider {
      * @throws SpentAddressesException If the provider fails to add an address
      */
     void saveAddressesBatch(Collection<Hash> addressHashes) throws SpentAddressesException;
+    
+    /**
+     * Loads all spent addresses we know of in a collection
+     * 
+     * @return The spent addresses
+     * @throws SpentAddressesException If the provider fails read
+     */
+    Collection<Hash> getAllAddresses() throws SpentAddressesException;
 
 }

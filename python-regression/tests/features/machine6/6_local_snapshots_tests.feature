@@ -79,6 +79,25 @@ Feature: Test Bootstrapping With LS
     Then the response for "checkConsistency" should return null
 
 
+  Scenario: Check unconfirmed transaction is spent from
+    Issues a value transaction that will be unconfirmed, and check that the address was spent from.
+
+    Given a transaction is generated and attached on "nodeE" with:
+      |keys                       |values                   |type           |
+      |address                    |TEST_ADDRESS             |staticValue    |
+      |value                      |10                       |int            |
+      |seed                       |UNCONFIRMED_TEST_SEED    |staticValue    |
+
+    When "wereAddressesSpentFrom" is called on "nodeE" with:
+      |keys                       |values                   |type             |
+      |addresses                  |UNCONFIRMED_TEST_ADDRESS |staticValue      |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type             |
+      |addresses                  |True                     |boolList         |
+
+
+
   Scenario: Check addresses spent from after pruning
     Ensures that a node with a spent address registers that the address is spent from both before and after the
     transaction has been pruned from the DB.
@@ -102,4 +121,5 @@ Feature: Test Bootstrapping With LS
     Then the response for "wereAddressesSpentFrom" should return with:
       |keys                       |values                   |type             |
       |addresses                  |True                     |boolList         |
+
 

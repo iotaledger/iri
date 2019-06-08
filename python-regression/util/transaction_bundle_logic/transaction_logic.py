@@ -89,6 +89,10 @@ def check_for_seed(arg_list):
         if arg['keys'] == 'seed' and arg['type'] == 'staticList':
             seed = arg['values']
 
+        elif arg['keys'] == 'seed' and arg['type'] == 'staticValue':
+            seed = getattr(static, arg['values'])
+
+
     return seed
 
 

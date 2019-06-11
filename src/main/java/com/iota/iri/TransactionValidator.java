@@ -268,10 +268,10 @@ public class TransactionValidator {
                 if (transaction.getType() == PREFILLED_SLOT) {
                     solid = false;
 
-                    if (transactionRequester.isTransactionRequested(hashPointer, milestone)) {
+                    if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
+                        transactionRequester.requestTransaction(hashPointer, milestone);
                         continue;
                     }
-                    transactionRequester.requestTransaction(hashPointer, milestone);
                 } else {
                     nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());

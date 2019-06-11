@@ -712,7 +712,7 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT;
     }
 
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final Set<Hash> analyzedHashes)
+    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final LinkedHashSet<Hash> analyzedHashes)
             throws Exception {
         Object[] hashes = analyzedHashes.toArray();
         TransactionViewModel transactionViewModel;

@@ -247,7 +247,7 @@ public class TransactionValidator {
         if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
-        Set<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
+        LinkedHashSet<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
         if(maxProcessedTransactions != Integer.MAX_VALUE) {
             maxProcessedTransactions += analyzedHashes.size();
         }
@@ -263,7 +263,7 @@ public class TransactionValidator {
                 return false;
             }
 
-            final TransactionViewModel transaction = fromHash(tangle, hashPointer);
+            TransactionViewModel transaction = fromHash(tangle, hashPointer);
             if (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
                 if (transaction.getType() == PREFILLED_SLOT) {
                     solid = false;

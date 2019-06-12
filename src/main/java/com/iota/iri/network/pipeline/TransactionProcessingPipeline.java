@@ -15,7 +15,7 @@ import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,13 +61,11 @@ public class TransactionProcessingPipeline {
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
 
-    private FIFOCache<Long, Hash> recentlySeenBytesCache;
-    private BlockingQueue<ProcessingContext<PreProcessPayload>> preProcessStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<
-            ProcessingContext<? extends ValidationPayload>> validationStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext<ReceivedPayload>> receivedStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext<BroadcastPayload>> broadcastStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext<ReplyPayload>> replyStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
 
     /**
      * Defines the different stages of the {@link TransactionProcessingPipeline}.
@@ -91,7 +89,7 @@ public class TransactionProcessingPipeline {
     public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
             SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
             LatestMilestoneTracker latestMilestoneTracker) {
-        this.recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
+        FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
                 snapshotProvider, recentlySeenBytesCache);
@@ -145,10 +143,7 @@ public class TransactionProcessingPipeline {
                             receivedStageQueue.put(ctx);
                             break;
                         case MULTIPLE:
-                            ImmutablePair<ProcessingContext<ReplyPayload>,
-                                    ProcessingContext<
-                                            ReceivedPayload>> payload = (ImmutablePair<ProcessingContext<ReplyPayload>,
-                                                    ProcessingContext<ReceivedPayload>>) ctx.getPayload();
+                            MultiStagePayload payload = (MultiStagePayload) ctx.getPayload();
                             replyStageQueue.put(payload.getLeft());
                             receivedStageQueue.put(payload.getRight());
                             break;
@@ -210,7 +205,7 @@ public class TransactionProcessingPipeline {
      * 
      * @return the received stage queue
      */
-    public BlockingQueue<ProcessingContext<ReceivedPayload>> getReceivedStageQueue() {
+    public BlockingQueue<ProcessingContext> getReceivedStageQueue() {
         return receivedStageQueue;
     }
 
@@ -219,7 +214,7 @@ public class TransactionProcessingPipeline {
      * 
      * @return the broadcast stage queue.
      */
-    public BlockingQueue<ProcessingContext<BroadcastPayload>> getBroadcastStageQueue() {
+    public BlockingQueue<ProcessingContext> getBroadcastStageQueue() {
         return broadcastStageQueue;
     }
 
@@ -228,7 +223,7 @@ public class TransactionProcessingPipeline {
      * 
      * @return the reply stage queue
      */
-    public BlockingQueue<ProcessingContext<ReplyPayload>> getReplyStageQueue() {
+    public BlockingQueue<ProcessingContext> getReplyStageQueue() {
         return replyStageQueue;
     }
 
@@ -237,7 +232,7 @@ public class TransactionProcessingPipeline {
      * 
      * @return the validation stage queue
      */
-    public BlockingQueue<ProcessingContext<? extends ValidationPayload>> getValidationStageQueue() {
+    public BlockingQueue<ProcessingContext> getValidationStageQueue() {
         return validationStageQueue;
     }
 
@@ -248,7 +243,7 @@ public class TransactionProcessingPipeline {
      * @param data     the data to process
      */
     public void process(Neighbor neighbor, ByteBuffer data) {
-        ProcessingContext<PreProcessPayload> ctx = new ProcessingContext(new PreProcessPayload(neighbor, data));
+        ProcessingContext ctx = new ProcessingContext(new PreProcessPayload(neighbor, data));
         try {
             preProcessStageQueue.put(ctx);
         } catch (InterruptedException e) {
@@ -266,7 +261,7 @@ public class TransactionProcessingPipeline {
         Converter.bytes(txTrits, txBytes);
         long txDigest = NeighborRouter.getTxCacheDigest(txBytes);
         HashingPayload payload = new HashingPayload(null, txTrits, txDigest, null);
-        hashAndValidate(new ProcessingContext<HashingPayload>(payload));
+        hashAndValidate(new ProcessingContext(payload));
     }
 
     /**
@@ -275,10 +270,10 @@ public class TransactionProcessingPipeline {
      * 
      * @param ctx the hashing stage {@link ProcessingContext}
      */
-    private void hashAndValidate(ProcessingContext<HashingPayload> ctx) {
+    private void hashAndValidate(ProcessingContext ctx) {
         // the hashing already runs in its own thread,
         // the callback will submit the data to the validation stage
-        HashingPayload hashingStagePayload = ctx.getPayload();
+        HashingPayload hashingStagePayload = (HashingPayload) ctx.getPayload();
         hashingStagePayload.setHashRequest(new HashRequest(hashingStagePayload.getTxTrits(), hashTrits -> {
             try {
                 hashingStagePayload.setHashTrits(hashTrits);

@@ -7,13 +7,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * The {@link BroadcastStage} takes care of broadcasting newly received transactions to all neighbors except the
  * neighbor from which the transaction originated from.
  */
-public class BroadcastStage {
+public class BroadcastStage implements Stage {
 
     private static final Logger log = LoggerFactory.getLogger(BroadcastStage.class);
 
@@ -37,14 +36,14 @@ public class BroadcastStage {
      */
     public ProcessingContext process(ProcessingContext ctx) {
         BroadcastPayload payload = (BroadcastPayload) ctx.getPayload();
-        Optional<Neighbor> optOriginNeighbor = payload.getOriginNeighbor();
+        Neighbor originNeighbor = payload.getOriginNeighbor();
         TransactionViewModel tvm = payload.getTransactionViewModel();
 
         // racy
         Map<String, Neighbor> currentlyConnectedNeighbors = neighborRouter.getConnectedNeighbors();
         for (Neighbor neighbor : currentlyConnectedNeighbors.values()) {
             // don't send back to origin neighbor
-            if (optOriginNeighbor.isPresent() && neighbor.equals(optOriginNeighbor.get())) {
+            if (neighbor.equals(originNeighbor)) {
                 continue;
             }
             try {

@@ -54,7 +54,7 @@ public class ReceivedStageTest {
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
                 ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor is still the same", neighbor, broadcastPayload.getOriginNeighbor().get());
+        assertEquals("neighbor is still the same", neighbor, broadcastPayload.getOriginNeighbor());
         assertEquals("tvm is still the same", tvm, broadcastPayload.getTransactionViewModel());
     }
 
@@ -73,7 +73,7 @@ public class ReceivedStageTest {
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
                 ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor should still be the same", neighbor, broadcastPayload.getOriginNeighbor().get());
+        assertEquals("neighbor should still be the same", neighbor, broadcastPayload.getOriginNeighbor());
         assertEquals("tvm should still be the same", tvm, broadcastPayload.getTransactionViewModel());
     }
 

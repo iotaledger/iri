@@ -3,12 +3,10 @@ package com.iota.iri.network.pipeline;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.neighbor.Neighbor;
 
-import java.util.Optional;
-
 /**
  * Defines a payload which gets submitted to the {@link BroadcastStage}.
  */
-public class BroadcastPayload {
+public class BroadcastPayload extends Payload {
 
     private Neighbor originNeighbor;
     private TransactionViewModel tvm;
@@ -27,10 +25,10 @@ public class BroadcastPayload {
     /**
      * Gets the origin neighbor.
      * 
-     * @return empty if there wasn't an origin neighbor
+     * @return the origin neighbor
      */
-    public Optional<Neighbor> getOriginNeighbor() {
-        return originNeighbor == null ? Optional.empty() : Optional.of(originNeighbor);
+    public Neighbor getOriginNeighbor() {
+        return originNeighbor;
     }
 
     /**

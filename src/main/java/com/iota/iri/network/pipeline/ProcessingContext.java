@@ -3,20 +3,18 @@ package com.iota.iri.network.pipeline;
 /**
  * A {@link ProcessingContext} defines a context within the {@link TransactionProcessingPipeline} of processing a
  * transaction. It holds the information to which stage to be submitted next and the associated payload.
- * 
- * @param <T> the payload type
  */
-public class ProcessingContext<T> {
+public class ProcessingContext {
 
     private TransactionProcessingPipeline.Stage nextStage;
-    private T payload;
+    private Payload payload;
 
     /**
      * Creates a new {@link ProcessingContext}.
      * 
      * @param payload The payload
      */
-    public ProcessingContext(T payload) {
+    public ProcessingContext(Payload payload) {
         this.payload = payload;
     }
 
@@ -26,7 +24,7 @@ public class ProcessingContext<T> {
      * @param nextStage The next stage
      * @param payload   The payload for the next stage
      */
-    public ProcessingContext(TransactionProcessingPipeline.Stage nextStage, T payload) {
+    public ProcessingContext(TransactionProcessingPipeline.Stage nextStage, Payload payload) {
         this.nextStage = nextStage;
         this.payload = payload;
     }
@@ -36,7 +34,7 @@ public class ProcessingContext<T> {
      * 
      * @return the payload
      */
-    public T getPayload() {
+    public Payload getPayload() {
         return payload;
     }
 
@@ -45,7 +43,7 @@ public class ProcessingContext<T> {
      * 
      * @param payload the payload to set
      */
-    public void setPayload(T payload) {
+    public void setPayload(Payload payload) {
         this.payload = payload;
     }
 

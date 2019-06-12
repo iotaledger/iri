@@ -45,13 +45,13 @@ public class PreProcessStageTest {
         assertEquals("should submit to hashing stage next",TransactionProcessingPipeline.Stage.HASHING, ctx.getNextStage());
         HashingPayload hashingPayload = (HashingPayload) ctx.getPayload();
 
-        assertEquals("neighbor should still be the same", neighbor, hashingPayload.getNeighbor().get());
+        assertEquals("neighbor should still be the same", neighbor, hashingPayload.getOriginNeighbor());
         assertEquals("bytes digest of the tx should still be the same", SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
-                hashingPayload.getTxBytesDigest().get().longValue());
+                hashingPayload.getTxBytesDigest().longValue());
         assertArrayEquals("tx trits should still be the same", SampleTransaction.TRITS_OF_SAMPLE_TX,
                 hashingPayload.getTxTrits());
         assertEquals("requested hash should still be the same", Hash.NULL_HASH,
-                hashingPayload.getHashOfRequestedTx().get());
+                hashingPayload.getHashOfRequestedTx());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class PreProcessStageTest {
         assertEquals("should submit to reply stage next", TransactionProcessingPipeline.Stage.REPLY,
                 ctx.getNextStage());
         ReplyPayload replyPayload = (ReplyPayload) ctx.getPayload();
-        assertEquals("neighor should still be the same", neighbor, replyPayload.getNeighbor());
+        assertEquals("neighor should still be the same", neighbor, replyPayload.getOriginNeighbor());
         assertEquals("requested tx hash should still be the same", Hash.NULL_HASH, replyPayload.getHashOfRequestedTx());
     }
 
@@ -93,10 +93,10 @@ public class PreProcessStageTest {
                 ctx.getNextStage());
         HashingPayload hashingPayload = (HashingPayload) ctx.getPayload();
         assertEquals("bytes digest should still be the same", SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
-                hashingPayload.getTxBytesDigest().get().longValue());
+                hashingPayload.getTxBytesDigest().longValue());
         assertArrayEquals("tx trits should still be the same", SampleTransaction.TRITS_OF_SAMPLE_TX,
                 hashingPayload.getTxTrits());
         assertEquals("requested tx hash should still be the same", Hash.NULL_HASH,
-                hashingPayload.getHashOfRequestedTx().get());
+                hashingPayload.getHashOfRequestedTx());
     }
 }

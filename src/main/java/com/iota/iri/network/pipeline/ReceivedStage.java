@@ -8,13 +8,11 @@ import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 /**
  * The {@link ReceivedStage} stores the given transaction in the database, updates the arrival time and sender and then
  * submits to the {@link BroadcastStage}.
  */
-public class ReceivedStage {
+public class ReceivedStage implements Stage {
 
     private static final Logger log = LoggerFactory.getLogger(ReceivedStage.class);
 
@@ -44,7 +42,7 @@ public class ReceivedStage {
      */
     public ProcessingContext process(ProcessingContext ctx) {
         ReceivedPayload payload = (ReceivedPayload) ctx.getPayload();
-        Optional<Neighbor> optNeighbor = payload.getNeighbor();
+        Neighbor originNeighbor = payload.getOriginNeighbor();
         TransactionViewModel tvm = payload.getTransactionViewModel();
 
         boolean stored;
@@ -52,7 +50,9 @@ public class ReceivedStage {
             stored = tvm.store(tangle, snapshotProvider.getInitialSnapshot());
         } catch (Exception e) {
             log.error("error persisting newly received tx", e);
-            optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrInvalidTransactionsCount());
+            if (originNeighbor != null) {
+                originNeighbor.getMetrics().incrInvalidTransactionsCount();
+            }
             ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
             return ctx;
         }
@@ -62,19 +62,21 @@ public class ReceivedStage {
             try {
                 txValidator.updateStatus(tvm);
                 // neighbor might be null because tx came from a broadcastTransaction command
-                if (optNeighbor.isPresent()) {
-                    tvm.updateSender(optNeighbor.get().getHostAddressAndPort());
+                if (originNeighbor != null) {
+                    tvm.updateSender(originNeighbor.getHostAddressAndPort());
                 }
                 tvm.update(tangle, snapshotProvider.getInitialSnapshot(), "arrivalTime|sender");
             } catch (Exception e) {
                 log.error("error updating newly received tx", e);
             }
-            optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrNewTransactionsCount());
+            if (originNeighbor != null) {
+                originNeighbor.getMetrics().incrNewTransactionsCount();
+            }
         }
 
         // broadcast the newly saved tx to the other neighbors
         ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-        ctx.setPayload(new BroadcastPayload(optNeighbor.orElse(null), tvm));
+        ctx.setPayload(new BroadcastPayload(originNeighbor, tvm));
         return ctx;
     }
 }

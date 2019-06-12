@@ -318,7 +318,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--auto-tethering"}, description = NetworkConfig.Descriptions.AUTO_TETHERING_ENABLED)
+    @Parameter(names = {"--auto-tethering"}, description = NetworkConfig.Descriptions.AUTO_TETHERING_ENABLED, arity = 1)
     protected void setAutoTetheringEnabled(boolean autoTetheringEnabled) {
         this.autoTetheringEnabled = autoTetheringEnabled;
     }

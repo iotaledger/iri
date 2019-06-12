@@ -8,8 +8,6 @@ import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
@@ -18,8 +16,6 @@ import java.nio.ByteBuffer;
  * converts the transaction to its trits representation.
  */
 public class PreProcessStage {
-
-    private static final Logger log = LoggerFactory.getLogger(PreProcessStage.class);
 
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
 
@@ -58,7 +54,7 @@ public class PreProcessStage {
                 Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
 
         // increment all txs count
-        payload.getNeighbor().getMetrics().incrAllTransactionsCount();
+        payload.getOriginNeighbor().getMetrics().incrAllTransactionsCount();
 
         // compute digest of tx bytes data
         long txDigest = NeighborRouter.getTxCacheDigest(txDataBytes);
@@ -71,7 +67,7 @@ public class PreProcessStage {
             // reply with a random tip by setting the request hash to the null hash
             requestedHash = requestedHash.equals(receivedTxHash) ? Hash.NULL_HASH : requestedHash;
             ctx.setNextStage(TransactionProcessingPipeline.Stage.REPLY);
-            ctx.setPayload(new ReplyPayload(payload.getNeighbor(), requestedHash));
+            ctx.setPayload(new ReplyPayload(payload.getOriginNeighbor(), requestedHash));
             return ctx;
         }
 
@@ -81,7 +77,7 @@ public class PreProcessStage {
 
         // submit to hashing stage.
         ctx.setNextStage(TransactionProcessingPipeline.Stage.HASHING);
-        HashingPayload hashingStagePayload = new HashingPayload(payload.getNeighbor(), txTrits, txDigest,
+        HashingPayload hashingStagePayload = new HashingPayload(payload.getOriginNeighbor(), txTrits, txDigest,
                 requestedHash);
         ctx.setPayload(hashingStagePayload);
         return ctx;

@@ -78,10 +78,10 @@ public class TransactionProcessingPipelineTest {
     private ProcessingContext divergeToReplyAndReceivedCtx;
 
     @Mock
-    private ProcessingContext<ReplyPayload> replyCtx;
+    private ProcessingContext replyCtx;
 
     @Mock
-    private ProcessingContext<ReceivedPayload> receivedCtx;
+    private ProcessingContext receivedCtx;
 
     @Mock
     private ProcessingContext broadcastCtx;
@@ -124,12 +124,11 @@ public class TransactionProcessingPipelineTest {
         mockHashingStage(pipeline);
 
         // mock validation context/stage
-        ImmutablePair<ProcessingContext<ReplyPayload>,
-                ProcessingContext<ReceivedPayload>> divergePaypload = new ImmutablePair<>(replyCtx, receivedCtx);
+        MultiStagePayload divergePayload = new MultiStagePayload(replyCtx, receivedCtx);
         Mockito.when(validationStage.process(validationCtx)).thenReturn(divergeToReplyAndReceivedCtx);
         Mockito.when(divergeToReplyAndReceivedCtx.getNextStage())
                 .thenReturn(TransactionProcessingPipeline.Stage.MULTIPLE);
-        Mockito.when(divergeToReplyAndReceivedCtx.getPayload()).thenReturn(divergePaypload);
+        Mockito.when(divergeToReplyAndReceivedCtx.getPayload()).thenReturn(divergePayload);
 
         // mock received
         Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);

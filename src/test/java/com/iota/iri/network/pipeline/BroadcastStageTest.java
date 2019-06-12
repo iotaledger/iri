@@ -41,7 +41,7 @@ public class BroadcastStageTest {
         BroadcastStage broadcastStage = new BroadcastStage(neighborRouter);
         TransactionViewModel tvm = new TransactionViewModel(new Transaction(), null);
         BroadcastPayload broadcastPayload = new BroadcastPayload(neighborA, tvm);
-        ProcessingContext ctx = new ProcessingContext<>(null, broadcastPayload);
+        ProcessingContext ctx = new ProcessingContext(null, broadcastPayload);
         broadcastStage.process(ctx);
 
         try {
@@ -61,7 +61,7 @@ public class BroadcastStageTest {
         BroadcastStage broadcastStage = new BroadcastStage(neighborRouter);
         TransactionViewModel tvm = new TransactionViewModel(new Transaction(), null);
         BroadcastPayload broadcastPayload = new BroadcastPayload(null, tvm);
-        ProcessingContext ctx = new ProcessingContext<>(null, broadcastPayload);
+        ProcessingContext ctx = new ProcessingContext(null, broadcastPayload);
         broadcastStage.process(ctx);
 
         try {

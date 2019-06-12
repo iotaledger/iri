@@ -1,6 +1,5 @@
 package com.iota.iri.network.protocol.message.impl;
 
-import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.network.protocol.ProtocolMessage;
 import com.iota.iri.network.protocol.message.MessageReader;
 

@@ -6,7 +6,7 @@ import com.iota.iri.crypto.batched.HashRequest;
 /**
  * The {@link HashingStage} batches up transaction trits and then hashes them using a {@link BatchedHasher} in one go.
  */
-public class HashingStage {
+public class HashingStage implements Stage {
 
     private BatchedHasher batchedHasher;
 

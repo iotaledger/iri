@@ -40,10 +40,6 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private BlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(100);
     private ByteBuffer currentToWrite;
 
-    // stats
-    private long msgsWritten;
-    private long msgsRead;
-
     private NeighborState state = NeighborState.HANDSHAKING;
     private ReadState readState = ReadState.PARSE_HEADER;
 
@@ -140,7 +136,6 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                         handshake = Handshake.fromByteBuffer(msg);
                         break;
                     case TRANSACTION_GOSSIP:
-                        msgsRead++;
                         txPipeline.process(this, msg);
                         break;
                     default:
@@ -173,7 +168,6 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private int writeMsg() throws IOException {
         int written = channel.write(currentToWrite);
         if (!currentToWrite.hasRemaining()) {
-            msgsWritten++;
             currentToWrite = null;
         }
         return written;
@@ -254,21 +248,4 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
         return protocolVersion;
     }
 
-    /**
-     * Gets the number of messages written.
-     * 
-     * @return the number of messages written
-     */
-    public long getMessagesWrittenCount() {
-        return msgsWritten;
-    }
-
-    /**
-     * Gets the number of messages read.
-     * 
-     * @return the number of messages read
-     */
-    public long getMessagesReadCount() {
-        return msgsRead;
-    }
 }

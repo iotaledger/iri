@@ -7,7 +7,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory;
  * receive a random tip, when the requested transaction hash is the same as the transaction hash of the transaction in
  * the gossip payload.
  */
-public class ReplyStage {
+public class ReplyStage implements Stage {
 
     private static final Logger log = LoggerFactory.getLogger(ReplyStage.class);
 
@@ -96,7 +95,7 @@ public class ReplyStage {
      */
     public ProcessingContext process(ProcessingContext ctx) {
         ReplyPayload payload = (ReplyPayload) ctx.getPayload();
-        Neighbor neighbor = payload.getNeighbor();
+        Neighbor neighbor = payload.getOriginNeighbor();
         Hash hashOfRequestedTx = payload.getHashOfRequestedTx();
 
         TransactionViewModel tvm = null;
@@ -105,8 +104,8 @@ public class ReplyStage {
             try {
                 // don't reply to random tip requests if we are synchronized with a max delta of one
                 // to the newest milestone
-                if (snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker
-                        .getLatestMilestoneIndex() -1) {
+                if (snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex()
+                        - 1) {
                     return ctx;
                 }
                 // retrieve random tx

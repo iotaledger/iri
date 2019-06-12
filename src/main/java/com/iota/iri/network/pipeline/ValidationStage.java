@@ -7,9 +7,6 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.neighbor.Neighbor;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-
-import java.util.Optional;
 
 import static com.iota.iri.model.Hash.SIZE_IN_TRITS;
 
@@ -18,7 +15,7 @@ import static com.iota.iri.model.Hash.SIZE_IN_TRITS;
  * further to the {@link ReceivedStage} or/and {@link ReplyStage} depending on whether the transaction originated from a
  * neighbor or not.
  */
-public class ValidationStage {
+public class ValidationStage implements Stage {
 
     private TransactionValidator txValidator;
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
@@ -46,9 +43,9 @@ public class ValidationStage {
         ValidationPayload payload = (ValidationPayload) ctx.getPayload();
         byte[] hashTrits = payload.getHashTrits();
         byte[] txTrits = payload.getTxTrits();
-        Optional<Neighbor> optNeighbor = payload.getNeighbor();
-        Optional<Long> optTxDigest = payload.getTxBytesDigest();
-        Optional<Hash> optHashOfRequestedTx = payload.getHashOfRequestedTx();
+        Neighbor originNeighbor = payload.getOriginNeighbor();
+        Long txBytesDigest = payload.getTxBytesDigest();
+        Hash hashOfRequestedTx = payload.getHashOfRequestedTx();
 
         // construct transaction hash and model
         TransactionHash txHash = (TransactionHash) HashFactory.TRANSACTION.create(hashTrits, 0, SIZE_IN_TRITS);
@@ -57,27 +54,28 @@ public class ValidationStage {
         try {
             txValidator.runValidation(tvm, txValidator.getMinWeightMagnitude());
         } catch (TransactionValidator.StaleTimestampException ex) {
-            optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrStaleTransactionsCount());
+            if (originNeighbor != null) {
+                originNeighbor.getMetrics().incrSentTransactionsCount();
+            }
             ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
             return ctx;
         } catch (Exception ex) {
-            optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrInvalidTransactionsCount());
+            if (originNeighbor != null) {
+                originNeighbor.getMetrics().incrInvalidTransactionsCount();
+            }
             ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
             return ctx;
         }
 
         // cache the tx hash under the tx payload digest
-        optTxDigest.ifPresent(txDigest -> {
-            if (txDigest == 0) {
-                return;
-            }
-            recentlySeenBytesCache.put(txDigest, txHash);
-        });
+        if (txBytesDigest != null && txBytesDigest != 0) {
+            recentlySeenBytesCache.put(txBytesDigest, txHash);
+        }
 
-        ReceivedPayload receivedStagePayload = new ReceivedPayload(optNeighbor.orElse(null), tvm);
+        ReceivedPayload receivedStagePayload = new ReceivedPayload(originNeighbor, tvm);
 
         // go directly to receive stage if the transaction didn't originate from a neighbor
-        if (!optHashOfRequestedTx.isPresent() || !optNeighbor.isPresent()) {
+        if (hashOfRequestedTx == null || originNeighbor == null) {
             ctx.setNextStage(TransactionProcessingPipeline.Stage.RECEIVED);
             ctx.setPayload(receivedStagePayload);
             return ctx;
@@ -85,15 +83,14 @@ public class ValidationStage {
 
         // diverge flow to received and reply stage
         ctx.setNextStage(TransactionProcessingPipeline.Stage.MULTIPLE);
-        Hash requestedHash = optHashOfRequestedTx.get();
-        Hash txToRequest = requestedHash.equals(txHash) ? Hash.NULL_HASH : requestedHash;
+        hashOfRequestedTx = hashOfRequestedTx.equals(txHash) ? Hash.NULL_HASH : hashOfRequestedTx;
 
-        ReplyPayload replyStagePayload = new ReplyPayload(optNeighbor.get(), txToRequest);
+        ReplyPayload replyStagePayload = new ReplyPayload(originNeighbor, hashOfRequestedTx);
         ProcessingContext replyCtx = new ProcessingContext(TransactionProcessingPipeline.Stage.REPLY,
                 replyStagePayload);
         ProcessingContext receivedCtx = new ProcessingContext(TransactionProcessingPipeline.Stage.RECEIVED,
                 receivedStagePayload);
-        ctx.setPayload(new ImmutablePair<>(replyCtx, receivedCtx));
+        ctx.setPayload(new MultiStagePayload(replyCtx, receivedCtx));
         return ctx;
     }
 }

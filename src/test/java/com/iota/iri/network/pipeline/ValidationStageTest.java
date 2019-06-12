@@ -8,7 +8,6 @@ import com.iota.iri.network.SampleTransaction;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.impl.NeighborMetricsImpl;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -52,12 +51,11 @@ public class ValidationStageTest {
 
         assertEquals("should submit to multiple stages next", TransactionProcessingPipeline.Stage.MULTIPLE,
                 ctx.getNextStage());
-        ImmutablePair<ProcessingContext,
-                ProcessingContext> ctxs = (ImmutablePair<ProcessingContext, ProcessingContext>) ctx.getPayload();
+        MultiStagePayload payload = (MultiStagePayload) ctx.getPayload();
         assertEquals("should submit to reply stage next", TransactionProcessingPipeline.Stage.REPLY,
-                ctxs.getLeft().getNextStage());
+                payload.getLeft().getNextStage());
         assertEquals("should submit to received stage next", TransactionProcessingPipeline.Stage.RECEIVED,
-                ctxs.getRight().getNextStage());
+                payload.getRight().getNextStage());
     }
 
     @Test
@@ -78,7 +76,7 @@ public class ValidationStageTest {
         assertEquals("should submit to received stage next", TransactionProcessingPipeline.Stage.RECEIVED,
                 ctx.getNextStage());
         ReceivedPayload receivedPayload = (ReceivedPayload) ctx.getPayload();
-        assertFalse("neighbor should not be present", receivedPayload.getNeighbor().isPresent());
+        assertFalse("neighbor should not be present", receivedPayload.getOriginNeighbor() != null);
         assertNotNull("tvm should not be null", receivedPayload.getTransactionViewModel());
     }
 

@@ -5,7 +5,7 @@ import com.iota.iri.network.neighbor.Neighbor;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link Handshake} defines information exchanged up on a new connection with a {@link Neighbor}.
+ * Defines information exchanged up on a new connection with a {@link Neighbor}.
  */
 public class Handshake {
 

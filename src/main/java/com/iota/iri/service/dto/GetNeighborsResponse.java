@@ -95,21 +95,6 @@ public class GetNeighborsResponse extends AbstractResponse {
         private long numberOfSentTransactions;
 
         /**
-         * Amount of packets with an unknown message type.
-         */
-        private long numberOfUnknownMsgTypePackets;
-
-        /**
-         * Amount of incompatible packets received.
-         */
-        private long numberOfIncompatiblePackets;
-
-        /**
-         * Amount of packets received with an invalid message length.
-         */
-        private long numberOfInvalidMsgLengthPackets;
-
-        /**
          * Amount of packets dropped from the neighbor's send queue as it was full.
          */
         private long numberOfDroppedSentPackets;
@@ -141,9 +126,6 @@ public class GetNeighborsResponse extends AbstractResponse {
             ne.numberOfStaleTransactions = metrics.getStaleTransactionsCount();
             ne.numberOfNewTransactions = metrics.getNewTransactionsCount();
             ne.numberOfSentTransactions = metrics.getSentTransactionsCount();
-            ne.numberOfUnknownMsgTypePackets = metrics.getUnknownMessageTypePacketsCount();
-            ne.numberOfIncompatiblePackets = metrics.getIncompatiblePacketsCount();
-            ne.numberOfInvalidMsgLengthPackets = metrics.getInvalidProtocolMessageLengthCount();
             ne.numberOfDroppedSentPackets = metrics.getDroppedSendPacketsCount();
             ne.numberOfRandomTransactionRequests = metrics.getRandomTransactionRequestsCount();
             ne.connectionType = "tcp";
@@ -212,27 +194,6 @@ public class GetNeighborsResponse extends AbstractResponse {
          */
         public long getNumberOfRandomTransactionRequests() {
             return numberOfRandomTransactionRequests;
-        }
-
-        /**
-         * {@link #numberOfUnknownMsgTypePackets}
-         */
-        public long getNumberOfUnknownMsgTypePackets() {
-            return numberOfUnknownMsgTypePackets;
-        }
-
-        /**
-         * {@link #numberOfIncompatiblePackets}
-         */
-        public long getNumberOfIncompatiblePackets() {
-            return numberOfIncompatiblePackets;
-        }
-
-        /**
-         * {@link #numberOfInvalidMsgLengthPackets}
-         */
-        public long getNumberOfInvalidMsgLengthPackets() {
-            return numberOfInvalidMsgLengthPackets;
         }
 
         /**

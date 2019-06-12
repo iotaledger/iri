@@ -53,6 +53,7 @@ public class BroadcastStage implements Stage {
             }
         }
 
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
         return ctx;
     }
 }

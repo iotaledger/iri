@@ -71,7 +71,7 @@ public class TransactionProcessingPipeline {
      * Defines the different stages of the {@link TransactionProcessingPipeline}.
      */
     public enum Stage {
-        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT
+        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH,
     }
 
     /**
@@ -144,6 +144,8 @@ public class TransactionProcessingPipeline {
                             broadcastStageQueue.put(ctx);
                             break;
                         case ABORT:
+                            break;
+                        case FINISH:
                             break;
                     }
                 }

@@ -106,6 +106,7 @@ public class ReplyStage implements Stage {
                 // to the newest milestone
                 if (snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex()
                         - 1) {
+                    ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
                     return ctx;
                 }
                 // retrieve random tx
@@ -114,6 +115,7 @@ public class ReplyStage implements Stage {
                 tvm = TransactionViewModel.fromHash(tangle, transactionPointer);
             } catch (Exception e) {
                 log.error("error loading random tip for reply", e);
+                ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
                 return ctx;
             }
         } else {
@@ -123,6 +125,8 @@ public class ReplyStage implements Stage {
                         Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH));
             } catch (Exception e) {
                 log.error("error while searching for explicitly asked for tx", e);
+                ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
+                return ctx;
             }
         }
 
@@ -136,6 +140,7 @@ public class ReplyStage implements Stage {
             } catch (Exception e) {
                 log.error("error adding reply tx to neighbor's send queue", e);
             }
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
             return ctx;
         }
 
@@ -149,6 +154,7 @@ public class ReplyStage implements Stage {
             e.printStackTrace();
         }
 
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
         return ctx;
     }
 

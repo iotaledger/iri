@@ -14,5 +14,4 @@ public abstract class Payload {
      * @return the origin neighbor
      */
     public abstract Neighbor getOriginNeighbor();
-
 }

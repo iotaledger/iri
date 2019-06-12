@@ -39,4 +39,10 @@ public class BroadcastPayload extends Payload {
     public TransactionViewModel getTransactionViewModel() {
         return tvm;
     }
+
+    @Override
+    public String toString() {
+        return "BroadcastPayload{" + "originNeighbor=" + originNeighbor.getHostAddressAndPort() + ", tvm="
+                + tvm.getHash() + '}';
+    }
 }

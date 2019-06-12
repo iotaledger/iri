@@ -43,4 +43,10 @@ public class MultiStagePayload extends Payload {
     public Neighbor getOriginNeighbor() {
         return left.getPayload().getOriginNeighbor();
     }
+
+    @Override
+    public String toString() {
+        return "MultiStagePayload{" + "left=" + left.getPayload().toString() + ", right="
+                + right.getPayload().toString() + '}';
+    }
 }

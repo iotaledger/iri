@@ -46,4 +46,10 @@ public class ReplyPayload extends Payload {
     public Hash getHashOfRequestedTx() {
         return hashOfRequestedTx;
     }
+
+    @Override
+    public String toString() {
+        return "ReplyPayload{" + "neighbor=" + neighbor.getHostAddressAndPort() + ", hashOfRequestedTx="
+                + hashOfRequestedTx.toString() + '}';
+    }
 }

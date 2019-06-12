@@ -3,6 +3,8 @@ package com.iota.iri.network.pipeline;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.neighbor.Neighbor;
 
+import java.util.Arrays;
+
 /**
  * Defines a payload whic gets submitted to the {@link ValidationStage}.
  */
@@ -82,5 +84,12 @@ public class ValidationPayload extends Payload {
      */
     public void setHashTrits(byte[] hashTrits) {
         this.hashTrits = hashTrits;
+    }
+
+    @Override
+    public String toString() {
+        return "ValidationPayload{" + "neighbor=" + neighbor.getHostAddressAndPort() + ", hashTrits="
+                + Arrays.toString(hashTrits) + ", txBytesDigest=" + txBytesDigest + ", hashOfRequestedTx="
+                + hashOfRequestedTx.toString() + '}';
     }
 }

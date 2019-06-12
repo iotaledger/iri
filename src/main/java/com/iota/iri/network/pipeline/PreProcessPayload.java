@@ -47,4 +47,9 @@ public class PreProcessPayload extends Payload {
     public ByteBuffer getData() {
         return data;
     }
+
+    @Override
+    public String toString() {
+        return "PreProcessPayload{" + "neighbor=" + neighbor.getHostAddressAndPort() + '}';
+    }
 }

@@ -37,4 +37,9 @@ public class ReceivedPayload extends Payload {
     public TransactionViewModel getTransactionViewModel() {
         return tvm;
     }
+
+    @Override
+    public String toString() {
+        return "ReceivedPayload{" + "neighbor=" + neighbor.getHostAddressAndPort() + ", tvm=" + tvm.getHash() + '}';
+    }
 }

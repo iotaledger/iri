@@ -46,7 +46,11 @@
 
         <repository>
             <id>maven-repo</id>
-            <url>https://github.com/triasteam/maven/snapshot</url>
+            <url>https://raw.github.com/triasteam/maven/snapshot</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
         </repository>
     </repositories>
 
@@ -55,6 +59,7 @@
         <dependency>
             <groupId>com.iri.utils</groupId>
             <artifactId>utils-crypto</artifactId>
+            <!--<version>0.0.1-SNAPSHOT</version>-->
             <version>0.0.1-SNAPSHOT</version>
             <exclusions>
                 <exclusion>

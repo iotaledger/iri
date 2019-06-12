@@ -1,14 +1,14 @@
 \section{Optimization Methods}
 One of the biggest challenges to maintain the stability of DAG system is that, 
-as the local data structure growing, the graph algorithms ($Pivot()$, $MCMC()$, $StreamNetOrder()$), 
-relies on some of the graph properties that needs to be recalculated every time these functions are called,
+as the local data structure grows, the graph algorithms ($Pivot()$, $MCMC()$, $StreamNetOrder()$), 
+relies on some of the graph operators that need to be recalculated for every newly generated block,
 which are very expensive. 
-Table~\ref{tab:properties} list all the expensive graph properties that are called. 
-Suppose the set of blocks in the DAG is represented by $B$, and the depth of the pivot chain is $d$.
-Then we give the analysis of complexity in the following way. 
-$Score()$ relies on the calculation of $SubTree()$ which is dependent on the breath first search ($BFS$), and the average $BFS$
-complexity would be $O(|B|)$, consider the scenario of MCMC() and Pivot() which are advanced through the main chain,
-the complexity would be in total $O(|B|*d)$ in both of these two cases.
+Table~\ref{tab:properties} list all the expensive graph operators that are called. 
+Suppose the depth of the pivot chain is $d$, then we give the analysis of complexity in the following way. 
+$ParentScore()$  and $Score()$ rely on the breath first search ($BFS$), and the average $BFS$
+complexity would be $O(|B|)$,
+and for each MCMC() and Pivot() called 
+the complexity would be in total $O(|B|^2)$ in both of these two cases.
 The calculation of $Past()$ also relies on the $BFS$ operator, in the StreamNetOrder() algorithm, the complexity would be 
 accrued to $O(|B| * d)$.
 TopOrder() is used in sub-order ranking the blocks in the same epoch.
@@ -21,9 +21,9 @@ It's the classical topological sorting problem, and the complexity in the Stream
 \begin{tabular}{|l|l|l|l|}
 \hline
 Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
-Score(G, b)           & MCMC()           & $O(|B|)$              & $O(|B|*d)$  \\ \hline
-Score(G, b)           & Pivot()          & $O(|B|)$              & $O(|B|*d)$  \\ \hline
-Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$          & $O(|B|*d)$  \\ \hline
+ParentScore(G, b)     & Pivot()          & $O(|B|)$              & $O(|B|^2)$  \\ \hline
+Score(G, b)           & MCMC()           & $O(|B|)$              & $O(|B|^2)$  \\ \hline
+Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$              & $O(|B|*d)$  \\ \hline
 TopOrder(G, b)        & StreamNetOrder() & $O(|B|)$              & $O(|B|)$    \\ \hline
 \end{tabular}}
 \end{center}
@@ -34,7 +34,7 @@ The expensive graph properties could be maintained dynamically as the DAG grows.
 Such that the complexity of calculating these properties would be amortized to each time a new block is generated or merged.
 In the following sections, we will discuss how to design streaming algorithms to achieve this goal.
 
-\subsection{Optimization of Score()}
+\subsection{Optimization of Score() and ParentScore() }
 In the optimized version, the DAG will have a map that keeps the score of each block. Once there is a new generated/merged block,
 it will trigger the BFS based UpdateScore() algorithm to update the scores of the block in the map that are referenced by the new block.
 The skeleton of the UpdateScore() algorithm is as Algorithm~\ref{algo:update_score} shows.
@@ -43,9 +43,9 @@ The skeleton of the UpdateScore() algorithm is as Algorithm~\ref{algo:update_sco
 
 \subsection{Optimization of Past(G,b) - Past(G,p)}
 
-We abbreviate the Past(G,b) - Past(G,p) as GetDiffSet(G,b,C) which is shown in the Algorithm~\ref{algo:get_diff_set}.
-This algorithm is in essence a dual direction $BFS$ algorithm. Starting from the block $b$, it will traverse its referenced blocks.
-Every time a new reference block $b'$ is discovered, it will perform a backward $BFS$ to `look back' to see if itself is already covered by the $b$'s parent block of $p$. 
+We abbreviate the Past(G,b) - Past(G,p) to calculate $B\delta$ as GetDiffSet(G,b,C) which is shown in the Algorithm~\ref{algo:get_diff_set}.
+This algorithm is in essence a dual direction $BFS$ algorithm. Starting from the block $b$, it will traverse all its referenced blocks.
+Every time a new reference block $b'$ is discovered, it will perform a backward $BFS$ to `look back' to see if itself is already covered by the $b$'s parent block $p$. 
 If yes, $b'$ would not be added to the forward $BFS$ queue.  
 To avoid the complexity of the backward $BFS$, the previous calculated diff set will be added to the covered set $C$, which will be passed to GetDiffSet() as a parameter.
 To be more specific, when a backward BFS is performed, the blocks in $C$ will not be added to the search queue.
@@ -74,7 +74,14 @@ If it continue searching on $2$ or $4$, these two blocks would not be added to t
 The topological order is used in sorting the blocks in the same epoch.
 To get the topological order, every time, there needs a top sort of the whole DAG from the scratch.
 However we can easily update the topological order when a new block is added or merged.
- The update rule is, when a new block is added, it's topological position will be $TopScore(G, b) \gets min(TopScore(G, Parent(b)), TopScore(G, Reference(b)))$. This step can be done in $O(1)$ 
+The update rule is, when a new block is added, it's topological position will be as (1) shows. This step can be done in $O(1)$ 
+
+\begin{equation}
+    \begin{flalign*}
+        & TopScore(G, b) \gets min(TopScore(G, Parent(b)), \\
+        & TopScore(G, Reference(b))) + 1
+    \end{flalign*}
+\end{equation}
 
 
 To summarize, the optimized streaming operators can achieve the performance improvement as Table~\ref{tab:improvement} shows. 
@@ -86,21 +93,21 @@ To summarize, the optimized streaming operators can achieve the performance impr
 \begin{tabular}{|l|l|l|l|}
 \hline
 Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
-Score(G, b)           & MCMC()           & $O(|B|)$              & $O(d)$  \\ \hline
-Score(G, b)           & Pivot()          & $O(|B|)$              & $O(d)$  \\ \hline
-Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$          & $O(|B|)$  \\ \hline
+Score(G, b)           & MCMC()           & $O(|B|)$              & $O(|B|)$  \\ \hline
+ParentScore(G, b)     & Pivot()          & $O(|B|)$              & $O(|B|)$  \\ \hline
+Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$              & $O(|B|)$  \\ \hline
 TopOrder(G, b)        & StreamNetOrder() & $O(|1|)$              & $O(|1|)$    \\ \hline
 \end{tabular}}
 \end{center}
 \end{table}
 
 \subsection{Genesis Forwarding}
-The above algorithm solved the problem of how to dynamically maintaining the information needed for total order computation.
-However, it still need to update the information until genesis block. 
-With the size of the graph growing, the updating process still becoming harder to compute.
-Consider that with the DAG size growing, the old historical confirmed block are confirming by more and more blocks, and it will be very hard to mutate it.
+The above algorithm solved the problem of how to dynamically maintaining the information needed for graph computation.
+However, it still needs to update the information until genesis block. 
+With the size of the graph growing, the updating process will become harder to compute.
+With the grwoth of DAG size, the old historical confirmed blocks are being confirmed by more and more blocks, which are hard to be mutated.
 Hence, we can design a strategy to forward the genesis periodically and fix the historical blocks into a total ordered chain.
-The criteria to forward the genesis are based on the threshold of ParentScore.
+The criteria to forward the genesis are based on the threshold of ParentScore().
 Suppose we define this threshold as $t$, then we only forward the genesis if: 
 
 \begin{equation}

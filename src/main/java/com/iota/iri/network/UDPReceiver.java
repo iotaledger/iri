@@ -79,7 +79,18 @@ public class UDPReceiver {
                     socket.receive(receivingPacket);
 
                     if (node.optimizeNetworkEnabled) {
-                        
+                        if (receivingPacket.getLength() == node.transactionSize || receivingPacket.getLength() == node.broadcastHashSize || receivingPacket.getLength() == node.requestHashSize) {
+                            byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
+                            SocketAddress address = receivingPacket.getSocketAddress();
+
+                            processor.submit(() -> node.preProcessReceivedOptimizedData(bytes, address, "udp"));
+                            processed++;
+
+                            Thread.yield();
+                        } else {
+                            log.error("Wrong packet size {}, it should be one of {}, {}, and {}",
+                                    receivingPacket.getLength(), node.transactionSize, node.broadcastHashSize, node.requestHashSize);
+                        }
                     } else {
                         if (receivingPacket.getLength() == packetSize) {
 

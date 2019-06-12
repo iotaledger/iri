@@ -272,11 +272,22 @@ public class TransactionValidator {
     private boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
         if(!transactionViewModel.isSolid()) {
             boolean solid = true;
-            if (!checkApproovee(transactionViewModel.getTrunkTransaction(tangle), transactionViewModel)) {
-                solid = false;
+
+            Hash genesis = null;
+            LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
+            if (provider != null) {
+                genesis = provider.getGenesis();
             }
-            if (!checkApproovee(transactionViewModel.getBranchTransaction(tangle), transactionViewModel)) {
-                solid = false;
+            if (transactionViewModel.getHash().equals(genesis)) {
+                log.debug("Genesis needn't to check trunk and branch hash.");
+            } else {
+                if (!checkApproovee(transactionViewModel.getTrunkTransaction(tangle))) {
+                    solid = false;
+                }
+
+                if (!checkApproovee(transactionViewModel.getBranchTransaction(tangle))) {
+                    solid = false;
+                }
             }
             if(solid) {
                 transactionViewModel.updateSolid(true);
@@ -287,13 +298,8 @@ public class TransactionValidator {
         return false;
     }
 
-    private boolean checkApproovee(TransactionViewModel approovee, TransactionViewModel transactionViewModel) throws Exception {
-        Hash genesis = null;
-        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
-        if (provider != null) {
-            genesis = provider.getGenesis();
-        }
-        if(approovee.getType() == PREFILLED_SLOT && (genesis == null || transactionViewModel.getHash() != genesis)) {
+    private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
+        if(approovee.getType() == PREFILLED_SLOT) {
             transactionRequester.requestTransaction(approovee.getHash(), null, false);
             return false;
         }

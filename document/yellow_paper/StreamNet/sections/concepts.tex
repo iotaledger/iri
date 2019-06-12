@@ -42,10 +42,10 @@ Figure~\ref{node} shows the local architecture of StreamNet.
 In each StreamNet node, there will be a transaction pool accepting the transactions from the HTTP API.
 And there will be a block generator to pack a certain amount of transactions into a block, it firstly find a 
 parent and reference block to attach the new block to, based on the hash information of these two blocks and the meta data of the block itself, 
-it will then perform the proof of work (POW) to calculate the nonce for the received block.
+it will then perform the proof of work (POW) to calculate the nonce for the new block.
 Algorithm~\ref{algo:main_loop} summarize the server logic for a StreamNet node.
-In the algorithm, the way to find parent reference node is by $Pivot(G, g)$.
-And the way to find reference node is by calling $MCMC(G, g)$ which is the Markov Chain Monte Carlo (MCMC) random walk algorithm \cite{popov2016tangle}.
+In the algorithm, the way to find parent block is by $Pivot(G, g)$.
+And the way to find reference block is by calling $MCMC(G, g)$ which is the Markov Chain Monte Carlo (MCMC) random walk algorithm \cite{popov2016tangle}.
 The two algorithms will be described in the later section.
 
 \begin{figure}[!ht]
@@ -76,6 +76,7 @@ The two algorithms will be described in the later section.
 Based on predefined data structure, to present the StreamNet consensus algorithm, 
 we firstly define several utility functions and notations, which is a variation from the definition in the Conflux paper \cite{li2018scaling}. 
 Chain() returns the chain from the genesis block to a given block following only parent edges. 
+$\overline{Chain(G,b)}$ returns all blocks except those in the chain.
 Child() returns the set of child blocks of a given block. 
 Sibling() returns the set of siblings of a given block. 
 Subtree() returns the sub-tree of a given block in the parental tree. 
@@ -119,8 +120,8 @@ Figure~\ref{allMethods} represents the definition of these utility functions.
 \subsubsection{Parent tip Selection by pivotal chain} 
 The algorithm Algorithm~\ref{algo:getPivot} presents our pivot chain selection algorithm(i.e., the definition of $Pivot(G, b)$). 
 Given a StreamNet state $G$, Pivot($G$,$g$) returns the last block in the pivot chain starting from the genesis block $g$. 
-The algorithm recursively advances to the child block whose corresponding sub-tree has the largest number of blocks. 
-Which is calculated by $Score(G, b)$  
+The algorithm recursively advances to the child block whose corresponding sub-tree has the largest number of children. 
+Which is calculated by $ParentScore(G, b)$  
 When there are multiple child blocks with the same score, the algorithm selects the child block with the largest block hash. 
 The algorithm terminates until it reaches a tip. 
 Each block in the pivot chain defines a epoch in the DAG, the nodes in DAG that satisfy Past($G$,$b$) - Past($G$,$p$) will belong to the epoch of block $b$.
@@ -139,13 +140,14 @@ The algorithm returns until it finds a tip.
 \subsubsection{Total Order} 
 The algorithm Algorithm~\ref{algo:conflux_order} defines StreamNetOrder(), 
 which corresponds to our block ordering algorithm. 
-Given the local state $G$ and a block $a$ in the pivot chain, 
-StreamNetOrder($G$,$a$) returns the ordered list of all blocks that appear in or before the epoch of $a$. 
-Using StreamNetOrder(), the total order of a local state $G$ is defined as TotalOrder($G$) in Figure~\ref{total_order}. 
-The algorithm in Figure~\ref{total_order}  first recursively orders all blocks in previous epochs(i.e., the epoch of $P(a)$ and before). 
-It then computes all blocks in the epoch of $a$ as $B_\Delta$. 
+Given the local state $G$ and a block $b$ in the pivot chain, 
+StreamNetOrder($G$, $b$) returns the ordered list of all blocks that appear in or before the epoch of $b$. 
+Using StreamNetOrder(), the total order of a local state $G$ is defined as TotalOrder($G$). 
+The algorithm recursively orders all blocks in previous epochs(i.e., the epoch of $P(b)$ and before). 
+It then computes all blocks in the epoch of $b$ as $B_\Delta$. 
 It topologically sorts all blocks in $B_\Delta$ and appends it into the result list. 
-The algorithm uses the unique hash to break ties. 
+The algorithm utilizes the unique hash to break ties. 
+In Figure~\ref{total_order}, the final total order is $<g, 1, 3, 4, 5, 2, 6>$.
 
 \input{./algorithms/conflux_order.tex}
 

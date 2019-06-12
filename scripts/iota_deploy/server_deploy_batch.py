@@ -41,6 +41,8 @@ def deploy_iri_server_method(*args):
     print('%s is deploying iri server'%ip_address)
     oret = cmd("-i", "-H", "%s@" % user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps |grep iota-node:%s |wc -l"%version_image)
     num_exist = oret.split()[-1]
+    data_path = data_volume+'/*'
+    cmd("-i", "-H", "%s@" % user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo rm -rf %s" %data_path)
     if int(num_exist):
         source_add = total_ip_info[ip_address]+':14700'
         ret_nerighbors = pycmd('add_neighbors_batch.py','get',source_add).strip()

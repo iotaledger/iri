@@ -1,8 +1,8 @@
 language: java
 jdk:
   - oraclejdk8
-  - openjdk8
-  - oraclejdk9
+  #- openjdk8
+  #- oraclejdk9
 
 cache:
   apt: true
@@ -15,10 +15,6 @@ addons:
   apt:
     packages:
     - jq
-
-matrix:
-  allow_failures:
-    - jdk: oraclejdk9
 
 install:
   # install python env
@@ -44,6 +40,9 @@ install:
       && cd go-ipfs/
       && sudo ./install.sh
       && cd ..
+  # update go version
+    - gimme 1.11.5
+    - source ~/.gimme/envs/go1.11.5.env
 
 before_script:
   - ipfs init

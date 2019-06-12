@@ -57,8 +57,8 @@ public class Node {
     // `Neighbor` in broadcastQueue stands for where the transaction is from.
     // If 'null', it means the transaction is from user's input.
     // If not null, it means the transaction is from the specific Neighbor.
-    private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> broadcastQueue = weightQueueTxPair();
-    private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> receiveQueue = weightQueueTxPair();
+    private final ConcurrentLinkedQueue<Pair<TransactionViewModel, Neighbor>> broadcastQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Pair<TransactionViewModel, Neighbor>> receiveQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentSkipListSet<Pair<Hash, Neighbor>> replyQueue = weightQueueHashPair();
 
 
@@ -357,14 +357,14 @@ public class Node {
                 if(checkIfReady(model)) {
                     persistBundle(h);
                 } else { // put missing block into request queue
-                    List<Hash> missingHashes = getMissingHash(model);
+                    /*List<Hash> missingHashes = getMissingHash(model);
                     for(Hash req : missingHashes) {
                         try {
                             transactionRequester.requestTransaction(req, null, false);
                         } catch(Exception e) {
                             log.error("Something wrong goes here {}", e.getStackTrace().toString());
                         }
-                    }
+                    }*/
                 }
                 break; // only get the first
             }
@@ -475,8 +475,8 @@ public class Node {
                     recentSeenBytes.put(digest, receivedTransactionHash);
                 }
 
-                if(checkIfBundle(receivedTransactionViewModel)) {
-                    if(addBundleAndCheckIfReady(receivedTransactionViewModel, neighbor)) {
+                if (checkIfBundle(receivedTransactionViewModel)) {
+                    if (addBundleAndCheckIfReady(receivedTransactionViewModel, neighbor)) {
                         persistBundle(receivedTransactionViewModel.getBundleHash());
                     }
                 } else {
@@ -552,10 +552,76 @@ public class Node {
         }
     }
 
+    private void preProcessReceivedBroadcastHash(byte[] receivedData, Neighbor neighbor) {
+        boolean cached = false;
+
+        Hash hash = HashFactory.TRANSACTION.create(receivedData, broadcastFlag.length(), reqHashSize);
+
+        //check if cached
+        synchronized (recentSeenBytes) {
+            cached = recentSeenBytes.containValue(hash);
+        }
+
+        if (cached) {
+            log.debug("Received broadcast hash {}, have seen.", hash);
+        } else if(((LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH")).hasBlock(hash)) {
+            log.debug("Received broadcast hash {}, found in db", hash);
+        } else {
+            log.debug("Received unkown broadcast hash {}, request", hash);
+            try {
+                transactionRequester.requestTransaction(hash, neighbor, false);
+            } catch (Exception e) {
+                log.error("Error adding transaction to request.", e);
+            }
+        }
+    }
+
+    private void preProcessReceivedRequestHash(byte[] receivedData, Neighbor neighbor) {
+
+        //Request bytes
+        Hash requestedHash = HashFactory.TRANSACTION.create(receivedData, requestFlag.length(), reqHashSize);
+
+        log.debug("received request hash {} from {}", requestedHash, neighbor == null?null:neighbor.getAddress());
+
+        //add request to reply queue (requestedHash, neighbor)
+        addReceivedDataToReplyQueue(requestedHash, neighbor);
+    }
+
+    public void preProcessReceivedOptimizedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
+        boolean addressMatch = false;
+        boolean cached = false;
+
+        for (final Neighbor neighbor : getNeighbors()) {
+            addressMatch = neighbor.matches(senderAddress);
+            if (addressMatch) {
+                //Validate transaction
+                neighbor.incAllTransactions();
+
+                if (receivedData.length == transactionSize) {
+                    try {
+                        preProcessReceivedTransaction(receivedData, neighbor);
+                    } catch (RuntimeException e) {
+                        break;
+                    }
+                } else if (receivedData.length == broadcastHashSize) {
+                    preProcessReceivedBroadcastHash(receivedData, neighbor);
+                } else if (receivedData.length == requestHashSize) {
+                    preProcessReceivedRequestHash(receivedData, neighbor);
+                }
+
+                break;
+            }
+        }
+
+        if (!addressMatch && configuration.isTestnet()) {
+            addNeighborFromReceivedData(senderAddress, uriScheme);
+        }
+    }
+
     public void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
         receiveQueue.add(new ImmutablePair<>(receivedTransactionViewModel, neighbor));
         if (receiveQueue.size() > RECV_QUEUE_SIZE) {
-            receiveQueue.pollLast();
+            receiveQueue.poll();
         }
 
     }
@@ -569,7 +635,7 @@ public class Node {
 
 
     public void processReceivedDataFromQueue() {
-        final Pair<TransactionViewModel, Neighbor> receivedData = receiveQueue.pollFirst();
+        final Pair<TransactionViewModel, Neighbor> receivedData = receiveQueue.poll();
         if (receivedData != null) {
             processReceivedData(receivedData.getLeft(), receivedData.getRight());
         }
@@ -648,7 +714,7 @@ public class Node {
                 //transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
                 if(((LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH")).hasBlock(requestedHash)) {
                     transactionViewModel = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(requestedHash.bytes(), 0, reqHashSize));
-                    log.info("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
+                    log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
                 }
             } catch (Exception e) {
                 log.error("Error while searching for transaction.", e);
@@ -684,7 +750,11 @@ public class Node {
 
     public void sendTxn(TransactionViewModel model, Neighbor neighbor) {
         try {
-            sendPacket(sendingPacket, model, neighbor);
+            if (optimizeNetworkEnabled) {
+                sendPacket(sendingTransaction, model, neighbor);
+            } else {
+                sendPacket(sendingPacket, model, neighbor);
+            }
 
             ByteBuffer digest = getBytesDigest(model.getBytes());
             synchronized (recentSeenBytes) {
@@ -716,13 +786,27 @@ public class Node {
         }
 
         synchronized (packet) {
-            System.arraycopy(transactionViewModel.getBytes(), 0, packet.getData(), 0, TransactionViewModel.SIZE);
+            if (optimizeNetworkEnabled) {
+                if (packet.equals(sendingTransaction)) {
+                    //log.info("Sending transaction {} to {}...", transactionViewModel.getHash(), neighbor.getAddress());
+                    System.arraycopy(transactionViewModel.getBytes(), 0, packet.getData(), 0, TransactionViewModel.SIZE);
+                    neighbor.send(packet);
+                } else {
+                    //log.info("Sending broadcast hash {} to {}...", transactionViewModel.getHash(), neighbor.getAddress());
+                    System.arraycopy(broadcastFlag.getBytes(), 0, packet.getData(), 0, broadcastFlag.length());
+                    System.arraycopy(transactionViewModel.getHash().bytes(), 0, packet.getData(), broadcastFlag.length(), reqHashSize);
+                    neighbor.send(packet);
+                }
 
-            Pair<Hash, Neighbor> pair = transactionRequester.transactionToRequest(false);
+            } else {
+                System.arraycopy(transactionViewModel.getBytes(), 0, packet.getData(), 0, TransactionViewModel.SIZE);
 
-            System.arraycopy(pair != null ? pair.getKey().bytes() : transactionViewModel.getHash().bytes(), 0,
-                    packet.getData(), TransactionViewModel.SIZE, reqHashSize);
-            neighbor.send(packet);
+                Pair<Hash, Neighbor> pair = transactionRequester.transactionToRequest(false);
+
+                System.arraycopy(pair != null ? pair.getKey().bytes() : transactionViewModel.getHash().bytes(), 0,
+                        packet.getData(), TransactionViewModel.SIZE, reqHashSize);
+                neighbor.send(packet);
+            }
         }
 
         sendPacketsCounter.getAndIncrement();
@@ -736,16 +820,26 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    final Pair<TransactionViewModel, Neighbor> broadcastData = broadcastQueue.pollFirst();
+                    final Pair<TransactionViewModel, Neighbor> broadcastData = broadcastQueue.poll();
                     if (broadcastData != null) {
                         TransactionViewModel transactionViewModel = broadcastData.getLeft();
                         Neighbor from = broadcastData.getRight();
 
                         for (final Neighbor neighbor : neighbors) {
                             try {
-                                if (!neighbor.equals(from)) {
-                                    sendPacket(sendingPacket, transactionViewModel, neighbor);
-                                }
+                            	if (optimizeNetworkEnabled) {
+                            		if (from == null) {
+                            			sendPacket(sendingTransaction, transactionViewModel, neighbor);
+		                            } else {
+                                        if (!neighbor.equals(from)) {
+                                            sendPacket(sendingBroadcastHash, transactionViewModel, neighbor);
+                                        }
+                                    }
+	                            } else {
+		                            if (!neighbor.equals(from)) {
+			                            sendPacket(sendingPacket, transactionViewModel, neighbor);
+		                            }
+	                            }
                             } catch (final Exception e) {
                                 // ignore
                             }
@@ -770,15 +864,22 @@ public class Node {
                 try {
                     Pair<Hash, Neighbor> pair = transactionRequester.transactionToRequest(false);
                     if (pair != null) {
-                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, pair.getKey());
-                        System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
-                        System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
-                                reqHashSize);
-                        //Hash.SIZE_IN_BYTES);
 
-                        if (optimizeNetworkEnabled && pair.getValue() != null) {
-                            pair.getValue().send(tipRequestingPacket);
+                        if (optimizeNetworkEnabled) {
+                            System.arraycopy(requestFlag.getBytes(), 0, sendingReqHash.getData(), 0, requestFlag.length());
+                            System.arraycopy(pair.getKey().bytes(), 0, sendingReqHash.getData(), requestFlag.length(), reqHashSize);
+
+                            if (pair.getValue() != null) {
+                                pair.getValue().send(sendingReqHash);
+                            } else {
+                                neighbors.forEach(n -> n.send(sendingReqHash));
+                            }
                         } else {
+                            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, pair.getKey());
+                            System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
+                            System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
+                                    reqHashSize);
+
                             neighbors.forEach(n -> n.send(tipRequestingPacket));
                         }
                     }
@@ -902,7 +1003,7 @@ public class Node {
     public void broadcast(final TransactionViewModel transactionViewModel, Neighbor from) {
         broadcastQueue.add(new ImmutablePair<>(transactionViewModel, from));
         if (broadcastQueue.size() > BROADCAST_QUEUE_SIZE) {
-            broadcastQueue.pollLast();
+            broadcastQueue.poll();
         }
     }
 

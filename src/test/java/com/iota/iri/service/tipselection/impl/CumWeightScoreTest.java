@@ -27,7 +27,7 @@ public class CumWeightScoreTest {
     }
 
     @Test
-    public void testCalculate() throws Exception {
+    public void testComputeScore() throws Exception {
         Hash a = getRandomTransactionHash();
         Hash b = getRandomTransactionHash();
         Hash c = getRandomTransactionHash();
@@ -92,5 +92,130 @@ public class CumWeightScoreTest {
         Assert.assertEquals((Double)2.0, score.get(f));
         Assert.assertEquals((Double)1.0, score.get(g));
         Assert.assertEquals((Double)1.0, score.get(h));
+
+        Hash i = getRandomTransactionHash();
+        gr.put(i, new HashSet<Hash>());
+        gr.get(i).add(h);
+        gr.get(i).add(g);
+        revG.get(h).add(i);
+        revG.get(g).add(i);
+
+        score = CumWeightScore.update(gr, score, i, 1.0);
+
+        Assert.assertEquals((Double)9.0, score.get(a));
+        Assert.assertEquals((Double)8.0, score.get(b));
+        Assert.assertEquals((Double)3.0, score.get(c));
+        Assert.assertEquals((Double)7.0, score.get(d));
+        Assert.assertEquals((Double)4.0, score.get(e));
+        Assert.assertEquals((Double)3.0, score.get(f));
+        Assert.assertEquals((Double)2.0, score.get(g));
+        Assert.assertEquals((Double)2.0, score.get(h));
+        Assert.assertEquals((Double)1.0, score.get(i));
+
+        Hash j = getRandomTransactionHash();
+        gr.put(j, new HashSet<Hash>());
+        gr.get(j).add(g);
+        gr.get(j).add(c);
+        revG.get(g).add(j);
+        revG.get(c).add(j);
+
+        score = CumWeightScore.update(gr, score, j, 3.0);
+
+        Assert.assertEquals((Double)12.0, score.get(a));
+        Assert.assertEquals((Double)11.0, score.get(b));
+        Assert.assertEquals((Double)6.0, score.get(c));
+        Assert.assertEquals((Double)10.0, score.get(d));
+        Assert.assertEquals((Double)4.0, score.get(e));
+        Assert.assertEquals((Double)3.0, score.get(f));
+        Assert.assertEquals((Double)5.0, score.get(g));
+        Assert.assertEquals((Double)2.0, score.get(h));
+        Assert.assertEquals((Double)1.0, score.get(i));
+        Assert.assertEquals((Double)3.0, score.get(j));
+    }
+
+    @Test
+    public void testComputeParentScore() throws Exception {
+        Map<Hash, Hash> p = new HashMap<>();
+        Map<Hash, Set<Hash>> rp = new HashMap<>();
+
+        Hash none = getRandomTransactionHash();
+        Hash a = getRandomTransactionHash();
+        Hash b = getRandomTransactionHash();
+        Hash c = getRandomTransactionHash();
+        Hash d = getRandomTransactionHash();
+        Hash e = getRandomTransactionHash();
+        Hash f = getRandomTransactionHash();
+        Hash g = getRandomTransactionHash();
+        Hash h = getRandomTransactionHash();
+
+        p.put(a, none);
+        p.put(b, a);
+        p.put(d, b);
+        p.put(c, b);
+        p.put(e, d);
+        p.put(f, e);
+        p.put(h, e);
+        p.put(g, d);
+
+        rp.put(a, new HashSet<>());
+        rp.put(b, new HashSet<>());
+        rp.put(c, new HashSet<>());
+        rp.put(d, new HashSet<>());
+        rp.put(e, new HashSet<>());
+        rp.put(f, new HashSet<>());
+        rp.put(g, new HashSet<>());
+        rp.put(h, new HashSet<>());
+
+        rp.get(a).add(b);
+        rp.get(b).add(c);
+        rp.get(b).add(d);
+        rp.get(d).add(e);
+        rp.get(d).add(g);
+        rp.get(e).add(h);
+        rp.get(e).add(f);
+
+        Map<Hash, Double> score = CumWeightScore.computeParentScore(p, rp);
+
+        Assert.assertEquals((Double)8.0, score.get(a));
+        Assert.assertEquals((Double)7.0, score.get(b));
+        Assert.assertEquals((Double)1.0, score.get(c));
+        Assert.assertEquals((Double)5.0, score.get(d));
+        Assert.assertEquals((Double)3.0, score.get(e));
+        Assert.assertEquals((Double)1.0, score.get(f));
+        Assert.assertEquals((Double)1.0, score.get(g));
+        Assert.assertEquals((Double)1.0, score.get(h));
+
+        Hash i = getRandomTransactionHash();
+        p.put(i, g);
+        rp.get(g).add(i);
+
+        score = CumWeightScore.updateParentScore(p, score, i, 1.0);
+
+        Assert.assertEquals((Double)9.0, score.get(a));
+        Assert.assertEquals((Double)8.0, score.get(b));
+        Assert.assertEquals((Double)1.0, score.get(c));
+        Assert.assertEquals((Double)6.0, score.get(d));
+        Assert.assertEquals((Double)3.0, score.get(e));
+        Assert.assertEquals((Double)1.0, score.get(f));
+        Assert.assertEquals((Double)2.0, score.get(g));
+        Assert.assertEquals((Double)1.0, score.get(h));
+        Assert.assertEquals((Double)1.0, score.get(i));
+
+        Hash j = getRandomTransactionHash();
+        p.put(j, g);
+        rp.get(g).add(j);
+
+        score = CumWeightScore.updateParentScore(p, score, j, 3.0);
+
+        Assert.assertEquals((Double)12.0, score.get(a));
+        Assert.assertEquals((Double)11.0, score.get(b));
+        Assert.assertEquals((Double)1.0, score.get(c));
+        Assert.assertEquals((Double)9.0, score.get(d));
+        Assert.assertEquals((Double)3.0, score.get(e));
+        Assert.assertEquals((Double)1.0, score.get(f));
+        Assert.assertEquals((Double)5.0, score.get(g));
+        Assert.assertEquals((Double)1.0, score.get(h));
+        Assert.assertEquals((Double)1.0, score.get(i));
+        Assert.assertEquals((Double)3.0, score.get(j));
     }
 }

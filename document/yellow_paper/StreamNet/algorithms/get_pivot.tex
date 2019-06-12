@@ -5,23 +5,23 @@
 \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
 
 \KwIn{ The local state $G$ = $<B,g,P,E>$  and a starting block $b \in B$ }
-\KwOut{ The last block in the pivot chain for the subtree of $b$ in $G$ }
+\KwOut{ The tip in the pivot chain }
 
 \Do { Child(G,b) != 0} {
   $b'$ $\gets$ Child($G,b$)  \;
   $tmpMaxScore$ $\gets$ -1 \;
   $tmpBlock$ $\gets$ $\perp$ \;
-  \Do { $b'$ $\neq$ 0 } {
-    $score$ $\gets$ Score($G, b'$) \;
+  \For {$b' \in Child(G,b)$} {
+    $pScore$ $\gets$ ParentScore($G, b'$) \;
     \If { $score$ $>$ $tmpMaxScore$ $||$ ($score$ = $tmpMaxScore$ \text{and Hash($b'$ ) $<$ Hash($tmpBlock$)}} {
-      $tmpMaxScore$ $\gets$ $score$ \;
+      $tmpMaxScore$ $\gets$ $pScore$ \;
       $tmpBlock$ $\gets$ $b'$ \; 
     }
   }
   $b$ $\gets$ $tmpBlock$ \;
 }
 
-\Return{$tmpBlock$} \;
+\Return{$b$} \;
 
 \caption{{\sc pivot($G$, $b$).}}
 \label{algo:getPivot}

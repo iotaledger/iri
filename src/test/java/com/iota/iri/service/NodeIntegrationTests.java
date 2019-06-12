@@ -10,8 +10,8 @@ import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.Node;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;
@@ -41,19 +41,26 @@ public class NodeIntegrationTests {
     public void testGetsSolid() throws Exception {
         int count = 1;
         long spacing = 5000;
-        Iota iotaNodes[] = new Iota[count];
-        API api[] = new API[count];
-        IXI ixi[] = new IXI[count];
+        Iota[] iotaNodes = new Iota[count];
+        API[] api = new API[count];
+        IXI[] ixi = new IXI[count];
         Thread cooThread, master;
         TemporaryFolder[] folders = new TemporaryFolder[count*2];
         for(int i = 0; i < count; i++) {
             folders[i*2] = new TemporaryFolder();
             folders[i*2 + 1] = new TemporaryFolder();
-            iotaNodes[i] = newNode(i, folders[i*2], folders[i*2+1]);
+            TestnetConfig conf = new TestnetConfig();
+            iotaNodes[i] = newNode(i, conf, folders[i*2], folders[i*2+1]);
             ixi[i] = new IXI(iotaNodes[i]);
             ixi[i].init(IXIConfig.IXI_DIR);
-            api[i] = new API(iotaNodes[i], ixi[i]);
-            api[i].init();
+            
+            api[i] = new API(conf, ixi[i], iotaNodes[i].transactionRequester,
+                    iotaNodes[i].spentAddressesService, iotaNodes[i].tangle, iotaNodes[i].bundleValidator,
+                    iotaNodes[i].snapshotProvider, iotaNodes[i].ledgerService, iotaNodes[i].node, 
+                    iotaNodes[i].tipsSelector, iotaNodes[i].tipsViewModel, iotaNodes[i].transactionValidator,
+                    iotaNodes[i].latestMilestoneTracker);
+            
+            api[i].init(new RestEasy(conf));
         }
         Node.uri("udp://localhost:14701").ifPresent(uri -> iotaNodes[0].node.addNeighbor(iotaNodes[0].node.newNeighbor(uri, true)));
         //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.addNeighbor(iotaNodes[1].node.newNeighbor(uri, true)));
@@ -79,10 +86,9 @@ public class NodeIntegrationTests {
         }
     }
 
-    private Iota newNode(int index, TemporaryFolder db, TemporaryFolder log) throws Exception {
+    private Iota newNode(int index, TestnetConfig conf, TemporaryFolder db, TemporaryFolder log) throws Exception {
         db.create();
         log.create();
-        TestnetConfig conf = new TestnetConfig();
         Iota iota;
         conf.setPort(14800 + index);
         conf.setUdpReceiverPort((14700 + index));

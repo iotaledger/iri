@@ -56,8 +56,9 @@ import org.slf4j.LoggerFactory;
  * <p>
  *     Validation of a transaction is the process by which other devices choose the transaction.
  *     This is done via a {@link TipSelector} algorithm, after which the transaction performs
- *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips. <br/>
- *
+ *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips.
+ * </p>
+ * <p>
  *     As many other transactions repeat this process on top of each other,
  *     validation of the transaction in question slowly builds up enough verifications.
  *     Eventually this will reach a minimum acceptable verification threshold.
@@ -104,7 +105,7 @@ public class Iota {
     public final Node node;
     public final UDPReceiver udpReceiver;
     public final Replicator replicator;
-    public final IotaConfig configuration;
+    private final IotaConfig configuration;
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
 
@@ -154,8 +155,10 @@ public class Iota {
     }
 
     /**
+     * <p>
      * Adds all database providers, and starts initialization of our services.
-     * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.<br/>
+     * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.
+     * </p>
      * After this function, incoming and outbound transaction processing has started.
      *
      * @throws Exception If along the way a service fails to initialize.
@@ -216,7 +219,7 @@ public class Iota {
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
                 bundleValidator);
         if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration);
+            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, tipsViewModel, configuration);
         }
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }

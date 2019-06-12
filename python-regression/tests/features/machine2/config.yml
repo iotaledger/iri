@@ -6,10 +6,13 @@ defaults: &transaction_tests_config_files
   '--milestone-start',
   '0',
   '--testnet-no-coo-validation',
+  'true',
   '--testnet',
+  'true',
   '--snapshot',
   './snapshot.txt'
   ]
+  java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
 
 nodes:
   nodeA: #name

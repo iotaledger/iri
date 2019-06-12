@@ -6,7 +6,7 @@ import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.IotaUtils;
-
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -120,14 +120,18 @@ public class IRI {
 
             iota = new Iota(config);
             ixi = new IXI(iota);
-            api = new API(iota, ixi);
+            api = new API(config, ixi, iota.transactionRequester,
+                    iota.spentAddressesService, iota.tangle, iota.bundleValidator,
+                    iota.snapshotProvider, iota.ledgerService, iota.node, iota.tipsSelector,
+                    iota.tipsViewModel, iota.transactionValidator,
+                    iota.latestMilestoneTracker);
             shutdownHook();
 
             try {
                 iota.init();
-                api.init();
                 //TODO redundant parameter but we will touch this when we refactor IXI
                 ixi.init(config.getIxiDir());
+                api.init(new RestEasy(config));
                 log.info("IOTA Node initialised correctly.");
             } catch (Exception e) {
                 log.error("Exception during IOTA node initialisation: ", e);

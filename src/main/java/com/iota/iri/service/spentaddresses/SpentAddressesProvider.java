@@ -3,6 +3,7 @@ package com.iota.iri.service.spentaddresses;
 import com.iota.iri.model.Hash;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Find, mark and store spent addresses
@@ -39,6 +40,7 @@ public interface SpentAddressesProvider {
      * @return The spent addresses
      * @throws SpentAddressesException If the provider fails read
      */
-    Collection<Hash> getAllAddresses() throws SpentAddressesException;
+    //used by IXI
+    List<Hash> getAllAddresses();
 
 }

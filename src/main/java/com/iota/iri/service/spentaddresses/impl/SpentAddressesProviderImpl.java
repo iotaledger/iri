@@ -119,7 +119,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     }
 
     @Override
-    public Collection<Hash> getAllAddresses() throws SpentAddressesException {
+    public List<Hash> getAllAddresses() {
         List<Hash> addresses = new ArrayList<>();
         for (byte[] bytes : rocksDBPersistenceProvider.loadAllKeysFromTable(SpentAddress.class)) {
             addresses.add(HashFactory.ADDRESS.create(bytes));

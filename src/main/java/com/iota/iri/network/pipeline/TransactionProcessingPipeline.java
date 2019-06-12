@@ -101,22 +101,30 @@ public class TransactionProcessingPipeline {
     }
 
     /**
-     * Kicks of the pipeline by spawning all necessary threads for all stages.
+     * Kicks of the pipeline by assembling the pipeline and starting all threads.
      */
     public void start() {
-        /*
-         * Assembly: pre process stage: -> reply stage if tx already seen -> hashing stage if tx not already seen
-         * hashing stage: -> validation stage validation stage: -> received stage if not tx not gotten from a neighbor
-         * -> received/reply stage otherwise received stage: -> broadcast stage
-         * 
-         * external actors: neighbors: -> pre process stage broadcastTransactions: -> hashing stage
-         */
         stagesThreadPool.submit(batchedHasher);
+        addStage("pre-process", preProcessStageQueue, preProcessStage);
+        addStage("validation", validationStageQueue, validationStage);
+        addStage("reply", replyStageQueue, replyStage);
+        addStage("received", receivedStageQueue, receivedStage);
+        addStage("broadcast", broadcastStageQueue, broadcastStage);
+    }
+
+    /**
+     * Adds the given stage to the processing pipeline.
+     * 
+     * @param name  the name of the stage
+     * @param queue the queue from which contexts are taken to process within the stage
+     * @param stage the stage with the processing logic
+     */
+    private void addStage(String name, BlockingQueue<ProcessingContext> queue,
+            com.iota.iri.network.pipeline.Stage stage) {
         stagesThreadPool.submit(new Thread(() -> {
             try {
                 while (!shutdown.get()) {
-                    ProcessingContext ctx = preProcessStageQueue.take();
-                    ctx = preProcessStage.process(ctx);
+                    ProcessingContext ctx = stage.process(queue.take());
                     switch (ctx.getNextStage()) {
                         case REPLY:
                             replyStageQueue.put(ctx);
@@ -124,21 +132,6 @@ public class TransactionProcessingPipeline {
                         case HASHING:
                             hashAndValidate(ctx);
                             break;
-                        default:
-                            // do nothing
-                    }
-                }
-            } catch (InterruptedException e) {
-            } finally {
-                log.info("pre process stage shutdown");
-            }
-        }, "pre-process-stage"));
-        stagesThreadPool.submit(new Thread(() -> {
-            try {
-                while (!shutdown.get()) {
-                    ProcessingContext ctx = validationStageQueue.take();
-                    ctx = validationStage.process(ctx);
-                    switch (ctx.getNextStage()) {
                         case RECEIVED:
                             receivedStageQueue.put(ctx);
                             break;
@@ -147,57 +140,19 @@ public class TransactionProcessingPipeline {
                             replyStageQueue.put(payload.getLeft());
                             receivedStageQueue.put(payload.getRight());
                             break;
-                        case ABORT:
-                            break;
-                        default:
-                            // do nothing
-                    }
-                }
-            } catch (InterruptedException e) {
-            } finally {
-                log.info("validation stage shutdown");
-            }
-        }, "tx-validation-stage"));
-        stagesThreadPool.submit(new Thread(() -> {
-            try {
-                while (!shutdown.get()) {
-                    ProcessingContext ctx = replyStageQueue.take();
-                    replyStage.process(ctx);
-                }
-            } catch (InterruptedException e) {
-            } finally {
-                log.info("reply stage shutdown");
-            }
-        }, "reply-stage"));
-        stagesThreadPool.submit(new Thread(() -> {
-            try {
-                while (!shutdown.get()) {
-                    ProcessingContext ctx = receivedStageQueue.take();
-                    ctx = receivedStage.process(ctx);
-                    switch (ctx.getNextStage()) {
                         case BROADCAST:
                             broadcastStageQueue.put(ctx);
                             break;
-                        default:
-                            // do nothing
+                        case ABORT:
+                            break;
                     }
                 }
             } catch (InterruptedException e) {
+
             } finally {
-                log.info("received stage shutdown");
+                log.info("{}-stage shutdown", name);
             }
-        }, "received-stage"));
-        stagesThreadPool.submit(new Thread(() -> {
-            try {
-                while (!shutdown.get()) {
-                    ProcessingContext ctx = broadcastStageQueue.take();
-                    broadcastStage.process(ctx);
-                }
-            } catch (InterruptedException e) {
-            } finally {
-                log.info("broadcast stage shutdown");
-            }
-        }, "broadcast-stage"));
+        }, String.format("%s-stage", name)));
     }
 
     /**
@@ -243,9 +198,8 @@ public class TransactionProcessingPipeline {
      * @param data     the data to process
      */
     public void process(Neighbor neighbor, ByteBuffer data) {
-        ProcessingContext ctx = new ProcessingContext(new PreProcessPayload(neighbor, data));
         try {
-            preProcessStageQueue.put(ctx);
+            preProcessStageQueue.put(new ProcessingContext(new PreProcessPayload(neighbor, data)));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

@@ -15,10 +15,7 @@ import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.security.SecureRandom;
@@ -212,8 +209,7 @@ public class NeighborRouter {
                             if (!okToConnect(remoteAddr.getAddress().getHostAddress(), newConn)) {
                                 continue;
                             }
-                            newConn.socket().setTcpNoDelay(true);
-                            newConn.socket().setSoLinger(true, 0);
+                            configureSocket(newConn);
                             newConn.configureBlocking(false);
                             Neighbor newNeighbor = new NeighborImpl<>(selector, newConn,
                                     remoteAddr.getAddress().getHostAddress(),
@@ -371,6 +367,18 @@ public class NeighborRouter {
      */
     public static long getTxCacheDigest(byte[] txBytes) {
         return TX_CACHE_DIGEST_HASH_FUNC.hashBytes(txBytes);
+    }
+
+    /**
+     * Adjusts the given socket's configuration.
+     * 
+     * @param socketChannel the socket to configure
+     * @throws IOException throw during adjusting the socket's configuration
+     */
+    private void configureSocket(SocketChannel socketChannel) throws IOException {
+        socketChannel.socket().setTcpNoDelay(true);
+        socketChannel.socket().setSoLinger(true, 0);
+        socketChannel.configureBlocking(false);
     }
 
     /**
@@ -604,9 +612,7 @@ public class NeighborRouter {
 
         // init new TCP socket channel
         SocketChannel tcpChannel = SocketChannel.open();
-        tcpChannel.socket().setTcpNoDelay(true);
-        tcpChannel.socket().setSoLinger(true, 0);
-        tcpChannel.configureBlocking(false);
+        configureSocket(tcpChannel);
         tcpChannel.connect(addr);
         Neighbor neighbor = new NeighborImpl<>(selector, tcpChannel, addr.getAddress().getHostAddress(), addr.getPort(),
                 txPipeline);

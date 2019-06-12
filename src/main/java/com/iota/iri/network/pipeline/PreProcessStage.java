@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
  * The {@link PreProcessStage} expands truncated transaction gossip payloads, computes the digest of the payload and
  * converts the transaction to its trits representation.
  */
-public class PreProcessStage {
+public class PreProcessStage implements Stage {
 
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
 

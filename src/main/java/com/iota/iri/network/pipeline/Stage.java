@@ -1,7 +1,7 @@
 package com.iota.iri.network.pipeline;
 
 /**
- * Defines a stage in the {@link TransactionProcessingPipeline} which processes a {@link ProcessingContext} and its
+ * Defines a stage in the {@link TransactionProcessingPipelineImpl} which processes a {@link ProcessingContext} and its
  * payload and then mutates the given context with the information for the next stage.
  */
 public interface Stage {

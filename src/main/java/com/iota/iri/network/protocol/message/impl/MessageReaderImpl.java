@@ -25,18 +25,22 @@ public class MessageReaderImpl implements MessageReader {
         this.msgBuf = ByteBuffer.allocate(msgLength);
     }
 
+    @Override
     public boolean ready() {
         return !msgBuf.hasRemaining();
     }
 
+    @Override
     public int readMessage(ReadableByteChannel channel) throws IOException {
         return channel.read(msgBuf);
     }
 
+    @Override
     public ByteBuffer getMessage() {
         return msgBuf;
     }
 
+    @Override
     public ProtocolMessage getMessageType() {
         return protoMsg;
     }

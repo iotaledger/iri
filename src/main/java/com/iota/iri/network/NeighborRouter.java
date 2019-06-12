@@ -1,7 +1,6 @@
 package com.iota.iri.network;
 
 import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.NetworkConfig;
 import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -10,6 +9,7 @@ import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.NeighborState;
 import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.network.protocol.Handshake;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
@@ -116,7 +116,7 @@ public class NeighborRouter {
      * @param networkConfig      Network related configuration parameters
      * @param protocolConfig     Protocol related configuration parameters
      * @param txRequester {@link TransactionRequester} instance to load hashes of requested transactions when gossiping
-     * @param txPipeline  {@link TransactionProcessingPipeline} passed to newly created {@link Neighbor} instances
+     * @param txPipeline  {@link TransactionProcessingPipelineImpl} passed to newly created {@link Neighbor} instances
      */
     public void init(NetworkConfig networkConfig, ProtocolConfig protocolConfig, TransactionRequester txRequester, TransactionProcessingPipeline txPipeline) {
         this.txRequester = txRequester;
@@ -796,9 +796,9 @@ public class NeighborRouter {
     }
 
     /**
-     * Returns the {@link TransactionProcessingPipeline}.
+     * Returns the {@link TransactionProcessingPipelineImpl}.
      * 
-     * @return the {@link TransactionProcessingPipeline} used by the {@link NeighborRouter}
+     * @return the {@link TransactionProcessingPipelineImpl} used by the {@link NeighborRouter}
      */
     public TransactionProcessingPipeline getTransactionProcessingPipeline() {
         return txPipeline;

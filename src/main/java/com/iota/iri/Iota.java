@@ -9,6 +9,7 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
 import com.iota.iri.service.milestone.impl.*;
@@ -137,7 +138,7 @@ public class Iota {
                 : null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
         neighborRouter = new NeighborRouter();
-        txPipeline = new TransactionProcessingPipeline();
+        txPipeline = new TransactionProcessingPipelineImpl();
         tipRequester = new TipsRequesterImpl();
 
         // legacy code

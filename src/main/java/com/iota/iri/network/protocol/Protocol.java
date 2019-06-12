@@ -182,4 +182,16 @@ public class Protocol {
         return truncatedTx;
     }
 
+    /**
+     * Copies the requested transaction hash from the given source data byte array into the given destination byte
+     * array.
+     * 
+     * @param source the transaction gossip packet data
+     * @param dest   the destination array to write the requested transaction hash into
+     */
+    public static void extractRequestedTxHash(byte[] source, byte[] dest) {
+        System.arraycopy(source, source.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH, dest, 0,
+                Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
+    }
+
 }

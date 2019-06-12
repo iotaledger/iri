@@ -50,8 +50,7 @@ public class PreProcessStage {
         Protocol.expandTx(data, txDataBytes);
 
         // copy requested hash
-        System.arraycopy(data, data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH, reqHashBytes, 0,
-                Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
+        Protocol.extractRequestedTxHash(data, reqHashBytes);
 
         // increment all txs count
         payload.getOriginNeighbor().getMetrics().incrAllTransactionsCount();

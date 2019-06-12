@@ -12,7 +12,7 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.ellipticcurve.utils.EcdsaUtils;
+import com.iri.utils.crypto.ellipticcurve.EcdsaUtils;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;

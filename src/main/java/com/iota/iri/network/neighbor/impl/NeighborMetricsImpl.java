@@ -15,9 +15,6 @@ public class NeighborMetricsImpl implements NeighborMetrics {
     private AtomicLong randomTxsCount = new AtomicLong();
     private AtomicLong sentTxsCount = new AtomicLong();
     private AtomicLong newTxsCount = new AtomicLong();
-    private AtomicLong unknownMsgTypePacketsCount = new AtomicLong();
-    private AtomicLong incompatiblePacketsCount = new AtomicLong();
-    private AtomicLong invalidMsgLengthCount = new AtomicLong();
     private AtomicLong droppedSendPacketsCount = new AtomicLong();
 
     @Override
@@ -78,36 +75,6 @@ public class NeighborMetricsImpl implements NeighborMetrics {
     @Override
     public long incrSentTransactionsCount() {
         return sentTxsCount.incrementAndGet();
-    }
-
-    @Override
-    public long getUnknownMessageTypePacketsCount() {
-        return unknownMsgTypePacketsCount.get();
-    }
-
-    @Override
-    public long incrUnknownMessageTypePacketsCount() {
-        return unknownMsgTypePacketsCount.incrementAndGet();
-    }
-
-    @Override
-    public long getIncompatiblePacketsCount() {
-        return incompatiblePacketsCount.get();
-    }
-
-    @Override
-    public long incrIncompatiblePacketsCount() {
-        return incompatiblePacketsCount.incrementAndGet();
-    }
-
-    @Override
-    public long getInvalidProtocolMessageLengthCount() {
-        return invalidMsgLengthCount.get();
-    }
-
-    @Override
-    public long incrInvalidProtocolMessageLengthCount() {
-        return invalidMsgLengthCount.incrementAndGet();
     }
 
     @Override

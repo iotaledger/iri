@@ -90,48 +90,6 @@ public interface NeighborMetrics {
     long incrSentTransactionsCount();
 
     /**
-     * Gets the number of packets received with an unknown message type.
-     * 
-     * @return the number of packets received with an unknown message type
-     */
-    long getUnknownMessageTypePacketsCount();
-
-    /**
-     * Increments the number of packets received with an unknown message type.
-     * 
-     * @return the number of packets received with an unknown message type
-     */
-    long incrUnknownMessageTypePacketsCount();
-
-    /**
-     * Gets the number of packets received with an incompatible protocol version.
-     *
-     * @return the number of packets received with an incompatible protocol version
-     */
-    long getIncompatiblePacketsCount();
-
-    /**
-     * Increments the number of packets received with an incompatible protocol version.
-     *
-     * @return the number of packets received with an incompatible protocol version
-     */
-    long incrIncompatiblePacketsCount();
-
-    /**
-     * Gets the number of packets received with an invalid message length.
-     * 
-     * @return the number of packets received with an invalid message length
-     */
-    long getInvalidProtocolMessageLengthCount();
-
-    /**
-     * Increments the number of packets received with an invalid message length.
-     *
-     * @return the number of packets received with an invalid message length
-     */
-    long incrInvalidProtocolMessageLengthCount();
-
-    /**
      * Gets the number of packets dropped from the neighbor's send queue.
      *
      * @return the number of packets dropped from the neighbor's send queue

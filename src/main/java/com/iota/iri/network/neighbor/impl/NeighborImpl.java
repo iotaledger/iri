@@ -30,7 +30,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
      * The current state whether the neighbor is parsing a header or reading a message.
      */
     private enum ReadState {
-        PARSE_HEADER, READ_MESSAGE
+        PARSE_HEADER, HANDLE_MESSAGE
     }
 
     // next stage in the processing of incoming data
@@ -94,61 +94,77 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
         ByteBuffer msg = msgReader.getMessage();
         msg.flip();
         switch (readState) {
-
             case PARSE_HEADER:
-                ProtocolHeader protocolHeader;
-                try {
-                    protocolHeader = Protocol.parseHeader(msg);
-                } catch (UnknownMessageTypeException e) {
-                    log.error("unknown message type received from {}", getHostAddressAndPort());
-                    metrics.incrUnknownMessageTypePacketsCount();
-                    return bytesRead;
-                } catch (InvalidProtocolMessageLengthException e) {
-                    log.error("{} is trying to send a message with an invalid length for the given message type",
-                            getHostAddressAndPort());
-                    metrics.incrInvalidProtocolMessageLengthCount();
-
-                    // abort connection if we are handshaking
-                    if (state == NeighborState.HANDSHAKING) {
-                        return -1;
-                    }
-                    return bytesRead;
-                }
-
-                // if we are handshaking, then we must have a handshaking packet as the initial packet
-                if (state == NeighborState.HANDSHAKING
-                        && protocolHeader.getMessageType() != ProtocolMessage.HANDSHAKE) {
-                    log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
-                            getHostAddressAndPort());
+                // -1 signals a wrong parsing of the header
+                if (parseHeader(msg, bytesRead) == -1) {
                     return -1;
                 }
-
-                // we got the header, now we want to read the message
-                readState = ReadState.READ_MESSAGE;
-                msgReader = MessageReaderFactory.create(protocolHeader.getMessageType(),
-                        protocolHeader.getMessageLength());
                 // execute another read as we likely already have the message in the network buffer
                 return read();
 
-            case READ_MESSAGE:
-                switch (msgReader.getMessageType()) {
-                    case HANDSHAKE:
-                        handshake = Handshake.fromByteBuffer(msg);
-                        break;
-                    case TRANSACTION_GOSSIP:
-                        txPipeline.process(this, msg);
-                        break;
-                    default:
-                        // do nothing
-                }
-                // reset
-                readState = ReadState.PARSE_HEADER;
-                msgReader = MessageReaderFactory.create(ProtocolMessage.HEADER, ProtocolMessage.HEADER.getMaxLength());
-                return bytesRead;
+            case HANDLE_MESSAGE:
+                handleMessage(msg, bytesRead);
+                break;
             default:
                 // do nothing
         }
         return bytesRead;
+    }
+
+    /**
+     * Parses the header in the given {@link ByteBuffer} and sets up the message reader to read the bytes for a message
+     * of the advertised type/size.
+     * 
+     * @param msg       the {@link ByteBuffer} containing the header
+     * @param bytesRead the amount of bytes read up until now
+     * @return the amount of bytes read or -1 to indicate an error when parsing the header
+     */
+    private int parseHeader(ByteBuffer msg, int bytesRead) {
+        ProtocolHeader protocolHeader;
+        try {
+            protocolHeader = Protocol.parseHeader(msg);
+        } catch (UnknownMessageTypeException e) {
+            log.error("unknown message type received from {}, closing connection", getHostAddressAndPort());
+            return -1;
+        } catch (InvalidProtocolMessageLengthException e) {
+            log.error("{} is trying to send a message with an invalid length for the given message type, "
+                    + "closing connection", getHostAddressAndPort());
+            return -1;
+        }
+
+        // if we are handshaking, then we must have a handshaking packet as the initial packet
+        if (state == NeighborState.HANDSHAKING && protocolHeader.getMessageType() != ProtocolMessage.HANDSHAKE) {
+            log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
+                    getHostAddressAndPort());
+            return -1;
+        }
+
+        // we got the header, now we want to read/handle the message
+        readState = ReadState.HANDLE_MESSAGE;
+        msgReader = MessageReaderFactory.create(protocolHeader.getMessageType(), protocolHeader.getMessageLength());
+        return bytesRead;
+    }
+
+    /**
+     * Relays the message to the component in charge of handling this message.
+     * 
+     * @param msg       the {@link ByteBuffer} containing the message (without header)
+     * @param bytesRead the amount of bytes read up until now
+     */
+    private void handleMessage(ByteBuffer msg, int bytesRead) {
+        switch (msgReader.getMessageType()) {
+            case HANDSHAKE:
+                handshake = Handshake.fromByteBuffer(msg);
+                break;
+            case TRANSACTION_GOSSIP:
+                txPipeline.process(this, msg);
+                break;
+            default:
+                // do nothing
+        }
+        // reset
+        readState = ReadState.PARSE_HEADER;
+        msgReader = MessageReaderFactory.create(ProtocolMessage.HEADER, ProtocolMessage.HEADER.getMaxLength());
     }
 
     @Override

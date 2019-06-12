@@ -195,7 +195,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                 ctx.setNextStage(TransactionProcessingPipeline.Stage.VALIDATION);
                 validationStageQueue.put(ctx);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error("unable to put processing context into hashing stage. reason: {}", e.getMessage());
             }
         }));
         hashingStage.process(ctx);

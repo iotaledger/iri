@@ -76,7 +76,7 @@ public class ValidationStageTest {
         assertEquals("should submit to received stage next", TransactionProcessingPipeline.Stage.RECEIVED,
                 ctx.getNextStage());
         ReceivedPayload receivedPayload = (ReceivedPayload) ctx.getPayload();
-        assertFalse("neighbor should not be present", receivedPayload.getOriginNeighbor() != null);
+        assertNull("neighbor should not be present", receivedPayload.getOriginNeighbor());
         assertNotNull("tvm should not be null", receivedPayload.getTransactionViewModel());
     }
 

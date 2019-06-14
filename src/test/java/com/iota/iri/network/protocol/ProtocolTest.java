@@ -123,8 +123,7 @@ public class ProtocolTest {
         for (int i = 0; i < truncatedSize; i++) {
             truncatedTxData[i] = 3;
         }
-        byte[] expandedTxData = new byte[Transaction.SIZE];
-        Protocol.expandTx(truncatedTxData, expandedTxData);
+        byte[] expandedTxData = Protocol.expandTx(truncatedTxData);
 
         // stuff after signature message fragment should be intact
         for (int i = expandedTxData.length - 1; i >= Protocol.SIG_DATA_MAX_BYTES_LENGTH; i--) {

@@ -1,6 +1,7 @@
 package com.iota.iri.network.protocol;
 
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.persistables.Transaction;
 
 import java.nio.ByteBuffer;
 
@@ -116,10 +117,10 @@ public class Protocol {
     /**
      * Expands a truncated bytes encoded transaction payload.
      * 
-     * @param data        the source data
-     * @param txDataBytes the array to expand the transaction into
+     * @param data the source data
      */
-    public static void expandTx(byte[] data, byte[] txDataBytes) {
+    public static byte[] expandTx(byte[] data) {
+        byte[] txDataBytes = new byte[Transaction.SIZE];
         // we need to expand the tx data (signature message fragment) as
         // it could have been truncated for transmission
         int numOfBytesOfSigMsgFragToExpand = ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength() - data.length;
@@ -132,6 +133,7 @@ public class Protocol {
         System.arraycopy(sigMsgFragPadding, 0, txDataBytes, sigMsgFragBytesToCopy, sigMsgFragPadding.length);
         System.arraycopy(data, sigMsgFragBytesToCopy, txDataBytes, Protocol.SIG_DATA_MAX_BYTES_LENGTH,
                 Protocol.NON_SIG_TX_PART_BYTES_LENGTH);
+        return txDataBytes;
     }
 
     /**

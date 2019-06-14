@@ -46,12 +46,10 @@ public class PreProcessStage implements Stage {
         ByteBuffer packetData = payload.getData();
         byte[] data = packetData.array();
 
-        // allocate buffers for tx payload and requested tx hash
-        byte[] txDataBytes = new byte[Transaction.SIZE];
-        byte[] reqHashBytes = new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH];
-
         // expand received tx data
-        Protocol.expandTx(data, txDataBytes);
+        byte[] txDataBytes = Protocol.expandTx(data);
+        // allocate buffer for requested tx hash
+        byte[] reqHashBytes = new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH];
 
         // copy requested hash
         Protocol.extractRequestedTxHash(data, reqHashBytes);

@@ -4,7 +4,7 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.network.protocol.Protocol;
+import com.iota.iri.network.protocol.Handshake;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -16,7 +16,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -126,7 +125,7 @@ public class NeighborRouterTest {
         // send something to A in order to let A remove the connection to B
         Neighbor neighborA = neighborRouterB.getConnectedNeighbors().get(neighborAIdentity);
         neighborA.send(
-                Protocol.createHandshakePacket((char) 19000, Hash.NULL_HASH.bytes(), (byte) nodeConfigA.getMwm()));
+                Handshake.createHandshakePacket((char) 19000, Hash.NULL_HASH.bytes(), (byte) nodeConfigA.getMwm()));
 
         Thread.sleep(1000);
 

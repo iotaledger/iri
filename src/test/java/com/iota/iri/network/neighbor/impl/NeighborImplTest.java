@@ -7,7 +7,6 @@ import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.NeighborState;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.Handshake;
-import com.iota.iri.network.protocol.Protocol;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,7 +53,7 @@ public class NeighborImplTest {
         Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
 
             // fake having a handshaking packet in the socket
-            private ByteBuffer handshakePacket = Protocol.createHandshakePacket(serverSocketPort,
+            private ByteBuffer handshakePacket = Handshake.createHandshakePacket(serverSocketPort,
                     Hash.NULL_HASH.bytes(), (byte) 1);
 
             @Override

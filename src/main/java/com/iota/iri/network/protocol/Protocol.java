@@ -74,27 +74,6 @@ public class Protocol {
     }
 
     /**
-     * Creates a new handshake packet.
-     * 
-     * @param ownSourcePort the node's own server socket port number
-     * @return a {@link ByteBuffer} containing the handshake packet
-     */
-    public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress,
-            byte ownUsedMWM) {
-        short maxLength = ProtocolMessage.HANDSHAKE.getMaxLength();
-        final short payloadLengthBytes = (short) (maxLength - (maxLength - 60) + SUPPORTED_PROTOCOL_VERSIONS.length);
-        ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
-        addProtocolHeader(buf, ProtocolMessage.HANDSHAKE, payloadLengthBytes);
-        buf.putChar(ownSourcePort);
-        buf.putLong(System.currentTimeMillis());
-        buf.put(ownByteEncodedCooAddress);
-        buf.put(ownUsedMWM);
-        buf.put(SUPPORTED_PROTOCOL_VERSIONS);
-        buf.flip();
-        return buf;
-    }
-
-    /**
      * Creates a new transaction gossip packet.
      * 
      * @param tvm           The transaction to add into the packet
@@ -118,7 +97,7 @@ public class Protocol {
      * @param buf      the {@link ByteBuffer} to write into.
      * @param protoMsg the message type which will be sent
      */
-    private static void addProtocolHeader(ByteBuffer buf, ProtocolMessage protoMsg) {
+    public static void addProtocolHeader(ByteBuffer buf, ProtocolMessage protoMsg) {
         addProtocolHeader(buf, protoMsg, protoMsg.getMaxLength());
     }
 
@@ -129,7 +108,7 @@ public class Protocol {
      * @param protoMsg           the message type which will be sent
      * @param payloadLengthBytes the message length
      */
-    private static void addProtocolHeader(ByteBuffer buf, ProtocolMessage protoMsg, short payloadLengthBytes) {
+    public static void addProtocolHeader(ByteBuffer buf, ProtocolMessage protoMsg, short payloadLengthBytes) {
         buf.put(protoMsg.getTypeID());
         buf.putShort(payloadLengthBytes);
     }

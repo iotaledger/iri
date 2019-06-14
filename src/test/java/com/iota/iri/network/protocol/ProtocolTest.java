@@ -71,7 +71,7 @@ public class ProtocolTest {
         char ownSourcePort = (char) 15600;
         long now = System.currentTimeMillis();
         byte[] byteEncodedCooAddress = Hash.NULL_HASH.bytes();
-        ByteBuffer buf = Protocol.createHandshakePacket(ownSourcePort, byteEncodedCooAddress, (byte) 1);
+        ByteBuffer buf = Handshake.createHandshakePacket(ownSourcePort, byteEncodedCooAddress, (byte) 1);
         assertEquals("should be of type handshake message", ProtocolMessage.HANDSHAKE.getTypeID(), buf.get());
         int maxLength = ProtocolMessage.HANDSHAKE.getMaxLength();
         assertEquals("should have correct length",

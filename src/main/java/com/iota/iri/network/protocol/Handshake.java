@@ -29,6 +29,27 @@ public class Handshake {
     private byte[] supportedVersions;
 
     /**
+     * Creates a new handshake packet.
+     *
+     * @param ownSourcePort the node's own server socket port number
+     * @return a {@link ByteBuffer} containing the handshake packet
+     */
+    public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress,
+                                                   byte ownUsedMWM) {
+        short maxLength = ProtocolMessage.HANDSHAKE.getMaxLength();
+        final short payloadLengthBytes = (short) (maxLength - (maxLength - 60) + Protocol.SUPPORTED_PROTOCOL_VERSIONS.length);
+        ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
+        Protocol.addProtocolHeader(buf, ProtocolMessage.HANDSHAKE, payloadLengthBytes);
+        buf.putChar(ownSourcePort);
+        buf.putLong(System.currentTimeMillis());
+        buf.put(ownByteEncodedCooAddress);
+        buf.put(ownUsedMWM);
+        buf.put(Protocol.SUPPORTED_PROTOCOL_VERSIONS);
+        buf.flip();
+        return buf;
+    }
+
+    /**
      * Parses the given message into a {@link Handshake} object.
      * 
      * @param msg the buffer containing the handshake info

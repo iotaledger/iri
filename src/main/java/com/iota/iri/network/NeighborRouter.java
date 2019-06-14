@@ -218,7 +218,7 @@ public class NeighborRouter {
                             if (domain != null) {
                                 newNeighbor.setDomain(domain);
                             }
-                            newNeighbor.send(Protocol.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
+                            newNeighbor.send(Handshake.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
                                     byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
                             log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
                             newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
@@ -263,7 +263,7 @@ public class NeighborRouter {
                                     key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                                     // add handshaking packet as the initial packet to send
                                     neighbor.send(
-                                            Protocol.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
+                                            Handshake.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
                                                     byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
                                     continue;
                                 }

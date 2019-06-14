@@ -8,6 +8,8 @@ import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
@@ -17,6 +19,7 @@ import java.nio.ByteBuffer;
  */
 public class PreProcessStage implements Stage {
 
+    private static final Logger log = LoggerFactory.getLogger(PreProcessStage.class);
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
 
     /**
@@ -59,7 +62,18 @@ public class PreProcessStage implements Stage {
         long txDigest = NeighborRouter.getTxCacheDigest(txDataBytes);
 
         Hash receivedTxHash = recentlySeenBytesCache.get(txDigest);
-        Hash requestedHash = HashFactory.TRANSACTION.create(reqHashBytes, 0, Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
+        Hash requestedHash = HashFactory.TRANSACTION.create(reqHashBytes, 0,
+                Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
+
+        // log cache hit/miss ratio every 50k get()s
+        if (log.isDebugEnabled()) {
+            long hits = recentlySeenBytesCache.getCacheHits();
+            long misses = recentlySeenBytesCache.getCacheMisses();
+            if ((hits + misses) % 50000L == 0) {
+                log.info("recently seen bytes cache hit/miss ratio: {}/{}", hits, misses);
+                recentlySeenBytesCache.resetCacheStats();
+            }
+        }
 
         // received tx is known, therefore we can submit to the reply stage directly.
         if (receivedTxHash != null) {

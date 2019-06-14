@@ -3,6 +3,7 @@ package com.iota.iri.network;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -18,6 +19,8 @@ public class FIFOCache<K, V> {
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
     private final int capacity;
     private Map<K, V> map = new LinkedHashMap<>();
+    private AtomicLong cacheHits = new AtomicLong();
+    private AtomicLong cacheMisses = new AtomicLong();
 
     /**
      * Creates a new {@link FIFOCache}.
@@ -35,10 +38,16 @@ public class FIFOCache<K, V> {
      * @return the entry
      */
     public V get(K key) {
-        try{
+        try {
             cacheLock.readLock().lock();
-            return this.map.get(key);
-        }finally{
+            V v = this.map.get(key);
+            if (v == null) {
+                cacheMisses.incrementAndGet();
+            } else {
+                cacheHits.incrementAndGet();
+            }
+            return v;
+        } finally {
             cacheLock.readLock().unlock();
         }
     }
@@ -51,7 +60,7 @@ public class FIFOCache<K, V> {
      * @return the added entry
      */
     public V put(K key, V value) {
-        try{
+        try {
             cacheLock.writeLock().lock();
             if (this.map.containsKey(key)) {
                 return value;
@@ -62,8 +71,34 @@ public class FIFOCache<K, V> {
                 it.remove();
             }
             return this.map.put(key, value);
-        }finally{
+        } finally {
             cacheLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Gets the amount of cache hits.
+     * 
+     * @return amount of cache hits
+     */
+    public long getCacheHits() {
+        return cacheHits.get();
+    }
+
+    /**
+     * Gets the amount of ache misses.
+     * 
+     * @return amount of cache misses
+     */
+    public long getCacheMisses() {
+        return cacheMisses.get();
+    }
+
+    /**
+     * Resets the cache hits and misses stats back to 0.
+     */
+    public void resetCacheStats() {
+        cacheHits.set(0);
+        cacheMisses.set(0);
     }
 }

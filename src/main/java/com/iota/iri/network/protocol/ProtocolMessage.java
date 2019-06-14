@@ -32,7 +32,7 @@ public enum ProtocolMessage {
         this.supportsDynamicLength = supportsDynamicLength;
     }
 
-    private static ProtocolMessage[] lookup = new ProtocolMessage[256];
+    private static final ProtocolMessage[] lookup = new ProtocolMessage[256];
 
     static {
         lookup[0] = HEADER;

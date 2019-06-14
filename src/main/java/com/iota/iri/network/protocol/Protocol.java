@@ -36,10 +36,6 @@ public class Protocol {
      */
     public final static int GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH = 49;
     /**
-     * The amount of bytes used for the coo address sent in a handshake packet.
-     */
-    public final static int BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH = 49;
-    /**
      * The amount of bytes making up the non signature message fragment part of a transaction gossip payload.
      */
     public final static int NON_SIG_TX_PART_BYTES_LENGTH = 292;

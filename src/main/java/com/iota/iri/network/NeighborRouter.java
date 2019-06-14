@@ -128,7 +128,7 @@ public class NeighborRouter {
         byte[] tritsEncodedCooAddress = new byte[protocolConfig.getCoordinator().toString().length()
                 * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
         Converter.trits(protocolConfig.getCoordinator().toString(), tritsEncodedCooAddress, 0);
-        byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
+        byteEncodedCooAddress = new byte[Handshake.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         Converter.bytes(tritsEncodedCooAddress, byteEncodedCooAddress);
     }
 

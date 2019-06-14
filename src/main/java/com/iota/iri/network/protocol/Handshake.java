@@ -10,6 +10,11 @@ import java.nio.ByteBuffer;
 public class Handshake {
 
     /**
+     * The amount of bytes used for the coo address sent in a handshake packet.
+     */
+    public final static int BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH = 49;
+
+    /**
      * The state of the handshaking.
      */
     public enum State {
@@ -33,7 +38,7 @@ public class Handshake {
         Handshake handshake = new Handshake();
         handshake.setServerSocketPort((int) msg.getChar());
         handshake.setSentTimestamp(msg.getLong());
-        byte[] byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
+        byte[] byteEncodedCooAddress = new byte[BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         msg.get(byteEncodedCooAddress);
         handshake.setByteEncodedCooAddress(byteEncodedCooAddress);
         handshake.setMWM(msg.get());

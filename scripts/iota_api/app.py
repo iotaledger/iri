@@ -12,6 +12,7 @@ from collections import deque
 import StringIO
 import gzip
 from iota import TryteString
+from key_manager.signmessage import sign_input_message
 
 cf = ConfigParser.ConfigParser()
 cf.read("conf")
@@ -20,6 +21,7 @@ iota_seed = cf.get("iota", "seed")
 enable_ipfs = cf.getboolean("iota", "enableIpfs")
 enable_compression = cf.getboolean("iota", "enableCompression")
 enable_batching = cf.getboolean("iota", "enableBatching")
+enable_crypto = cf.getboolean("iota", "enableCrypto")
 listen_port = cf.get("iota", "listenPort")
 listen_address = cf.get("iota", "listenAddress")
 cache = IotaCache(iota_addr, iota_seed)
@@ -37,6 +39,15 @@ lock = threading.Lock()
 if (enable_ipfs == True and enable_compression == True) or (enable_batching == False and enable_compression == True):
     print("Error configure!", file=sys.stderr)
     sys.exit(-1)
+
+def sign_message(data,address, base58_priv_key):
+    if enable_crypto is True:
+        message = json.dumps(data, sort_keys=True)
+        signature = sign_input_message(address, message.replace(' ', ''), base58_priv_key)
+        data['sign'] = signature
+        return json.dumps(data, sort_keys=True)
+    else:
+        return json.dumps(data, sort_keys=True)
 
 def compress_str(data):
     if enable_compression == True:
@@ -95,6 +106,8 @@ def get_cache():
     if enable_batching is False:
         return
 
+    address = '14dD6ygPi5WXdwwBTt1FBZK3aD8uDem1FY'
+    base58_priv_key = 'L41XHGJA5QX43QRG3FEwPbqD5BYvy6WxUxqAMM9oQdHJ5FcRHcGk'
     global cache_lock
     with cache_lock:
         nums = min(len(txn_cache), BATCH_SIZE)
@@ -112,7 +125,7 @@ def get_cache():
                 tr_list.append(tx)
                 num_tr += 1
             elif req_json[u'tag'] == 'TX':
-                tx_list.append(tx)
+                tx_list.append(sign_message(req_json, address, base58_priv_key))
                 num_tx += 1
 
         tr_txs = json.dumps(tr_list)
@@ -150,15 +163,19 @@ def get_balance():
 
 @app.route('/put_file', methods=['POST'])
 def put_file():
+
+    address = '14dD6ygPi5WXdwwBTt1FBZK3aD8uDem1FY'
+    base58_priv_key = 'L41XHGJA5QX43QRG3FEwPbqD5BYvy6WxUxqAMM9oQdHJ5FcRHcGk'
+
     req_json = request.get_json()
 
     if req_json is None:
         return 'error'
 
     if not req_json.has_key(u'tag'):
-        send(json.dumps(req_json, sort_keys=True))
+        send(sign_message(req_json, address, base58_priv_key))
     else:
-        send(json.dumps(req_json, sort_keys=True), tag=req_json[u'tag'])
+        send(sign_message(req_json, address, base58_priv_key), tag=req_json[u'tag'])
 
     return 'ok'
 

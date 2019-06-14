@@ -1,7 +1,7 @@
 language: java
 jdk:
-  - oraclejdk8
-  #- openjdk8
+    #- oraclejdk8
+  - openjdk8
   #- oraclejdk9
 
 cache:
@@ -26,19 +26,14 @@ install:
     - sudo apt-get install python-pip
     - sudo pip install ipfsapi
     - sudo pip install flask
-    - sudo pip install pyOpenSSL
+    - sudo pip install -U pyOpenSSL
     - sudo pip install pyota
-    - sudo pip install docker
+    - sudo pip install docker 
     - sudo pip install mock
     - sudo pip install cryptography==2.5
     - sudo pip install sh
     - sudo pip install six --upgrade
-  # install ipfs
-    - wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz
-      && tar xf go-ipfs_v0.4.18_linux-amd64.tar.gz
-      && cd go-ipfs/
-      && sudo ./install.sh
-      && cd ..
+    - sudo pip install ecdsa
   # update go version
     - gimme 1.11.5
     - source ~/.gimme/envs/go1.11.5.env

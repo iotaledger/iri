@@ -12,6 +12,7 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iri.utils.crypto.ellipticcurve.EcdsaUtils;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
@@ -19,6 +20,10 @@ import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.Neighbor;
+import com.iota.iri.pluggables.tee.BatchTee;
+import com.iota.iri.pluggables.tee.TEEFormatted;
+import com.iota.iri.pluggables.utxo.BatchTxns;
+import com.iota.iri.pluggables.utxo.NodeFormatted;
 import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
@@ -29,8 +34,6 @@ import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
 import com.iota.iri.validator.BundleValidator;
 import com.iota.iri.validator.Snapshot;
-import com.iota.iri.pluggables.tee.BatchTee;
-import com.iota.iri.pluggables.tee.TEE;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -44,6 +47,8 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.channels.StreamSinkChannel;
@@ -54,6 +59,7 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,13 +67,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-
-import com.iota.iri.pluggables.utxo.BatchTxns;
-import com.iota.iri.pluggables.utxo.NodeFormatted;
-import com.iota.iri.pluggables.tee.TEEFormatted;
 
 import static io.undertow.Handlers.path;
 
@@ -246,10 +245,21 @@ public class API {
                     String message;
                     if (request.get("message") instanceof Map){
                         message = (String) request.get("message").toString();
-                    }else{
+                    } else{
                         message = (String) request.get("message");
                     }
 
+                    if (message.indexOf("sign") > 0){
+                        if(!verifySign(address, message)){
+                            log.error("Failed to verify signature!");
+                            return AbstractResponse.createEmptyResponse();
+                        }
+                    }
+
+                    address = Converter.asciiToTrytes(address);
+                    if(address.length() < 81) {
+                        address = StringUtils.rightPad(address, 81, '9');
+                    }
                     AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
                 }
@@ -1606,6 +1616,54 @@ public class API {
             e.printStackTrace();
             return AbstractResponse.createEmptyResponse();
         }
+    }
+
+    private boolean verifySign(String address, String requstJson){
+        JSONObject json = new JSONObject(requstJson);
+        Integer num = json.getInt("tx_num");
+        if (num == null || num < 1){
+            throw new RuntimeException("request need txn_num.");
+        }
+        String contentStr = json.getString("txn_content");
+        if(num == 1) {
+            return doVerify(address, contentStr);
+        }
+        else if (num > 1 ){
+            JSONArray arr = new JSONArray(contentStr);
+            for (Object obj : arr){
+                boolean r = doVerify(address, (String) obj);
+                if (!r){
+                    return false;
+                }
+            }
+            return true;
+        }
+        else{
+            throw new RuntimeException("request need a positive txn_num.");
+        }
+    }
+
+    private boolean doVerify(String address, String contentStr){
+        JSONObject content = new JSONObject(contentStr);
+        String signature = (String) content.remove("sign");
+        String message = EcdsaUtils.getSortedStringFrom(content);
+        log.debug("[message] {}", message);
+        return doVerifySign(address, signature, message);
+    }
+
+    private boolean doVerifySign(String address, String sign, String message){
+        try {
+            EcdsaUtils.ValidRes res = EcdsaUtils.verifyMessage(sign, message, address);
+            if (!res.verifyResult()){
+                log.error(String.format("Signatire verification failed for : %s", res.errMessage()));
+            }
+            return res.verifyResult();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
 

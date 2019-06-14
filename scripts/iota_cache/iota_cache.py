@@ -54,7 +54,8 @@ class IotaCache(object):
         return res
 
     def cache_txn_in_tangle_message(self, data, tag):
-        address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
+        #address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
+        address = "14dD6ygPi5WXdwwBTt1FBZK3aD8uDem1FY"
         res = storeMessage(self.uri, address, data, tag)
         return res
 

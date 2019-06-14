@@ -35,9 +35,9 @@ public enum ProtocolMessage {
     private static ProtocolMessage[] lookup = new ProtocolMessage[256];
 
     static {
-        lookup[0] = ProtocolMessage.HEADER;
-        lookup[1] = ProtocolMessage.HANDSHAKE;
-        lookup[2] = ProtocolMessage.TRANSACTION_GOSSIP;
+        lookup[0] = HEADER;
+        lookup[1] = HANDSHAKE;
+        lookup[2] = TRANSACTION_GOSSIP;
     }
 
     private byte typeID;

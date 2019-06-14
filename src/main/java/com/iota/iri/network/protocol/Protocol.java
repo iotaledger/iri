@@ -164,11 +164,12 @@ public class Protocol {
      * array.
      * 
      * @param source the transaction gossip packet data
-     * @param dest   the destination array to write the requested transaction hash into
      */
-    public static void extractRequestedTxHash(byte[] source, byte[] dest) {
-        System.arraycopy(source, source.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH, dest, 0,
+    public static byte[] extractRequestedTxHash(byte[] source) {
+        byte[] reqHashBytes = new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH];
+        System.arraycopy(source, source.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH, reqHashBytes, 0,
                 Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
+        return reqHashBytes;
     }
 
 }

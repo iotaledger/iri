@@ -48,11 +48,8 @@ public class PreProcessStage implements Stage {
 
         // expand received tx data
         byte[] txDataBytes = Protocol.expandTx(data);
-        // allocate buffer for requested tx hash
-        byte[] reqHashBytes = new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH];
-
-        // copy requested hash
-        Protocol.extractRequestedTxHash(data, reqHashBytes);
+        // copy requested tx hash
+        byte[] reqHashBytes = Protocol.extractRequestedTxHash(data);
 
         // increment all txs count
         payload.getOriginNeighbor().getMetrics().incrAllTransactionsCount();

@@ -27,6 +27,7 @@ public class HashingStage implements Stage {
      * @param ctx the hashing stage {@link ProcessingContext}
      * @return the same ctx as passed in
      */
+    @Override
     public ProcessingContext process(ProcessingContext ctx) {
         HashingPayload payload = (HashingPayload) ctx.getPayload();
         batchedHasher.submitHashingRequest(payload.getHashRequest());

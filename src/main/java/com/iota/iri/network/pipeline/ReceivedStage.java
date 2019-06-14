@@ -40,6 +40,7 @@ public class ReceivedStage implements Stage {
      * @param ctx the received stage {@link ProcessingContext}
      * @return a {@link ProcessingContext} which redirects to the {@link BroadcastStage}
      */
+    @Override
     public ProcessingContext process(ProcessingContext ctx) {
         ReceivedPayload payload = (ReceivedPayload) ctx.getPayload();
         Neighbor originNeighbor = payload.getOriginNeighbor();

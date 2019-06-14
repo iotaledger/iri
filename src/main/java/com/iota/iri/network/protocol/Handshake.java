@@ -161,7 +161,7 @@ public class Handshake {
      * @return a positive integer defining the highest supported protocol version and a negative integer indicating the
      *         highest supported version by the given neighbor but which is not supported by us
      */
-    public int isNeighborSupported(byte[] ownSupportedVersions) {
+    public int getNeighborSupportedVersion(byte[] ownSupportedVersions) {
         int highestSupportedVersion = 0;
         for (int i = 0; i < ownSupportedVersions.length; i++) {
             // max check up to advertised versions by the neighbor

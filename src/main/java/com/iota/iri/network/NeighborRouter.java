@@ -486,7 +486,7 @@ public class NeighborRouter {
         }
 
         // check whether we support the supported protocol versions by the neighbor
-        int supportedVersion = handshake.isNeighborSupported(Protocol.SUPPORTED_PROTOCOL_VERSIONS);
+        int supportedVersion = handshake.getNeighborSupportedVersion(Protocol.SUPPORTED_PROTOCOL_VERSIONS);
         if (supportedVersion <= 0) {
             log.error(
                     "dropping handshaked connection to neighbor {} as its highest supported protocol version {} is not supported",

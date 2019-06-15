@@ -25,14 +25,20 @@ ENV JAVA_MAX_MEMORY 4G
 ENV DOCKER_IRI_JAR_PATH "/iri/target/iri*.jar"
 ENV DOCKER_IRI_REMOTE_LIMIT_API "interruptAttachToTangle, attachToTangle, addNeighbors, removeNeighbors, getNeighbors"
 
-# Setting this to 1 will have socat exposing 14266 and pointing it on
-# localhost. See /entrypoint.sh
+# When using a docker bridged network setting this to 1 will have
+# socat exposing 14266 and pointing it on localhost. See /entrypoint.sh
+# Do not enable this option when running IRI's container on host network.
 # !!! DO NOT DOCKER EXPOSE (-p) 14266 as the remote api settings
 #     will not be applied on that port !!!
 # You also have to maintain $DOCKER_IRI_MONITORING_API_PORT_DESTINATION
 # based on the actual API port exposed via IRI
 ENV DOCKER_IRI_MONITORING_API_PORT_ENABLE 0
 ENV DOCKER_IRI_MONITORING_API_PORT_DESTINATION 14265
+
+# When using a docker bridged network set this to true
+# Using host network you may choose to set it to false
+# to make sure the API port listens on localhost only.
+ENV DOCKER_IRI_REMOTE true
 
 WORKDIR /iri/data
 ENTRYPOINT [ "/entrypoint.sh" ]

@@ -113,12 +113,15 @@ public class NeighborRouter {
     /**
      * Initializes the dependencies of the {@link NeighborRouter}.
      * 
-     * @param networkConfig      Network related configuration parameters
-     * @param protocolConfig     Protocol related configuration parameters
-     * @param txRequester {@link TransactionRequester} instance to load hashes of requested transactions when gossiping
-     * @param txPipeline  {@link TransactionProcessingPipelineImpl} passed to newly created {@link Neighbor} instances
+     * @param networkConfig  Network related configuration parameters
+     * @param protocolConfig Protocol related configuration parameters
+     * @param txRequester    {@link TransactionRequester} instance to load hashes of requested transactions when
+     *                       gossiping
+     * @param txPipeline     {@link TransactionProcessingPipelineImpl} passed to newly created {@link Neighbor}
+     *                       instances
      */
-    public void init(NetworkConfig networkConfig, ProtocolConfig protocolConfig, TransactionRequester txRequester, TransactionProcessingPipeline txPipeline) {
+    public void init(NetworkConfig networkConfig, ProtocolConfig protocolConfig, TransactionRequester txRequester,
+            TransactionProcessingPipeline txPipeline) {
         this.txRequester = txRequester;
         this.txPipeline = txPipeline;
         this.networkConfig = networkConfig;
@@ -150,10 +153,14 @@ public class NeighborRouter {
     }
 
     /**
+     * <p>
      * Starts the routing mechanism which first initialises connections to neighbors from the configuration and then
-     * continuously reads and writes messages from/to neighbors. <br/>
+     * continuously reads and writes messages from/to neighbors.
+     * </p>
+     * <p>
      * This method will also try to reconnect to wanted neighbors by the given
      * {@link BaseIotaConfig#getReconnectAttemptIntervalSeconds()} value.
+     * </p>
      */
     public void route() {
         log.info("starting neighbor router");
@@ -178,7 +185,8 @@ public class NeighborRouter {
             connectToWantedNeighbors();
 
             long lastReconnectAttempts = System.currentTimeMillis();
-            long reconnectAttemptTimeout = TimeUnit.SECONDS.toMillis(networkConfig.getReconnectAttemptIntervalSeconds());
+            long reconnectAttemptTimeout = TimeUnit.SECONDS
+                    .toMillis(networkConfig.getReconnectAttemptIntervalSeconds());
 
             while (!shutdown.get()) {
                 selector.select(reconnectAttemptTimeout);
@@ -198,30 +206,9 @@ public class NeighborRouter {
                 while (iterator.hasNext()) {
                     try {
                         SelectionKey key = iterator.next();
+
                         if (key.isAcceptable()) {
-                            // new connection from neighbor
-                            ServerSocketChannel srvSocket = (ServerSocketChannel) key.channel();
-                            SocketChannel newConn = srvSocket.accept();
-                            if (newConn == null) {
-                                continue;
-                            }
-                            InetSocketAddress remoteAddr = (InetSocketAddress) newConn.getRemoteAddress();
-                            if (!okToConnect(remoteAddr.getAddress().getHostAddress(), newConn)) {
-                                continue;
-                            }
-                            configureSocket(newConn);
-                            newConn.configureBlocking(false);
-                            Neighbor newNeighbor = new NeighborImpl<>(selector, newConn,
-                                    remoteAddr.getAddress().getHostAddress(),
-                                    Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT, txPipeline);
-                            String domain = ipToDomainMapping.get(remoteAddr.getAddress().getHostAddress());
-                            if (domain != null) {
-                                newNeighbor.setDomain(domain);
-                            }
-                            newNeighbor.send(Handshake.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
-                                    byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
-                            log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
-                            newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
+                            handleNewConnection(key);
                             continue;
                         }
 
@@ -238,101 +225,18 @@ public class NeighborRouter {
                         }
 
                         if (key.isConnectable()) {
-                            // in here we are handling a connection to a neighbor we have initialized after
-                            // we booted up the server socket (from the config), we are attempting
-                            // to reconnect to or was added via addNeighbor.
-                            // there's an inherit race condition between us doing the initial connect to our
-                            // defined neighbors and our neighbors connecting to us.
-                            // thereby, there's a chance that a neighbor got already connected before
-                            // our own initialized connection was fully connected, however, since
-                            // only a fully handshaked neighbor is recognized as connected, the redundant
-                            // connection will be closed after that connection's handshake.
-                            try {
-                                // the neighbor was faster than us to setup the connection
-                                if (connectedNeighbors.containsKey(identity)) {
-                                    log.info("neighbor {} is already connected", identity);
-                                    removeFromReconnectPool(neighbor);
-                                    key.cancel();
-                                    continue;
-                                }
-                                if (channel.finishConnect()) {
-                                    log.info("established connection to neighbor {}, now performing handshake...",
-                                            identity);
-                                    removeFromReconnectPool(neighbor);
-                                    // remove connect interest
-                                    key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                                    // add handshaking packet as the initial packet to send
-                                    neighbor.send(
-                                            Handshake.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
-                                                    byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
-                                    continue;
-                                }
-                            } catch (ConnectException ex) {
-                                log.info(
-                                        "couldn't establish connection to neighbor {}, will attempt to reconnect later. reason: {}",
-                                        identity, ex.getMessage());
-                                closeNeighborConnection(channel, identity, selector);
-                            }
+                            handleConnect(channel, key, identity, neighbor);
                             continue;
                         }
 
-                        if (key.isWritable()) {
-                            try {
-                                switch (neighbor.write()) {
-                                    case 0:
-                                        // nothing was written, probably because no message was available to send.
-                                        // lets unregister this channel from write interests until at least
-                                        // one message is back available for sending.
-                                        key.interestOps(SelectionKey.OP_READ);
-                                        break;
-                                    case -1:
-                                        if (neighbor.getState() == NeighborState.HANDSHAKING) {
-                                            log.info("closing connection to {} as handshake packet couldn't be written",
-                                                    identity);
-                                            closeNeighborConnection(channel, null, selector);
-                                        } else {
-                                            closeNeighborConnection(channel, identity, selector);
-                                        }
-                                        continue;
-                                    default:
-                                        // bytes were written to the channel
-                                }
-                            } catch (IOException ex) {
-                                log.error("unable to send message to neighbor {}. reason: {}", identity, ex.getMessage());
-                                closeNeighborConnection(channel, identity, selector);
-                                addToReconnectPool(neighbor);
-                                continue;
-                            }
+                        if (key.isWritable() && !handleWrite(channel, key, identity, neighbor)) {
+                            continue;
                         }
 
                         if (key.isReadable()) {
-                            try {
-                                switch (neighbor.getState()) {
-                                    case READY_FOR_MESSAGES:
-                                        if (neighbor.read() == -1) {
-                                            closeNeighborConnection(channel, identity, selector);
-                                        }
-                                        break;
-                                    case HANDSHAKING:
-                                        if (finalizeHandshake(identity, neighbor, channel)) {
-                                            // if all known neighbors or max neighbors are connected we are
-                                            // no longer interested in any incoming connections
-                                            // (as long as no neighbor dropped the connection)
-                                            if (availableNeighborSlotsFilled()) {
-                                                SelectionKey srvKey = serverSocketChannel.keyFor(selector);
-                                                srvKey.interestOps(0);
-                                            }
-                                        }
-                                    default:
-                                        // do nothing
-                                }
-                            } catch (IOException ex) {
-                                log.error("unable to read message from neighbor {}. reason: {}", identity,
-                                        ex.getMessage());
-                                closeNeighborConnection(channel, identity, selector);
-                                addToReconnectPool(neighbor);
-                            }
+                            handleRead(channel, identity, neighbor);
                         }
+
                     } finally {
                         iterator.remove();
                     }
@@ -357,6 +261,187 @@ public class NeighborRouter {
             }
             log.info("neighbor router stopped");
         }
+    }
+
+    /**
+     * Handles a new incoming connection and if it passes some initial conditions (via
+     * {@link NeighborRouter#okToConnect(String, SocketChannel)}), will start the handshaking process by placing a
+     * handshake packet into the connection's send queue.
+     * 
+     * @param key the selection key associated with the server socket channel
+     * @return whether the new connection was accepted
+     */
+    private boolean handleNewConnection(SelectionKey key) {
+        try {
+            // new connection from neighbor
+            ServerSocketChannel srvSocket = (ServerSocketChannel) key.channel();
+            SocketChannel newConn = srvSocket.accept();
+            if (newConn == null) {
+                return false;
+            }
+            InetSocketAddress remoteAddr = (InetSocketAddress) newConn.getRemoteAddress();
+            if (!okToConnect(remoteAddr.getAddress().getHostAddress(), newConn)) {
+                return false;
+            }
+            configureSocket(newConn);
+            Neighbor newNeighbor = new NeighborImpl<>(selector, newConn, remoteAddr.getAddress().getHostAddress(),
+                    Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT, txPipeline);
+            String domain = ipToDomainMapping.get(remoteAddr.getAddress().getHostAddress());
+            if (domain != null) {
+                newNeighbor.setDomain(domain);
+            }
+            newNeighbor.send(Handshake.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
+                    byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
+            log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
+            newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
+            return true;
+        } catch (IOException ex) {
+            log.info("couldn't accept connection. reason: {}", ex.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * <p>
+     * Finalizes the underlying connection sequence by calling the channel's finishConnect() method.
+     * </p>
+     * <p>
+     * <strong> This method does not finalize the logical protocol level connection, rather, it kicks of that process by
+     * placing a handshake packet into the neighbor's send queue if the connection was successfully established.
+     * </strong>
+     * </p>
+     * <p>
+     * Connections passed into this method are self-initialized and were not accepted by the server socket channel.
+     * </p>
+     * <p>
+     * In case the connection sequence fails, the connection will be dropped.
+     * </p>
+     * 
+     * @param channel  the associated channel for the given connection
+     * @param key      the associated selection key associated with the given connection
+     * @param identity the identity of the connection/neighbor
+     * @param neighbor the neighbor associated with this connection
+     * @return whether the connection sequence finished successfully
+     */
+    private boolean handleConnect(SocketChannel channel, SelectionKey key, String identity, Neighbor neighbor) {
+        try {
+            // the neighbor was faster than us to setup the connection
+            if (connectedNeighbors.containsKey(identity)) {
+                log.info("neighbor {} is already connected", identity);
+                removeFromReconnectPool(neighbor);
+                key.cancel();
+                return false;
+            }
+            if (channel.finishConnect()) {
+                log.info("established connection to neighbor {}, now performing handshake...", identity);
+                removeFromReconnectPool(neighbor);
+                // remove connect interest
+                key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                // add handshaking packet as the initial packet to send
+                neighbor.send(Handshake.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
+                        byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
+                return true;
+            }
+        } catch (IOException ex) {
+            log.info("couldn't establish connection to neighbor {}, will attempt to reconnect later. reason: {}",
+                    identity, ex.getMessage());
+            closeNeighborConnection(channel, identity, selector);
+        }
+        return false;
+    }
+
+    /**
+     * <p>
+     * Handles the write readiness by the given channel by writing a message into its send buffer.
+     * </p>
+     * 
+     * <p>
+     * If there was no message to send, then the channel is de-registered from write interests. If the channel would not
+     * be de-registered from write interests, the channel's write readiness would constantly fire this method even if
+     * there's nothing to send, causing high CPU usage. Re-registering the channel for write interest is implicitly done
+     * via the caller who's interested to send a message through the neighbor's implementation.
+     * </p>
+     * <p>
+     * In case the write fails with an IOException, the connection will be dropped.
+     * </p>
+     *
+     * @param channel  the associated channel for the given connection
+     * @param key      the associated selection key associated with the given connection
+     * @param identity the identity of the connection/neighbor
+     * @param neighbor the neighbor associated with this connection
+     * @return whether the write operation was successful or not
+     */
+    private boolean handleWrite(SocketChannel channel, SelectionKey key, String identity, Neighbor neighbor) {
+        try {
+            switch (neighbor.write()) {
+                case 0:
+                    // nothing was written, because no message was available to be sent.
+                    // lets unregister this channel from write interests until at least
+                    // one message is back available for sending.
+                    key.interestOps(SelectionKey.OP_READ);
+                    break;
+                case -1:
+                    if (neighbor.getState() == NeighborState.HANDSHAKING) {
+                        log.info("closing connection to {} as handshake packet couldn't be written", identity);
+                        closeNeighborConnection(channel, null, selector);
+                    } else {
+                        closeNeighborConnection(channel, identity, selector);
+                    }
+                    return false;
+                default:
+                    // bytes were written to the channel
+            }
+            return true;
+        } catch (IOException ex) {
+            log.error("unable to send message to neighbor {}. reason: {}", identity, ex.getMessage());
+            closeNeighborConnection(channel, identity, selector);
+            addToReconnectPool(neighbor);
+        }
+        return false;
+    }
+
+    /**
+     * <p>
+     * Handles the read readiness by the given channel by reading from the channel's receive buffer.
+     * </p>
+     * <p>
+     * In case the read fails with an IOException, the connection will be dropped.
+     * </p>
+     *
+     * @param channel  the associated channel for the given connection
+     * @param identity the identity of the connection/neighbor
+     * @param neighbor the neighbor associated with this connection
+     * @return whether the read operation was successful or not
+     */
+    private boolean handleRead(SocketChannel channel, String identity, Neighbor neighbor) {
+        try {
+            switch (neighbor.getState()) {
+                case READY_FOR_MESSAGES:
+                    if (neighbor.read() == -1) {
+                        closeNeighborConnection(channel, identity, selector);
+                        return false;
+                    }
+                    break;
+                case HANDSHAKING:
+                    if (finalizeHandshake(identity, neighbor, channel)) {
+                        // if all known neighbors or max neighbors are connected we are
+                        // no longer interested in any incoming connections
+                        // (as long as no neighbor dropped the connection)
+                        if (availableNeighborSlotsFilled()) {
+                            SelectionKey srvKey = serverSocketChannel.keyFor(selector);
+                            srvKey.interestOps(0);
+                        }
+                    }
+                default:
+                    // do nothing
+            }
+            return true;
+        } catch (IOException ex) {
+            log.error("unable to read message from neighbor {}. reason: {}", identity, ex.getMessage());
+            closeNeighborConnection(channel, identity, selector);
+            addToReconnectPool(neighbor);
+        }
+        return false;
     }
 
     /**

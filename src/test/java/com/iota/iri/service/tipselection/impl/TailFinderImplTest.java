@@ -1,10 +1,10 @@
 package com.iota.iri.service.tipselection.impl;
 
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
 import static com.iota.iri.TransactionTestUtils.createBundleHead;
 import static com.iota.iri.TransactionTestUtils.createTransactionWithTrunkBundleHash;
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
-import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
 
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -55,7 +55,7 @@ public class TailFinderImplTest {
 
     @Test
     public void findTailTest() throws Exception {
-        TransactionViewModel txa = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        TransactionViewModel txa = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
         txa.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel tx2 = createBundleHead(2);
@@ -82,7 +82,7 @@ public class TailFinderImplTest {
 
     @Test
     public void findMissingTailTest() throws Exception {
-        TransactionViewModel txa = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        TransactionViewModel txa = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
         txa.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel tx2 = createBundleHead(2);
@@ -91,8 +91,8 @@ public class TailFinderImplTest {
         TransactionViewModel tx1 = createTransactionWithTrunkBundleHash(tx2, txa.getHash());
         tx1.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx0 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), tx2.getHash()),
-                getRandomTransactionHash());
+        TransactionViewModel tx0 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(tx1.getHash(), tx2.getHash()),
+                getTransactionHash());
         tx0.store(tangle, snapshotProvider.getInitialSnapshot());
 
         Optional<Hash> tail = tailFinder.findTail(tx2.getHash());

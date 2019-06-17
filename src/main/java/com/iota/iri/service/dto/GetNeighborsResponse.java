@@ -2,12 +2,10 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-import com.iota.iri.service.API;
-
 /**
  * 
  * Contains information about the result of a successful {@code getNeighbors} API call.
- * See {@link API#getNeighborsStatement} for how this response is created.
+ * See {@link GetNeighborsResponse#create(List)} for how this response is created.
  *
  */
 public class GetNeighborsResponse extends AbstractResponse {
@@ -25,7 +23,7 @@ public class GetNeighborsResponse extends AbstractResponse {
      *     <li>numberOfSentTransactions</li>
      *     <li>numberOfStaleTransactions</li>
      * </ol>
-     * @see {@link com.iota.iri.service.dto.GetNeighborsResponse.Neighbor}
+     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      */
     private Neighbor[] neighbors;
 
@@ -58,77 +56,110 @@ public class GetNeighborsResponse extends AbstractResponse {
      * A plain DTO of an iota neighbor.
      * 
      */
-    static class Neighbor {
-
-        private String address;
-        public long numberOfAllTransactions,
-                numberOfRandomTransactionRequests,
-                numberOfNewTransactions,
-                numberOfInvalidTransactions,
-                numberOfStaleTransactions,
-                numberOfSentTransactions;
-        public String connectionType;
+    @SuppressWarnings("unused")
+    public static class Neighbor {
 
         /**
          * The address of your neighbor
+         */
+        private String address;
+        
+        /**
+         * Number of all transactions sent (invalid, valid, already-seen)
+         */
+        private long numberOfAllTransactions;
+        
+        /**
+         * Random tip requests which were sent
+         */
+        private long numberOfRandomTransactionRequests;
+        
+        /**
+         * New transactions which were transmitted.
+         */
+        private long numberOfNewTransactions;
+        
+        /**
+         * Invalid transactions your neighbor has sent you. 
+         * These are transactions with invalid signatures or overall schema.
+         */
+        private long numberOfInvalidTransactions;
+        
+        /**
+         * Stale transactions your neighbor has sent you.
+         * These are transactions with a timestamp older than your latest snapshot.
+         */
+        private long numberOfStaleTransactions;
+        
+        /**
+         * Amount of transactions send through your neighbor
+         */
+        private long numberOfSentTransactions;
+        
+        /**
+         * The method type your neighbor is using to connect (TCP / UDP)
+         */
+        private String connectionType;
+
+        /**
          * 
-         * @return the address
+         * {@link #address}
          */
         public String getAddress() {
             return address;
         }
 
         /**
-         * Number of all transactions sent (invalid, valid, already-seen)
          * 
-         * @return the number
+         * {@link #numberOfAllTransactions}
          */
         public long getNumberOfAllTransactions() {
             return numberOfAllTransactions;
         }
 
         /**
-         * New transactions which were transmitted.
          * 
-         * @return the number
+         * {@link #numberOfNewTransactions}
          */
         public long getNumberOfNewTransactions() {
             return numberOfNewTransactions;
         }
 
         /**
-         * Invalid transactions your neighbor has sent you. 
-         * These are transactions with invalid signatures or overall schema.
          * 
-         * @return the number
+         * {@link #numberOfInvalidTransactions}
          */
         public long getNumberOfInvalidTransactions() {
             return numberOfInvalidTransactions;
         }
 
         /**
-         * Stale transactions your neighbor has sent you.
-         * These are transactions with a timestamp older than your latest snapshot.
-         *
-         * @return the number
+         * 
+         * {@link #numberOfStaleTransactions}
          */
         public long getNumberOfStaleTransactions() {
             return numberOfStaleTransactions;
         }
 
         /**
-         * Amount of transactions send through your neighbor
          * 
-         * @return the number
+         * {@link #numberOfSentTransactions}
          */
         public long getNumberOfSentTransactions() {
             return numberOfSentTransactions;
         }
 
         /**
-         * The method type your neighbor is using to connect (TCP / UDP)
          * 
-         * @return the connection type
+         * {@link #numberOfRandomTransactionRequests}
+         */
+        public long getNumberOfRandomTransactionRequests() {
+            return numberOfRandomTransactionRequests;
+        }
+
+       /**
+         * 
+         * {@link #connectionType}
          */
         public String getConnectionType() {
             return connectionType;

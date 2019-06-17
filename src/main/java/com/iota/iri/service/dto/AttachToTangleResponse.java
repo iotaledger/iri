@@ -7,8 +7,8 @@ import com.iota.iri.service.API;
 /**
  * 
  * Contains information about the result of a successful {@code attachToTangle} API call.
+ * 
  * @see {@link API#attachToTangleStatement} for how this response is created.
- *
  */
 public class AttachToTangleResponse extends AbstractResponse {
 

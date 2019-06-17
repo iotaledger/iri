@@ -14,8 +14,10 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -106,7 +108,6 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         try {
             // Its bytes are always new byte[0], therefore identical in storage
             SpentAddress spentAddressModel = new SpentAddress();
-
             rocksDBPersistenceProvider.saveBatch(addressHash
                 .stream()
                 .map(address -> new Pair<Indexable, Persistable>(address, spentAddressModel))
@@ -115,5 +116,14 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
+    }
+
+    @Override
+    public List<Hash> getAllAddresses() {
+        List<Hash> addresses = new ArrayList<>();
+        for (byte[] bytes : rocksDBPersistenceProvider.loadAllKeysFromTable(SpentAddress.class)) {
+            addresses.add(HashFactory.ADDRESS.create(bytes));
+        }
+        return addresses;
     }
 }

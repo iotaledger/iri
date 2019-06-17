@@ -223,3 +223,33 @@ The major difference with Conflux are in two points:
         which will be discussed in the next chapter. 
         In Conflux paper, there is no description of how to deal with the complexity paired with the growing graph.
 \end{itemize}
+
+\subsection{Correctness}
+
+\subsubsection{Safety \& Liveness}
+Because StreamNet utilises the GHOST rule to select pivot chain, which is the same as in Conflux. 
+Thus, it shares the same safety and correctness property as Conflux.
+Although the choice of reference chain in StreamNet is didfferent from Conflux, it only affects the inclusion rate,
+which is the probability of a block to be included in the total order.
+
+\subsubsection{Confirmation}
+
+According to Theorem 10 in \cite{sompolinsky2015secure} and the deduction in \cite{li2018scaling}, 
+given a period of $[t-d, t]$, and block $b$ in pivot chain in this period, 
+the chance of $b$ kicked out by its sibling $b'$ is no more than $Pr(b_{drop})$ in (1).
+Which is the same as in Conflux.
+
+\begin{equation}
+    \begin{flalign*}
+        & Pr(b_{drop}) \leq \sum_{k=0}^{n-m}{\zeta_kq^{n-m-k+1}} + \sum_{k=n-m+1}^{\infty}{\zeta_k} \\
+        & \zeta_k = e^{-q\lambda_{h}t \frac{(-q\lambda_{h}t)^k}{k!}}
+    \end{flalign*}
+\end{equation}
+
+Followed by the definitions in Conflux paper \cite{li2018scaling}, 
+in (1), $n$ is the number of blocks in the subtree before $t$, 
+$m$ is the number of blocks in the subtree of $b'$ before $t$. 
+$\lambda_{h}$ is honest node's block generation rate.
+$q (0 \leq q \leq 1)$ is the attacker's block generation ratio with respect to $\lambda_{h}$.
+From the equation, we can conclude that with the time $t$ goes by, 
+the chance of a block $b$ in the pivot chain to be reverted is decreased exponetially.

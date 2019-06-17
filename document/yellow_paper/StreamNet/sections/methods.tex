@@ -105,31 +105,37 @@ TopOrder(G, b)        & StreamNetOrder() & $O(|1|)$              & $O(|1|)$    \
 The above algorithm solved the problem of how to dynamically maintaining the information needed for graph computation.
 However, it still needs to update the information until genesis block. 
 With the size of the graph growing, the updating process will become harder to compute.
-With the grwoth of DAG size, the old historical confirmed blocks are being confirmed by more and more blocks, which are hard to be mutated.
+With the grwoth of DAG size, the old historical confirmed blocks are being confirmed by more and more blocks, 
+which are hard to be mutated.
+And the exact probability can be computed in formula (1).
 Hence, we can design a strategy to forward the genesis periodically and fix the historical blocks into a total ordered chain.
 The criteria to forward the genesis are based on the threshold of ParentScore().
-Suppose we define this threshold as $t$, then we only forward the genesis if: 
+Suppose we define this threshold as $h = n-m $, then we only forward the genesis if: 
 
 \begin{equation}
     \begin{flalign*}
-        & \exists b' | b' \in Chain(G, g), for \\ 
-        & \forall b'' | b'' \in \overline{Chain(G,b)}, such that \\
-        & ParentScore(b') > ParentScore(b'') + t 
+        & \exists b | b \in Chain(G, g), for \\ 
+        & \forall b' | b' \in \overline{Chain(G,g)}, such that \\
+        & ParentScore(b) > ParentScore(b') + h 
     \end{flalign*}
 \end{equation}
 
 In addition, after the new genesis has been chosen, 
-we will induce a new DAG in memory from this genesis 
-and the vertices in UTXO graph that belongs to the fixed blocks will be eliminated from the memory as well.  
+we will induce a new DAG in memory from this genesis,
+and persist the `snapshot' total order (Conflux paper has the same definition, 
+but it does not show the technical detail, we do not view it trivial) in the local data base.
+Once the total order is queried, a total order based on the current DAG will be appended to the end of the historical
+snapshot total order and be returned.
+In addition, the vertices in UTXO graph that belongs to the fixed blocks will 
+be eliminated from the memory and be persisted to disk as well.  
 The algorithm is as Algorithm~\ref{algo:genesis_forward} shows.
-
 
 \input{./algorithms/genesis_forward.tex}
 
 \subsection{The Direct Signal Gossip Protocol}
 To minimize the message passing in the gossip network,
 there are solutions in \cite{demers1988epidemic}. And in Hyperledger \cite{androulaki2018hyperledger}
-they have adopted the PUSH and PULL model for the gossip message propagation. However, their system is aiming at small scale.
+they have adopted the PUSH and PULL model for the gossip message propagation. However, their system is aiming at permissioned chain.
 Suppose the size of the hash of a block is $H$, we designed the direct signal algorithm.
 The algorithm is divided into two steps, once a node generate or receive a block,
 it firstly broadcast the hash of the block, this is the PUSH step.

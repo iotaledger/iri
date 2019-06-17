@@ -7,14 +7,17 @@
 \KwIn{ Graph $G=<B, g, P, E>$ }
 
     \While {Node is running}{
-        \uIf{$\exists b'$ satisties (1)}{
-            $g' \gets b'$ \;
+        \uIf{$\exists b$ satisties (3)}{
+            $ O = TopOrder(G, g) $\;
+            $g' \gets b$ \;
             $G' \gets induceGraph(G, g') $ \;
-            ParentScore(G', g')\;
-            Score(G', g')\;
-            TopOrder(G', g')\;
+            $ pS = ParentScore(G', g') $\;
+            $ S = Score(G', g') $\;
+            $ O' = TopOrder(G', g') $\;
             $G \gets G'$ \;
+            persist $O - O'$ \;
         } 
+        sleep ($t$) \;
     }
 
 \caption{{ Genesis Forward Algorithm.}}

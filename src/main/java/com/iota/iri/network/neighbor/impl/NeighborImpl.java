@@ -95,8 +95,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
         msg.flip();
         switch (readState) {
             case PARSE_HEADER:
-                // -1 signals a wrong parsing of the header
-                if (parseHeader(msg, bytesRead) == -1) {
+                if (!parseHeader(msg)) {
                     return -1;
                 }
                 // execute another read as we likely already have the message in the network buffer
@@ -115,34 +114,33 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
      * Parses the header in the given {@link ByteBuffer} and sets up the message reader to read the bytes for a message
      * of the advertised type/size.
      * 
-     * @param msg       the {@link ByteBuffer} containing the header
-     * @param bytesRead the amount of bytes read up until now
-     * @return the amount of bytes read or -1 to indicate an error when parsing the header
+     * @param msg the {@link ByteBuffer} containing the header
+     * @return whether the parsing was successful or not
      */
-    private int parseHeader(ByteBuffer msg, int bytesRead) {
+    private boolean parseHeader(ByteBuffer msg) {
         ProtocolHeader protocolHeader;
         try {
             protocolHeader = Protocol.parseHeader(msg);
         } catch (UnknownMessageTypeException e) {
             log.error("unknown message type received from {}, closing connection", getHostAddressAndPort());
-            return -1;
+            return false;
         } catch (InvalidProtocolMessageLengthException e) {
             log.error("{} is trying to send a message with an invalid length for the given message type, "
                     + "closing connection", getHostAddressAndPort());
-            return -1;
+            return false;
         }
 
         // if we are handshaking, then we must have a handshaking packet as the initial packet
         if (state == NeighborState.HANDSHAKING && protocolHeader.getMessageType() != ProtocolMessage.HANDSHAKE) {
             log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
                     getHostAddressAndPort());
-            return -1;
+            return false;
         }
 
         // we got the header, now we want to read/handle the message
         readState = ReadState.HANDLE_MESSAGE;
         msgReader = MessageReaderFactory.create(protocolHeader.getMessageType(), protocolHeader.getMessageLength());
-        return bytesRead;
+        return true;
     }
 
     /**

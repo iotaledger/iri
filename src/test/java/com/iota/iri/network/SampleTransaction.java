@@ -45,6 +45,11 @@ public class SampleTransaction {
         SAMPLE_TRANSACTION.parsed = true;
     }
 
+    /**
+     * Creates a byte buffer containing a sample transaction.
+     * 
+     * @return a byte buffer containing a sample transaction
+     */
     public static ByteBuffer createSampleTxBuffer() {
         int size = ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength();
         ByteBuffer buf = ByteBuffer.allocate(size);

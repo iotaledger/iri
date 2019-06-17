@@ -4,6 +4,9 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
+/**
+ * A fake selection key with defaulted interest ops.
+ */
 public class FakeSelectionKey extends SelectionKey {
     @Override
     public SelectableChannel channel() {

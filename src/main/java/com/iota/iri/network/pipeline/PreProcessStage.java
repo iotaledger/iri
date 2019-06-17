@@ -3,7 +3,6 @@ package com.iota.iri.network.pipeline;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.protocol.Protocol;

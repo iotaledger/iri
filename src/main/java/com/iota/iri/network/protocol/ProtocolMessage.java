@@ -26,23 +26,23 @@ public enum ProtocolMessage {
     TRANSACTION_GOSSIP((byte) 2, (short) (Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH + Protocol.NON_SIG_TX_PART_BYTES_LENGTH
             + Protocol.SIG_DATA_MAX_BYTES_LENGTH), true);
 
+    private static final ProtocolMessage[] lookup = new ProtocolMessage[256];
+
+    private byte typeID;
+    private short maxLength;
+    private boolean supportsDynamicLength;
+
     ProtocolMessage(byte typeID, short maxLength, boolean supportsDynamicLength) {
         this.typeID = typeID;
         this.maxLength = maxLength;
         this.supportsDynamicLength = supportsDynamicLength;
     }
 
-    private static final ProtocolMessage[] lookup = new ProtocolMessage[256];
-
     static {
         lookup[0] = HEADER;
         lookup[1] = HANDSHAKE;
         lookup[2] = TRANSACTION_GOSSIP;
     }
-
-    private byte typeID;
-    private short maxLength;
-    private boolean supportsDynamicLength;
 
     /**
      * Gets the {@link ProtocolMessage} corresponding to the given type id.

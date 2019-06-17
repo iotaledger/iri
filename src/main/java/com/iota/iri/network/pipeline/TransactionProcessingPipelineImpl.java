@@ -130,6 +130,8 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             break;
                         case FINISH:
                             break;
+                        default:
+                            // do nothing
                     }
                 }
             } catch (InterruptedException e) {

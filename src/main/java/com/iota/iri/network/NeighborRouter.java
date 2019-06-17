@@ -423,14 +423,12 @@ public class NeighborRouter {
                     }
                     break;
                 case HANDSHAKING:
-                    if (finalizeHandshake(identity, neighbor, channel)) {
+                    if (finalizeHandshake(identity, neighbor, channel) && availableNeighborSlotsFilled()) {
                         // if all known neighbors or max neighbors are connected we are
                         // no longer interested in any incoming connections
                         // (as long as no neighbor dropped the connection)
-                        if (availableNeighborSlotsFilled()) {
-                            SelectionKey srvKey = serverSocketChannel.keyFor(selector);
-                            srvKey.interestOps(0);
-                        }
+                        SelectionKey srvKey = serverSocketChannel.keyFor(selector);
+                        srvKey.interestOps(0);
                     }
                 default:
                     // do nothing
@@ -545,6 +543,8 @@ public class NeighborRouter {
                 log.error("dropping connection to neighbor {} as handshaking was faulty", identity);
                 closeNeighborConnection(channel, identity, selector);
                 return false;
+            default:
+                // do nothing
         }
 
         // drop the connection if in the meantime the available neighbor slots were filled

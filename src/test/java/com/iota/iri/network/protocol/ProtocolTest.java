@@ -77,7 +77,7 @@ public class ProtocolTest {
         assertEquals("should have correct length",
                 (maxLength - (maxLength - 60) + Protocol.SUPPORTED_PROTOCOL_VERSIONS.length), buf.getShort());
         assertEquals("should resolve to the correct source port", ownSourcePort, buf.getChar());
-        assertTrue(now <= buf.getLong());
+        assertTrue("timestamp in handshake packet should be same age or newer than timestamp",now <= buf.getLong());
         byte[] actualCooAddress = new byte[Handshake.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         buf.get(actualCooAddress);
         assertArrayEquals("should resolve to the correct coo address", byteEncodedCooAddress, actualCooAddress);

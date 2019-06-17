@@ -36,10 +36,25 @@ docker run -d -p 8080:8080 --name <name> <name>:<tag>
 
 ## Performance test by Jmeter  
 Run jmeter to collect the performance stats(you need to have the jmeter installation)
+
+There are some parameters to replace
+
+```bash
+NUM_CALL # number of requests
+NUM_THREAD # number of threads to run
+PORT # iri port number
+DATA # which data to use
+ACTION # http endpoint
+```
+
 ```bash
 jmeter -n -t PerformanceTestDAG2TM_TPS.jmx
 ```
 
 make sure the result is correct
+
+## Example script
+
 ```bash
+./run_perf.sh
 ```

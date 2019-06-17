@@ -712,12 +712,12 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT;
     }
 
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final Set<Hash> analyzedHashes)
+    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final LinkedHashSet<Hash> analyzedHashes)
             throws Exception {
-        Iterator<Hash> hashIterator = analyzedHashes.iterator();
+        Object[] hashes = analyzedHashes.toArray();
         TransactionViewModel transactionViewModel;
-        while (hashIterator.hasNext()) {
-            transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
+        for(int i = hashes.length -1; i >= 0; i--){
+            transactionViewModel = TransactionViewModel.fromHash(tangle, (Hash) hashes[i]);
 
             transactionViewModel.updateHeights(tangle, initialSnapshot);
 

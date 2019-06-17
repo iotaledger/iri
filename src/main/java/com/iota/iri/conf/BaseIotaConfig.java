@@ -963,7 +963,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int TIP_SELECTION_TIMEOUT_SEC = 60;
 
         //Tip solidification
-        boolean TIP_SOLIDIFIER_ENABLED = true;
+        boolean TIP_SOLIDIFIER_ENABLED = false;
 
         //PearlDiver
         int POW_THREADS = 0;

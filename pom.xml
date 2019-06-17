@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.7.0-DEV-${version.number}</version>
+    <version>1.7.1-RELEASE</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -22,7 +22,6 @@
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>1.4.26.Final</undertow.version>
         <jacoco.version>0.7.9</jacoco.version>
-        <version.number>${git.commit.id.abbrev}</version.number>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
              configLocation attribute on every maven goal. -->
@@ -263,23 +262,6 @@
                     <testSource>${java-version}</testSource>
                     <testTarget>${java-version}</testTarget>
                     <useIncrementalCompilation>false</useIncrementalCompilation>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
-                <version>2.2.4</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>revision</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
-                    <generateGitPropertiesFile>false</generateGitPropertiesFile><!-- somehow necessary. otherwise the variables are not available in the pom -->
                 </configuration>
             </plugin>
             <!-- Controls how jar is being created -->

@@ -175,9 +175,9 @@ public class MilestoneServiceImpl implements MilestoneService {
         }
 
         try {
-            if (MilestoneViewModel.get(tangle, milestoneIndex) != null) {
-                // Already validated.
-                return VALID;
+            MilestoneViewModel existingMilestone = MilestoneViewModel.get(tangle, milestoneIndex);
+            if(existingMilestone != null){
+                return existingMilestone.getHash().equals(transactionViewModel.getHash()) ? VALID : INVALID;
             }
 
             final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(tangle,
@@ -192,10 +192,11 @@ public class MilestoneServiceImpl implements MilestoneService {
                         //the signed transaction - which references the confirmed transactions and contains
                         // the Merkle tree siblings.
                         int coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
-                        final TransactionViewModel siblingsTx =
-                                bundleTransactionViewModels.get(coordinatorSecurityLevel);
 
                         if (isMilestoneBundleStructureValid(bundleTransactionViewModels, coordinatorSecurityLevel)) {
+                            final TransactionViewModel siblingsTx = bundleTransactionViewModels
+                                    .get(coordinatorSecurityLevel);
+
                             //milestones sign the normalized hash of the sibling transaction.
                             byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
 

@@ -4,7 +4,6 @@ import com.iota.iri.network.neighbor.NeighborMetrics;
 import com.iota.iri.network.neighbor.NeighborState;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Contains information about the result of a successful {@code getNeighbors} API call.
@@ -202,7 +201,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         public long getNumberOfDroppedSentPackets() {
             return numberOfDroppedSentPackets;
         }
-        
+
         /**
          * {@link #connected}
          */

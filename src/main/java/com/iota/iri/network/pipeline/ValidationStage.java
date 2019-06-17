@@ -56,7 +56,7 @@ public class ValidationStage implements Stage {
             txValidator.runValidation(tvm, txValidator.getMinWeightMagnitude());
         } catch (TransactionValidator.StaleTimestampException ex) {
             if (originNeighbor != null) {
-                originNeighbor.getMetrics().incrSentTransactionsCount();
+                originNeighbor.getMetrics().incrStaleTransactionsCount();
             }
             ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
             return ctx;

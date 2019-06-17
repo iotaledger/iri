@@ -72,7 +72,6 @@ public class NeighborRouterTest {
         URI neighborAURI = URI.create("tcp://127.0.0.1:19000");
         String neighborAIdentity = String.format("%s:%d", neighborAURI.getHost(), neighborAURI.getPort());
         URI neighborBURI = URI.create("tcp://127.0.0.1:20000");
-        String neighborBIdentity = String.format("%s:%d", neighborBURI.getHost(), neighborBURI.getPort());
 
         List<String> configNeighborsA = new ArrayList<>();
         Mockito.when(nodeConfigA.isTestnet()).thenReturn(true);

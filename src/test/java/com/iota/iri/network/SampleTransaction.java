@@ -12,6 +12,9 @@ import net.openhft.hashing.LongHashFunction;
 
 import java.nio.ByteBuffer;
 
+/**
+ * A sample transaction for network code related tests.
+ */
 public class SampleTransaction {
 
     public final static int SIG_FILL = 4;

@@ -1,7 +1,6 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.TangleMockUtils;
-import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.model.Hash;

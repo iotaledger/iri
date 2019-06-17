@@ -52,8 +52,6 @@ jmeter -n -t PerformanceTestDAG2TM_TPS.jmx
 ```
 
 make sure the result is correct
-```bash
-```
 
 ## Example script
 

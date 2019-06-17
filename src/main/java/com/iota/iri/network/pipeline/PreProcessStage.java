@@ -66,7 +66,7 @@ public class PreProcessStage implements Stage {
             long hits = recentlySeenBytesCache.getCacheHits();
             long misses = recentlySeenBytesCache.getCacheMisses();
             if ((hits + misses) % 50000L == 0) {
-                log.info("recently seen bytes cache hit/miss ratio: {}/{}", hits, misses);
+                log.debug("recently seen bytes cache hit/miss ratio: {}/{}", hits, misses);
                 recentlySeenBytesCache.resetCacheStats();
             }
         }

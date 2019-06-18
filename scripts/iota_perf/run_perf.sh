@@ -31,9 +31,27 @@ jmeter -n -t PerformanceTest1.jmx
 sleep 30
 
 # check balance
-./check_result.sh
+result=$(sh ./check_result.sh)
+if [ $result -eq 5000000 ]; then
+	echo "Result is right"
+else
+	echo "Wrong! Result should be 5,000,000, but now it's $result"
+	exit -1
+fi
 
 # check order
 curl -s -X GET http://127.0.0.1:5000/get_total_order -H 'Content-Type: application/json' -H 'cache-control: no-cache' > order1
 curl -s -X GET http://127.0.0.1:6000/get_total_order -H 'Content-Type: application/json' -H 'cache-control: no-cache' > order2
 diff order1 order2
+if [ $? -eq 0 ]; then
+	echo "Orders from 2 nodes are the same."
+else
+	echo "Wrong! Orders from 2 nodes are different!"
+	echo "Order 1"
+	cat order1
+	echo
+	echo "Order 2"
+	cat order2
+
+	exit -1
+fi

@@ -15,6 +15,7 @@ addons:
   apt:
     packages:
     - jq
+    - nginx
 
 install:
   # install python env
@@ -28,7 +29,7 @@ install:
     - sudo pip install flask
     - sudo pip install -U pyOpenSSL
     - sudo pip install pyota
-    - sudo pip install docker 
+    - sudo pip install docker
     - sudo pip install mock
     - sudo pip install cryptography==2.5
     - sudo pip install sh
@@ -37,10 +38,18 @@ install:
   # update go version
     - gimme 1.11.5
     - source ~/.gimme/envs/go1.11.5.env
+  # install jmeter
+    - wget -c https://github.com/triasteam/utils/raw/master/software/apache-jmeter-5.1.1.zip
+      && mv apache-jmeter-5.1.1.zip /opt
+      && cd /opt
+      && unzip apache-jmeter-5.1.1.zip
+      && export JMETER_HOME=/opt/apache-jmeter-5.1.1
+      && export CLASSPATH=$CLASSPATH:$JMETER_HOME/lib
+      && export PATH=$PATH:$JMETER_HOME/bin
+      && cd -
 
 before_script:
-  - ipfs init
-    && ipfs daemon &> /tmp/ipfs.log &
+  -
 
 script:
   #run tests and integration tests
@@ -79,7 +88,6 @@ after_success:
 
 after_failure:
   - cat /tmp/app.log
-  - cat /tmp/ipfs.log
   - cat ../../iri-regression-tests/iri/node1/iri.log
 
 deploy:

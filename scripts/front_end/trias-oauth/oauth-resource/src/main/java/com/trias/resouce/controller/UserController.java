@@ -1,14 +1,10 @@
 package com.trias.resouce.controller;
 
-import java.util.Collection;
-import java.util.List;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
@@ -19,34 +15,33 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.trias.resouce.body.CommonResponse;
 import com.trias.resouce.body.request.OauthLoginRequestBody;
+import com.trias.resouce.body.request.RegisterOauthRequest;
 import com.trias.resouce.body.response.UserResourceResponseBody;
 import com.trias.resouce.exception.IllegalRoleException;
 import com.trias.resouce.exception.OauthNoResposeException;
-import com.trias.resouce.model.Resource;
 import com.trias.resouce.service.UserService;
 
 @Controller
 @RequestMapping("user")
 public class UserController {
 
-	Logger logger = LoggerFactory.getLogger(UserController.class);
+	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
 	@Autowired
 	private UserService userService;
 
-	@RequestMapping(value = "getUserInfo", method = RequestMethod.GET)
+	@RequestMapping(value = "/getUserInfo", method = RequestMethod.GET)
 	@ResponseBody
 	public CommonResponse getUserInfo(HttpServletRequest request) {
 		try {
 			UserResourceResponseBody responseBody = userService
-					.getUserResources(SecurityContextHolder.getContext()
-							.getAuthentication());
-			return CommonResponse.CreateSuccessResponse("success", responseBody);
+					.getUserResources(SecurityContextHolder.getContext().getAuthentication());
+			return CommonResponse.CreateResponse("success", 1, responseBody);
 		} catch (IllegalRoleException ie) {
-			return CommonResponse.CreateErrorResponse("User role is not exist", null);
+			return CommonResponse.CreateResponse("User role is not exist", 0, null);
 		} catch (Exception e) {
-			logger.error("getUserInfo happens a error:{}", new Object[] { e });
-			return CommonResponse.CreateErrorResponse("Illegal user", null);
+			logger.error("getUserInfo happens an error:{}", new Object[] { e });
+			return CommonResponse.CreateResponse("Illegal user", 0, null);
 		}
 
 	}
@@ -57,17 +52,43 @@ public class UserController {
 		try {
 			String token = userService.oauthLogin(request);
 			if (StringUtils.isEmpty(token)) {
-				return CommonResponse.CreateErrorResponse("User not exists", null);
+				return CommonResponse.CreateResponse("User not exists", 0, null);
 			} else {
-				return CommonResponse.CreateSuccessResponse("Login success", token);
+				return CommonResponse.CreateResponse("Login success", 1, token);
 			}
-		} catch(OauthNoResposeException oe) {
-			logger.error("oauthLogin happens a error:{}", new Object[] { oe });
-			return CommonResponse.CreateErrorResponse("System error", oe.getMessage());
+		} catch (OauthNoResposeException oe) {
+			logger.error("oauthLogin happens an error:{}", new Object[] { oe });
+			return CommonResponse.CreateResponse("System error", 0, oe.getMessage());
 		} catch (Exception e) {
-			logger.error("oauthLogin happens a error:{}", new Object[] { e });
-			return CommonResponse.CreateErrorResponse("System error", null);
+			logger.error("oauthLogin happens an error:{}", new Object[] { e });
+			return CommonResponse.CreateResponse("System error", 0, null);
 		}
+	}
 
+	@RequestMapping(value = "/register", method = RequestMethod.POST)
+	@ResponseBody
+	public CommonResponse register(@RequestBody RegisterOauthRequest request) {
+		if (StringUtils.isEmpty(request.getUsername()) || StringUtils.isEmpty(request.getPassword())) {
+			return CommonResponse.CreateResponse("error,username or password is empty", 0, null);
+		}
+		try {
+			return userService.registerOauthUser(request);
+		} catch (Exception e) {
+			logger.error("register happens an error:'{}'", new Object[] { e });
+			return CommonResponse.CreateResponse("System error", 0, null);
+		}
+	}
+
+	@RequestMapping(value = "/addition", method = RequestMethod.POST)
+	@ResponseBody
+	public CommonResponse addition(@RequestBody RegisterOauthRequest request) {
+		request.setUsername(SecurityContextHolder.getContext().getAuthentication().getName());
+		try {
+			return userService.addition(request);
+		} catch (Exception e) {
+			logger.error("addition happens an error:'{}'", new Object[] { e });
+			return CommonResponse.CreateResponse("System error", 0, null);
+		}
 	}
 }
+

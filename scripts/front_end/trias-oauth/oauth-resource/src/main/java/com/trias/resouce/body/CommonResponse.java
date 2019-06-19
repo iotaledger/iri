@@ -39,17 +39,9 @@ public class CommonResponse implements Serializable {
 		this.data = data;
 	}
 
-	public static CommonResponse CreateSuccessResponse(String message, Object data) {
+	public static CommonResponse CreateResponse(String message, int code, Object data) {
 		CommonResponse response = new CommonResponse();
-		response.setCode(1);
-		response.setMessage(message);
-		response.setData(data);
-		return response;
-	}
-
-	public static CommonResponse CreateErrorResponse(String message, Object data) {
-		CommonResponse response = new CommonResponse();
-		response.setCode(0);
+		response.setCode(code);
 		response.setMessage(message);
 		response.setData(data);
 		return response;

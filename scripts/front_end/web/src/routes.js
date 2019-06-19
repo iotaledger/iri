@@ -7,11 +7,25 @@ import NetCoin from "./views/nav1/NetCoin";
 import DevOps from "./views/nav2/DevOps";
 import Deployment from "./views/nav2/Deployment";
 import Experiment from "./views/nav2/Experiment";
+import Addition from "./views/Addition"
+import Register from "./views/Register"
 
 let routes = [
     {
         path: '/login',
         component: Login,
+        name: '',
+        hidden: true
+    },
+    {
+        path: '/register',
+        component: Register,
+        name: '',
+        hidden: true
+    },
+    {
+        path: '/addition',
+        component: Addition,
         name: '',
         hidden: true
     },

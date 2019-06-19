@@ -4,7 +4,8 @@
 	<resultMap type="com.trias.resouce.model.Resource"
 		id="userResource">
 		<id column="id" property="id" jdbcType="INTEGER" />
-		<result column="root_name" property="rootName" jdbcType="VARCHAR" />
+		<result column="root_name" property="rootName"
+			jdbcType="VARCHAR" />
 		<result column="path" property="path" jdbcType="VARCHAR" />
 		<result column="description" property="description"
 			jdbcType="VARCHAR" />
@@ -17,12 +18,54 @@
 		c.root_name,
 		c.path,
 		c.description
-		from trias_role a inner join trias_role_resource b on a.id = b.role_id
-		inner join trias_resource c on b.resource_id = c.id
-		where c.del_flag = 0 and a.role_type in 
-		<foreach collection="roleList" item="item" open="(" separator="," close=")">
+		from trias_role a inner
+		join trias_role_resource b on a.id = b.role_id
+		inner join
+		trias_resource c on b.resource_id = c.id
+		where c.del_flag = 0 and
+		a.role_type in
+		<foreach collection="roleList" item="item" open="("
+			separator="," close=")">
 			#{item}
 		</foreach>
-		
 	</select>
+
+	<select id="getUserByName" resultType="com.trias.resouce.model.User">
+		SELECT
+			u.id,
+			u.username,
+			u.account,
+			u.sex,
+			u.email,
+			u.create_time as `createTime`,
+			u.update_time as `updateTime`
+		FROM trias_cli_user u
+		<where>
+			<if test="username !='' and username != null">
+				and u.username = #{username}
+			</if>
+		</where>
+	</select>
+	
+	<update id="updateUserByName" parameterType="com.trias.resouce.model.User">
+		update trias_cli_user
+		<set>
+			<if test="user.account != null and user.account != ''">
+				account = #{user.account},
+			</if>
+			<if test="user.sex != null and user.sex != ''">
+				sex = #{user.sex},
+			</if>
+			<if test="user.email != null and user.email != ''">
+				email = #{user.email},
+			</if>
+			update_time = now(),
+		</set>
+		where username = #{user.username}
+	</update>
+	
+	<insert id="insertUser">
+		INSERT INTO trias_cli_user(`username`,`account`,`sex`,`email`,`create_time`,`update_time`) VALUES 
+		(#{user.username},#{user.account},#{user.sex},#{user.email}, now(), now())
+	</insert>
 </mapper>

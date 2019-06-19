@@ -14,10 +14,10 @@ import org.springframework.util.CollectionUtils;
 import com.trias.oauth.mapper.UserDetailsMapper;
 import com.trias.oauth.model.CustomUserDetails;
 import com.trias.oauth.model.vo.LocalUserRoleVO;
-import com.trias.oauth.service.TriasUserDetailsService;
+import com.trias.oauth.service.OauthUserService;
 
 @Service
-public class TriasUserDetailsServiceImpl implements TriasUserDetailsService {
+public class OauthUserServiceImpl implements OauthUserService {
 	private static final String NOOP = "{noop}";
 
 	@Autowired
@@ -25,16 +25,15 @@ public class TriasUserDetailsServiceImpl implements TriasUserDetailsService {
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		List<LocalUserRoleVO> userList = userDetailsMapper.findUserByName(username);
-		if(CollectionUtils.isEmpty(userList)) {
+		LocalUserRoleVO userVo = userDetailsMapper.findUserByName(username);
+		if(userVo == null) {
 			throw new UsernameNotFoundException(username);
 		}else {
-			LocalUserRoleVO user = userList.get(0);
 			List<GrantedAuthority> grantedAuthorityList = new ArrayList<>();
-			grantedAuthorityList.add(new SimpleGrantedAuthority(user.getRoleName()));
-			user.setUsername(username);
-			user.setPassword(NOOP+user.getPassword());
-			return new CustomUserDetails(user, grantedAuthorityList);
+			grantedAuthorityList.add(new SimpleGrantedAuthority(userVo.getRoleName()==null?"ROLE_USER":userVo.getRoleName()));
+			userVo.setUsername(username);
+			userVo.setPassword(NOOP+userVo.getPassword());
+			return new CustomUserDetails(userVo, grantedAuthorityList);
 		}
 		
 	}

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.trias.resouce.model.Resource;
+import com.trias.resouce.model.User;
 
 public class UserResourceResponseBody implements Serializable {
 
@@ -12,7 +13,7 @@ public class UserResourceResponseBody implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	private List<Resource> resourceList;
-	private UserInfo userInfo;
+	private User userInfo;
 
 	public List<Resource> getResourceList() {
 		return resourceList;
@@ -22,11 +23,11 @@ public class UserResourceResponseBody implements Serializable {
 		this.resourceList = resourceList;
 	}
 
-	public UserInfo getUserInfo() {
+	public User getUserInfo() {
 		return userInfo;
 	}
 
-	public void setUserInfo(UserInfo userInfo) {
+	public void setUserInfo(User userInfo) {
 		this.userInfo = userInfo;
 	}
 

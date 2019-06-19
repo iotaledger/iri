@@ -1,6 +1,6 @@
 package com.trias.oauth.config;
 
-import com.trias.oauth.service.TriasUserDetailsService;
+import com.trias.oauth.service.OauthUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +24,7 @@ public class ServerConfig extends AuthorizationServerConfigurerAdapter {
 	private AuthenticationManager authenticationManager;
 
 	@Autowired
-	private TriasUserDetailsService userDetailsService;
+	private OauthUserService userDetailsService;
 
 	@Autowired
 	@Qualifier("dataSource")

@@ -6,9 +6,9 @@
             </el-col>
             <el-col :span="4" class="userinfo">
                 <el-dropdown trigger="hover">
-                    <span class="el-dropdown-link userinfo-inner">{{$store.state.username}}</span>
+                    <span class="el-dropdown-link userinfo-inner">{{$store.state.userInfo.username}}</span>
                     <el-dropdown-menu slot="dropdown">
-                        <el-dropdown-item @click.native="logout">退出登录</el-dropdown-item>
+                        <el-dropdown-item @click.native="logout">Logout</el-dropdown-item>
                     </el-dropdown-menu>
                 </el-dropdown>
             </el-col>

@@ -152,7 +152,7 @@
                 let digraph = "digraph {rankdir=LR;";
                 for (let i in data) {
                     if (data[i].attester !== "" && data[i].attestee != "") {
-                        digraph += data[i].attester + "->" + data[i].attestee + ";"
+                        digraph += "\"" + data[i].attester + "\"->\"" + data[i].attestee + "\";"
                     }
                 }
                 digraph += "}";

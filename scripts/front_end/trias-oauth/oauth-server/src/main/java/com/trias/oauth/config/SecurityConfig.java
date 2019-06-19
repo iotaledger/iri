@@ -1,6 +1,6 @@
 package com.trias.oauth.config;
 
-import com.trias.oauth.service.TriasUserDetailsService;
+import com.trias.oauth.service.OauthUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +25,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Autowired
-    private TriasUserDetailsService userDetailsService;
+    private OauthUserService userDetailsService;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {

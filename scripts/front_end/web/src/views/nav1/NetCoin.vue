@@ -22,14 +22,14 @@
         </el-form-item>
         <el-form-item label="Balance: " label-width="150px;">
             <el-input v-model="form.account" class="input-large left-float" placeholder="Input the account"
-                      @change="setAccount"/>
+                      @change="setAccount" :readonly="true"/>
             <div class="div-balance">{{form.balance}}</div>
             <el-button @click="getBalance" type="success">Get Balance</el-button>
         </el-form-item>
         <el-form-item label="Trans: " label-width="150px;">
             <label>&nbsp;&nbsp;&nbsp;&nbsp;From: &nbsp;</label>
             <el-input v-model="form.source" class="input-large" placeholder="Input source account"
-                      @change="setSource"/>
+                      @change="setSource" :readonly="true"/>
             <label>To: </label>
             <el-input v-model="form.target" class="input-large" placeholder="Input target account"
                       @change="setTarget"/>
@@ -59,9 +59,9 @@
         data() {
             return {
                 form: {
-                    account: "",
+                    account: this.$store.state.userInfo.account,
                     balance: "0",
-                    source: "",
+                    source: this.$store.state.userInfo.account,
                     target: "",
                     tarnsBalance: ""
                 },

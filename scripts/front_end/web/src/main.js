@@ -28,42 +28,53 @@ const router = new VueRouter({
 });
 
 router.beforeEach((to, from, next) => {
-    if (to.path === '/login') {
+    if (to.path === '/login' || to.path === '/register') {
         Cookies.remove("UserToken");
     }
     let token = Cookies.get("UserToken");
-    // let token = "77b5601f-6d2b-4a27-be7c-82634b0d73d9";
     if (!token && to.path !== '/login') {
-        next({path: '/login'})
+        if (to.path === '/register') {
+            next();
+        } else {
+            next({path: '/login'})
+        }
     } else if (token) {
-        let action = "/user/getUserInfo";
-        let settings = {
-            "async": false,
-            "crossDomain": true,
-            "timeout": 60000,
-            "url": localConfig.oauthResource + action,
-            "method": "GET",
-            "headers": {
-                "Authorization": "bearer " + token,
-                "Accept": "*/*",
-                "Cache-Control": "no-cache"
-            }
-        };
-        $.ajax(settings).done(function (response) {
-            if (response.code !== 1) {
-                Cookies.remove("UserToken");
-                console.log("Invalid user or token timeout,please login");
-                next({path: "/login"})
-            } else {
-                let userInfo = response["data"];
-                store.commit("setUserInfo",userInfo);
-                if(store.state.pathMap[to.path] !== 1){
-                    next({path: "/login"});
+        if (to.path === '/addition') {
+            next();
+        } else {
+            let url = "/trias-resource/user/getUserInfo";
+            let settings = {
+                "async": false,
+                "crossDomain": true,
+                "timeout": 60000,
+                "url": url,
+                "method": "GET",
+                "headers": {
+                    "Authorization": "bearer " + token,
+                    "Accept": "*/*",
+                    "Cache-Control": "no-cache"
                 }
-                next();
-            }
-        });
-
+            };
+            $.ajax(settings).done(function (response) {
+                if (response.code !== 1) {
+                    Cookies.remove("UserToken");
+                    console.log("Invalid user or token timeout,please login");
+                    next({path: "/login"})
+                } else {
+                    let data = response["data"];
+                    store.commit("setUserInfo", data);
+                    if (!data.userInfo.account) {
+                        next({path: "/addition"});
+                        return;
+                    }
+                    if (store.state.pathMap[to.path] !== 1) {
+                        next({path: "/login"});
+                        return;
+                    }
+                    next();
+                }
+            });
+        }
     } else {
         next()
     }

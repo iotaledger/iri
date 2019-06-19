@@ -15,7 +15,7 @@ security:
       
 spring:
   datasource:
-    url: jdbc:mysql://192.168.199.126:3306/trias_cli?useSSL=false&useUnicode=true&characterEncoding=utf-8
+    url: jdbc:mysql://localhost:3306/trias_cli?useSSL=false&useUnicode=true&characterEncoding=utf-8
     username: trias
     password: trias@123
     driver-class-name: com.mysql.cj.jdbc.Driver

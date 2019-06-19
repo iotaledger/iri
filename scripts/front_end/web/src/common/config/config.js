@@ -77,8 +77,5 @@ export default {
                 opsServer: "http://13.229.201.108:5001"
             }
         };
-
-        Vue.prototype.oauthResource = "http://localhost:9081/trias-resource";
     },
-    oauthResource : "http://localhost:9081/trias-resource"
 }

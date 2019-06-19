@@ -120,6 +120,20 @@ Suppose we define this threshold as $h = n-m $, then we only forward the genesis
     \end{flalign*}
 \end{equation}
 
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figures/genesis_forward.pdf}
+    \caption{
+        Example of genesis forward method. 
+     }
+\label{genesis_forward}
+\end{center}
+\end{figure}
+
+In Figure~\ref{genesis_forward}, we set $h=5$, and there are three side chains with $\forall b' | b' \in \overline{Chain(G,g)}$, $ParentScore(b')<=4$.
+And in pivot chain, there are multiple blocks $b$ that has $ParentScore(b) >= 9$, they are condidates for the new genesis, 
+we choose the block with minimumn $ParentScore$ as the new genesis.
+
 In addition, after the new genesis has been chosen, 
 we will induce a new DAG in memory from this genesis,
 and persist the `snapshot' total order (Conflux paper has the same definition, 

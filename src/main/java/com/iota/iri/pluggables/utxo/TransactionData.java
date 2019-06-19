@@ -63,6 +63,17 @@ public class TransactionData {
         init();
     }
 
+    public int getNumTransactions() {
+        return transactions.size();
+    }
+
+    public int getTangleToTxnMapSize() {
+        return tangleToTxnMap.size();
+    }
+
+    public int getTxnToTangleMapSize() {
+        return txnToTangleMap.size();
+    }
 
     public void restoreTxs(){
         try {
@@ -257,6 +268,17 @@ public class TransactionData {
         return newTxn;
     }
 
+    public boolean isCoinBaseTxn(Txn tx) {
+        for(int i=0; i<tx.outputs.size(); i++) {
+            TxnOut out = tx.outputs.get(i);
+            //System.out.println(out.toString());
+            if(out.amount==1000000000 && out.userAccount.equals("A")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void init() {
         transactions = new ArrayList<>();
 
@@ -449,5 +471,74 @@ public class TransactionData {
             System.out.println("[total] " + tot);
             graph.printGraph(graph.outGraph, "graph.dot", spend);
         }
+    }
+
+    public void persistFixedTxns(List<Hash> fixedBlocks) {
+        // Based on blocks, find all txns to be removed
+        log.debug("[before] has {} transactions", transactions.size());
+        List<Txn> toBeRemoved = new ArrayList<>();
+        for(Hash h : fixedBlocks) {
+            if(tangleToTxnMap.containsKey(h)) {
+                Set<Txn> st =  tangleToTxnMap.get(h);
+                for(Txn tx : st) {
+                    boolean allSpent = true;
+                    for(int i=0; i<tx.outputs.size(); i++) {
+                        String key = tx.txnHash + ":" + String.valueOf(i) + "," + tx.outputs.get(i).userAccount;
+                        if(!utxoGraph.isSpent(key)) {
+                            allSpent = false;
+                        }
+                    }
+                    if(allSpent) {
+                        toBeRemoved.add(tx);
+                    }
+                }
+                
+            } else {
+                throw new RuntimeException("Fixed blocks should be in the UTXO index.");
+            }
+        }
+
+        // Remove txns from transactions, txnToTangleMap, tangleToTxnMap, utxoGraph
+        // the rule is: 
+        //     1) all the txnOuts have been spent
+        //     2) block is fixed
+        // why we need to wait until this step? because unless block is fixed, there will still be chances for txns to be muted even if all its txns have been spent.
+        for(Hash h : fixedBlocks) {
+            HashSet<Txn> st = tangleToTxnMap.get(h);
+            for(Txn tx : toBeRemoved) {
+                for(Txn t : st) {
+                    if(t.equals(tx)) {
+                        st.remove(t);
+                        break;
+                    }
+                }
+            }
+            if(st.isEmpty()) {
+                tangleToTxnMap.remove(h); // tangleToTxnMap
+            } else {
+                tangleToTxnMap.put(h, st);
+            }
+        }
+
+        for(Txn tx : toBeRemoved) {
+            // transactions
+            for(Txn txOrig : transactions) {
+                if(tx.equals(txOrig)) {
+                    transactions.remove(txOrig);
+                    // txnToTangleMap
+                    txnToTangleMap.remove(tx.txnHash);
+                    break;
+                }
+            }
+        }
+
+        for(Txn txOrig : transactions) {
+            if(isCoinBaseTxn(txOrig)) {
+                transactions.remove(txOrig);
+                break;
+            }
+        }
+        log.debug("[after] has {} transactions", transactions.size());
+        utxoGraph = new UTXOGraph(transactions);
     }
 }

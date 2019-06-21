@@ -33,6 +33,7 @@ RUN go get -u github.com/triasteam/noderank
 RUN apt-get install software-properties-common -y \
     && add-apt-repository ppa:nginx/stable -y \
     && apt-get update \
-    && apt-get install nginx -y
+    && apt-get install nginx -y \
+    && rm -rf /var/lib/apt/lists/*
 RUN mv /oauth_web/nginx.conf  /etc/nginx/nginx.conf
 CMD ["sh", "/oauth_web/entrypoint.sh"]

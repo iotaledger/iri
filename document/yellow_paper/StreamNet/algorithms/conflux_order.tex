@@ -1,0 +1,32 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ The local state $G$ = $<B,g,P,E>$  and a tip block $b \in B$ }
+\KwOut{ The block list of total top order starting from Genesis block to the giving block $b$ in $G$ }
+
+$L = \perp$
+
+\Do { $b$ != $g$} {
+  $p$ $\gets$ Parent($G,b$)  \;
+  $B_\Delta$ $\gets$ Past($G$,$b$) - Past($G$,$p$) \;
+  \Do { $B_\Delta$ $\neq$ 0 } {
+      $G'$ $\gets SubGraph(B_\Delta) $ \;
+    $B'_\Delta$ $\gets$ \{x $||$ Before($G'$,$x$) = 0\} \;
+    \text{Sort all blocks in $B'_\Delta$ in order as $b'_1,b'_2,...,b'_k$} \\
+      \text{such that $\forall$1$\leq i \leq j \leq k$, Hash($b'_i$) $\leq$ Hash($b'_j$)} \;  
+    $L$ $\gets$ $L + b'_1 + b'_2 + ... + b'_k$ \;
+    $B_\Delta$ $\gets$ $B_\Delta$ - $B'_\Delta$ \;
+  }
+  $b$ = $p$ \;
+}
+
+
+\Return{$L$} \;
+
+\caption{{\sc StreamNetOrder($G$, $b$).}}
+\label{algo:conflux_order}
+\end{algorithm}
+\DecMargin{1em}

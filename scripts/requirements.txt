@@ -1,0 +1,6 @@
+flask==1.0.2
+#ipfsapi==0.4.3
+pyOpenSSL==19.0.0
+pyota==2.0.7
+docker==3.7.0
+PyYAML==3.10

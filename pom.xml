@@ -38,10 +38,36 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+
+        <repository>
+            <id>maven-repo</id>
+            <url>https://raw.github.com/triasteam/maven/snapshot</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
     </repositories>
 
     <dependencies>
 
+        <dependency>
+            <groupId>com.iri.utils</groupId>
+            <artifactId>utils-crypto</artifactId>
+            <!--<version>0.0.1-SNAPSHOT</version>-->
+            <version>0.0.1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.mockito</groupId>
+                    <artifactId>mockito-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -124,6 +150,14 @@
             <version>${undertow.version}</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j -->
+       <dependency>
+           <groupId>org.neo4j</groupId>
+           <artifactId>neo4j</artifactId>
+           <version>3.4.10</version>
+       </dependency>
+
+
         <!-- test dependencies -->
 
         <!-- https://mvnrepository.com/artifact/com.jayway.restassured/rest-assured -->
@@ -194,6 +228,26 @@
             <version>1.21</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.ipfs</groupId>
+            <artifactId>java-ipfs-http-client</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.json/json -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20180813</version>
+        </dependency>
+
 
     </dependencies>
 
@@ -393,6 +447,7 @@
                         <exclude>integration/*.java</exclude>
                         <exclude>benchmarks/**/*</exclude>
                     </excludes>
+                    <argLine>-XX:-OmitStackTraceInFastThrow -Xms1024m -Xmx2048m @{argLine}</argLine>
                 </configuration>
                 <executions>
                     <execution>

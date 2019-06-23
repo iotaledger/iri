@@ -1,0 +1,29 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ Graph $G=<B, g, P, E>$ }
+
+    \While {Node is running}{
+        \uIf{Received $G' = <B', g, P', E'> $}{
+            $G'' \gets <B \cup B', g, P \cup P', E \cup E' > $\;
+            \uIf{$G \neq G''$ } {
+                $G \gets G''$ \;
+                Broadcase updated G to neighbors \;
+            }
+        } 
+
+        \uIf{Generate block $b$}{
+            $a \gets Pivot(G, g) $ \;
+            $r \gets MCMC(G, g) $ \;
+            $G \gets <B \cup b, g, P \cup <b, a>, E \cup <b, a> \cup <b, r> >$ \;
+            Broadcase updated G to neighbors \;
+        } 
+    }
+
+\caption{{ StreamNet node main loop.}}
+\label{algo:main_loop}
+\end{algorithm}
+\DecMargin{1em}

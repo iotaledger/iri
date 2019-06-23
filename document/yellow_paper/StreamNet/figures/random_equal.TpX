@@ -1,0 +1,71 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <rect x="100.27" y="49.6537" w="100.408" h="49.241"/>
+%  <text x="150.337" y="72.2111" t="Genesis:5i" h="10" halign="c" lw="2.00"/>
+%  <text x="150.337" y="72.2111" t="Genesis:5i" h="10" halign="c" lw="2.00"/>
+%  <rect x="300.463" y="50.5032" w="100.408" h="49.241"/>
+%  <text x="346.848" y="75.3323" t="Genesis:-1i" h="10" halign="c" lw="2.00"/>
+%  <text x="340.267" y="62.1711" t="Alice:1i" h="10" halign="c" lw="2.00"/>
+%  <rect x="299.722" y="-50.2371" w="100.408" h="49.241"/>
+%  <text x="346.3" y="-23.9255" t="Genesis:-5i" h="10" halign="c" lw="2.00"/>
+%  <text x="339.719" y="-37.0868" t="Bob:5i" h="10" halign="c" lw="2.00"/>
+%  <line x1="626.604" y1="84.1611" x2="626.604" y2="84.1611"/>
+%  <line x1="301.122" y1="86.7107" x2="301.122" y2="86.7107"/>
+%  <line x1="300.519" y1="80.1324" x2="300.519" y2="80.1324" arr2="h40"/>
+%  <line x1="301.037" y1="85.2255" x2="301.037" y2="85.2255" arr2="h40"/>
+%  <line x1="300.534" y1="84.7227" x2="300.534" y2="84.7227" arr2="h40"/>
+%  <line x1="300.691" y1="80.4377" x2="200.741" y2="79.0587" arr2="h44" arrs="10" li="dash"/>
+%  <line x1="300.679" y1="64.7551" x2="200.76" y2="62.9772" arr2="h44" arrs="10"/>
+%  <line x1="350.378" y1="-1.24659" x2="349.725" y2="50.9252" arr2="h44" arrs="10"/>
+%  <line x1="299.51" y1="-29.2889" x2="148.864" y2="48.9687" arr2="h44" arrs="10" li="dash"/>
+%  <line x1="684.929" y1="81.5761" x2="643.844" y2="80.9239" arr2="h44" arrs="10" li="dash"/>
+%  <line x1="684.929" y1="62.0117" x2="643.844" y2="61.3595" arr2="h44" arrs="10"/>
+%  <text x="669.93" y="90.054" t="trunk" h="10" lw="2.00"/>
+%  <text x="672.538" y="67.2289" t="branch" h="10" lw="2.00"/>
+%  <rect x="501.324" y="49.1989" w="100.408" h="49.241"/>
+%  <text x="543.796" y="75.3323" t="Alice:-1i" h="10" halign="c" lw="2.00"/>
+%  <text x="540.476" y="62.8232" t="Sam:1i" h="10" halign="c" lw="2.00"/>
+%  <line x1="501.984" y1="85.4064" x2="501.984" y2="85.4064"/>
+%  <line x1="501.38" y1="78.8281" x2="501.38" y2="78.8281" arr2="h40"/>
+%  <line x1="501.898" y1="83.9212" x2="501.898" y2="83.9212" arr2="h40"/>
+%  <line x1="501.395" y1="83.4184" x2="501.395" y2="83.4184" arr2="h40"/>
+%  <text x="356.567" y="86.6742" t="1/2" h="10"/>
+%  <text x="355.856" y="-10.7559" t="1/2" h="10"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(1710.65, 436.48)(0,0)
+  \put(0,0){\includegraphics{random_equal.pdf}}
+  \put(147.59,352.77){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:5i}}
+  \put(147.59,352.77){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:5i}}
+  \put(704.63,361.61){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:-1i}}
+  \put(685.98,324.31){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Alice:1i}}
+  \put(703.08,80.25){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:-5i}}
+  \put(684.42,42.95){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Bob:5i}}
+  \put(1620.45,403.34){\fontsize{28.45}{34.14}\selectfont trunk}
+  \put(1627.85,338.64){\fontsize{28.45}{34.14}\selectfont branch}
+  \put(1262.91,361.61){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Alice:-1i}}
+  \put(1253.50,326.16){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Sam:1i}}
+  \put(732.18,393.76){\fontsize{28.45}{34.14}\selectfont 1/2}
+  \put(730.17,117.58){\fontsize{28.45}{34.14}\selectfont 1/2}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(1710.65, 436.48)(0,0)
+  \put(0,0){\includegraphics{random_equal}}
+  \put(147.59,352.77){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:5i}}
+  \put(147.59,352.77){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:5i}}
+  \put(704.63,361.61){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:-1i}}
+  \put(685.98,324.31){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Alice:1i}}
+  \put(703.08,80.25){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:-5i}}
+  \put(684.42,42.95){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Bob:5i}}
+  \put(1620.45,403.34){\fontsize{28.45}{34.14}\selectfont trunk}
+  \put(1627.85,338.64){\fontsize{28.45}{34.14}\selectfont branch}
+  \put(1262.91,361.61){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Alice:-1i}}
+  \put(1253.50,326.16){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Sam:1i}}
+  \put(732.18,393.76){\fontsize{28.45}{34.14}\selectfont 1/2}
+  \put(730.17,117.58){\fontsize{28.45}{34.14}\selectfont 1/2}
+  \end{picture}%
+\fi
+\end{figure}

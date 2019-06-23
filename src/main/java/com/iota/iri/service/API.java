@@ -1,12 +1,18 @@
 package com.iota.iri.service;
 
-import com.iota.iri.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.iota.iri.IRI;
+import com.iota.iri.IXI;
+import com.iota.iri.Iota;
 import com.iota.iri.conf.APIConfig;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iri.utils.crypto.ellipticcurve.EcdsaUtils;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
@@ -14,36 +20,20 @@ import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.Neighbor;
+import com.iota.iri.pluggables.tee.BatchTee;
+import com.iota.iri.pluggables.tee.TEEFormatted;
+import com.iota.iri.pluggables.utxo.BatchTxns;
+import com.iota.iri.pluggables.utxo.NodeFormatted;
+import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import com.iota.iri.validator.BundleValidator;
+import com.iota.iri.validator.Snapshot;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -56,6 +46,27 @@ import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
+import org.xnio.streams.ChannelInputStream;
+
+import java.io.*;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static io.undertow.Handlers.path;
 
@@ -96,7 +107,7 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
-    
+
     private final String[] features;
 
     public API(Iota instance, IXI ixi) {
@@ -208,7 +219,9 @@ public class API {
 
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
                     !sourceAddress.getAddress().isLoopbackAddress()) {
-                return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                if(BaseIotaConfig.getInstance().getEnableRemoteAuth()) {
+                    return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                }
             }
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
@@ -223,11 +236,37 @@ public class API {
                         return ErrorResponse.create("Invalid params");
                     }
 
-                    String address = (String) request.get("address");
-                    String message = (String) request.get("message");
-                    return storeMessageStatement(address, message);
-                }
+                    String tag = "TX"; // by default is TX
+                    if(request.containsKey("tag")) {
+                        tag = (String) request.get("tag");
+                    }
 
+                    String address = (String) request.get("address");
+                    String message;
+                    if (request.get("message") instanceof Map){
+                        message = (String) request.get("message").toString();
+                    } else{
+                        message = (String) request.get("message");
+                    }
+
+                    if (message.indexOf("sign") > 0){
+                        if(!verifySign(address, message)){
+                            log.error("Failed to verify signature!");
+                            return AbstractResponse.createEmptyResponse();
+                        }
+                    }
+
+                    address = Converter.asciiToTrytes(address);
+                    if(address.length() < 81) {
+                        address = StringUtils.rightPad(address, 81, '9');
+                    }
+                    AbstractResponse rsp = storeMessageStatement(address, message, tag);
+                    return rsp;
+                }
+                case "getBlocksInPeriodStatement": {
+                    Integer period = getParameterAsInt(request, "period");
+                    return getBlocksInPeriodStatement(period);
+                }
                 case "addNeighbors": {
                     List<String> uris = getParameterAsList(request,"uris",0);
                     log.debug("Invoking 'addNeighbors' with {}", uris);
@@ -252,12 +291,20 @@ public class API {
                     return findTransactionsStatement(request);
                 }
                 case "getBalances": {
-                    final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
-                    final List<String> tips = request.containsKey("tips") ?
-                            getParameterAsList(request,"tips", HASH_SIZE):
-                            null;
-                    final int threshold = getParameterAsInt(request, "threshold");
-                    return getBalancesStatement(addresses, tips, threshold);
+                    if(request.containsKey("cointype")) {
+                        String account = (String) request.get("account");
+                        log.info("getBalaces: account {}", account);
+                        List list = new ArrayList<String>();
+                        list.add(account);
+                        return getStreamNetBalanceStatement(list);
+                    } else {
+                        final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+                        final List<String> tips = request.containsKey("tips") ?
+                                getParameterAsList(request,"tips", HASH_SIZE):
+                                null;
+                        final int threshold = getParameterAsInt(request, "threshold");
+                        return getBalancesStatement(addresses, tips, threshold);
+                    }
                 }
                 case "getInclusionStates": {
                     if (invalidSubtangleStatus()) {
@@ -290,7 +337,23 @@ public class API {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
                     return getTrytesStatement(hashes);
                 }
-
+                case "getBlockContent": {
+                    final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
+                    LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+                    List<Hash> list = prov.getHashesFromBundle(hashes);
+                    return getBlockContentStatement(list);
+                }
+                case "getDAG": {
+                    String type = getParameterAsString(request, "type");
+                    return getDAGStatement(type);
+                }
+                case "getUTXO": {
+                    String type = getParameterAsString(request, "type");
+                    return getUTXOStatement(type);
+                }
+                case "getTotalOrder": {
+                    return getTotalOrderStatement();
+                }
                 case "interruptAttachingToTangle": {
                     return interruptAttachingToTangleStatement();
                 }
@@ -331,6 +394,7 @@ public class API {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     return wereAddressesSpentFromStatement(addresses);
                 }
+
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
@@ -507,6 +571,12 @@ public class API {
         return result;
     }
 
+    private String getParameterAsString(Map<String, Object> request, String paramName) throws ValidationException {
+        validateParamExists(request, paramName);
+        String result = (String) request.get(paramName);
+        return result;
+    }
+
     private void validateTrytes(String paramName, int size, String result) throws ValidationException {
         if (!validTrytes(result,size,ZERO_LENGTH_NOT_ALLOWED)) {
             throw new ValidationException("Invalid " + paramName + " input");
@@ -538,6 +608,10 @@ public class API {
     }
 
     public boolean invalidSubtangleStatus() {
+        String tipSel = BaseIotaConfig.getInstance().getTipSelector();
+        if(tipSel.equals("CONFLUX")) {
+            return false; // if using conflux, there is no need to check milestone.
+        }
         return (instance.milestoneTracker.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
     }
 
@@ -591,6 +665,71 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
+
+    // FIXME add comments
+    private synchronized AbstractResponse getBlockContentStatement(List<Hash> hashes) throws Exception {
+        
+
+        final List<String> elements = new LinkedList<>();
+        String info = "";
+        for (final Hash hash : hashes) {
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, hash);
+            if (transactionViewModel != null) {
+                byte[] sigTrits = transactionViewModel.getSignature();
+                String sigTrytes = Converter.trytes(sigTrits);
+                String txnInfo = Converter.trytesToAscii(sigTrytes);
+                Pattern pattern = Pattern.compile("\\{.*\\}");
+                Matcher matcher = pattern.matcher(txnInfo);
+                if (matcher.find()) {
+                    LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+                    double score = prov.getScore(hash);
+                    double pScore = prov.getParentScore(hash);
+                    BatchTxns tx = new Gson().fromJson(matcher.group(0), BatchTxns.class);
+                    NodeFormatted fmt = new NodeFormatted();
+                    fmt.txns = tx;
+                    fmt.score = score;
+                    fmt.pScore = pScore;
+                    elements.add(new Gson().toJson(fmt));
+                } else {
+                    LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+                    double score = prov.getScore(hash);
+                    double pScore = prov.getParentScore(hash);
+                    TEEFormatted fmt = new TEEFormatted();
+                    fmt.score = score;
+                    fmt.pScore = pScore;
+                    String decoded = java.net.URLDecoder.decode(StringUtils.trim(txnInfo), StandardCharsets.UTF_8.name());
+                    BatchTee tee = new Gson().fromJson(decoded, BatchTee.class);
+                    fmt.tee = tee;
+                    elements.add(new Gson().toJson(fmt));
+                }
+            }
+        }
+        if (elements.size() > maxGetTrytes){
+            return ErrorResponse.create(overMaxErrorMessage);
+        }
+        return GetTrytesResponse.create(elements);
+    }
+
+    // FIXME add comments
+    private synchronized AbstractResponse getDAGStatement(String type) throws Exception {
+        LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        String graph = prov.printGraph(prov.getGraph(), type);
+        return GetDAGResponse.create(graph);
+    }
+
+    // FIXME add comments
+    private synchronized AbstractResponse getUTXOStatement(String type) throws Exception {
+        String graph = TransactionData.getInstance().getUTXOGraph(type);
+        return GetDAGResponse.create(graph);
+    }
+    
+    // FIXME add comments
+    private synchronized AbstractResponse getTotalOrderStatement() throws Exception {
+        LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        List<Hash> order = prov.totalTopOrder();
+        return GetTotalOrderResponse.create(order);
+    }
+
     private static int counterGetTxToApprove = 0;
     public static int getCounterGetTxToApprove() {
         return counterGetTxToApprove;
@@ -625,11 +764,14 @@ public class API {
         }
 
         try {
+            if(instance.tangle.getTxnCount()==0) {
+                return GetTransactionsToApproveResponse.create(IotaUtils.getRandomTransactionHash(), IotaUtils.getRandomTransactionHash());
+            }
             List<Hash> tips = getTransactionToApproveTips(depth, reference);
             return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
 
         } catch (Exception e) {
-            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            log.error("Tip selection failed: " + e.getLocalizedMessage(),e);
             return ErrorResponse.create(e.getLocalizedMessage());
         }
     }
@@ -674,17 +816,74 @@ public class API {
       **/
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
-        for (final String trytesPart : trytes) {
+        List<TransactionViewModel> elements = new ArrayList<>();
+
+        for(int i=0; i<trytes.size(); i++) {
+            String trytesPart = trytes.get(i);
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+            elements.add(transactionViewModel);
+        }
+
+        storeTransactionViews(elements);
+    }
+
+    public void storeTransactionViews(List<TransactionViewModel> elements) throws Exception {
+        List<Hash> hashes = new ArrayList<>();
+        for(int i=elements.size()-1; i>=0; i--){
+            final TransactionViewModel transactionViewModel = elements.get(i);
+            hashes.add(transactionViewModel.getHash());
+
             if(transactionViewModel.store(instance.tangle)) {
+                long count = transactionViewModel.addTxnCount(instance.tangle);
+                log.info("received {} {} from api.", count, count == 1?"transaction":"transactions");
+
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, "sender");
             }
+        }
+        TransactionData.getInstance().batchPutIndex(hashes);
+    }
+
+    private void executeContract(String msg, String tagVal) {
+        try {
+            URL url = new URL("http://localhost:5000/put_contract");
+            if(tagVal.equals("KB")) {
+                url = new URL("http://localhost:5000/put_action");
+            }
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("PUT");
+            conn.setRequestProperty("Content-Type", "application/json");
+            String input = "{\"ipfs_addr\" :\"" + msg + "\"}";
+            OutputStream os = conn.getOutputStream();
+            os.write(input.getBytes());
+            os.flush();
+            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                throw new RuntimeException("Failed : HTTP error code : "
+                        + conn.getResponseCode());
+            }
+            BufferedReader br = new BufferedReader(new InputStreamReader(
+                        (conn.getInputStream())));
+            String output;
+            log.info("Output from Server .... \n");
+            while ((output = br.readLine()) != null) {
+                log.info(output);
+            }
+            conn.disconnect();
+        } catch (MalformedURLException e) {
+            log.error("MalformedURLException {}", e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("IOException {}", e);
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            log.error("Exception {}", e);
         }
     }
 
@@ -953,8 +1152,8 @@ public class API {
       *
       * @param trytes the list of transaction
       **/
-    public void broadcastTransactionsStatement(final List<String> trytes) {
-        final List<TransactionViewModel> elements = new LinkedList<>();
+    public List<TransactionViewModel> broadcastTransactionsStatement(final List<String> trytes) {
+        List<TransactionViewModel> elements = new ArrayList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes) {
             //validate all trytes
@@ -962,13 +1161,25 @@ public class API {
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits, instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
-        for (final TransactionViewModel transactionViewModel : elements) {
+        for(int i = elements.size() -1 ; i>= 0; i--) {
+        //for (final TransactionViewModel transactionViewModel : elements) {
+            final TransactionViewModel transactionViewModel = elements.get(i);
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
-            instance.node.broadcast(transactionViewModel);
+            instance.node.broadcast(transactionViewModel, null);
         }
+        return elements;
     }
 
+    private AbstractResponse getStreamNetBalanceStatement(final List<String> addresses) {
+        List<String> balances = new LinkedList<>();
+        for (String addr: addresses) {
+            long balance = TransactionData.getInstance().getBalance(addr);
+            balances.add(Long.toString(balance));
+        }
+        final int index = instance.milestoneTracker.latestSnapshot.index();
+        return GetBalancesResponse.create(balances, null, index);
+    }
 
     /**
       * Returns the confirmed balance, as viewed by the specified <code>tips</code>. If you do not specify the referencing <code>tips</code>, the returned balance is based on the latest confirmed milestone.
@@ -1077,35 +1288,37 @@ public class API {
             long timestamp = System.currentTimeMillis();
             try {
                 Converter.trits(tryte, transactionTrits, 0);
+                byte[] tTrits = IotaIOUtils.processTxnTrytes(transactionTrits);
                 //branch and trunk
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
-                        transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
+                        tTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
                 System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
-                        transactionTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
+                        tTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
 
                 //attachment fields: tag and timestamps
                 //tag - copy the obsolete tag to the attachment tag field only if tag isn't set.
-                if(IntStream.range(TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(idx -> transactionTrits[idx]  == ((byte) 0))) {
-                    System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
-                    transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
+                if(IntStream.range(TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(idx -> tTrits[idx]  == ((byte) 0))) {
+                    System.arraycopy(tTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
+                    tTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
                     TransactionViewModel.TAG_TRINARY_SIZE);
                 }
 
-                Converter.copyTrits(timestamp,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
+                Converter.copyTrits(timestamp,tTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
-                Converter.copyTrits(0,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(0,tTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
-                Converter.copyTrits(MAX_TIMESTAMP_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(MAX_TIMESTAMP_VALUE,tTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
-                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, instance.configuration.getPowThreads())) {
+                if (!pearlDiver.search(tTrits, minWeightMagnitude, instance.configuration.getPowThreads())) {
                     transactionViewModels.clear();
                     break;
                 }
                 //validate PoW - throws exception if invalid
-                final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
+                final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(tTrits, instance.transactionValidator.getMinWeightMagnitude());
+                IotaIOUtils.processReceivedTxn(transactionViewModel);
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
@@ -1184,7 +1397,7 @@ public class API {
                         exchange.endExchange();
                     }
                 } catch (IOException e) {
-                    log.error("Lost connection to client - cannot send response");
+                    log.error("Lost connection to client - cannot send response",e);
                     exchange.endExchange();
                     sinkChannel.getWriteSetter().set(null);
                 }
@@ -1244,13 +1457,60 @@ public class API {
      *
      * @param address The address to add the message to
      * @param message The message to store
+     * @param tag     The tag to store, by default is TX
      **/
-    private synchronized AbstractResponse storeMessageStatement(final String address, final String message) throws Exception {
-        final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
+        long tStart = System.currentTimeMillis();
+        List<Hash> txToApprove = new ArrayList<Hash>();
+        try {
+            txToApprove = getTransactionToApproveTips(15, Optional.empty());
+        } catch (NullPointerException e) {
+            log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage(),e);
+            if(instance.tangle.getTxnCount() > 2) {
+                return AbstractResponse.createEmptyResponse();
+                // TODO, if this happens for multiple times, find the reason and solve it
+            }
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+        }
+        catch (Exception e) {
+            log.error("Tip selection failed: " + e.getLocalizedMessage(),e);
+        } finally {
+            if(txToApprove.get(0).equals(null) || (txToApprove.size()>1 && txToApprove.get(1).equals(null))) {
+                log.warn("Tip selection failed, why?");
+                return AbstractResponse.createEmptyResponse(); // FIXME why come here?
+            }
+        }
+        long tTipSel = System.currentTimeMillis();
 
-        final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
+        final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
-        final int txCount = (message.length() + txMessageSize - 1) / txMessageSize;
+        // special process
+        String msg = message;
+
+        if (!BaseIotaConfig.getInstance().isEnableIPFSTxns() && BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+            String processed;
+            // skip 'YYYYMMDD' in tag
+            switch (tag.substring(8)){
+                case "TX" :
+                    processed = IotaIOUtils.processBatchTxnMsg(message);
+                    if (processed == null) {
+                        log.error("Special process failed!");
+                        return AbstractResponse.createEmptyResponse();
+                    }
+                    break;
+                case "TEE" :
+                    processed = Converter.asciiToTrytes(message);
+                    break;
+                default:
+                    processed = Converter.asciiToTrytes(message);
+            }
+            msg = processed;
+        }
+
+        long tPreProcess = System.currentTimeMillis();
+
+        final int txCount = (int) (msg.length() + txMessageSize - 1) / txMessageSize;
 
         final byte[] timestampTrits = new byte[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
         Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
@@ -1266,9 +1526,9 @@ public class API {
         for (int i = 0; i < txCount; i++) {
             String tx;
             if (i != txCount - 1) {
-                tx = message.substring(i * txMessageSize, (i + 1) * txMessageSize);
+                tx = msg.substring(i * txMessageSize, (i + 1) * txMessageSize);
             } else {
-                tx = message.substring(i * txMessageSize);
+                tx = msg.substring(i * txMessageSize);
             }
 
             Converter.copyTrits(i, currentIndexTrits, 0, currentIndexTrits.length);
@@ -1278,7 +1538,7 @@ public class API {
             // value
             tx += StringUtils.repeat('9', 27);
             // obsolete tag
-            tx += StringUtils.repeat('9', 27);
+            tx += StringUtils.rightPad(Converter.asciiToTrytes(tag), 27, '9');
             // timestamp
             tx += timestampTrytes;
             // current index
@@ -1305,9 +1565,105 @@ public class API {
 
         transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
 
+        long tBundleHash = System.currentTimeMillis();
+
         // do pow
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
-        broadcastTransactionsStatement(powResult);
+
+        long tPow = System.currentTimeMillis();
+
+        List<TransactionViewModel> elements = broadcastTransactionsStatement(powResult);
+
+        long tBroadCast = System.currentTimeMillis();
+
+        storeTransactionViews(elements);
+
+        long tStore = System.currentTimeMillis();
+
+        log.debug("[time] tTipSel {} tPreProcess {} tBundleHash {} tPow {} tBroadCast {} tStore {} num {}", tTipSel-tStart, tPreProcess-tTipSel, tBundleHash-tPreProcess, tPow-tBundleHash, tBroadCast-tPow, tStore-tBroadCast, powResult.size());
+
         return AbstractResponse.createEmptyResponse();
     }
+
+    private synchronized AbstractResponse getBlocksInPeriodStatement(final long period) {
+        if (period <= 0){
+            throw new RuntimeException("period not valid: " + period);
+        }
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        int blocksPerPeriod = (int)BaseIotaConfig.getInstance().getNumBlocksPerPeriod();
+        int p = (int)period;
+//        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
+        List<Hash> totalTopOrders = provider.totalTopOrder();
+        int totalSize = totalTopOrders.size();
+        List<Hash> retOrder = totalTopOrders.subList(blocksPerPeriod*(p-1) > totalSize ? totalSize : blocksPerPeriod*(p-1),
+                blocksPerPeriod*p > totalSize ? totalSize : (blocksPerPeriod*p));
+
+        List<String> resArray = new ArrayList<String>();
+        try {
+            for(Hash h : retOrder) {
+                TransactionViewModel model = TransactionViewModel.find(instance.tangle, h.bytes());
+                byte[] sigTrits = model.getSignature();
+                String sigTrytes = Converter.trytes(sigTrits);
+                String info = Converter.trytesToAscii(sigTrytes);
+                //too many spacing
+                resArray.add(StringUtils.trim(info));
+            }
+
+            String finalRes = new Gson().toJson(resArray);
+
+            return GetBlocksInPeriodResponse.create(finalRes);
+        } catch(Exception e) {
+            e.printStackTrace();
+            return AbstractResponse.createEmptyResponse();
+        }
+    }
+
+    private boolean verifySign(String address, String requstJson){
+        JSONObject json = new JSONObject(requstJson);
+        Integer num = json.getInt("tx_num");
+        if (num == null || num < 1){
+            throw new RuntimeException("request need txn_num.");
+        }
+        String contentStr = json.getString("txn_content");
+        if(num == 1) {
+            return doVerify(address, contentStr);
+        }
+        else if (num > 1 ){
+            JSONArray arr = new JSONArray(contentStr);
+            for (Object obj : arr){
+                boolean r = doVerify(address, (String) obj);
+                if (!r){
+                    return false;
+                }
+            }
+            return true;
+        }
+        else{
+            throw new RuntimeException("request need a positive txn_num.");
+        }
+    }
+
+    private boolean doVerify(String address, String contentStr){
+        JSONObject content = new JSONObject(contentStr);
+        String signature = (String) content.remove("sign");
+        String message = EcdsaUtils.getSortedStringFrom(content);
+        log.debug("[message] {}", message);
+        return doVerifySign(address, signature, message);
+    }
+
+    private boolean doVerifySign(String address, String sign, String message){
+        try {
+            EcdsaUtils.ValidRes res = EcdsaUtils.verifyMessage(sign, message, address);
+            if (!res.verifyResult()){
+                log.error(String.format("Signatire verification failed for : %s", res.errMessage()));
+            }
+            return res.verifyResult();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
+

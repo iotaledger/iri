@@ -1,0 +1,30 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ The local state $G$ = $<B,g,P,E>$  and a starting block $b \in B$ }
+\KwOut{ The tip in the pivot chain }
+
+\Do { Child(G,b) != 0} {
+  $b'$ $\gets$ Child($G,b$)  \;
+  $tmpMaxScore$ $\gets$ -1 \;
+  $tmpBlock$ $\gets$ $\perp$ \;
+  \For {$b' \in Child(G,b)$} {
+    $pScore$ $\gets$ ParentScore($G, b'$) \;
+    \If { $score$ $>$ $tmpMaxScore$ $||$ ($score$ = $tmpMaxScore$ \text{and Hash($b'$ ) $<$ Hash($tmpBlock$)}} {
+      $tmpMaxScore$ $\gets$ $pScore$ \;
+      $tmpBlock$ $\gets$ $b'$ \; 
+    }
+  }
+  $b$ $\gets$ $tmpBlock$ \;
+}
+
+\Return{$b$} \;
+
+\caption{{\sc pivot($G$, $b$).}}
+\label{algo:getPivot}
+\end{algorithm}
+\DecMargin{1em}
+

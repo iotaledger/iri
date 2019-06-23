@@ -1,0 +1,161 @@
+\section{Optimization Methods}
+One of the biggest challenges to maintain the stability of DAG system is that, 
+as the local data structure grows, the graph algorithms ($Pivot()$, $MCMC()$, $StreamNetOrder()$), 
+relies on some of the graph operators that need to be recalculated for every newly generated block,
+which are very expensive. 
+Table~\ref{tab:properties} list all the expensive graph operators that are called. 
+Suppose the depth of the pivot chain is $d$, then we give the analysis of complexity in the following way. 
+$ParentScore()$  and $Score()$ rely on the breath first search ($BFS$), and the average $BFS$
+complexity would be $O(|B|)$,
+and for each MCMC() and Pivot() called 
+the complexity would be in total $O(|B|^2)$ in both of these two cases.
+The calculation of $Past()$ also relies on the $BFS$ operator, in the StreamNetOrder() algorithm, the complexity would be 
+accrued to $O(|B| * d)$.
+TopOrder() is used in sub-order ranking the blocks in the same epoch.
+It's the classical topological sorting problem, and the complexity in the StreamNetOrder() would be $O(|B|)$.
+
+\begin{table}[]
+\caption {Analysis of Graph properties calculation} \label{tab:properties}
+\begin{center}
+    \resizebox{\linewidth}{!}{
+\begin{tabular}{|l|l|l|l|}
+\hline
+Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
+ParentScore(G, b)     & Pivot()          & $O(|B|)$              & $O(|B|^2)$  \\ \hline
+Score(G, b)           & MCMC()           & $O(|B|)$              & $O(|B|^2)$  \\ \hline
+Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$              & $O(|B|*d)$  \\ \hline
+TopOrder(G, b)        & StreamNetOrder() & $O(|B|)$              & $O(|B|)$    \\ \hline
+\end{tabular}}
+\end{center}
+\end{table}
+
+Considering new blocks are generated and merged into the local data structure in a streaming way.
+The expensive graph properties could be maintained dynamically as the DAG grows.
+Such that the complexity of calculating these properties would be amortized to each time a new block is generated or merged.
+In the following sections, we will discuss how to design streaming algorithms to achieve this goal.
+
+\subsection{Optimization of Score() and ParentScore() }
+In the optimized version, the DAG will have a map that keeps the score of each block. Once there is a new generated/merged block,
+it will trigger the BFS based UpdateScore() algorithm to update the scores of the block in the map that are referenced by the new block.
+The skeleton of the UpdateScore() algorithm is as Algorithm~\ref{algo:update_score} shows.
+
+\input{./algorithms/update_score.tex}
+
+\subsection{Optimization of Past(G,b) - Past(G,p)}
+
+We abbreviate the Past(G,b) - Past(G,p) to calculate $B\delta$ as GetDiffSet(G,b,C) which is shown in the Algorithm~\ref{algo:get_diff_set}.
+This algorithm is in essence a dual direction $BFS$ algorithm. Starting from the block $b$, it will traverse all its referenced blocks.
+Every time a new reference block $b'$ is discovered, it will perform a backward $BFS$ to `look back' to see if itself is already covered by the $b$'s parent block $p$. 
+If yes, $b'$ would not be added to the forward $BFS$ queue.  
+To avoid the complexity of the backward $BFS$, the previous calculated diff set will be added to the covered set $C$, which will be passed to GetDiffSet() as a parameter.
+To be more specific, when a backward BFS is performed, the blocks in $C$ will not be added to the search queue.
+This backward search algorithm is denoted as IsCovered() and described in detail in Algorithm~\ref{algo:is_covered}.
+
+Figure~\ref{get_diff} shows the example of the GetDiffSet() method for block $5$.
+It first perform forward BFS to find block $4$ which does not have children, then it will be added to the diff set.
+$4$ then move forward to $1$, which have three children, if it detect $3$ which is the parent of $5$, it will stop searching promptly.
+If it continue searching on $2$ or $4$, these two blocks would not be added to the search queue, because they are already in the covered set.
+
+\input{./algorithms/get_diff.tex}
+
+\input{./algorithms/is_covered.tex}
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.35\textwidth]{figures/get_diff.pdf}
+    \caption{
+        Example of the streaming get diff set method.
+     }
+\label{get_diff}
+\end{center}
+\end{figure}
+
+\subsection{Optimization of TopOrder()}
+The topological order is used in sorting the blocks in the same epoch.
+To get the topological order, every time, there needs a top sort of the whole DAG from the scratch.
+However we can easily update the topological order when a new block is added or merged.
+The update rule is, when a new block is added, it's topological position will be as (1) shows. This step can be done in $O(1)$ 
+
+\begin{equation}
+    \begin{flalign*}
+        & TopScore(G, b) \gets min(TopScore(G, Parent(b)), \\
+        & TopScore(G, Reference(b))) + 1
+    \end{flalign*}
+\end{equation}
+
+
+To summarize, the optimized streaming operators can achieve the performance improvement as Table~\ref{tab:improvement} shows. 
+
+\begin{table}[]
+\caption {Analysis of Graph properties calculation} \label{tab:improvement}
+\begin{center}
+    \resizebox{\linewidth}{!}{
+\begin{tabular}{|l|l|l|l|}
+\hline
+Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
+Score(G, b)           & MCMC()           & $O(|B|)$              & $O(|B|)$  \\ \hline
+ParentScore(G, b)     & Pivot()          & $O(|B|)$              & $O(|B|)$  \\ \hline
+Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$              & $O(|B|)$  \\ \hline
+TopOrder(G, b)        & StreamNetOrder() & $O(|1|)$              & $O(|1|)$    \\ \hline
+\end{tabular}}
+\end{center}
+\end{table}
+
+\subsection{Genesis Forwarding}
+The above algorithm solved the problem of how to dynamically maintaining the information needed for graph computation.
+However, it still needs to update the information until genesis block. 
+With the size of the graph growing, the updating process will become harder to compute.
+With the grwoth of DAG size, the old historical confirmed blocks are being confirmed by more and more blocks, 
+which are hard to be mutated.
+And the exact probability can be computed in formula (1).
+Hence, we can design a strategy to forward the genesis periodically and fix the historical blocks into a total ordered chain.
+The criteria to forward the genesis are based on the threshold of ParentScore().
+Suppose we define this threshold as $h = n-m $, then we only forward the genesis if: 
+
+\begin{equation}
+    \begin{flalign*}
+        & \exists b | b \in Chain(G, g), for \\ 
+        & \forall b' | b' \in \overline{Chain(G,g)}, such that \\
+        & ParentScore(b) > ParentScore(b') + h 
+    \end{flalign*}
+\end{equation}
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figures/genesis_forward.pdf}
+    \caption{
+        Example of genesis forward method. 
+     }
+\label{genesis_forward}
+\end{center}
+\end{figure}
+
+In Figure~\ref{genesis_forward}, we set $h=5$, and there are three side chains with $\forall b' | b' \in \overline{Chain(G,g)}$, $ParentScore(b')<=4$.
+And in pivot chain, there are multiple blocks $b$ that has $ParentScore(b) >= 9$, they are condidates for the new genesis, 
+we choose the block with minimumn $ParentScore$ as the new genesis.
+
+In addition, after the new genesis has been chosen, 
+we will induce a new DAG in memory from this genesis,
+and persist the `snapshot' total order (Conflux paper has the same definition, 
+but it does not show the technical detail, we do not view it trivial) in the local data base.
+Once the total order is queried, a total order based on the current DAG will be appended to the end of the historical
+snapshot total order and be returned.
+In addition, the vertices in UTXO graph that belongs to the fixed blocks will 
+be eliminated from the memory and be persisted to disk as well.  
+The algorithm is as Algorithm~\ref{algo:genesis_forward} shows.
+
+\input{./algorithms/genesis_forward.tex}
+
+\subsection{The Direct Signal Gossip Protocol}
+To minimize the message passing in the gossip network,
+there are solutions in \cite{demers1988epidemic}. And in Hyperledger \cite{androulaki2018hyperledger}
+they have adopted the PUSH and PULL model for the gossip message propagation. However, their system is aiming at permissioned chain.
+Suppose the size of the hash of a block is $H$, we designed the direct signal algorithm.
+The algorithm is divided into two steps, once a node generate or receive a block,
+it firstly broadcast the hash of the block, this is the PUSH step.
+Once a node receive a hash or a set of a hash,
+it will pick one source of the hash for the block content, this is the PULL step.
+The direct signal algorithm's complexity will be $O(LH + NB)$ and for a node averaged to $O(\frac{LH}{N} + 1)$
+The algorithm is as Algorithm~\ref{algo:gossip} shows.
+
+\input{./algorithms/gossip.tex}

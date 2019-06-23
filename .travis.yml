@@ -1,8 +1,8 @@
 language: java
 jdk:
-  - oraclejdk8
+    #- oraclejdk8
   - openjdk8
-  - oraclejdk9
+  #- oraclejdk9
 
 cache:
   apt: true
@@ -15,15 +15,46 @@ addons:
   apt:
     packages:
     - jq
+    - nginx
 
-matrix:
-  allow_failures:
-    - jdk: oraclejdk9
+install:
+  # install python env
+    - sudo apt-get install software-properties-common
+    - sudo apt-add-repository universe
+    - sudo add-apt-repository restricted
+    - sudo add-apt-repository multiverse
+    - sudo apt-get update
+    - sudo apt-get install python-pip
+    - sudo pip install ipfsapi
+    - sudo pip install flask
+    - sudo pip install -U pyOpenSSL
+    - sudo pip install pyota
+    - sudo pip install docker 
+    - sudo pip install mock
+    - sudo pip install cryptography==2.5
+    - sudo pip install sh
+    - sudo pip install six --upgrade
+    - sudo pip install ecdsa
+  # update go version
+    - gimme 1.11.5
+    - source ~/.gimme/envs/go1.11.5.env
+  # install jmeter
+    - wget -c https://github.com/triasteam/utils/raw/master/software/apache-jmeter-5.1.1.zip
+      && mv apache-jmeter-5.1.1.zip /opt
+      && cd /opt
+      && unzip apache-jmeter-5.1.1.zip
+      && export JMETER_HOME=/opt/apache-jmeter-5.1.1
+      && export CLASSPATH=$CLASSPATH:$JMETER_HOME/lib
+      && export PATH=$PATH:$JMETER_HOME/bin
+      && cd -
+
+before_script:
+  -
 
 script:
   #run tests and integration tests
   # see  https://stackoverflow.com/questions/34405047/how-do-you-merge-into-another-branch-using-travis-with-git-commands?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-  - build_head=$(git rev-parse HEAD) 
+  - build_head=$(git rev-parse HEAD)
   - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
   - git fetch origin $TRAVIS_BRANCH
   - git checkout -f $TRAVIS_BRANCH
@@ -37,22 +68,27 @@ script:
   - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep -E '^[0-9.]+')
   - export _JAVA_OPTIONS="$_JAVA_OPTIONS -javaagent:$HOME/.m2/repository/org/jacoco/org.jacoco.agent/$JACOCO_V/org.jacoco.agent-$JACOCO_V-runtime.jar=destfile=$PWD/target/jacoco.exec,output=file,append=true,dumponexit=true"
   - echo $_JAVA_OPTIONS
-  - git clone https://github.com/iotaledger/iri-regression-tests.git
+  - git clone https://github.com/triasteam/iri-regression-tests.git
   - cd iri-regression-tests
-  - git checkout -f master
-  - curl -LO https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/testnet_files.tgz
-  - tar -xzf testnet_files.tgz
+  #- git checkout -f master
   - mkdir iri
   - cp -rf ../target iri/target
+  - cp -rf ../scripts iri/scripts
   - bash run_all_stable_tests.sh $VERSION
   - cd ..
   #jacoco append to report
   - mvn jacoco:report
+  - cd scripts/iota_cache/
+  - python iota_cache_test.py
 
 after_success:
   #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)
   - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && wget -O codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets[0].browser_download_url')
   - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && java -jar codacy-coverage-reporter-assembly-latest.jar report -l Java -r target/site/jacoco/jacoco.xml
+
+after_failure:
+  - cat /tmp/app.log
+  - cat ../../iri-regression-tests/iri/node1/iri.log
 
 deploy:
 - provider: releases

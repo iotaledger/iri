@@ -1,0 +1,33 @@
+\section{Introduction}
+
+Segregated-Witness
+Fork Accountability
+Long Range Attacks
+
+Bitshares
+Corda
+Steem
+
+COSMOS uses the Tendermint consensus algorithm, which is a combination of PBFT and POS whereas the participants in the consorition will have the voting power according to their token shares.
+NEO is based on the delegated PBFT algorithm, in which each participants in the NEO network will have some ballots to vote for their proxy, then the elected proxy will practice the PBFT for the final consensus.
+
+\subsection{RepCloud and NeuronVisor}
+RepCloud is an attestation network that each node will periodically perform the attestation to its neighbors in the network and disseminate the trust information to the neighbors in a "gossip" like manner. 
+Due to the "small world" network topology feature, two hops of information passing is enough for each node to gather information about the whole network's trust. 
+NeuronVisor is the data structure in each node to maintain the network's trust information. It's an 𝑁×𝑁 matrix, and each entry position in the matrix is an T bit bit vector representing the attestation score of different time, which shift to right 1 bit per attestation period.
+
+\subsection{Issues to apply to the BlockChain Scenario}
+Assumption that there will be no network failures/partitions (CAP theorem's 'P'). And each node in the network will not cheat (Byzantine general's problem). Which is not suitable to the Blockchain domain.
+There is no global consensus of time, each bit vector will shift at different time, even if there is no network issue and there is no node cheating, it's still hard to maintain a common view of scores across different nodes.
+Each local node need to maintain a score matrix of 𝑂(_𝑁_2_), N is total number of nodes in the network, which is quite large and sparse. Not to say broadcast this amount of information will flood network easily.
+Simply calculate the total score is erroneous, and can not avoid spam.
+
+
+The trust information is broadcasted through StreamNet
+StreamNet is a consensus protocol that is based on Conflux [2] algorithm. And this protocol is Nakamoto consensus [1] algorithm, which is Byzantine tolerant.
+It's a DAG that is maintained in a distributed environment. Every block in the DAG contains data uploaded by the user, and it will approve two previous data by calculating nonces.
+Each StreamNet machine will grow its DAG locally, and will broadcast the changes using gossip protocol. Eventually, every machine will have a unified view of DAG.
+By calling total ordering algorithm, every machine can sort the DAG into a total order, and the data in each block can have a relative order regardless of their local upload time. 
+StreamNet has a really high throughput leveraging the Streaming graph computing technology.
+
+

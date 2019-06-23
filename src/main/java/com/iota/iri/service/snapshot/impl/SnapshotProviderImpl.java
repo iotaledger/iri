@@ -1,6 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
-import com.iota.iri.SignedFiles;
+import com.iota.iri.validator.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;

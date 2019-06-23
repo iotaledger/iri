@@ -1,19 +1,21 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.Iota;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.utils.IotaUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.neo4j.cypher.internal.compiler.v2_3.HalfOpenSeekRange;
 
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 public class TangleTest {
     private final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -27,8 +29,9 @@ public class TangleTest {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
     }
@@ -63,6 +66,27 @@ public class TangleTest {
         }
 
         return out;
+    }
+
+    @Test
+    public void txnCount() throws Exception {
+        long count = tangle.getTxnCount();
+        tangle.addTxnCount(100);
+        Assert.assertEquals("batch txs count should be 100", tangle.getTxnCount(), count + 100);
+    }
+
+    @Test
+    public void testGetTotalOrder(){
+
+        List<Hash> totalOrder = new ArrayList<>();
+        totalOrder.add(IotaUtils.getRandomTransactionHash());
+        totalOrder.add(IotaUtils.getRandomTransactionHash());
+        totalOrder.add(IotaUtils.getRandomTransactionHash());
+        tangle.storeTotalOrder(totalOrder);
+
+        List<Hash> hashes = tangle.getTotalOrder();
+
+        assert hashes.equals(totalOrder);
     }
 
 }

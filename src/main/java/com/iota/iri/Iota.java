@@ -1,14 +1,18 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
+import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.service.tipselection.RatingCalculator;
@@ -16,8 +20,12 @@ import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightWithEdgeCalculator;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightMemCalculator;
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
+import com.iota.iri.service.tipselection.impl.EntryPointSelectorKatz;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
+import com.iota.iri.service.tipselection.impl.TipSelectorConflux;
 import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.service.tipselection.impl.WalkerAlpha;
 import com.iota.iri.storage.Indexable;
@@ -27,13 +35,22 @@ import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
+import com.iota.iri.storage.neo4j.Neo4jPersistenceProvider;
+
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.iota.iri.validator.*;
+import com.iota.iri.validator.impl.*;
 
 import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.List;
+
 
 /**
  * Created by paul on 5/19/17.
@@ -69,9 +86,10 @@ public class Iota {
                 configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
-        ledgerValidator = new LedgerValidator(tangle, milestoneTracker, transactionRequester, messageQ);
+        ledgerValidator = createLedgerValidator();
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
+        TransactionData.getInstance().setTangle(tangle);
     }
 
     public void init() throws Exception {
@@ -94,6 +112,7 @@ public class Iota {
         udpReceiver.init();
         replicator.init();
         node.init();
+        TransactionData.getInstance().restoreTxs();
     }
 
     private void rescanDb() throws Exception {
@@ -138,7 +157,10 @@ public class Iota {
                 tangle.addPersistenceProvider(new RocksDBPersistenceProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
-                        configuration.getDbCacheSize()));
+                        configuration.getDbCacheSize(),
+                        Tangle.COLUMN_FAMILIES,
+                        Tangle.METADATA_COLUMN_FAMILY)
+                );
                 break;
             }
             default: {
@@ -148,14 +170,48 @@ public class Iota {
         if (configuration.isZmqEnabled()) {
             tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));
         }
+        if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
+            tangle.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle));
+        }
+        if(!BaseIotaConfig.getInstance().getGraphDbPath().equals("")) {
+            String graphDbPath = BaseIotaConfig.getInstance().getGraphDbPath();
+            tangle.addPersistenceProvider(new Neo4jPersistenceProvider(graphDbPath));
+        }
     }
 
     private TipSelector createTipSelector(TipSelConfig config) {
+        // TODO use factory
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestoneTracker);
+        if(BaseIotaConfig.getInstance().getEntryPointSelector().equals("KATZ")) {
+            entryPointSelector = new EntryPointSelectorKatz(tangle, null);
+        }
+
+        // TODO use factory
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
+        if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("CUM_EDGE_WEIGHT")){
+            ratingCalculator = new CumulativeWeightWithEdgeCalculator(tangle);
+        } else if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("IN_MEM")) {
+            ratingCalculator = new CumulativeWeightMemCalculator(tangle);
+        }
+
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
-        return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
-                walker, milestoneTracker, config);
+        TipSelector tipSel;
+        if(BaseIotaConfig.getInstance().getTipSelector().equals("CONFLUX")) {
+            tipSel = new TipSelectorConflux(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
+                                                 walker, milestoneTracker, config);
+        } else {
+            tipSel = new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
+                    walker, milestoneTracker, config);
+        }
+        return tipSel;
+    }
+
+    private LedgerValidator createLedgerValidator() {
+        LedgerValidator validator = new LedgerValidatorImpl(tangle, milestoneTracker, transactionRequester, messageQ);
+        if(BaseIotaConfig.getInstance().getLedgerValidator().equals("NULL")){
+            validator = new LedgerValidatorNull(tangle, milestoneTracker, transactionRequester, messageQ);
+        }
+        return validator;
     }
 }

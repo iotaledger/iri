@@ -1,5 +1,9 @@
 package com.iota.iri.controllers;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.Address;
 import com.iota.iri.model.persistables.Approvee;
@@ -7,12 +11,18 @@ import com.iota.iri.model.persistables.Bundle;
 import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
+import org.apache.commons.lang3.StringUtils;
+import com.iota.iri.pluggables.utxo.BatchTxns;
+import com.iota.iri.pluggables.utxo.Txn;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class TransactionViewModel {
@@ -332,6 +342,18 @@ public class TransactionViewModel {
         return transaction.currentIndex;
     }
 
+    public long getLastIndex() {
+        return transaction.lastIndex;
+    }
+
+    public void setCurrentIndex(long idx) {
+        transaction.currentIndex = idx;
+    }
+
+    public void setLastIndex(long idx) {
+        transaction.lastIndex = idx;
+    }
+
     public byte[] getSignature() {
         return Arrays.copyOfRange(trits(), SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
     }
@@ -516,5 +538,55 @@ public class TransactionViewModel {
     @Override
     public String toString() {
         return "transaction " + hash.toString();
+    }
+
+    private boolean isMilestoneTxn() {
+        // milestone
+        byte[] tritsSig = getSignature();
+        String trytesSig = Converter.trytes(tritsSig);
+        byte[] bytesSig = Converter.trytesToBytes(trytesSig);
+        String headerStr = new String((Arrays.copyOfRange(bytesSig, 0, 4)), StandardCharsets.US_ASCII);
+
+        if (headerStr.equals("\0\0\0\0")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public long addTxnCount(Tangle tangle) {
+        // TODO: replacing with isMilestone??
+        if (isMilestoneTxn()) {
+            tangle.addTxnCount(1);
+            return 1;
+        }
+
+        if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+            byte[] trits = getSignature();
+            String trytes = Converter.trytes(trits);
+
+            try {
+                String bytes = Converter.trytesToAscii(trytes);
+
+                try {
+                    JSONObject jo = new JSONObject(bytes);
+                    long txnCount = jo.getLong("tx_num");
+                    tangle.addTxnCount(txnCount);
+                    return txnCount;
+                } catch (JSONException e) {
+                    // transaction's format is not json
+                    tangle.addTxnCount(1);
+                    return 1;
+                }
+            } catch (IllegalArgumentException e) {
+                // failed to convert trytes to ascii, tx content is illegal.
+                e.printStackTrace();
+                return 0;
+            }
+        } else {
+            // transaction not in batch, means 'put_file'
+            tangle.addTxnCount(1);
+            return 1;
+        }
     }
 }

@@ -35,6 +35,37 @@ public interface DbConfig extends Config {
      */
     boolean isRescanDb();
 
+    /**
+     * @return {@value Descriptions#GRAPH_DB_PATH}
+     */
+    String getGraphDbPath();
+
+    /**
+     * @return {@value Descriptions#ENABLE_BATCH_TXNS}
+     */
+    boolean isEnableBatchTxns();
+
+    /**
+     * @return {@value Descriptions#ENABLE_IPFS_TXNS}
+     */
+    boolean isEnableIPFSTxns();
+
+    /**
+     * @return {@value Descriptions#ENABLE_COMPRESSION_TXNS}
+     */
+    boolean isEnableCompressionTxns();
+
+    /**
+     *
+     * @return {@value Descriptions#ANCESTOR_CREATE_FREQUENCY}
+     */
+    double getAncestorCreateFrequency();
+
+    /**
+     * @return {@Value Descriptions#ANCESTOR_FORWARD_ENABLE}
+     */
+    boolean isAncestorForwardEnable();
+
     interface Descriptions {
 
         String DB_PATH = "The folder where the DB saves its data.";
@@ -44,5 +75,11 @@ public interface DbConfig extends Config {
         String REVALIDATE = "Reload from the db data about confirmed transaction (milestones), state of the ledger, " +
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
+        String GRAPH_DB_PATH = "Path to the graph database storage.";
+        String ENABLE_BATCH_TXNS = "The DB engine can be used to store batches of transactions.";
+        String ENABLE_IPFS_TXNS = "The message is stored in IPFS.";
+        String ENABLE_COMPRESSION_TXNS = "The message is compressed.";
+        String ANCESTOR_CREATE_FREQUENCY = "Number of nodes to create a new ancestor.";
+        String ANCESTOR_FORWARD_ENABLE = "Enable ancestor change forward. ";
     }
 }

@@ -1,19 +1,15 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
@@ -21,9 +17,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class RocksDBPersistenceProvider implements PersistenceProvider {
@@ -33,38 +34,17 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private static final Pair<Indexable, Persistable> PAIR_OF_NULLS = new Pair<>(null, null);
 
-    private final List<String> columnFamilyNames = Arrays.asList(
-        new String(RocksDB.DEFAULT_COLUMN_FAMILY),
-        "transaction",
-        "transaction-metadata",
-        "milestone",
-        "stateDiff",
-        "address",
-        "approvee",
-        "bundle",
-        "obsoleteTag",
-        "tag"
-    );
-
     private final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
     private final SecureRandom seed = new SecureRandom();
 
     private final String dbPath;
     private final String logPath;
     private final int cacheSize;
-
-    private ColumnFamilyHandle transactionHandle;
-    private ColumnFamilyHandle transactionMetadataHandle;
-    private ColumnFamilyHandle milestoneHandle;
-    private ColumnFamilyHandle stateDiffHandle;
-    private ColumnFamilyHandle addressHandle;
-    private ColumnFamilyHandle approveeHandle;
-    private ColumnFamilyHandle bundleHandle;
-    private ColumnFamilyHandle obsoleteTagHandle;
-    private ColumnFamilyHandle tagHandle;
+    private final Map<String, Class<? extends Persistable>> columnFamilies;
+    private final Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily;
 
     private Map<Class<?>, ColumnFamilyHandle> classTreeMap;
-    private Map<Class<?>, ColumnFamilyHandle> metadataReference;
+    private Map<Class<?>, ColumnFamilyHandle> metadataReference = Collections.emptyMap();
 
     private RocksDB db;
     // DBOptions is only used in initDB(). However, it is closeable - so we keep a reference for shutdown.
@@ -72,17 +52,29 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private BloomFilter bloomFilter;
     private boolean available;
 
-    public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize) {
+    private static final String txnCountFileName = "TXN_COUNT";
+    private AtomicLong txnCount = new AtomicLong(0);
+    private File txnCountFile;
+
+    private final String ANCESTORS = "ancestors";
+    private final String TOTAL_ORDER = "totalOrder";
+
+    public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
+                                      Map<String, Class<? extends Persistable>> columnFamilies,
+                                      Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
         this.dbPath = dbPath;
         this.logPath = logPath;
         this.cacheSize = cacheSize;
+        this.columnFamilies = columnFamilies;
+        this.metadataColumnFamily = metadataColumnFamily;
+
     }
 
     @Override
-    public void init() {
-        log.info("Initializing Database Backend... ");
-        initDB(dbPath, logPath);
-        initClassTreeMap();
+    public void init() throws Exception {
+        log.info("Initializing Database on " + dbPath);
+        initDB(dbPath, logPath, columnFamilies);
+        initTxnsCount(dbPath);
         available = true;
         log.info("RocksDB persistence provider initialized.");
     }
@@ -92,22 +84,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         return this.available;
     }
 
-    private void initClassTreeMap() {
-        Map<Class<?>, ColumnFamilyHandle> classMap = new LinkedHashMap<>();
-        classMap.put(Transaction.class, transactionHandle);
-        classMap.put(Milestone.class, milestoneHandle);
-        classMap.put(StateDiff.class, stateDiffHandle);
-        classMap.put(Address.class, addressHandle);
-        classMap.put(Approvee.class, approveeHandle);
-        classMap.put(Bundle.class, bundleHandle);
-        classMap.put(ObsoleteTag.class, obsoleteTagHandle);
-        classMap.put(Tag.class, tagHandle);
-        classTreeMap = classMap;
-
-        Map<Class<?>, ColumnFamilyHandle> metadataHashMap = new HashMap<>();
-        metadataHashMap.put(Transaction.class, transactionMetadataHandle);
-        metadataReference = metadataHashMap;
-    }
 
     @Override
     public void shutdown() {
@@ -341,12 +317,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     }
                 });
 
-                WriteOptions writeOptions = new WriteOptions()
+                try(WriteOptions writeOptions = new WriteOptions()
                         //We are explicit about what happens if the node reboots before a flush to the db
                         .setDisableWAL(false)
                         //We want to make sure deleted data was indeed deleted
-                        .setSync(true);
-                db.write(writeOptions, writeBatch);
+                        .setSync(true)) {
+                    db.write(writeOptions, writeBatch);
+                }
             }
         }
     }
@@ -416,10 +393,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 backupEngine.restoreDbFromLatestBackup(path, logPath, restoreOptions);
             }
         }
-        initDB(path, logPath);
+        initDB(path, logPath, columnFamilies);
     }
 
-    private void initDB(String path, String logPath) {
+    private void initDB(String path, String logPath, Map<String, Class<? extends Persistable>> columnFamilies) {
         try {
             try {
                 RocksDB.loadLibrary();
@@ -478,36 +455,57 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setWriteBufferSize(2 * SizeUnit.MB);
 
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
-            for (String name : columnFamilyNames) {
+            //Add default column family. Main motivation is to not change legacy code
+            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
+            for (String name : columnFamilies.keySet()) {
                 columnFamilyDescriptors.add(new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions));
             }
+            // metadata descriptor is always last
+            if (metadataColumnFamily != null) {
+                columnFamilyDescriptors.add(
+                        new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
+                metadataReference = new HashMap<>();
+            }
+
 
             db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
             db.enableFileDeletions(true);
 
-            fillModelColumnHandles();
+            initClassTreeMap(columnFamilyDescriptors);
 
         } catch (Exception e) {
             log.error("Error while initializing RocksDb", e);
             IotaIOUtils.closeQuietly(db);
+        } finally {
+            options.close();
+//            mergeOperator.close();
+//            columnFamilyDescriptors.close();
         }
     }
 
-    private void fillModelColumnHandles() throws Exception {
-        int i = 0;
-        transactionHandle = columnFamilyHandles.get(++i);
-        transactionMetadataHandle = columnFamilyHandles.get(++i);
-        milestoneHandle = columnFamilyHandles.get(++i);
-        stateDiffHandle = columnFamilyHandles.get(++i);
-        addressHandle = columnFamilyHandles.get(++i);
-        approveeHandle = columnFamilyHandles.get(++i);
-        bundleHandle = columnFamilyHandles.get(++i);
-        obsoleteTagHandle = columnFamilyHandles.get(++i);
-        tagHandle = columnFamilyHandles.get(++i);
+    private void initClassTreeMap(List<ColumnFamilyDescriptor> columnFamilyDescriptors) throws Exception {
+        Map<Class<?>, ColumnFamilyHandle> classMap = new LinkedHashMap<>();
+        String mcfName = metadataColumnFamily == null ? "" : metadataColumnFamily.getKey();
+        //skip default column
+        int i = 1;
+        for (; i < columnFamilyDescriptors.size(); i++) {
+
+            String name = new String(columnFamilyDescriptors.get(i).columnFamilyName());
+            if (name.equals(mcfName)) {
+                Map<Class<?>, ColumnFamilyHandle> metadataRef = new HashMap<>();
+                metadataRef.put(metadataColumnFamily.getValue(), columnFamilyHandles.get(i));
+                metadataReference = MapUtils.unmodifiableMap(metadataRef);
+            }
+            else {
+                classMap.put(columnFamilies.get(name), columnFamilyHandles.get(i));
+            }
+        }
 
         for (; ++i < columnFamilyHandles.size(); ) {
             db.dropColumnFamily(columnFamilyHandles.get(i));
         }
+
+        classTreeMap = MapUtils.unmodifiableMap(classMap);
     }
 
     // 2018 March 28 - Unused Code
@@ -539,9 +537,159 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     // 2018 March 28 - Unused Code
     private void addColumnFamily(byte[] familyName, RocksDB db) throws RocksDBException {
-        final ColumnFamilyHandle columnFamilyHandle = db.createColumnFamily(
-            new ColumnFamilyDescriptor(familyName, new ColumnFamilyOptions()));
+        try(final ColumnFamilyHandle columnFamilyHandle = db.createColumnFamily(
+            new ColumnFamilyDescriptor(familyName, new ColumnFamilyOptions()))) {
 
-        assert (columnFamilyHandle != null);
+            assert (columnFamilyHandle != null);
+        }
+    }
+
+    private void initTxnsCount(String path) throws IOException {
+        String filePath = path + "/" + txnCountFileName;
+        txnCountFile = new File(filePath);
+
+        if (!txnCountFile.exists()) {
+            boolean b = txnCountFile.createNewFile();
+            if (!b) {
+                log.error("Creating TXN_COUNT file failed.");
+            }
+        }
+
+        FileInputStream fis = new FileInputStream(txnCountFile);
+        long count;
+        if (fis.available() == 0) {
+            count = 0;
+        } else {
+            // TODO: judge the count whether or not right.
+            byte[] bytes = new byte[Long.BYTES];
+            int c = fis.read(bytes);
+
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+            buffer.put(bytes);
+            buffer.flip(); //need flip
+            count =  buffer.getLong();
+        }
+        txnCount.set(count);
+        fis.close();
+    }
+
+    @Override
+    public synchronized void addTxnCount(long count) {
+        try {
+            FileOutputStream fos = new FileOutputStream(txnCountFile);
+            fos.write(ByteBuffer.allocate(Long.BYTES).putLong(txnCount.addAndGet(count)).array());
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error("Writing to TX_COUNT filed");
+        }
+    }
+
+    @Override
+    public long getTotalTxns() {
+        return txnCount.get();
+    }
+
+    @Override
+    public List<Hash> getSiblings(Hash block) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void buildGraph() {
+
+    }
+
+    @Override
+    public void computeScore() {
+
+    }
+
+    @Override
+    public Hash getPivotalHash(int depth) {
+        return null;
+    }
+
+    @Override
+    public List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder) {
+        return null;
+    }
+
+    @Override
+    public Set<Hash> getChild(Hash block) {
+        return null;
+    }
+
+    public int getNumOfTips() {
+        // TODO
+        return -1;
+    }
+
+    @Override
+    public Stack<Hash> getAncestors() {
+        byte[] ancestors = null;
+        try {
+            ancestors = db.get(ANCESTORS.getBytes());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
+        if (null == ancestors){
+            return null;
+        }
+
+        Stack<Hash> stack = new Stack<>();
+        for(int i=0; i<ancestors.length; i+= Hash.SIZE_IN_BYTES){
+            byte[] ins = new byte[Hash.SIZE_IN_BYTES];
+            System.arraycopy(ancestors, 0 + i, ins, 0, Hash.SIZE_IN_BYTES);
+            Hash hash = HashFactory.TRANSACTION.create(ins);
+            stack.push(hash);
+        }
+        log.info("=== ancestors : " + stack.stream().map(h -> IotaUtils.abbrieviateHash(h, 6)).collect(Collectors.toList()));
+        return stack;
+    }
+
+    @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        doStoreRocksDB(ANCESTORS, ancestors);
+    }
+
+    public List<Hash> getTotalOrder() {
+        byte[] totalOrder = null;
+        try {
+            totalOrder = db.get(TOTAL_ORDER.getBytes());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
+        if (null == totalOrder){
+            return null;
+        }
+
+        List<Hash> list = new ArrayList<>();
+        for(int i=0; i<totalOrder.length; i+= Hash.SIZE_IN_BYTES){
+            byte[] ins = new byte[Hash.SIZE_IN_BYTES];
+            System.arraycopy(totalOrder, 0 + i, ins, 0, Hash.SIZE_IN_BYTES);
+            Hash hash = HashFactory.TRANSACTION.create(ins);
+            list.add(hash);
+        }
+        return list;
+    }
+
+    public void storeTotalOrder(List<Hash> totalOrders) {
+       doStoreRocksDB(TOTAL_ORDER, totalOrders);
+    }
+
+    private void doStoreRocksDB(String key, List<Hash> value){
+        if (null == value){
+            return;
+        }
+        ByteBuffer byteBuffer = ByteBuffer.allocate(value.size() * Hash.SIZE_IN_BYTES);
+        for(Hash h : value){
+            byteBuffer.put(h.bytes());
+        }
+        try {
+            db.put(key.getBytes(), byteBuffer.array());
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
     }
 }

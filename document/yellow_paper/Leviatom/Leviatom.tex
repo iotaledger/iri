@@ -1,0 +1,76 @@
+\documentclass[10pt, conference, compsocconf]{IEEEtran}
+
+\usepackage[ruled,linesnumbered,lined,commentsnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small}
+\SetAlCapNameFnt{\small}
+\usepackage{algorithmic}
+\algsetup{linenosize=\tiny}
+\usepackage[tight]{subfigure}
+\usepackage{graphicx}
+\usepackage{multicol,lipsum}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{mathtools}
+\usepackage{breqn}
+\usepackage{placeins}
+\usepackage{balance}
+
+\ifCLASSINFOpdf
+\else
+\fi
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\SetKwRepeat{Do}{do}{while}
+
+
+\begin{document}
+\title{Leviatom: Bringing Trust to Block Chain Network of Million Nodes}
+
+%\author{
+%\IEEEauthorblockN{{\bf Zhaoming Yin}\IEEEauthorrefmark{1}\\ \tt\footnotesize stplaydog@gmail.com} \and
+%\IEEEauthorblockN{{\bf Anbang Ruan}\IEEEauthorrefmark{1}\IEEEauthorrefmark{2}\\ \tt\footnotesize ar@8lab.cn} \and
+%\IEEEauthorblockN{{\bf Ming Wei}\IEEEauthorrefmark{1}\IEEEauthorrefmark{2}\\ \tt\footnotesize wm@8lab.cn} \and 
+%\IEEEauthorblockN{{\bf Huafeng Li}\IEEEauthorrefmark{1}\\ \tt\footnotesize lhf@trias.one} \and 
+%\IEEEauthorblockN{{\bf Kai Yuan}\IEEEauthorrefmark{1}\\ \tt\footnotesize yuankai@trias.one} \and
+%\IEEEauthorblockN{{\bf Junqing Wang}\IEEEauthorrefmark{1}\\ \tt\footnotesize wangjunqing@trias.one} \and
+%\IEEEauthorblockN{{\bf Yahui Wang}\IEEEauthorrefmark{1}\\ \tt\footnotesize wangyahui@trias.one} \and
+%\IEEEauthorblockN{{\bf Ming Ni}\IEEEauthorrefmark{1}\\ \tt\footnotesize ming.ni@trias.one} \and
+%\IEEEauthorblockN{{\bf Andrew Martin}\IEEEauthorrefmark{3}\\ \tt\footnotesize andrew.martin@cs.ox.ac.uk}
+%\and
+%\IEEEauthorblockA{\IEEEauthorrefmark{1}TRIAS Lab, Hangzhou, China}
+%\IEEEauthorblockA{\IEEEauthorrefmark{2}Octa Innovation, Beijing, China}
+%\IEEEauthorblockA{\IEEEauthorrefmark{3} Oxford University, Oxford, England}
+%}
+
+
+\maketitle
+
+
+
+
+\input{./sections/abstract.tex}
+
+\begin{IEEEkeywords}
+Block chain, Trusted Computing, Graph Theory 
+
+\end{IEEEkeywords}
+
+
+\IEEEpeerreviewmaketitle
+
+
+
+% no \IEEEPARstart
+\input{sections/introduction.tex}
+\input{sections/applications.tex}
+
+\bibliographystyle{IEEEtran}
+\balance
+\bibliography{Leviatom}
+
+% that's all folks
+\end{document}
+
+

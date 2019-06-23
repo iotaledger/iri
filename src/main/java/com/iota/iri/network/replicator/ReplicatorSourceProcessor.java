@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.CRC32;
 
@@ -30,7 +31,7 @@ class ReplicatorSourceProcessor implements Runnable {
     private final int packetSize;
 
     private boolean existingNeighbor;
-    
+
     private TCPNeighbor neighbor;
 
     public ReplicatorSourceProcessor(final ReplicatorSinkPool replicatorSinkPool,
@@ -46,6 +47,17 @@ class ReplicatorSourceProcessor implements Runnable {
         this.packetSize = testnet
                 ? TestnetConfig.Defaults.PACKET_SIZE
                 : MainnetConfig.Defaults.PACKET_SIZE;
+    }
+
+    private boolean checkBreak(int offset) {
+        if (node.optimizeNetworkEnabled) {
+            // FIXME: may got wrong message according to size
+            return (offset == node.transactionSize + ReplicatorSinkProcessor.CRC32_BYTES
+                    || offset == node.broadcastHashSize + ReplicatorSinkProcessor.CRC32_BYTES
+                    || offset == node.requestHashSize + ReplicatorSinkProcessor.CRC32_BYTES);
+        } else {
+            return offset >= (packetSize + ReplicatorSinkProcessor.CRC32_BYTES);
+        }
     }
 
     @Override
@@ -71,7 +83,7 @@ class ReplicatorSourceProcessor implements Runnable {
                             neighbor = n;
                         }
                     });
-            
+
             if (!existingNeighbor) {
                 int maxPeersAllowed = maxPeers;
                 if (!testnet || Neighbor.getNumPeers() >= maxPeersAllowed) {
@@ -97,58 +109,63 @@ class ReplicatorSourceProcessor implements Runnable {
                     Neighbor.incNumPeers();
                 }
             }
-            
+
             if ( neighbor.getSource() != null ) {
                 log.info("Source {} already connected", inetSocketAddress.getAddress().getHostAddress());
                 finallyClose = false;
                 return;
             }
             neighbor.setSource(connection);
-            
+
             // Read neighbors tcp listener port number.
             InputStream stream = connection.getInputStream();
             offset = 0;
             while (((count = stream.read(data, offset, ReplicatorSinkPool.PORT_BYTES - offset)) != -1) && (offset < ReplicatorSinkPool.PORT_BYTES)) {
                 offset += count;
             }
-          
+
             if ( count == -1 || connection.isClosed() ) {
                 log.error("Did not receive neighbors listener port");
                 return;
             }
-            
+
             byte [] pbytes = new byte [10];
             System.arraycopy(data, 0, pbytes, 0, ReplicatorSinkPool.PORT_BYTES);
             neighbor.setTcpPort((int)Long.parseLong(new String(pbytes)));
-            
+
             if (neighbor.getSink() == null) {
                 log.info("Creating sink for {}", neighbor.getHostAddress());
                 replicatorSinkPool.createSink(neighbor);
-            }           
-            
+            }
+
             if (connection.isConnected()) {
                 log.info("----- NETWORK INFO ----- Source {} is connected", inetSocketAddress.getAddress().getHostAddress());
             }
-            
+
             connection.setSoTimeout(0);  // infinite timeout - blocking read
 
             offset = 0;
             while (!shutdown && !neighbor.isStopped()) {
 
-                while ( ((count = stream.read(data, offset, (packetSize- offset + ReplicatorSinkProcessor.CRC32_BYTES))) != -1)
-                        && (offset < (packetSize + ReplicatorSinkProcessor.CRC32_BYTES))) {
+                while ( (count = stream.read(data, offset, (packetSize- offset + ReplicatorSinkProcessor.CRC32_BYTES))) != -1) {
                     offset += count;
+
+                    if (checkBreak(offset)) {
+                        break;
+                    }
                 }
-              
+
                 if ( count == -1 || connection.isClosed() ) {
                     break;
                 }
-                
+
+                int dataLen = offset - ReplicatorSinkProcessor.CRC32_BYTES;
+
                 offset = 0;
 
                 try {
                     CRC32 crc32 = new CRC32();
-                    for (int i=0; i<packetSize; i++) {
+                    for (int i = 0; i < dataLen; i++) {
                         crc32.update(data[i]);
                     }
                     String crc32String = Long.toHexString(crc32.getValue());
@@ -156,16 +173,21 @@ class ReplicatorSourceProcessor implements Runnable {
                         crc32String = "0"+crc32String;
                     }
                     byte [] crc32Bytes = crc32String.getBytes();
-                    
+
                     boolean crcError = false;
                     for (int i=0; i<ReplicatorSinkProcessor.CRC32_BYTES; i++) {
-                        if (crc32Bytes[i] != data[packetSize + i]) {
+                        if (crc32Bytes[i] != data[dataLen + i]) {
                             crcError = true;
                             break;
                         }
                     }
                     if (!crcError) {
-                        node.preProcessReceivedData(data, address, "tcp");
+                        if (node.optimizeNetworkEnabled) {
+                            byte[] realData = Arrays.copyOfRange(data, 0, dataLen);
+                            node.preProcessReceivedOptimizedData(realData, address, "tcp");
+                        } else {
+                            node.preProcessReceivedData(data, address, "tcp");
+                        }
                     }
                 }
                   catch (IllegalStateException e) {
@@ -188,9 +210,9 @@ class ReplicatorSourceProcessor implements Runnable {
                     neighbor.setSource(null);
                     neighbor.setSink(null);
                     //if (!neighbor.isFlagged() ) {
-                    //   Node.instance().getNeighbors().remove(neighbor);   
+                    //   Node.instance().getNeighbors().remove(neighbor);
                     //}
-                }                   
+                }
             }
         }
     }

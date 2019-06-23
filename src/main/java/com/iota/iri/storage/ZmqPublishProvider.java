@@ -9,9 +9,7 @@ import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ZmqPublishProvider implements PersistenceProvider {
 
@@ -178,5 +176,59 @@ public class ZmqPublishProvider implements PersistenceProvider {
     @Override
     public void clearMetadata(Class<?> column) throws Exception {
 
+    }
+
+    public void addTxnCount(long count) {
+        // TODO implement this
+    }
+
+    public long getTotalTxns() throws Exception {
+        return 0;
+    }
+
+    @Override
+    public List<Hash> getSiblings(Hash block) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void buildGraph() {
+
+    }
+
+    @Override
+    public void computeScore() {
+
+    }
+
+    @Override
+    public Hash getPivotalHash(int depth) {
+        return null;
+    }
+
+    @Override
+    public List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder) {
+        return null;
+    }
+
+    @Override
+    public Set<Hash> getChild(Hash block) {
+        return null;
+    }
+
+    public int getNumOfTips() {
+        // TODO
+        return -1;
+    }
+
+    @Override
+    public Stack<Hash> getAncestors() {
+        //TODO
+        return null;
+    }
+
+    @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        //TODO
     }
 }

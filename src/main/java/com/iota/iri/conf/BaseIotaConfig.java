@@ -32,6 +32,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    protected boolean enableRemoteAuth = Defaults.ENABLE_REMOTE_AUTH;
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -46,9 +47,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean dnsRefresherEnabled = Defaults.DNS_REFRESHER_ENABLED;
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
     protected List<String> neighbors = new ArrayList<>();
+    protected boolean optimizeNetworkEnabled = Defaults.OPTIMIZE_NETWORK_ENABLED;
 
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
+
+    //Node
+    protected boolean wasmSupport = Defaults.WASM_SUPPORT;
+    protected boolean streamingGraphSupport = Defaults.STREAMING_GRAPH_SUPPORT;
+    protected long numBlocksPerPeriod = Defaults.NUM_BLOCKS_PER_PERIOD;
 
     //DB
     protected String dbPath = Defaults.DB_PATH;
@@ -57,6 +64,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String mainDb = Defaults.ROCKS_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
+    protected String graphDbPath = Defaults.GRAPH_DB_PATH;
+    protected boolean enableBatchTxns = Defaults.ENABLE_BATCH_TXNS;
+    protected boolean enableIPFSTxns = Defaults.ENABLE_IPFS_TXNS;
+    protected boolean enableCompressionTxns = Defaults.ENABLE_COMPRESSION_TXNS;
+    protected double ancestorCreateFrequency = Defaults.ANCESTOR_CREATE_FREQUENCY;
+    protected boolean ancestorForwardEnable = Defaults.ANCESTOR_FORWARD_ENABLE;
 
     //Protocol
     protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
@@ -78,6 +91,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
+    private String weightCalAlgo = Defaults.WEIGHT_CAL_ALGO;
+    private String entryPointSelAlgo = Defaults.ENTRY_POINT_CAL_ALGO;
+    private String tipSelectorAlgo = Defaults.TIP_SELECTOR_ALGO;
+    private String confluxScoreAlgo = Defaults.CONFLUX_SCORE_ALGO;
+    private String walkValidator = Defaults.WALK_VALIDATOR;
+    private String ledgerValidator = Defaults.LEDGER_VALIDATOR;
+
 
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
@@ -90,6 +110,24 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
+
+    private static BaseIotaConfig config;
+
+    // TODO make this thread safe
+    public static void setInstance(BaseIotaConfig cfg)
+    {
+        if (config == null)
+        {
+            config = cfg;
+        }
+    }
+    public static BaseIotaConfig getInstance() {
+        if(config == null)
+        {
+            config = new TestnetConfig();
+        }
+        return config;
+    }
 
     public BaseIotaConfig() {
         //empty constructor
@@ -145,11 +183,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.apiHost = apiHost;
     }
 
-    @JsonIgnore
+    @JsonProperty
     @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE)
     protected void setRemote(boolean remote) {
         this.apiHost = "0.0.0.0";
+        this.remote = remote;
     }
+
+    public boolean isRemote() {
+            return remote;
+        }
 
     @Override
     public List<String> getRemoteLimitApi() {
@@ -215,6 +258,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--remote-auth"}, description = APIConfig.Descriptions.REMOTE_AUTH)
     protected void setRemoteAuth(String remoteAuth) {
         this.remoteAuth = remoteAuth;
+    }
+
+    @Override
+    public boolean getEnableRemoteAuth() {
+        return enableRemoteAuth;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--enable-remote-auth"}, description = APIConfig.Descriptions.ENABLE_REMOTE_AUTH)
+    protected void setEnableRemoteAuth(boolean enableRemoteAuth) {
+        this.enableRemoteAuth = enableRemoteAuth;
     }
 
     @Override
@@ -306,6 +360,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public boolean isOptimizeNetworkEnabled() {
+        return optimizeNetworkEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--optimize-network", description = NetworkConfig.Descriptions.OPTIMIZE_NETWORK_ENABLED, arity = 1)
+    protected void setOptimizeNetworkEnabled(boolean optimizeNetworkEnabled) {
+        this.optimizeNetworkEnabled = optimizeNetworkEnabled;
+    }
+
+    @Override
     public String getIxiDir() {
         return ixiDir;
     }
@@ -358,6 +423,50 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
+    }
+
+    @Override
+    public String getGraphDbPath() {
+        return graphDbPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--graph-db-path"}, description = DbConfig.Descriptions.GRAPH_DB_PATH)
+    protected void setGraphDbPath(String graphDbPath) {
+        this.graphDbPath = graphDbPath;
+    }
+
+    @Override
+    public boolean isEnableBatchTxns() {
+        return enableBatchTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--batch-txns"}, description = DbConfig.Descriptions.ENABLE_BATCH_TXNS)
+    protected void setEnableBatchTxns(boolean enableBatchTxns) {
+        this.enableBatchTxns = enableBatchTxns;
+    }
+
+    @Override
+    public boolean isEnableIPFSTxns() {
+        return enableIPFSTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--ipfs-txns"}, description = DbConfig.Descriptions.ENABLE_IPFS_TXNS, arity = 1)
+    protected void setEnableIPFSTxns(boolean enableIPFSTxns) {
+        this.enableIPFSTxns = enableIPFSTxns;
+    }
+
+    @Override
+    public boolean isEnableCompressionTxns() {
+        return enableCompressionTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--compression-txns"}, description = DbConfig.Descriptions.ENABLE_COMPRESSION_TXNS)
+    protected void setEnableCompressionTxns(boolean enableCompressionTxns) {
+        this.enableCompressionTxns = enableCompressionTxns;
     }
 
     @Override
@@ -658,6 +767,39 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public boolean getWASMSupport() {
+        return wasmSupport;
+    }
+
+    @JsonProperty("ENABLE_WASM")
+    @Parameter(names = "--enable-wasm", description = NodeConfig.Descriptions.ENABLE_WASMVM)
+    protected void getWASMSupport(Boolean wasmSupport) {
+        this.wasmSupport = wasmSupport;
+    }
+
+    @Override
+    public boolean getStreamingGraphSupport() {
+        return streamingGraphSupport;
+    }
+
+    @JsonProperty("STREAMING_GRAPH")
+    @Parameter(names = "--enable-streaming-graph", description = NodeConfig.Descriptions.STREAMING_GRAPH)
+    public void setStreamingGraphSupport(Boolean streamingGraphSupport) {
+        this.streamingGraphSupport = streamingGraphSupport;
+    }
+
+    @Override
+    public long getNumBlocksPerPeriod() {
+        return numBlocksPerPeriod;
+    }
+
+    @JsonProperty("PERIOD_SIZE")
+    @Parameter(names = "--num-blocks-per-period", description = NodeConfig.Descriptions.PERIOD_SIZE)
+    public void setNumBlocksPerPeriod(Long numBlocksPerPeriod) {
+        this.numBlocksPerPeriod = numBlocksPerPeriod;
+    }
+
+    @Override
     public double getAlpha() {
         return alpha;
     }
@@ -680,6 +822,72 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public String getWeightCalAlgo() {
+        return weightCalAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--weight-calculation-algorithm", description = TipSelConfig.Descriptions.WEIGHT_CAL_ALGO)
+    protected void setWeightCalAlgo(String weightCalAlgo) {
+        this.weightCalAlgo = weightCalAlgo;
+    }
+
+    @Override
+    public String getEntryPointSelector() {
+        return entryPointSelAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--entrypoint-selector-algorithm", description = TipSelConfig.Descriptions.ENTRY_POINT_SEL_ALGO)
+    protected void setEntryPointSelector(String entryPointSelAlgo) {
+        this.entryPointSelAlgo = entryPointSelAlgo;
+    }
+
+    @Override
+    public String getTipSelector() {
+        return tipSelectorAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--conflux-score-algo", description = TipSelConfig.Descriptions.CONFLUX_SCORE_ALGO)
+    public void setConfluxScoreAlgo(String confluxScoreAlgo) {
+        this.confluxScoreAlgo = confluxScoreAlgo;
+    }
+
+    @Override
+    public String getConfluxScoreAlgo() {
+        return confluxScoreAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--tip-sel-algo", description = TipSelConfig.Descriptions.TIP_SEL_ALGO)
+    protected void setTipSelector(String tipSelectorAlgo) {
+        this.tipSelectorAlgo = tipSelectorAlgo;
+    }
+
+    @Override
+    public String getWalkValidator() {
+        return walkValidator;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--walk-validator", description = TipSelConfig.Descriptions.WALK_VALIDATOR)
+    protected void setWalkValidator(String walkValidator) {
+        this.walkValidator = walkValidator;
+    }
+
+    @Override
+    public String getLedgerValidator() {
+        return ledgerValidator;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--ledger-validator", description = TipSelConfig.Descriptions.LEDGER_VALIDATOR)
+    protected void setLedgerValidator(String ledgerValidator) {
+        this.ledgerValidator = ledgerValidator;
+    }
+
+    @Override
     public int getPowThreads() {
         return powThreads;
     }
@@ -688,6 +896,32 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--pow-threads", description = PearlDiverConfig.Descriptions.POW_THREADS)
     protected void setPowThreads(int powThreads) {
         this.powThreads = powThreads;
+    }
+
+    @Override
+    public double getAncestorCreateFrequency() {
+        return ancestorCreateFrequency;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--ancestor-create-frequency", description = DbConfig.Descriptions.ANCESTOR_CREATE_FREQUENCY)
+    protected void setAncestorCreateFrequency(double ancestorCreateFrequency) {
+        //FIXME 测试通过后加上此限制
+//        if (ancestorCreateFrequency < Defaults.ANCESTOR_CREATE_FREQUENCY){
+//            return;
+//        }
+        this.ancestorCreateFrequency = ancestorCreateFrequency;
+    }
+
+    @Override
+    public boolean isAncestorForwardEnable() {
+        return ancestorForwardEnable;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--ancestor-forward-enable", description = DbConfig.Descriptions.ANCESTOR_FORWARD_ENABLE)
+    protected void setAncestorForwardEnable(boolean ancestorForwardEnable) {
+        this.ancestorForwardEnable = ancestorForwardEnable;
     }
 
     public interface Defaults {
@@ -700,6 +934,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_GET_TRYTES = 10_000;
         int MAX_BODY_LENGTH = 1_000_000;
         String REMOTE_AUTH = "";
+        boolean ENABLE_REMOTE_AUTH = false;
 
         //Network
         int UDP_RECEIVER_PORT = 14600;
@@ -709,9 +944,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_PEERS = 0;
         boolean DNS_REFRESHER_ENABLED = true;
         boolean DNS_RESOLUTION_ENABLED = true;
+        boolean OPTIMIZE_NETWORK_ENABLED = false;
 
         //ixi
         String IXI_DIR = "ixi";
+
+        // Node
+        boolean WASM_SUPPORT = false;
+        boolean STREAMING_GRAPH_SUPPORT = false;
+        long NUM_BLOCKS_PER_PERIOD = 100;
 
         //DB
         String DB_PATH = "mainnetdb";
@@ -720,6 +961,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String ROCKS_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
+        String GRAPH_DB_PATH = "";
+        boolean ENABLE_BATCH_TXNS = false;
+        boolean ENABLE_IPFS_TXNS = true;
+        boolean ENABLE_COMPRESSION_TXNS = false;
 
         //Protocol
         double P_REPLY_RANDOM_TIP = 0.66d;
@@ -745,6 +990,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //TipSel
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
+        String WEIGHT_CAL_ALGO = "CUM_WEIGHT";
+        String ENTRY_POINT_CAL_ALGO = "DEFAULT";
+        String TIP_SELECTOR_ALGO = "MCMC";
+        String CONFLUX_SCORE_ALGO = "CUM_WEIGHT";
+        String WALK_VALIDATOR = "DEFAULT";
+        String LEDGER_VALIDATOR = "DEFAULT";
 
         //PearlDiver
         int POW_THREADS = 0;
@@ -769,5 +1020,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MILESTONE_START_INDEX = 774_805;
         int NUM_KEYS_IN_MILESTONE = 20;
         int MAX_ANALYZED_TXS = 20_000;
+        double ANCESTOR_CREATE_FREQUENCY = 1000d;
+        boolean ANCESTOR_FORWARD_ENABLE = false;
     }
 }

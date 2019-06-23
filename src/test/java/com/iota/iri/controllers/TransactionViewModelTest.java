@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.Iota;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
@@ -38,8 +39,9 @@ public class TransactionViewModelTest {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
     }
@@ -424,6 +426,13 @@ public class TransactionViewModelTest {
             out[i] = (byte) (seed.nextInt(3) - 1);
         }
 
+        byte[] idx = new byte[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
+
+        System.arraycopy(idx, 0, out, TransactionViewModel.CURRENT_INDEX_TRINARY_OFFSET,
+                TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE);
+        System.arraycopy(idx, 0, out, TransactionViewModel.LAST_INDEX_TRINARY_OFFSET,
+                TransactionViewModel.LAST_INDEX_TRINARY_SIZE);
+
         return out;
     }
 
@@ -435,5 +444,14 @@ public class TransactionViewModelTest {
         }
 
         return HashFactory.TRANSACTION.create(out);
+    }
+
+    @Test
+    public void addTxnCount() throws Exception {
+        byte[] trits = new byte[TransactionViewModel.TRINARY_SIZE];
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
+
+        long addedTxCount = transactionViewModel.addTxnCount(tangle);
+        Assert.assertEquals("batch txs count should be equal.", 1, addedTxCount);
     }
 }

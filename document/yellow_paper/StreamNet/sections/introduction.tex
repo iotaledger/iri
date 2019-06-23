@@ -1,0 +1,43 @@
+\section{Introduction}
+Ever since bitcoin \cite{nakamoto2008bitcoin} has been proposed, blockchain technology has been widely studied for $10$ years. 
+Extensive adoptions of blockchain technologies was seen in real world applications such as 
+financial services with potential regulation challenges \cite{michael2018blockchain, tapscott2017blockchain}, 
+supply chains \cite{korpela2017digital,tian2016agri, abeyratne2016blockchain}, 
+health cares \cite{azaria2016medrec,yue2016healthcare} and IOT devices \cite{christidis2016blockchains}.
+The core of blockchain technology depends on the consensus algorithms applying to the open distributed computing world.
+Where computers can join and leave the network and these computers can cheat.
+
+As the first protocol that can solve the so called Byzantine general's problem, 
+bitcoin system suffers from the problem of low transaction rate with a transaction per second (TPS) of approximately $7$, and long confirmation time (about an hour).
+As more and more machines joined the network, they are competing for the privileges to attach the block (miners) which result in huge waste of electric power.
+While sky rocketing fees are payed to make sure the transfers of money will be placed in the chain.
+On par, there are multiple proposals to solve the low transaction speed issue. 
+One method intends to solve the speed problem without changing the chain data structure, for instance segregated witness \cite{lombrozo2015segregated} or off chain technologies such as lightning network \cite{poon2016bitcoin} or plasma \cite{poon2017plasma}. Another hard fork way changed the bitcoin protocol such as the bitcoin cash tries to improve the throughput of the system by enlarging the data size of each block from $1$ Mb to $4$ Mb. 
+
+To minimize the computational cost of POW, a series of proof of stake method POS \cite{duffield2018dash, tron2018, david2017ouroboros, wood2014ethereum, goodman2014tezos} are proposed to make sure that those who have the privilege to attach the block proportional to their token shares.
+Another idea targeting at utilizing the power in POW to do useful and meaningful tasks such as training machine learning models are also proposed \cite{matthew2017aion}.
+In addition, inspired by the PBFT algorithm \cite{castro1999practical} and a set of its related variations, so called hybrid (or consortium) chain was proposed. 
+The general idea is to use two step algorithm, the first step is to elect a committee, the second step is collecting committee power to employ PBFT for consensus.
+Bitcoin-NG \cite{eyal2016bitcoin} is the early adopter of this idea, which splits the blocks of bitcoin into two groups, one is for master election and another for regular transaction blocks. 
+Honey-badger \cite{miller2016honey} is the system that firstly introduced the consensus committee, it uses a predefined members to perform PBFT algorithm to reach consensus.  
+The Byzcoin system \cite{kogias2016enhancing} brought forth the idea of POW for the committee election, and uses a variation of PBFT called collective signing for speed purposes.
+The Algorand \cite{gilad2017algorand} utilizes a random function to anonymously elect committee and use this committee to commit blocks, and the member of the committee only have one chance to commit block.
+Other popular systems include Ripple \cite{schwartz2014ripple}, Stellar \cite{mazieres2015stellar} and COSMOS \cite{kwon2016cosmos} etc.
+All these systems have one common feature, the split of layers of players in the network, which results in the complexity of the implementation of the system.
+
+While aforementioned methods are trying to avoid side chains, another thread of effort is put on using direct acyclic graph DAG to merge side chains.
+The first ever idea comes with growing the blockchain with trees instead of chains \cite{sompolinsky2013accelerating}, which results in the well known GHOST protocol \cite{sompolinsky2015secure}.
+If one block links to $\geq 2$ previous blocks, then the data structure grows like a DAG instead of tree \cite{sompolinsky2016spectre, sompolinskyphantom, lewenberg2015inclusive}.
+There is a improvement of the GHOST based DAG algorithm which can achieve $6000$ of TPS in reality \cite{li2018scaling}.
+Another set of methods tried to avoid finality of constructing a linear total order by introducing the probability of confirmation in the network \cite{popov2016tangle, churyumov2016byteball}. 
+However, suffering from engineering issues, mainly due to the lack of transaction frequency and the growing complexity due to the network expansion.
+These system in reality are rely on centralized methods to maintain their stability.
+Some of the side chain methods also borrows the idea of DAG, such as nano \cite{lemahieu2018nano} and vite \cite{liuvite}.
+
+Social network analysis has widely adopted the method of streaming graph computing \cite{ediger2011tracking, green2012fast, ediger2012stinger} which deals
+with how to quickly maintain information on a temporally or spatially changing graph without traversing the whole graph. 
+We view the DAG based method as a streaming graph problem which is about how to compute the total order and achieve consensus without consuming more computing power.
+In distributed database systems, the problem of replicating data across machines is a well studied topic \cite{demers1988epidemic}.
+Due to the low efficiency of the bitcoin network, there are multiple ways to accelerate the message passing efficiency \cite{klarmanbloxroute}, however, they did not deal with the network complexity. 
+We view the problem of scaling DAG system in the network of growing size and topological complexity as another challenging issue, and proposed our own gossip solution.
+The main contribution of this paper is how to utilize the streaming graph analysis methods and new gossip protocol to enable real decentralized, and stabilized growing DAG system.

@@ -1,10 +1,9 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.model.Hash;
 import com.iota.iri.utils.Pair;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by paul on 3/2/17 for iri.
@@ -51,4 +50,26 @@ public interface PersistenceProvider {
 
     void clear(Class<?> column) throws Exception;
     void clearMetadata(Class<?> column) throws Exception;
+
+    void addTxnCount(long count);
+
+    long getTotalTxns() throws Exception;
+
+    List<Hash> getSiblings(Hash block);
+
+    void buildGraph();
+
+    void computeScore();
+
+    Hash getPivotalHash(int depth);
+
+    List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder);
+
+    Set<Hash> getChild(Hash block);
+
+    int getNumOfTips();
+
+    Stack<Hash> getAncestors();
+
+    void storeAncestors(Stack<Hash> ancestors);
 }

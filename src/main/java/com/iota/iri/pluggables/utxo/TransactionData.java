@@ -475,7 +475,6 @@ public class TransactionData {
 
     public void persistFixedTxns(List<Hash> fixedBlocks) {
         // Based on blocks, find all txns to be removed
-        log.debug("[before] has {} transactions", transactions.size());
         List<Txn> toBeRemoved = new ArrayList<>();
         for(Hash h : fixedBlocks) {
             if(tangleToTxnMap.containsKey(h)) {
@@ -538,7 +537,6 @@ public class TransactionData {
                 break;
             }
         }
-        log.debug("[after] has {} transactions", transactions.size());
         utxoGraph = new UTXOGraph(transactions);
     }
 }

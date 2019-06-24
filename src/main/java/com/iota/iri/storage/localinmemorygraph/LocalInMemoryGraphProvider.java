@@ -7,6 +7,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.service.tipselection.impl.CumWeightScore;
 import com.iota.iri.service.tipselection.impl.KatzCentrality;
 import com.iota.iri.storage.Indexable;
@@ -1088,7 +1089,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             List<Hash> totalOrderAfter = confluxOrder(getPivot(getGenesis()));
             order2 = printOrder(totalOrderAfter);
 
-            insertStableTotalOrder(totalOrderBefore, totalOrderAfter);
+            List<Hash> toBePersisted = insertStableTotalOrder(totalOrderBefore, totalOrderAfter);
+            TransactionData.getInstance().persistFixedTxns(toBePersisted);
         } catch(RuntimeException e) { 
             BufferedWriter writer = new BufferedWriter(new FileWriter("before"+ ".dot"));
             BufferedWriter writer1 = new BufferedWriter(new FileWriter("after" + ".dot"));
@@ -1111,7 +1113,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     // before: [A, B, C, D, E, F, G, H]
     // after: [F, G, H]
     // should append [A, B, C, D, E] to stable order
-    public void insertStableTotalOrder(List<Hash> before, List<Hash> after) throws Exception {
+    public List<Hash> insertStableTotalOrder(List<Hash> before, List<Hash> after) throws Exception {
+        List<Hash> ret = new ArrayList<>();
         // check first
         int checkPt = -1;
         for(int i=0; i<before.size(); i++) {
@@ -1139,7 +1142,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         // insert later
         for(int i=0; i<checkPt; i++) {
             stableOrder.add(before.get(i));
+            ret.add(before.get(i));
         }
+        return ret;
     }
 
     public List<Hash> getStableOrder() {

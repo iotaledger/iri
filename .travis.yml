@@ -29,7 +29,7 @@ install:
     - sudo pip install flask
     - sudo pip install -U pyOpenSSL
     - sudo pip install pyota
-    - sudo pip install docker 
+    - sudo pip install docker
     - sudo pip install mock
     - sudo pip install cryptography==2.5
     - sudo pip install sh
@@ -40,13 +40,13 @@ install:
     - source ~/.gimme/envs/go1.11.5.env
   # install jmeter
     - wget -c https://github.com/triasteam/utils/raw/master/software/apache-jmeter-5.1.1.zip
-      && mv apache-jmeter-5.1.1.zip /opt
-      && cd /opt
-      && unzip apache-jmeter-5.1.1.zip
-      && export JMETER_HOME=/opt/apache-jmeter-5.1.1
-      && export CLASSPATH=$CLASSPATH:$JMETER_HOME/lib
-      && export PATH=$PATH:$JMETER_HOME/bin
-      && cd -
+    - mv apache-jmeter-5.1.1.zip /opt
+    - cd /opt
+    - unzip apache-jmeter-5.1.1.zip
+    - export JMETER_HOME=/opt/apache-jmeter-5.1.1
+    - export CLASSPATH=$CLASSPATH:$JMETER_HOME/lib
+    - port PATH=$PATH:$JMETER_HOME/bin
+    - cd -
 
 before_script:
   -

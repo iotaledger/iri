@@ -45,7 +45,7 @@ install:
     - unzip apache-jmeter-5.1.1.zip
     - export JMETER_HOME=/opt/apache-jmeter-5.1.1
     - export CLASSPATH=$CLASSPATH:$JMETER_HOME/lib
-    - port PATH=$PATH:$JMETER_HOME/bin
+    - export PATH=$PATH:$JMETER_HOME/bin
     - cd -
 
 before_script:
@@ -75,6 +75,7 @@ script:
   - cp -rf ../target iri/target
   - cp -rf ../scripts iri/scripts
   #- bash run_all_stable_tests.sh $VERSION
+  - which jmeter
   - bash -x 12_*.sh
   - cd ..
   #jacoco append to report

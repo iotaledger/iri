@@ -76,6 +76,7 @@ script:
   - cp -rf ../scripts iri/scripts
   #- bash run_all_stable_tests.sh $VERSION
   - which jmeter
+  - cp /opt/apache-jmeter-5.1.1/lib . -r
   - sed -i '1i\which jmeter && echo $CLASSPATH' 12_*.sh
   - sed -i -e "s/\.\/run_perf\.sh/bash -x run_perf\.sh/g" 12_*.sh
   - bash -x 12_*.sh

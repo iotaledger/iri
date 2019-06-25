@@ -226,41 +226,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 Hash branch = model.getBranchTransactionHash();
                 graphLock.writeLock().lock();
                 try {
-                    // Approve graph
-                    if (graph.get(key) == null) {
-                        graph.put(key, new HashSet<>());
-                    }
-                    graph.get(key).add(trunk);
-                    graph.get(key).add(branch);
+                    updateGraph(key, trunk, branch);
 
-                    //parentGraph
-                    parentGraph.put(key, trunk);
-
-                    // Approvee graph
-                    if (revGraph.get(trunk) == null) {
-                        revGraph.put(trunk, new HashSet<>());
-                    }
-                    revGraph.get(trunk).add(key);
-                    if (revGraph.get(branch) == null) {
-                        revGraph.put(branch, new HashSet<>());
-                    }
-                    revGraph.get(branch).add(key);
-
-                    if (parentRevGraph.get(trunk) == null) {
-                        parentRevGraph.put(trunk, new HashSet<>());
-                    }
-                    parentRevGraph.get(trunk).add(key);
-
-                    // update degrees
-                    if (degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
-                        degs.put(model.getHash(), 2);
-                    }
-                    if (degs.get(trunk) == null) {
-                        degs.put(trunk, 0);
-                    }
-                    if (degs.get(branch) == null) {
-                        degs.put(branch, 0);
-                    }
                     updateTopologicalOrder(key, trunk, branch);
 
                     long currentIndex = model.getCurrentIndex();
@@ -271,7 +238,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     graphLock.writeLock().unlock();
                 }
 
-                if(model.getLastIndex() + 1 > 1) {   
+                if(model.getLastIndex() + 1 > 1) {
                     bundleMap.put(key, new Pair<Hash, Integer>(model.getBundleHash(), (int)model.getCurrentIndex()));
                     if(!bundleContent.containsKey(model.getBundleHash())) {
                         bundleContent.put(model.getBundleHash(), new HashSet<>());
@@ -292,44 +259,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
             while (one != null && one.low != null) {
                 TransactionViewModel model = new TransactionViewModel((Transaction) one.hi, (TransactionHash) one.low);
+                Hash key = model.getHash();
                 Hash trunk = model.getTrunkTransactionHash();
                 Hash branch = model.getBranchTransactionHash();
 
-                // approve direction
-                if (graph.get(model.getHash()) == null) {
-                    graph.put(model.getHash(), new HashSet<Hash>());
-                }
-                graph.get(model.getHash()).add(trunk);
-                graph.get(model.getHash()).add(branch);
-
-                // approved direction
-                if (revGraph.get(trunk) == null) {
-                    revGraph.put(trunk, new HashSet<Hash>());
-                }
-                if (revGraph.get(branch) == null) {
-                    revGraph.put(branch, new HashSet<Hash>());
-                }
-                revGraph.get(trunk).add(model.getHash());
-                revGraph.get(branch).add(model.getHash());
-
-                //parentGraph
-                parentGraph.put(model.getHash(), trunk);
-
-                if (parentRevGraph.get(trunk) == null) {
-                    parentRevGraph.put(trunk, new HashSet<>());
-                }
-                parentRevGraph.get(trunk).add(model.getHash());
-
-                // update degrees
-                if (degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
-                    degs.put(model.getHash(), 2);
-                }
-                if (degs.get(trunk) == null) {
-                    degs.put(trunk, 0);
-                }
-                if (degs.get(branch) == null) {
-                    degs.put(branch, 0);
-                }
+                updateGraph(key, trunk, branch);
 
                 long currentIndex = model.getCurrentIndex();
                 long lastIndex = model.getLastIndex();
@@ -351,6 +285,44 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             this.pivotChain = pivotChain(getGenesis());
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void updateGraph(Hash key, Hash trunk, Hash branch) {
+        // Approve graph
+        if (graph.get(key) == null) {
+            graph.put(key, new HashSet<>());
+        }
+        graph.get(key).add(trunk);
+        graph.get(key).add(branch);
+
+        //parentGraph
+        parentGraph.put(key, trunk);
+
+        // Approvee graph
+        if (revGraph.get(trunk) == null) {
+            revGraph.put(trunk, new HashSet<>());
+        }
+        revGraph.get(trunk).add(key);
+        if (revGraph.get(branch) == null) {
+            revGraph.put(branch, new HashSet<>());
+        }
+        revGraph.get(branch).add(key);
+
+        if (parentRevGraph.get(trunk) == null) {
+            parentRevGraph.put(trunk, new HashSet<>());
+        }
+        parentRevGraph.get(trunk).add(key);
+
+        // update degrees
+        if (degs.get(key) == null || degs.get(key) == 0) {
+            degs.put(key, 2);
+        }
+        if (degs.get(trunk) == null) {
+            degs.put(trunk, 0);
+        }
+        if (degs.get(branch) == null) {
+            degs.put(branch, 0);
         }
     }
 
@@ -393,12 +365,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                         score.put(vet, (double)(lastIndex-currentIndex+1));
                         parentScore.put(vet, (double)(lastIndex-currentIndex+1));
                     }
-                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {	
-                    score.put(vet, 1.0 / (score.size() + 1));	
-                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);	
-                    centrality.setScore(score);	
-                    score = centrality.compute();	
-                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet, 1.0);	
+                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
+                    score.put(vet, 1.0 / (score.size() + 1));
+                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
+                    centrality.setScore(score);
+                    score = centrality.compute();
+                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet, 1.0);
                 }
                 freshScore = false;
             }
@@ -903,9 +875,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public HashMap<Hash, Set<Hash>> getCondensedGraph() {
         HashMap<Hash, Set<Hash>> ret = new HashMap<>();
         for(Hash h : graph.keySet()) {
-            if((bundleMap.containsKey(h) && bundleMap.get(h).hi == 0) || 
+            if((bundleMap.containsKey(h) && bundleMap.get(h).hi == 0) ||
                !bundleMap.containsKey(h)) {
-                Set<Hash> to = new HashSet<>();           
+                Set<Hash> to = new HashSet<>();
                 for(Hash m : graph.get(h)) {
                     if(bundleMap.containsKey(m)) {
                         to.add(bundleMap.get(m).low);
@@ -918,7 +890,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 } else {
                     ret .put(h, to);
                 }
-            } 
+            }
         }
         return ret;
     }
@@ -991,14 +963,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
         }
 
-        subGraph.putIfAbsent(curAncestor, graph.get(curAncestor));	
-        for (Hash h : graph.get(curAncestor)){	
-            Set<Hash> set = new HashSet<>();	
-            set.add(curAncestor);	
-            subRevGraph.putIfAbsent(h, set);	
-            degs.putIfAbsent(h, 0);	
-        }	
-        subParentGraph.putIfAbsent(curAncestor, parentGraph.get(curAncestor));	
+        subGraph.putIfAbsent(curAncestor, graph.get(curAncestor));
+        for (Hash h : graph.get(curAncestor)){
+            Set<Hash> set = new HashSet<>();
+            set.add(curAncestor);
+            subRevGraph.putIfAbsent(h, set);
+            degs.putIfAbsent(h, 0);
+        }
+        subParentGraph.putIfAbsent(curAncestor, parentGraph.get(curAncestor));
         subParentRevGraph.putIfAbsent(subParentGraph.get(curAncestor),new HashSet(){{add(curAncestor);}});
     }
 
@@ -1091,7 +1063,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
             List<Hash> toBePersisted = insertStableTotalOrder(totalOrderBefore, totalOrderAfter);
             TransactionData.getInstance().persistFixedTxns(toBePersisted);
-        } catch(RuntimeException e) { 
+        } catch(RuntimeException e) {
             BufferedWriter writer = new BufferedWriter(new FileWriter("before"+ ".dot"));
             BufferedWriter writer1 = new BufferedWriter(new FileWriter("after" + ".dot"));
             BufferedWriter writer2 = new BufferedWriter(new FileWriter("order1"));
@@ -1212,7 +1184,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if (curAncestor == null) {
                 curAncestor = getGenesis();
             }
-            
+
             if (curAncestor == null) {
                 log.debug("=========no new ancestor node,cost:" + (System.currentTimeMillis() - begin) + "ms ==========");
                 return;
@@ -1225,7 +1197,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             ancestors = appendNewAncestor(ancestors, curAncestor);
             tangle.storeAncestors(ancestors);
 
-            
+
             if(!gen.equals(curAncestor)) {
                 induceGraphFromAncestor(curAncestor);
             }

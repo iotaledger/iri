@@ -82,6 +82,7 @@ script:
   - sed -i '1i\which jmeter && echo $CLASSPATH' 12_*.sh
   - sed -i -e "s/\.\/run_perf\.sh/bash -x run_perf\.sh/g" 12_*.sh
   - sed -i '1i\which jmeter && echo $CLASSPATH' iri/scripts/iota_perf/run_perf.sh
+  - sed -i 's/jmeter -n -t/jmeter -d \/opt\/apache-jmeter-5\.1\.1 -n -t/g' iri/scripts/iota_perf/run_perf.sh
   - bash -x 12_*.sh
   - cd ..
   #jacoco append to report

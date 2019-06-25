@@ -40,14 +40,13 @@ install:
     - source ~/.gimme/envs/go1.11.5.env
   # install jmeter
     - wget -c https://github.com/triasteam/utils/raw/master/software/apache-jmeter-5.1.1.zip
-    - mv apache-jmeter-5.1.1.zip /opt
-    - cd /opt
-    - unzip apache-jmeter-5.1.1.zip
-    - export JMETER_HOME=/opt/apache-jmeter-5.1.1
-    - export CLASSPATH=$CLASSPATH:$JMETER_HOME/lib
-    - export PATH=$PATH:$JMETER_HOME/bin
-    - cd -
-    - whoami
+      && mv apache-jmeter-5.1.1.zip /opt
+      && cd /opt
+      && unzip apache-jmeter-5.1.1.zip
+      && export JMETER_HOME=/opt/apache-jmeter-5.1.1
+      && export CLASSPATH=$CLASSPATH:$JMETER_HOME/lib
+      && export PATH=$PATH:$JMETER_HOME/bin
+      && cd -
 
 before_script:
   -
@@ -75,15 +74,8 @@ script:
   - mkdir iri
   - cp -rf ../target iri/target
   - cp -rf ../scripts iri/scripts
-  #- bash run_all_stable_tests.sh $VERSION
-  - which jmeter
-  #- cp /opt/apache-jmeter-5.1.1/lib /opt/apache-jmeter-5.1.1/bin iri/scripts -r
-  - whoami
-  - sed -i '1i\which jmeter && echo $CLASSPATH' 12_*.sh
-  - sed -i -e "s/\.\/run_perf\.sh/bash -x run_perf\.sh/g" 12_*.sh
-  - sed -i '1i\which jmeter && echo $CLASSPATH' iri/scripts/iota_perf/run_perf.sh
-  - sed -i 's/jmeter -n -t/jmeter -d \/opt\/apache-jmeter-5\.1\.1 -n -t/g' iri/scripts/iota_perf/run_perf.sh
-  - bash -x 12_*.sh
+  - cp /opt/apache-jmeter-5.1.1/lib /opt/apache-jmeter-5.1.1/bin iri/scripts -r
+  - bash run_all_stable_tests.sh $VERSION
   - cd ..
   #jacoco append to report
   - mvn jacoco:report

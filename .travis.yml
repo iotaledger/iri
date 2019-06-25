@@ -29,7 +29,7 @@ install:
     - sudo pip install flask
     - sudo pip install -U pyOpenSSL
     - sudo pip install pyota
-    - sudo pip install docker 
+    - sudo pip install docker
     - sudo pip install mock
     - sudo pip install cryptography==2.5
     - sudo pip install sh
@@ -74,6 +74,7 @@ script:
   - mkdir iri
   - cp -rf ../target iri/target
   - cp -rf ../scripts iri/scripts
+  - cp /opt/apache-jmeter-5.1.1/lib /opt/apache-jmeter-5.1.1/bin iri/scripts -r
   - bash run_all_stable_tests.sh $VERSION
   - cd ..
   #jacoco append to report

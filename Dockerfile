@@ -35,7 +35,10 @@ COPY docker/entrypoint.sh /
 # `DOCKER_IRI_MONITORING_API_PORT_DESTINATION`   Set this to the actual IRI API port. This is used to map port 14266.
 # `DOCKER_IRI_REMOTE`                            When using a docker bridged network set this to true. Using host network
 #                                                you may choose to set it to false to make sure the API port listens on
-#                                                localhost only.
+#                                                localhost only. If you want to bind your API (--api-host) to a specific interface
+#                                                you will have to set this option to false.
+# `DOCKER_JAVA_NET_PREFER_IPV4_STACK`            If set to true will allow usage of IPv4 only. Set to false to be able to use IPv6.
+#                                                See https://docs.oracle.com/javase/7/docs/api/java/net/doc-files/net-properties.html
 ENV JAVA_OPTIONS="-XX:+UnlockExperimentalVMOptions -XX:+DisableAttachMechanism -XX:InitiatingHeapOccupancyPercent=60 -XX:G1MaxNewSizePercent=75 -XX:MaxGCPauseMillis=10000 -XX:+UseG1GC" \
     JAVA_MIN_MEMORY=2G \
     JAVA_MAX_MEMORY=4G \
@@ -44,7 +47,8 @@ ENV JAVA_OPTIONS="-XX:+UnlockExperimentalVMOptions -XX:+DisableAttachMechanism -
     DOCKER_IRI_REMOTE_LIMIT_API="interruptAttachToTangle, attachToTangle, addNeighbors, removeNeighbors, getNeighbors" \
     DOCKER_IRI_MONITORING_API_PORT_ENABLE=0 \
     DOCKER_IRI_MONITORING_API_PORT_DESTINATION=14265 \
-    DOCKER_IRI_REMOTE=true
+    DOCKER_IRI_REMOTE=true \
+    DOCKER_JAVA_NET_PREFER_IPV4_STACK=true
 
 WORKDIR /iri/data
 ENTRYPOINT [ "/entrypoint.sh" ]

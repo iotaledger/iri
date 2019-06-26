@@ -32,8 +32,8 @@ The docker container supports the env variables to configure advanced options. T
 `DOCKER_IRI_JAR_FILE`: the IRI jar file name to execute. Defaults to `iri*.jar`
 `DOCKER_IRI_REMOTE_LIMIT_API`: defaults to "interruptAttachToTangle, attachToTangle, addNeighbors, removeNeighbors, getNeighbors"
 `DOCKER_IRI_MONITORING_API_PORT_ENABLE`: defaults to 0. If set to 1, a socat on port 14266 directed to 127.0.0.1:DOCKER_IRI_MONITORING_API_PORT_DESTINATION  will be open in order to allow all API calls regardless of the DOCKER_IRI_REMOTE_LIMIT_API setting. This is useful to give access to restricted API calls to local tools and still denying access to restricted API calls to the internet. It is highly recommended to use this option together with docker networks (docker run --net).
-`DOCKER_IRI_REMOTE`: defaults to "true". This sets the boolean value for the "--remote" command line option. Setting to "false" ensures that the API port binds only to the localhost interface. The setting of "true" lets the API listen on all the interfaces (0.0.0.0). Set this value to "false" if you plan on running the container on the host network and want the API to bind to the localhost interface only.
-
+`DOCKER_IRI_REMOTE`: defaults to "true". This sets the boolean value for the "--remote" command line option. Setting to "false" ensures that the API port binds only to the localhost interface. The setting of "true" lets the API listen on all the interfaces (0.0.0.0). Set this value to "false" if you plan on running the container on the host network and want the API to bind to the localhost interface only. Set this value to false if you want to bind the --api-host (API_HOST) to a specific interface.
+`DOCKER_JAVA_NET_PREFER_IPV4_STACK`: defaults to "true". This sets the boolean value for the -Djava.net.preferIPv4Stack option. To be able to use IPv6 make sure to set this to false.
 The container entry point is a shell script that performs few additional steps before launching IRI:
 - verifies if `DOCKER_IRI_MONITORING_API_PORT_ENABLE` is set to 1
 - launches IRI with all parameters passed as desired

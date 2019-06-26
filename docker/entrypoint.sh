@@ -16,7 +16,7 @@ exec java \
   $JAVA_OPTIONS \
   -Xms$JAVA_MIN_MEMORY \
   -Xmx$JAVA_MAX_MEMORY \
-  -Djava.net.preferIPv4Stack=true \
+  -Djava.net.preferIPv4Stack="$DOCKER_JAVA_NET_PREFER_IPV4_STACK" \
   -jar "$IRI_JAR_FILE" \
   --remote "$DOCKER_IRI_REMOTE" --remote-limit-api "$DOCKER_IRI_REMOTE_LIMIT_API" \
   "$@"

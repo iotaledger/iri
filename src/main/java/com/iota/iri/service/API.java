@@ -12,7 +12,6 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iri.utils.crypto.ellipticcurve.EcdsaUtils;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
@@ -25,6 +24,7 @@ import com.iota.iri.pluggables.tee.TEEFormatted;
 import com.iota.iri.pluggables.utxo.BatchTxns;
 import com.iota.iri.pluggables.utxo.NodeFormatted;
 import com.iota.iri.pluggables.utxo.TransactionData;
+import com.iota.iri.service.crypto.CryptoExecutor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
@@ -34,6 +34,7 @@ import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
 import com.iota.iri.validator.BundleValidator;
 import com.iota.iri.validator.Snapshot;
+import com.iri.utils.crypto.ellipticcurve.EcdsaUtils;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -59,7 +60,6 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1648,22 +1648,7 @@ public class API {
         String signature = (String) content.remove("sign");
         String message = EcdsaUtils.getSortedStringFrom(content);
         log.debug("[message] {}", message);
-        return doVerifySign(address, signature, message);
-    }
-
-    private boolean doVerifySign(String address, String sign, String message){
-        try {
-            EcdsaUtils.ValidRes res = EcdsaUtils.verifyMessage(sign, message, address);
-            if (!res.verifyResult()){
-                log.error(String.format("Signatire verification failed for : %s", res.errMessage()));
-            }
-            return res.verifyResult();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return CryptoExecutor.getCryptoInstance().verify(signature, address, message);
     }
 }
 

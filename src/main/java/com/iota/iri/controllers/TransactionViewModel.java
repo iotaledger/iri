@@ -10,6 +10,7 @@ import com.iota.iri.model.persistables.Approvee;
 import com.iota.iri.model.persistables.Bundle;
 import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.KeyValue;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.storage.Indexable;
@@ -20,6 +21,10 @@ import com.iota.iri.utils.Pair;
 import org.apache.commons.lang3.StringUtils;
 import com.iota.iri.pluggables.utxo.BatchTxns;
 import com.iota.iri.pluggables.utxo.Txn;
+import com.iota.iri.pluggables.KVStore.*;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import java.io.StringReader;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -181,9 +186,47 @@ public class TransactionViewModel {
         hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
         hashesList.add(new Pair<>(getObsoleteTagValue(), new ObsoleteTag(hash)));
         hashesList.add(new Pair<>(getTagValue(), new Tag(hash)));
+        // check if support KV store and return a key value pair
+        if(isSupportKV()) {
+            List<Hash> keys = getKeys();
+            for(Hash h : keys) {
+                hashesList.add(new Pair<>(h, new KeyValue(hash)));
+            }
+        }
         setAttachmentData();
         setMetadata();
         return hashesList;
+    }
+
+    public boolean isSupportKV() {
+        if(BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+            Hash tag = getTagValue();
+            String tagStr = Converter.trytesToAscii(Converter.trytes(tag.trits()));
+            String type = tagStr.substring(8, 10);
+            if(type.equals("KV")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Hash> getKeys() {
+        List<Hash> ret = new LinkedList<>();
+        try {
+            String msg = Converter.trytesToAscii(Converter.trytes(getSignature()));
+        
+            //JsonReader jsonReader = new JsonReader(new StringReader(msg));
+            String decoded = java.net.URLDecoder.decode(StringUtils.trim(msg), StandardCharsets.UTF_8.name()).replace("\"[", "[").replace("]\"", "]").replace("\\", "");
+            BatchKV batchTxns = new Gson().fromJson(decoded, BatchKV.class);
+            for(KV kv : batchTxns.txn_content) {
+                String key = kv.key;
+                Hash keyHash = HashFactory.TAG.create(Converter.asciiToTrytes(key));
+                ret.add(keyHash);
+            }
+        } catch(java.io.UnsupportedEncodingException e) {
+
+        }
+        return ret;
     }
 
     public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {

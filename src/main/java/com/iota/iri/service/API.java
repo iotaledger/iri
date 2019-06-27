@@ -849,44 +849,6 @@ public class API {
         TransactionData.getInstance().batchPutIndex(hashes);
     }
 
-    private void executeContract(String msg, String tagVal) {
-        try {
-            URL url = new URL("http://localhost:5000/put_contract");
-            if(tagVal.equals("KB")) {
-                url = new URL("http://localhost:5000/put_action");
-            }
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod("PUT");
-            conn.setRequestProperty("Content-Type", "application/json");
-            String input = "{\"ipfs_addr\" :\"" + msg + "\"}";
-            OutputStream os = conn.getOutputStream();
-            os.write(input.getBytes());
-            os.flush();
-            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + conn.getResponseCode());
-            }
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                        (conn.getInputStream())));
-            String output;
-            log.info("Output from Server .... \n");
-            while ((output = br.readLine()) != null) {
-                log.info(output);
-            }
-            conn.disconnect();
-        } catch (MalformedURLException e) {
-            log.error("MalformedURLException {}", e);
-            e.printStackTrace();
-        } catch (IOException e) {
-            log.error("IOException {}", e);
-            e.printStackTrace();
-        }
-        catch (Exception e) {
-            log.error("Exception {}", e);
-        }
-    }
-
     /**
       * Returns the set of neighbors you are connected with, as well as their activity statistics (or counters).
       * The activity counters are reset after restarting IRI.

@@ -172,10 +172,17 @@ def put_file():
     if req_json is None:
         return 'error'
 
-    if not req_json.has_key(u'tag'):
-        send(sign_message(req_json, address, base58_priv_key))
+    # check if KV
+    if req_json[u'tag'] == "KV":
+        kv_list = []
+        kv_list.append(req_json)
+        req_json = json.dumps(kv_list)
+        send(req_json, tag="KV")
     else:
-        send(sign_message(req_json, address, base58_priv_key), tag=req_json[u'tag'])
+        if not req_json.has_key(u'tag'):
+            send(sign_message(req_json, address, base58_priv_key))
+        else:
+            send(sign_message(req_json, address, base58_priv_key), tag=req_json[u'tag'])
 
     return 'ok'
 

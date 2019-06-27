@@ -161,6 +161,27 @@ def get_balance():
     print("Balance of '%s' is [%s]" % (account, balance), file=sys.stderr)
     return balance
 
+@app.route('/get_file', methods=['GET'])
+def get_file():
+    req_json = request.get_json()
+
+    if req_json is None:
+        return 'error'
+    if not req_json.has_key(u'project'):
+        print("[ERROR] Project is needed.", file=sys.stderr)
+        return 'error'
+    if not req_json.has_key(u'key'):
+        print("[ERROR] Key is needed.", file=sys.stderr)
+        return 'error'
+
+    project = req_json[u'project']
+    key = req_json[u'key']
+    resp = cache.get_file(project, key)
+
+    print("[INFO] Result is:" + str(resp), file=sys.stderr)
+
+    return 'ok' 
+
 @app.route('/put_file', methods=['POST'])
 def put_file():
 

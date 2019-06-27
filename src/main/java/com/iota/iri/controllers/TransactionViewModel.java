@@ -219,7 +219,7 @@ public class TransactionViewModel {
             String decoded = java.net.URLDecoder.decode(StringUtils.trim(msg), StandardCharsets.UTF_8.name()).replace("\"[", "[").replace("]\"", "]").replace("\\", "");
             BatchKV batchTxns = new Gson().fromJson(decoded, BatchKV.class);
             for(KV kv : batchTxns.txn_content) {
-                String key = kv.key;
+                String key = kv.project + "-" + kv.key;
                 Hash keyHash = HashFactory.TAG.create(Converter.asciiToTrytes(key));
                 ret.add(keyHash);
             }

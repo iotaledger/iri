@@ -100,7 +100,7 @@ def getFile(url, project, key):
     cmd = {
         "command": "getFile",
         "project": project,
-        "key": key 
+        "key": key
     }
     return API(cmd, url)
 

@@ -180,7 +180,7 @@ def get_file():
 
     print("[INFO] Result is:" + str(resp), file=sys.stderr)
 
-    return 'ok' 
+    return 'ok'
 
 @app.route('/put_file', methods=['POST'])
 def put_file():

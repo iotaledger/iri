@@ -12,7 +12,6 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iri.utils.crypto.ellipticcurve.EcdsaUtils;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
@@ -34,6 +33,7 @@ import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
 import com.iota.iri.validator.BundleValidator;
 import com.iota.iri.validator.Snapshot;
+import com.iri.utils.crypto.ellipticcurve.EcdsaUtils;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -1586,16 +1586,22 @@ public class API {
     }
 
     private synchronized AbstractResponse getBlocksInPeriodStatement(final long period) {
-        if (period <= 0){
-            throw new RuntimeException("period not valid: " + period);
-        }
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
         int blocksPerPeriod = (int)BaseIotaConfig.getInstance().getNumBlocksPerPeriod();
-        int p = (int)period;
+
 //        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
         List<Hash> totalTopOrders = provider.totalTopOrder();
         int totalSize = totalTopOrders.size();
-        List<Hash> retOrder = totalTopOrders.subList(blocksPerPeriod*(p-1) > totalSize ? totalSize : blocksPerPeriod*(p-1),
+        int pageNum = totalSize / blocksPerPeriod + totalSize % blocksPerPeriod > 0 ? 1 : 0;
+        // current page
+        int p;
+        if(period <= 0){
+            p = pageNum;
+        }else{
+            p = (int) period > pageNum ? pageNum : (int) period;
+        }
+
+        List<Hash> retOrder = totalTopOrders.subList(blocksPerPeriod*(p-1),
                 blocksPerPeriod*p > totalSize ? totalSize : (blocksPerPeriod*p));
 
         List<String> resArray = new ArrayList<String>();

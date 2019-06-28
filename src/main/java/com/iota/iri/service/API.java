@@ -24,6 +24,7 @@ import com.iota.iri.pluggables.tee.TEEFormatted;
 import com.iota.iri.pluggables.utxo.BatchTxns;
 import com.iota.iri.pluggables.utxo.NodeFormatted;
 import com.iota.iri.pluggables.utxo.TransactionData;
+import com.iota.iri.service.crypto.CryptoExecutor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
@@ -59,7 +60,6 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1654,22 +1654,7 @@ public class API {
         String signature = (String) content.remove("sign");
         String message = EcdsaUtils.getSortedStringFrom(content);
         log.debug("[message] {}", message);
-        return doVerifySign(address, signature, message);
-    }
-
-    private boolean doVerifySign(String address, String sign, String message){
-        try {
-            EcdsaUtils.ValidRes res = EcdsaUtils.verifyMessage(sign, message, address);
-            if (!res.verifyResult()){
-                log.error(String.format("Signatire verification failed for : %s", res.errMessage()));
-            }
-            return res.verifyResult();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return CryptoExecutor.getCryptoInstance().verify(signature, address, message);
     }
 }
 

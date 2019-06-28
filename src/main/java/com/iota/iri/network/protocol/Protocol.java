@@ -17,24 +17,24 @@ public class Protocol {
     /**
      * <p>
      * The supported protocol versions by this node. Bitmasks are used to denote what protocol version this node
-     * supports in its implementation. The MSB acts as a starting point. Up to 32 bytes are supported in the handshake
+     * supports in its implementation. The LSB acts as a starting point. Up to 32 bytes are supported in the handshake
      * packet, limiting the amount of supported denoted protocol versions to 256.
      * </p>
      * <p>
      * Examples:
      * </p>
      * <ul>
-     * <li>[10000000] denotes that this node supports protocol version 1.</li>
-     * <li>[11100000] denotes that this node supports protocol versions 1, 2 and 3.</li>
-     * <li>[01110110] denotes that this node supports protocol versions 2, 3, 4, 6 and 7.</li>
-     * <li>[01110110, 10001010] denotes that this node supports protocol versions 2, 3, 4, 6, 7, 9, 13 and 15.</li>
-     * <li>[01110110, 10001010, 10001000] denotes that this node supports protocol versions 2, 3, 4, 6, 7, 9, 13, 15,
+     * <li>[00000001] denotes that this node supports protocol version 1.</li>
+     * <li>[00000111] denotes that this node supports protocol versions 1, 2 and 3.</li>
+     * <li>[01101110] denotes that this node supports protocol versions 2, 3, 4, 6 and 7.</li>
+     * <li>[01101110, 01010001] denotes that this node supports protocol versions 2, 3, 4, 6, 7, 9, 13 and 15.</li>
+     * <li>[01101110, 01010001, 00010001] denotes that this node supports protocol versions 2, 3, 4, 6, 7, 9, 13, 15,
      * 17 and 21.</li>
      * </ul>
      */
     public final static byte[] SUPPORTED_PROTOCOL_VERSIONS = {
             /* supports protocol version(s): 1 */
-            (byte) 0b10000000,
+            (byte) 0b00000001,
     };
     /**
      * The amount of bytes dedicated for the message type in the packet header.

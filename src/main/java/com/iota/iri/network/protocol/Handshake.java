@@ -203,10 +203,10 @@ public class Handshake {
                 continue;
             }
 
-            // iterate through all bits and find highest (more to the right is higher)
+            // iterate through all bits and find highest (more to the left is higher)
             int highest = 0;
             for (int j = 0; j < 8; j++) {
-                if (((supported << j) & 0b10000000) == 0b10000000) {
+                if (((supported >> j) & 1) == 1) {
                     highest = j + 1;
                 }
             }
@@ -216,12 +216,15 @@ public class Handshake {
         // if the highest version is still 0, it means that we don't support
         // any protocol version the neighbor supports
         if (highestSupportedVersion == 0) {
-            // grab last byte denoting the highest versions
+            // grab last byte denoting the highest versions.
+            // a node will only hold version bytes if at least one version in that
+            // byte is supported, therefore it's safe to assume, that the last byte contains
+            // the highest supported version of a given node.
             byte lastVersionsByte = supportedVersions[supportedVersions.length - 1];
             // find highest version
             int highest = 0;
             for (int j = 0; j < 8; j++) {
-                if (((lastVersionsByte << j) & 0b10000000) == 0b10000000) {
+                if (((lastVersionsByte >> j) & 1) == 1) {
                     highest = j + 1;
                 }
             }

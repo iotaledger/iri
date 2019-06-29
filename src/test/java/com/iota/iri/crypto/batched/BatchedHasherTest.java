@@ -29,8 +29,7 @@ public class BatchedHasherTest {
         do {
             Thread.sleep(50);
         } while (done.get() != txs.length);
-
-        batchedHasher.shutdown();
+        
         hasherThread.interrupt();
 
         Assert.assertArrayEquals(hashes, results);

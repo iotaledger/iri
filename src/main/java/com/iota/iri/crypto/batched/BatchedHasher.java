@@ -20,9 +20,4 @@ public interface BatchedHasher extends Runnable {
      * @param req The hashing request.
      */
     void submitHashingRequest(HashRequest req);
-
-    /**
-     * Instructs the {@link BatchedHasher} to shutdown.
-     */
-    void shutdown();
 }

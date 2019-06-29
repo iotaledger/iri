@@ -35,11 +35,6 @@ public class FakeBatchedCurl implements BatchedHasher {
     }
 
     @Override
-    public void shutdown() {
-        // do nothing
-    }
-
-    @Override
     public void run() {
         // do nothing
     }

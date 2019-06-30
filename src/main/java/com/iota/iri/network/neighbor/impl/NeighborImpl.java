@@ -102,7 +102,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                 return read();
 
             case HANDLE_MESSAGE:
-                handleMessage(msg, bytesRead);
+                handleMessage(msg);
                 break;
             default:
                 // do nothing
@@ -147,9 +147,8 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
      * Relays the message to the component in charge of handling this message.
      * 
      * @param msg       the {@link ByteBuffer} containing the message (without header)
-     * @param bytesRead the amount of bytes read up until now
      */
-    private void handleMessage(ByteBuffer msg, int bytesRead) {
+    private void handleMessage(ByteBuffer msg) {
         switch (msgReader.getMessageType()) {
             case HANDSHAKE:
                 handshake = Handshake.fromByteBuffer(msg);

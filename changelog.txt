@@ -1,3 +1,33 @@
+1.7.1
+
+- Feature: Add getAllAddresses to the spentAdddresses provider. This is to enable exporting with IXI (#1495)
+- Fix: update solid flag from past-present (#1492)
+- Fix: Remove git-commit plugin (#1483)
+- Fix: Prevents IndexOutOfBoundsException within the MilestoneServiceImpl (#1480)
+- Change: Disable Tip Solidifier
+- Change: Pruning is now off by default (#1471)
+- Feature: adds a tip-selection timeout mechanism (#1404)
+- Fix: fetch correct arrival time while traversing dags for orphaned transactions. (#1407)
+- Fix: recent seen transactions digest (#1453)
+- Documentation: Changed <br> usage to <p> (#1457)
+- Feature: Doclet annotations (#1155)
+- Fix: fixes spent states of addresses not getting persisted on tx pruning (#1437)
+- Change: Made API class easier to work with
+- Fix: add boolean values to configurations for regression tests
+- Fix: Boolean flag consistent usage (#1295)
+- Feature: Do not request one transaction at a time (#1311)
+- Fix: log inconsistent addresses in debug mode (#1347)
+- Feature: Use xxHash instead of SHA-256 on incoming transaction hashes cache (#1326)
+- Feature: Added iotacafe/maven and iotacafe/java container full digest with sha256 in Dockerfile's FROM directives. (#1259)
+- Feature: Introducing a Cuckoo Filter for local snapshots (#1100)
+- Change: Prepare IRI to have its version injected by CI (#1359)
+- Change: print out line number in log info. (#1362)
+- Feature: Add configuration parameter for remote trusted api hosts (#1203)
+- Feature: upgrade RocksDB to version 5.17.2 (#1206)
+- Fix: unknown IXI command response (#1327)
+- Documentation: readme links fix (#1355)
+- Fix: ZMQ publishes to TCP and IPC instead of just one of them
+
 1.7.0
     - refactor milestone signature parameters to be configurable (#1322)
     - migration from legacy coordinator to compass

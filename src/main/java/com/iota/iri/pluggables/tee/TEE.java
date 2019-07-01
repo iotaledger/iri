@@ -6,5 +6,9 @@ public class TEE {
     String attester;
     String attestee;
     int    score;
+
+    public String getDigetst() {
+        return "[" + attester + "," + attestee + "]";
+    }
 }
 

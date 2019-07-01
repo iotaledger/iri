@@ -24,8 +24,6 @@ public class TipsRequesterImpl implements TipsRequester {
     private static final Logger log = LoggerFactory.getLogger(TipsRequesterImpl.class);
     private static final int REQUESTER_THREAD_INTERVAL = 5000;
 
-    private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
     private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
             "Tips Requester", log);
 
@@ -101,7 +99,6 @@ public class TipsRequesterImpl implements TipsRequester {
      * Shut downs the {@link TipsRequesterImpl}.
      */
     public void shutdown() {
-        shutdown.set(true);
         executorService.shutdownNow();
     }
 }

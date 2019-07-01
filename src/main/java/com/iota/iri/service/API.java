@@ -1505,17 +1505,18 @@ public class API {
                 {
                     String decoded = java.net.URLDecoder.decode(StringUtils.trim(message), StandardCharsets.UTF_8.name());
                     BatchTee tee = new Gson().fromJson(decoded, BatchTee.class);
-                    if(instance.timeOutCache.containsKey(tee.getDigetst())) {
-                        long time = instance.timeOutCache.get(tee.getDigetst());
+                    String digest = tee.getDigetst();
+                    if(instance.timeOutCache.containsKey(digest)) {
+                        long time = instance.timeOutCache.get(digest);
                         long diffTime = tStart - time;
                         if(diffTime / 2000 > 60) {
-                            instance.timeOutCache.put(tee.getDigetst(), tStart);
+                            instance.timeOutCache.put(digest, tStart);
                             processed = Converter.asciiToTrytes(message);
                         } else {
                             return AbstractResponse.createEmptyResponse();
                         }
                     } else {
-                        instance.timeOutCache.put(tee.getDigetst(), tStart);
+                        instance.timeOutCache.put(digest, tStart);
                         processed = Converter.asciiToTrytes(message);
                     }
                     break;

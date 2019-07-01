@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * During initialization, all the Providers can be set to rescan or revalidate their transactions. After initialization,
  * an asynchronous process has started which will process inbound and outbound transactions. Each full node should be
- * peered with 7-9 other full nodes (neighbors) to function optimally.
+ * peered with 3-5 other full nodes (neighbors) to function optimally.
  * </p>
  * <p>
  * If this node has no Neighbors defined, no data is transferred. However, if the node has Neighbors, but no Internet

@@ -1493,15 +1493,32 @@ public class API {
             // skip 'YYYYMMDD' in tag
             switch (tag.substring(8)){
                 case "TX" :
+                {
                     processed = IotaIOUtils.processBatchTxnMsg(message);
                     if (processed == null) {
                         log.error("Special process failed!");
                         return AbstractResponse.createEmptyResponse();
                     }
                     break;
+                }
                 case "TEE" :
-                    processed = Converter.asciiToTrytes(message);
+                {
+                    String decoded = java.net.URLDecoder.decode(StringUtils.trim(message), StandardCharsets.UTF_8.name());
+                    if(instance.timeOutCache.containsKey(decoded)) {
+                        long time = instance.timeOutCache.get(decoded);
+                        long diffTime = tStart - time;
+                        if(diffTime / 1000 > 60) {
+                            instance.timeOutCache.put(decoded, tStart);
+                            processed = Converter.asciiToTrytes(message);
+                        } else {
+                            return AbstractResponse.createEmptyResponse();
+                        }
+                    } else {
+                        instance.timeOutCache.put(decoded, tStart);
+                        processed = Converter.asciiToTrytes(message);
+                    }
                     break;
+                }
                 default:
                     processed = Converter.asciiToTrytes(message);
             }

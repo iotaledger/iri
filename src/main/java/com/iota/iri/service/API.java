@@ -1507,7 +1507,7 @@ public class API {
                     if(instance.timeOutCache.containsKey(decoded)) {
                         long time = instance.timeOutCache.get(decoded);
                         long diffTime = tStart - time;
-                        if(diffTime / 10000 > 60) {
+                        if(diffTime / 2000 > 60) {
                             instance.timeOutCache.put(decoded, tStart);
                             processed = Converter.asciiToTrytes(message);
                         } else {

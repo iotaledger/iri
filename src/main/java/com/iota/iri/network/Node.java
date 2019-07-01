@@ -171,7 +171,7 @@ public class Node {
      * traffic - so a balance is sought between speed and resource utilization.
      *
      */
-    Runnable spawnNeighborDNSRefresherThread() {
+    private Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
             if (configuration.isDnsResolutionEnabled()) {
                 log.info("Spawning Neighbor DNS Refresher Thread");

@@ -113,7 +113,7 @@ public class ConfigTest {
         Assert.assertEquals("max peers", 10, iotaConfig.getMaxPeers());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
         Assert.assertEquals("dns resolution", false, iotaConfig.isDnsResolutionEnabled());
-        Assert.assertEquals("tip solidification", true, iotaConfig.isTipSolidifierEnabled());
+        Assert.assertEquals("tip solidification", false, iotaConfig.isTipSolidifierEnabled());
         Assert.assertEquals("ixi-dir", "/ixi", iotaConfig.getIxiDir());
         Assert.assertEquals("db path", "/db", iotaConfig.getDbPath());
         Assert.assertEquals("zmq enabled", true, iotaConfig.isZmqEnabled());

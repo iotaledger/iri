@@ -54,11 +54,15 @@ Feature: Test API calls on Machine 1
 		Then a response with the following is returned:
 		|keys						|
 		|address					|
+		|domain					|
 		|numberOfAllTransactions			|
-		|numberOfRandomTransactionRequests		|
 		|numberOfNewTransactions			|
 		|numberOfInvalidTransactions			|
+		|numberOfStaleTransactions			|
 		|numberOfSentTransactions			|
+		|numberOfRandomTransactionRequests		|
+		|numberOfDroppedSentPackets			|
+		|isConnected			|
 		|connectionType					|
 
 

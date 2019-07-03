@@ -280,7 +280,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--neighboring-socket-address", "-t"}, description = NetworkConfig.Descriptions.NEIGHBORING_SOCKET_ADDRESS)
+    @Parameter(names = {"--neighboring-socket-address"}, description = NetworkConfig.Descriptions.NEIGHBORING_SOCKET_ADDRESS)
     public void setNeighboringSocketAddress(String neighboringSocketAddress) {
         this.neighboringSocketAddress = neighboringSocketAddress;
     }
@@ -291,7 +291,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--neighboring-socket-port"}, description = NetworkConfig.Descriptions.NEIGHBORING_SOCKET_PORT)
+    @Parameter(names = {"--neighboring-socket-port", "-t"}, description = NetworkConfig.Descriptions.NEIGHBORING_SOCKET_PORT)
     public void setNeighboringSocketPort(int neighboringSocketPort) {
         this.neighboringSocketPort = neighboringSocketPort;
     }

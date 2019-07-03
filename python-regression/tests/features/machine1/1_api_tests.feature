@@ -54,7 +54,6 @@ Feature: Test API calls on Machine 1
 		Then a response with the following is returned:
 		|keys						|
 		|address					|
-		|domain					|
 		|numberOfAllTransactions			|
 		|numberOfNewTransactions			|
 		|numberOfInvalidTransactions			|
@@ -62,7 +61,7 @@ Feature: Test API calls on Machine 1
 		|numberOfSentTransactions			|
 		|numberOfRandomTransactionRequests		|
 		|numberOfDroppedSentPackets			|
-		|connected					|
+		|connected				|
 		|connectionType					|
 
 

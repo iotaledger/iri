@@ -62,7 +62,7 @@ Feature: Test API calls on Machine 1
 		|numberOfSentTransactions			|
 		|numberOfRandomTransactionRequests		|
 		|numberOfDroppedSentPackets			|
-		|isConnected			|
+		|connected					|
 		|connectionType					|
 
 

@@ -12,9 +12,12 @@ bitcoin system suffers from the problem of low transaction rate with a transacti
 As more and more machines joined the network, they are competing for the privileges to attach the block (miners) which result in huge waste of electric power.
 While sky rocketing fees are payed to make sure the transfers of money will be placed in the chain.
 On par, there are multiple proposals to solve the low transaction speed issue. 
-One method intends to solve the speed problem without changing the chain data structure, for instance segregated witness \cite{lombrozo2015segregated} or off chain technologies such as lightning network \cite{poon2016bitcoin} or plasma \cite{poon2017plasma}. Another hard fork way changed the bitcoin protocol such as the bitcoin cash tries to improve the throughput of the system by enlarging the data size of each block from $1$ Mb to $4$ Mb. 
+One method intends to solve the speed problem without changing the chain data structure, for instance segregated witness \cite{lombrozo2015segregated} 
+or off chain technologies such as lightning network \cite{poon2016bitcoin} or plasma \cite{poon2017plasma}. 
+Another hard fork way changed the bitcoin protocol such as the bitcoin cash tries to improve the throughput of the system by enlarging the data size of each block from $1$ Mb to $4$ Mb. 
 
-To minimize the computational cost of POW, a series of proof of stake method POS \cite{duffield2018dash, tron2018, david2017ouroboros, wood2014ethereum, goodman2014tezos} are proposed to make sure that those who have the privilege to attach the block proportional to their token shares.
+To minimize the computational cost of POW, a series of proof of stake method POS \cite{duffield2018dash, tron2018, david2017ouroboros, wood2014ethereum, goodman2014tezos} 
+are proposed to make sure that those who have the privilege to attach the block proportional to their token shares.
 Another idea targeting at utilizing the power in POW to do useful and meaningful tasks such as training machine learning models are also proposed \cite{matthew2017aion}.
 In addition, inspired by the PBFT algorithm \cite{castro1999practical} and a set of its related variations, so called hybrid (or consortium) chain was proposed. 
 The general idea is to use two step algorithm, the first step is to elect a committee, the second step is collecting committee power to employ PBFT for consensus.
@@ -25,14 +28,24 @@ The Algorand \cite{gilad2017algorand} utilizes a random function to anonymously 
 Other popular systems include Ripple \cite{schwartz2014ripple}, Stellar \cite{mazieres2015stellar} and COSMOS \cite{kwon2016cosmos} etc.
 All these systems have one common feature, the split of layers of players in the network, which results in the complexity of the implementation of the system.
 
-While aforementioned methods are trying to avoid side chains, another thread of effort is put on using direct acyclic graph DAG to merge side chains.
-The first ever idea comes with growing the blockchain with trees instead of chains \cite{sompolinsky2013accelerating}, which results in the well known GHOST protocol \cite{sompolinsky2015secure}.
-If one block links to $\geq 2$ previous blocks, then the data structure grows like a DAG instead of tree \cite{sompolinsky2016spectre, sompolinskyphantom, lewenberg2015inclusive}.
-There is a improvement of the GHOST based DAG algorithm which can achieve $6000$ of TPS in reality \cite{li2018scaling}.
-Another set of methods tried to avoid finality of constructing a linear total order by introducing the probability of confirmation in the network \cite{popov2016tangle, churyumov2016byteball}. 
-However, suffering from engineering issues, mainly due to the lack of transaction frequency and the growing complexity due to the network expansion.
-These system in reality are rely on centralized methods to maintain their stability.
+While aforementioned methods are aiming to avoid side chains, 
+another thread of effort is put on using direct acyclic graph(DAG) to merge side chains.
+The first ever idea comes with growing the blockchain with trees instead of 
+chains \cite{sompolinsky2013accelerating}, which results in the well known GHOST protocol \cite{sompolinsky2015secure}.
+If one block links to $\geq 2$ previous blocks, then the data structure grows like a DAG instead of tree \cite{lewenberg2015inclusive}, 
+SPECTRE \cite{sompolinsky2016spectre} and PHANTOM \cite{sompolinskyphantom} are such type of systems.
+Byteball \cite{churyumov2016byteball} is the system that construct a main chain, 
+and leverage this main chain to help infer the total order, nontheless, 
+the selection of main chain is dependent on a role called witness, which is purely centralized.
+Conflux is a improvement of the GHOST based DAG algorithm which also utilises pivotal (main) chain 
+without the introduction of witness and claim to achieve $6000$ of TPS in reality \cite{li2018scaling}.
+IOTA tried to avoid finality of constructing a linear total order by introducing the probabilistic confirmation in the network \cite{popov2016tangle}. 
+Aforementioned systems are permissionless chains, in the permissioned chains, DAG technology is also applied. 
+HashGraph \cite{baird2016swirlds} is the system that utilises the $gossip\ on\ gossip$ algorithm to propagete the block graph structure, and achieve the
+consensus by link analysis in the DAG, this method is proved to be Byzantine fault tolerant and is not relied on voting.
+Blockmainia \cite{danezis2018blockmania} is based on the original PBFT design, but it's underlying log is DAG based.
 Some of the side chain methods also borrows the idea of DAG, such as nano \cite{lemahieu2018nano} and vite \cite{liuvite}.
+These system in reality are rely on centralized methods to maintain their stability.
 
 Social network analysis has widely adopted the method of streaming graph computing \cite{ediger2011tracking, green2012fast, ediger2012stinger} which deals
 with how to quickly maintain information on a temporally or spatially changing graph without traversing the whole graph. 

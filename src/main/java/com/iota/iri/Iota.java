@@ -42,6 +42,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
@@ -71,6 +72,7 @@ public class Iota {
     public final TipsViewModel tipsViewModel;
     public final MessageQ messageQ;
     public final TipSelector tipsSelector;
+    public final Map<String, Long> timeOutCache;
 
     public Iota(IotaConfig configuration) throws IOException {
         this.configuration = configuration;
@@ -90,6 +92,7 @@ public class Iota {
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
         TransactionData.getInstance().setTangle(tangle);
+        timeOutCache = new HashMap<String, Long>();
     }
 
     public void init() throws Exception {

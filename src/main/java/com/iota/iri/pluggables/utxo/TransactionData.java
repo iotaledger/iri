@@ -537,7 +537,6 @@ public class TransactionData {
                 break;
             }
         }
-        
         utxoGraph = new UTXOGraph(transactions);
     }
 }

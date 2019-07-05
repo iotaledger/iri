@@ -393,7 +393,7 @@ public class NeighborRouter {
             }
             return true;
         } catch (IOException ex) {
-            log.error("unable to send message to neighbor {}. reason: {}", identity, ex.getMessage());
+            log.warn("unable to write message to neighbor {}. reason: {}", identity, ex.getMessage());
             closeNeighborConnection(channel, identity, selector);
             addToReconnectPool(neighbor);
         }
@@ -435,7 +435,7 @@ public class NeighborRouter {
             }
             return true;
         } catch (IOException ex) {
-            log.error("unable to read message from neighbor {}. reason: {}", identity, ex.getMessage());
+            log.warn("unable to read message from neighbor {}. reason: {}", identity, ex.getMessage());
             closeNeighborConnection(channel, identity, selector);
             addToReconnectPool(neighbor);
         }

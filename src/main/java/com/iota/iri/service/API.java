@@ -11,6 +11,7 @@ import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
+import com.iota.iri.controllers.KeyViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
@@ -289,6 +290,15 @@ public class API {
                 }
                 case "findTransactions": {
                     return findTransactionsStatement(request);
+                }
+                case "getFile": {
+                    FindTransactionsResponse response = ((FindTransactionsResponse)findTransactionsStatement(request));
+                    String[] hashStrs = response.getHashes();
+                    final List<Hash> list = new ArrayList<Hash>();
+                    for(String s: hashStrs) {
+                        list.add(HashFactory.TRANSACTION.create(s));
+                    }
+                    return getBlockContentStatement(list);
                 }
                 case "getBalances": {
                     if(request.containsKey("cointype")) {
@@ -678,9 +688,10 @@ public class API {
                 byte[] sigTrits = transactionViewModel.getSignature();
                 String sigTrytes = Converter.trytes(sigTrits);
                 String txnInfo = Converter.trytesToAscii(sigTrytes);
+                String dec = java.net.URLDecoder.decode(StringUtils.trim(txnInfo), StandardCharsets.UTF_8.name()).replace("\"[", "[").replace("]\"", "]").replace("\\", "");
                 Pattern pattern = Pattern.compile("\\{.*\\}");
                 Matcher matcher = pattern.matcher(txnInfo);
-                if (matcher.find()) {
+                if (matcher.find() && dec.indexOf("txnHash") != -1) {
                     LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
                     double score = prov.getScore(hash);
                     double pScore = prov.getParentScore(hash);
@@ -690,7 +701,7 @@ public class API {
                     fmt.score = score;
                     fmt.pScore = pScore;
                     elements.add(new Gson().toJson(fmt));
-                } else {
+                } else if(dec.indexOf("attester") != -1 && dec.indexOf("attestee") != -1){
                     LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
                     double score = prov.getScore(hash);
                     double pScore = prov.getParentScore(hash);
@@ -701,6 +712,8 @@ public class API {
                     BatchTee tee = new Gson().fromJson(decoded, BatchTee.class);
                     fmt.tee = tee;
                     elements.add(new Gson().toJson(fmt));
+                } else { // should be key value
+                    elements.add(dec);
                 }
             }
         }
@@ -847,44 +860,6 @@ public class API {
             }
         }
         TransactionData.getInstance().batchPutIndex(hashes);
-    }
-
-    private void executeContract(String msg, String tagVal) {
-        try {
-            URL url = new URL("http://localhost:5000/put_contract");
-            if(tagVal.equals("KB")) {
-                url = new URL("http://localhost:5000/put_action");
-            }
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setDoOutput(true);
-            conn.setRequestMethod("PUT");
-            conn.setRequestProperty("Content-Type", "application/json");
-            String input = "{\"ipfs_addr\" :\"" + msg + "\"}";
-            OutputStream os = conn.getOutputStream();
-            os.write(input.getBytes());
-            os.flush();
-            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + conn.getResponseCode());
-            }
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                        (conn.getInputStream())));
-            String output;
-            log.info("Output from Server .... \n");
-            while ((output = br.readLine()) != null) {
-                log.info(output);
-            }
-            conn.disconnect();
-        } catch (MalformedURLException e) {
-            log.error("MalformedURLException {}", e);
-            e.printStackTrace();
-        } catch (IOException e) {
-            log.error("IOException {}", e);
-            e.printStackTrace();
-        }
-        catch (Exception e) {
-            log.error("Exception {}", e);
-        }
     }
 
     /**
@@ -1052,51 +1027,70 @@ public class API {
         boolean containsKey = false;
 
         final Set<Hash> bundlesTransactions = new HashSet<>();
-        if (request.containsKey("bundles")) {
-            final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
-            for (final String bundle : bundles) {
-                bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, HashFactory.BUNDLE.create(bundle)).getHashes());
-            }
-            foundTransactions.addAll(bundlesTransactions);
-            containsKey = true;
-        }
-
+        final Set<Hash> keyTransactions = new HashSet<>();
         final Set<Hash> addressesTransactions = new HashSet<>();
-        if (request.containsKey("addresses")) {
-            final HashSet<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
-            for (final String address : addresses) {
-                addressesTransactions.addAll(AddressViewModel.load(instance.tangle, HashFactory.ADDRESS.create(address)).getHashes());
-            }
-            foundTransactions.addAll(addressesTransactions);
-            containsKey = true;
-        }
-
         final Set<Hash> tagsTransactions = new HashSet<>();
-        if (request.containsKey("tags")) {
-            final HashSet<String> tags = getParameterAsSet(request,"tags",0);
-            for (String tag : tags) {
-                tag = padTag(tag);
-                tagsTransactions.addAll(TagViewModel.load(instance.tangle, HashFactory.TAG.create(tag)).getHashes());
-            }
-            if (tagsTransactions.isEmpty()) {
-                for (String tag : tags) {
-                    tag = padTag(tag);
-                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, HashFactory.OBSOLETETAG.create(tag)).getHashes());
-                }
-            }
-            foundTransactions.addAll(tagsTransactions);
-            containsKey = true;
-        }
-
         final Set<Hash> approveeTransactions = new HashSet<>();
 
-        if (request.containsKey("approvees")) {
-            final HashSet<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
-            for (final String approvee : approvees) {
-                approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(approvee)).getApprovers(instance.tangle).getHashes());
+        if (request.containsKey("project")) {
+           
+            String project = (String)request.get("project");
+            
+            if(!request.containsKey("key")) {
+                throw new RuntimeException("Should have key!");
             }
-            foundTransactions.addAll(approveeTransactions);
+
+            String key = (String)request.get("key");
+
+            log.debug("Query project: {}, key {}", project, key);
+            String trytes = Converter.asciiToTrytes(project + "-" + key);
+            keyTransactions.addAll(KeyViewModel.load(instance.tangle, HashFactory.TAG.create(trytes)).getHashes());
+            foundTransactions.addAll(keyTransactions);
+
             containsKey = true;
+        } else {
+            if (request.containsKey("bundles")) {
+                final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
+                for (final String bundle : bundles) {
+                    bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, HashFactory.BUNDLE.create(bundle)).getHashes());
+                }
+                foundTransactions.addAll(bundlesTransactions);
+                containsKey = true;
+            }
+
+            if (request.containsKey("addresses")) {
+                final HashSet<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
+                for (final String address : addresses) {
+                    addressesTransactions.addAll(AddressViewModel.load(instance.tangle, HashFactory.ADDRESS.create(address)).getHashes());
+                }
+                foundTransactions.addAll(addressesTransactions);
+                containsKey = true;
+            }
+
+            
+            if (request.containsKey("tags")) {
+                final HashSet<String> tags = getParameterAsSet(request,"tags",0);
+                for (String tag : tags) {
+                    tag = padTag(tag);
+                    tagsTransactions.addAll(TagViewModel.load(instance.tangle, HashFactory.TAG.create(tag)).getHashes());
+                }
+                if (tagsTransactions.isEmpty()) {
+                    for (String tag : tags) {
+                        tag = padTag(tag);
+                        tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, HashFactory.OBSOLETETAG.create(tag)).getHashes());
+                    }
+                }
+                foundTransactions.addAll(tagsTransactions);
+                containsKey = true;
+            }
+            if (request.containsKey("approvees")) {
+                final HashSet<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
+                for (final String approvee : approvees) {
+                    approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(approvee)).getApprovers(instance.tangle).getHashes());
+                }
+                foundTransactions.addAll(approveeTransactions);
+                containsKey = true;
+            }
         }
 
         if (!containsKey) {
@@ -1104,6 +1098,9 @@ public class API {
         }
 
         //Using multiple of these input fields returns the intersection of the values.
+        if (request.containsKey("project")) {
+            foundTransactions.retainAll(keyTransactions);
+        }
         if (request.containsKey("bundles")) {
             foundTransactions.retainAll(bundlesTransactions);
         }

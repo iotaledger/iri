@@ -1,3 +1,9 @@
+1.8.0
+
+- Feature: new networking infrastructure, new network rules, and batched BCT curl (#1393)
+- Fix: set arrival time in millis (not seconds) (#766)
+
+
 1.7.1
 
 - Feature: Add getAllAddresses to the spentAdddresses provider. This is to enable exporting with IXI (#1495)

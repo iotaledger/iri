@@ -39,6 +39,8 @@ public class Tangle {
 
     public static final Map.Entry<String, Class<? extends Persistable>> METADATA_COLUMN_FAMILY =
             new AbstractMap.SimpleImmutableEntry<>("transaction-metadata", Transaction.class);
+    
+    private final Map<Class<?>, DataCache<Indexable, ? extends Persistable>> caches = new HashMap<>();
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
@@ -62,6 +64,10 @@ public class Tangle {
     }
 
     public void shutdown() throws Exception {
+    	log.info("Shutting down data caching... ");
+        this.caches.values().forEach(DataCache::shutdown);
+        this.caches.clear();
+        
         log.info("Shutting down Tangle Persistence Providers... ");
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);
         this.persistenceProviders.clear();
@@ -70,6 +76,21 @@ public class Tangle {
         this.messageQueueProviders.clear();
     }
 
+    public void addCache(Class<?> model, DataCache<Indexable, ? extends Persistable> cache) {
+    	DataCache<Indexable, ? extends Persistable> old = caches.put(model, cache);
+    	if (null != old) {
+    		try {
+				old.writeAll();
+			} catch (CacheException e) {
+				log.warn(e.getMessage());
+			}
+    	}
+    }
+    
+    public <T extends Persistable> DataCache<Indexable, T> getCache(Class<T> model) {
+    	return (DataCache<Indexable, T>) caches.get(model);
+    }
+    
     public Persistable load(Class<?> model, Indexable index) throws Exception {
             Persistable out = null;
             for(PersistenceProvider provider: this.persistenceProviders) {

@@ -5,6 +5,7 @@ import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.impl.TipsRequesterImpl;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
@@ -288,9 +289,15 @@ public class Iota {
     private void initializeTangle() {
         switch (configuration.getMainDb()) {
             case "rocksdb": {
-                tangle.addPersistenceProvider(
-                        new RocksDBPersistenceProvider(configuration.getDbPath(), configuration.getDbLogPath(),
-                                configuration.getDbCacheSize(), Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
+            	PersistenceProvider persistance = new RocksDBPersistenceProvider(
+                        configuration.getDbPath(),
+                        configuration.getDbLogPath(),
+                        configuration.getDbCacheSize(),
+                        Tangle.COLUMN_FAMILIES,
+                        Tangle.METADATA_COLUMN_FAMILY);
+            	
+                tangle.addPersistenceProvider(persistance);
+                tangle.addCache(Transaction.class, new PersistenceCache<Transaction>(persistance, configuration.getCacheSizeBytes(), Transaction.class));
                 break;
             }
             default: {

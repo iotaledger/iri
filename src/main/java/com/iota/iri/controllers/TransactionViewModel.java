@@ -3,6 +3,7 @@ package com.iota.iri.controllers;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.storage.DataCache;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -16,7 +17,6 @@ import java.util.*;
  * each component of the {@link Transaction} within it.
  */
 public class TransactionViewModel {
-
     private final Transaction transaction;
 
     /** Length of a transaction object in trytes */
@@ -110,9 +110,18 @@ public class TransactionViewModel {
      * @return The {@link TransactionViewModel} with its Metadata filled in.
      * @throws Exception Thrown if the database fails to find the {@link Transaction} object
      */
-    public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(
-                (Transaction) tangle.find(Transaction.class, hash), HashFactory.TRANSACTION.create(hash));
+    public static TransactionViewModel find(Tangle tangle, byte[] hashData) throws Exception {
+    	Transaction transaction = null;
+    	Hash hash = HashFactory.TRANSACTION.create(hashData);
+    	
+    	DataCache<Indexable, Transaction> cache = tangle.getCache(Transaction.class);
+    	if (null != cache) {
+    		transaction = cache.get(hash);
+    	} else {
+    		transaction = (Transaction) tangle.find(Transaction.class, hashData);
+    	}
+    	
+        TransactionViewModel transactionViewModel = new TransactionViewModel(transaction, hash);
         fillMetadata(tangle, transactionViewModel);
         return transactionViewModel;
     }
@@ -128,8 +137,16 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error loading the {@link Transaction} object from the database
      */
     public static TransactionViewModel fromHash(Tangle tangle, final Hash hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(
-                (Transaction) tangle.load(Transaction.class, hash), hash);
+    	Transaction transaction = null;
+    	
+    	DataCache<Indexable, Transaction> cache = tangle.getCache(Transaction.class);
+    	if (null != cache) {
+    		transaction = cache.get(hash);
+    	} else {
+    		transaction = (Transaction) tangle.load(Transaction.class, hash);
+    	}
+    	
+        TransactionViewModel transactionViewModel = new TransactionViewModel(transaction, hash);
         fillMetadata(tangle, transactionViewModel);
         return transactionViewModel;
     }

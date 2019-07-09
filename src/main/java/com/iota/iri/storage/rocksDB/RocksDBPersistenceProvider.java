@@ -79,7 +79,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         this.cacheSize = cacheSize;
         this.columnFamilies = columnFamilies;
         this.metadataColumnFamily = metadataColumnFamily;
-
     }
 
     @Override
@@ -499,7 +498,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             db.enableFileDeletions(true);
 
             initClassTreeMap(columnFamilyDescriptors);
-
         } catch (Exception e) {
             IotaIOUtils.closeQuietly(db);
             throw e;

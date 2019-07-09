@@ -11,6 +11,8 @@ default_args: &args
    'true',
    '--snapshot',
    './snapshot.txt',
+   '--local-snapshots-pruning-enabled',
+   'true',
    '--local-snapshots-pruning-delay',
    '10000'
   ]

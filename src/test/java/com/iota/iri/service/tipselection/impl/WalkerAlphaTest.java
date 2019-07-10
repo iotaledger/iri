@@ -26,9 +26,9 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
-import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
 
 public class WalkerAlphaTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -59,7 +59,7 @@ public class WalkerAlphaTest {
 
         TailFinder tailFinder = Mockito.mock(TailFinder.class);
         Mockito.when(tailFinder.findTail(Mockito.any(Hash.class)))
-                .then(args -> Optional.of(args.getArgumentAt(0, Hash.class)));
+                .then(args -> Optional.of(args.getArgument(0)));
         walker = new WalkerAlpha(tailFinder, tangle, new Random(1), new MainnetConfig());
     }
 
@@ -68,13 +68,13 @@ public class WalkerAlphaTest {
     public void testWalkEndsOnlyInRating() throws Exception {
         //build a small tangle - 1,2,3,4 point to  transaction
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
 
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -86,17 +86,17 @@ public class WalkerAlphaTest {
         UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //add 4 after the rating was calculated
-        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
         transaction4.store(tangle, snapshotProvider.getInitialSnapshot());
 
         for (int i=0; i < 100; i++) {
             //select
             Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
-            Assert.assertTrue(tip != null);
+            Assert.assertNotNull(tip);
             //log.info("selected tip: " + tip.toString());
-            Assert.assertTrue(!transaction4.getHash().equals(tip));
+            Assert.assertFalse(transaction4.getHash().equals(tip));
         }
     }
 
@@ -105,13 +105,13 @@ public class WalkerAlphaTest {
 
         //build a small tangle - 1,2,3,4 point to  transaction
         TransactionViewModel transaction, transaction1, transaction2, transaction3;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
 
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -148,13 +148,13 @@ public class WalkerAlphaTest {
 
         //build a small tangle - 1,2,3,4 point to  transaction
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
 
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -168,8 +168,8 @@ public class WalkerAlphaTest {
         rating.put(transaction2.getHash(), 10);
 
         //add 4 after the rating was calculated
-        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
         transaction4.store(tangle, snapshotProvider.getInitialSnapshot());
 
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
@@ -195,15 +195,15 @@ public class WalkerAlphaTest {
     public void testWalk() throws Exception {
         //build a small tangle
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), Hash.NULL_HASH);
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction1.getHash(),
-                transaction1.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction2.getHash(),
-                transaction1.getHash()), getRandomTransactionHash());
-        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction2.getHash(),
-                transaction3.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), Hash.NULL_HASH);
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction1.getHash(),
+                transaction1.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction2.getHash(),
+                transaction1.getHash()), getTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction2.getHash(),
+                transaction3.getHash()), getTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -225,13 +225,13 @@ public class WalkerAlphaTest {
     public void testWalkDiamond() throws Exception {
         //build a small tangle
         TransactionViewModel transaction, transaction1, transaction2, transaction3;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction1.getHash(),
-                transaction2.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction1.getHash(),
+                transaction2.getHash()), getTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -252,15 +252,15 @@ public class WalkerAlphaTest {
     public void testWalkChain() throws Exception {
         //build a small tangle
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction1.getHash(), transaction1.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction2.getHash(), transaction2.getHash()), getRandomTransactionHash());
-        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction3.getHash(), transaction3.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction1.getHash(), transaction1.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction2.getHash(), transaction2.getHash()), getTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction3.getHash(), transaction3.getHash()), getTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());

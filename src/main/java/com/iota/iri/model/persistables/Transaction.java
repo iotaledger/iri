@@ -54,6 +54,10 @@ public class Transaction implements Persistable {
 
     public int validity = 0;
     public int type = TransactionViewModel.PREFILLED_SLOT;
+
+    /**
+     * The time when the transaction arrived. In milliseconds.
+     */
     public long arrivalTime = 0;
 
 

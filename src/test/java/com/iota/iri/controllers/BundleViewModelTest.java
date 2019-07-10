@@ -13,7 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
 
 public class BundleViewModelTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -71,7 +71,7 @@ public class BundleViewModelTest {
 
     @Test
     public void firstShouldFindTx() throws Exception {
-        byte[] trits = getRandomTransactionTrits();
+        byte[] trits = getTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
         transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
 

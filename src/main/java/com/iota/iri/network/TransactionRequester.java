@@ -1,5 +1,6 @@
 package com.iota.iri.network;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.Snapshot;
@@ -91,7 +92,7 @@ public class TransactionRequester {
      *
      * It used when the queue capacity is reached, and new transactions would be dropped as a result.
      */
-    // @VisibleForTesting
+    @VisibleForTesting
     void popEldestTransactionToRequest() {
         Iterator<Hash> iterator = transactionsToRequest.iterator();
         if (iterator.hasNext()) {

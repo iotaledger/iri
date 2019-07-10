@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -88,7 +89,7 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
@@ -246,7 +247,7 @@ public class TransactionValidator {
         if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
-        Set<Hash> analyzedHashes = new HashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
+        LinkedHashSet<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
         if(maxProcessedTransactions != Integer.MAX_VALUE) {
             maxProcessedTransactions += analyzedHashes.size();
         }
@@ -254,24 +255,26 @@ public class TransactionValidator {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (analyzedHashes.add(hashPointer)) {
-                if(analyzedHashes.size() >= maxProcessedTransactions) {
-                    return false;
-                }
+            if (!analyzedHashes.add(hashPointer)) {
+                continue;
+            }
 
-                final TransactionViewModel transaction = fromHash(tangle, hashPointer);
-                if(!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
-                    if (transaction.getType() == PREFILLED_SLOT) {
-                        solid = false;
+            if (analyzedHashes.size() >= maxProcessedTransactions) {
+                return false;
+            }
 
-                        if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
-                            transactionRequester.requestTransaction(hashPointer, milestone);
-                            break;
-                        }
-                    } else {
-                        nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                        nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+            TransactionViewModel transaction = fromHash(tangle, hashPointer);
+            if (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
+                if (transaction.getType() == PREFILLED_SLOT) {
+                    solid = false;
+
+                    if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
+                        transactionRequester.requestTransaction(hashPointer, milestone);
+                        continue;
                     }
+                } else {
+                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                 }
             }
         }
@@ -315,7 +318,7 @@ public class TransactionValidator {
      * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
      * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
      */
-    //Package private for testing
+    @VisibleForTesting
     void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
@@ -448,7 +451,7 @@ public class TransactionValidator {
         return approovee.isSolid();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }

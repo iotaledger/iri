@@ -29,10 +29,10 @@ script:
   - git checkout -f $TRAVIS_BRANCH
   - git checkout $build_head
   - git merge $TRAVIS_BRANCH
-  - mvn integration-test -Dlogging-level=INFO
-  #run jar sanity tests
   - VERSION=$(mvn help:evaluate -Dexpression=project.version | grep -E '^[0-9.]+')
   - echo $VERSION
+  #run jar sanity tests
+  - mvn integration-test -Dlogging-level=INFO
   #jacoco prep (appends to mvn run)
   - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep -E '^[0-9.]+')
   - export _JAVA_OPTIONS="$_JAVA_OPTIONS -javaagent:$HOME/.m2/repository/org/jacoco/org.jacoco.agent/$JACOCO_V/org.jacoco.agent-$JACOCO_V-runtime.jar=destfile=$PWD/target/jacoco.exec,output=file,append=true,dumponexit=true"
@@ -40,8 +40,6 @@ script:
   - git clone https://github.com/iotaledger/iri-regression-tests.git
   - cd iri-regression-tests
   - git checkout -f master
-  - curl -LO https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/testnet_files.tgz
-  - tar -xzf testnet_files.tgz
   - mkdir iri
   - cp -rf ../target iri/target
   - bash run_all_stable_tests.sh $VERSION

@@ -23,9 +23,9 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
 
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
-import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
 
 import static org.junit.Assert.*;
 
@@ -77,17 +77,17 @@ public class TransactionViewModelTest {
         TransactionViewModel transactionViewModel, otherTxVM, trunkTx, branchTx;
 
 
-        byte[] trits = getRandomTransactionTrits();
+        byte[] trits = getTransactionTrits();
         trunkTx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
         branchTx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
-        byte[] childTx = getRandomTransactionTrits();
+        byte[] childTx = getTransactionTrits();
         System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
         transactionViewModel = new TransactionViewModel(childTx, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, childTx));
 
-        childTx = getRandomTransactionTrits();
+        childTx = getTransactionTrits();
         System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
         otherTxVM = new TransactionViewModel(childTx, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, childTx));
@@ -120,13 +120,13 @@ public class TransactionViewModelTest {
     public void trits() throws Exception {
         byte[] blanks = new byte[13];
         for(int i=0; i++ < 1000;) {
-            byte[] trits = getRandomTransactionTrits(), searchTrits;
+            byte[] trits = getTransactionTrits(), searchTrits;
             System.arraycopy(new byte[TransactionViewModel.VALUE_TRINARY_SIZE], 0, trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_TRINARY_SIZE);
             Converter.copyTrits(seed.nextLong(), trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_USABLE_TRINARY_SIZE);
             System.arraycopy(blanks, 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET-blanks.length, blanks.length);
             System.arraycopy(blanks, 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET-blanks.length, blanks.length);
             System.arraycopy(blanks, 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET + TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE-blanks.length, blanks.length);
-            Hash hash = getRandomTransactionHash();
+            Hash hash = getTransactionHash();
             TransactionViewModel transactionViewModel = new TransactionViewModel(trits, hash);
             transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
             assertArrayEquals(transactionViewModel.trits(), TransactionViewModel.fromHash(tangle, transactionViewModel.getHash()).trits());
@@ -136,10 +136,10 @@ public class TransactionViewModelTest {
     @Test
     public void getBytes() throws Exception {
         for(int i=0; i++ < 1000;) {
-            byte[] trits = getRandomTransactionTrits();
+            byte[] trits = getTransactionTrits();
             System.arraycopy(new byte[TransactionViewModel.VALUE_TRINARY_SIZE], 0, trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_TRINARY_SIZE);
             Converter.copyTrits(seed.nextLong(), trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_USABLE_TRINARY_SIZE);
-            Hash hash = getRandomTransactionHash();
+            Hash hash = getTransactionHash();
             TransactionViewModel transactionViewModel = new TransactionViewModel(trits, hash);
             transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
             assertArrayEquals(transactionViewModel.getBytes(), TransactionViewModel.fromHash(tangle, transactionViewModel.getHash()).getBytes());
@@ -295,13 +295,13 @@ public class TransactionViewModelTest {
     public void updateHeightShouldWork() throws Exception {
         int count = 4;
         TransactionViewModel[] transactionViewModels = new TransactionViewModel[count];
-        Hash hash = getRandomTransactionHash();
-        transactionViewModels[0] = new TransactionViewModel(getTransactionWithTrunkAndBranch(Hash.NULL_HASH,
+        Hash hash = getTransactionHash();
+        transactionViewModels[0] = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(Hash.NULL_HASH,
                 Hash.NULL_HASH), hash);
         transactionViewModels[0].store(tangle, snapshotProvider.getInitialSnapshot());
         for(int i = 0; ++i < count; ) {
-            transactionViewModels[i] = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash,
-                    Hash.NULL_HASH), hash = getRandomTransactionHash());
+            transactionViewModels[i] = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(hash,
+                    Hash.NULL_HASH), hash = getTransactionHash());
             transactionViewModels[i].store(tangle, snapshotProvider.getInitialSnapshot());
         }
 
@@ -316,10 +316,10 @@ public class TransactionViewModelTest {
     public void updateHeightPrefilledSlotShouldFail() throws Exception {
         int count = 4;
         TransactionViewModel[] transactionViewModels = new TransactionViewModel[count];
-        Hash hash = getRandomTransactionHash();
+        Hash hash = getTransactionHash();
         for(int i = 0; ++i < count; ) {
-            transactionViewModels[i] = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash,
-                    Hash.NULL_HASH), hash = getRandomTransactionHash());
+            transactionViewModels[i] = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(hash,
+                    Hash.NULL_HASH), hash = getTransactionHash());
             transactionViewModels[i].store(tangle, snapshotProvider.getInitialSnapshot());
         }
 
@@ -332,7 +332,7 @@ public class TransactionViewModelTest {
 
     @Test
     public void findShouldBeSuccessful() throws Exception {
-        byte[] trits = getRandomTransactionTrits();
+        byte[] trits = getTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
         transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = transactionViewModel.getHash();
@@ -343,9 +343,9 @@ public class TransactionViewModelTest {
 
     @Test
     public void findShouldReturnNull() throws Exception {
-        byte[] trits = getRandomTransactionTrits();
+        byte[] trits = getTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
-        trits = getRandomTransactionTrits();
+        trits = getTransactionTrits();
         TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
         transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = transactionViewModelNoSave.getHash();
@@ -358,7 +358,7 @@ public class TransactionViewModelTest {
         int i, j;
         LinkedList<Hash> hashes = new LinkedList<>();
         Hash hash;
-        hash = getRandomTransactionHash();
+        hash = getTransactionHash();
         hashes.add(hash);
         long start, diff, diffget;
         long subSumDiff=0,maxdiff=0, sumdiff = 0;
@@ -366,13 +366,13 @@ public class TransactionViewModelTest {
         int interval1 = 50;
         int interval = interval1*10;
         log.info("Starting Test. #TX: {}", TransactionViewModel.getNumberOfStoredTransactions(tangle));
-        new TransactionViewModel(getTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH), hash).store(tangle, snapshotProvider.getInitialSnapshot());
+        new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH), hash).store(tangle, snapshotProvider.getInitialSnapshot());
         TransactionViewModel transactionViewModel;
         boolean pop = false;
         for (i = 0; i++ < max;) {
-            hash = getRandomTransactionHash();
+            hash = getTransactionHash();
             j = hashes.size();
-            transactionViewModel = new TransactionViewModel(getTransactionWithTrunkAndBranch(hashes.get(seed.nextInt(j)), hashes.get(seed.nextInt(j))), hash);
+            transactionViewModel = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(hashes.get(seed.nextInt(j)), hashes.get(seed.nextInt(j))), hash);
             start = System.nanoTime();
             transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
             diff = System.nanoTime() - start;
@@ -408,7 +408,7 @@ public class TransactionViewModelTest {
 
     @Test
     public void firstShouldFindTx() throws Exception {
-        byte[] trits = getRandomTransactionTrits();
+        byte[] trits = getTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
         transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
 

@@ -3,10 +3,14 @@ package com.iota.iri.storage;
 import java.util.Map.Entry;
 
 import org.apache.commons.collections4.map.ListOrderedMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.iota.iri.controllers.TransactionViewModel;
 
 public class PersistenceCache<T extends Persistable> implements DataCache<Indexable, T> {
+
+	private static final Logger log = LoggerFactory.getLogger(PersistenceCache.class);
 
 	private Object lock = new Object();
 
@@ -21,7 +25,7 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
 	public PersistenceCache(PersistenceProvider persistance, int cacheSizeInBytes, Class<?> persistableModel) {
 		this.persistance = persistance;
 		this.model = persistableModel;
-		
+
 		cache = new ListOrderedMap<Indexable, T>();
 
 		// CacheSize divided by trytes to bytes conversion of size per transaction
@@ -86,17 +90,18 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
 
 	private void cleanUp() throws CacheException {
 		synchronized (lock) {
+			log.debug("Cleaning cache...");
 			try {
 				for (int i = 0; i < getNumEvictions(); i++) {
 					Indexable oldest = cache.firstKey();
 					write(oldest, cache.get(oldest));
 					cache.remove(oldest);
 				}
-				
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			
+
 		}
 	}
 
@@ -109,7 +114,7 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
 	}
 
 	private int getNumEvictions() {
-		return (int) Math.ceil(calculatedMaxSize / 2.0); // Clean up 5%
+		return (int) Math.ceil(calculatedMaxSize / 20.0); // Clean up 5%
 	}
 
 	@Override

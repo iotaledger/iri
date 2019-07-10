@@ -7,7 +7,7 @@ Feature: Test Bootstrapping With LS
   [NodeA: Permanode, NodeB: Just DB, NodeC: Just LS Files]
 
   Scenario: PermaNode is synced
-  Check that the permanode has been started correctly and is synced.
+    Check that the permanode has been started correctly and is synced.
 
     #First make sure nodes are neighbored
     Given "nodeA" and "nodeB" are neighbors
@@ -20,8 +20,8 @@ Feature: Test Bootstrapping With LS
 
 
   Scenario: DB node is synced, and files contain expected values
-  Check that the node started with just a DB is synced correctly, and that the proper addresses and hashes have been
-  stored correctly.
+    Check that the node started with just a DB is synced correctly, and that the proper addresses and hashes have been
+    stored correctly.
 
     #First make sure nodes are neighbored
     Given "nodeB" and "nodeA" are neighbors
@@ -44,7 +44,7 @@ Feature: Test Bootstrapping With LS
 
 
   Scenario: LS File node is synced
-  Check that the node started with just LS Files is synced correctly.
+    Check that the node started with just LS Files is synced correctly.
 
     #First make sure nodes are neighbored
     Given "nodeC" and "nodeA" are neighbors
@@ -58,8 +58,8 @@ Feature: Test Bootstrapping With LS
 
 
   Scenario: Check DB for milestone hashes
-  Give the db-less node some time to receive the latest milestones from the permanode, then check if the milestones
-  are present in the new node.
+    Give the db-less node some time to receive the latest milestones from the permanode, then check if the milestones
+    are present in the new node.
 
     #First make sure nodes are neighbored
     Given "nodeC" and "nodeA" are neighbors
@@ -77,8 +77,8 @@ Feature: Test Bootstrapping With LS
 
 
   Scenario: Old transactions are pruned
-  Takes a node with a large db and transaction pruning enabled, and checks to make sure that the transactions below
-  the pruning depth are no longer present.
+    Takes a node with a large db and transaction pruning enabled, and checks to make sure that the transactions below
+    the pruning depth are no longer present.
 
     Given "checkConsistency" is called on "nodeD" with:
       |keys                       |values                   |type             |

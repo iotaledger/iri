@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.7.1-RELEASE</version>
+    <version>1.8.0-RELEASE</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -21,6 +21,7 @@
         <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>1.4.26.Final</undertow.version>
+        <zero-allocation-hashing.version>0.8</zero-allocation-hashing.version>
         <jacoco.version>0.7.9</jacoco.version>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
@@ -174,8 +175,8 @@
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
+            <artifactId>mockito-core</artifactId>
+            <version>2.27.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -184,6 +185,12 @@
             <artifactId>digest-enforcer-rules</artifactId>
             <version>0.0.1</version>
             <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>zero-allocation-hashing</artifactId>
+            <version>${zero-allocation-hashing.version}</version>
         </dependency>
 
         <dependency>
@@ -410,6 +417,9 @@
                                         not used anymore
                                         <urn>org.reflections:reflections:0.9.10:jar:null:compile:3812159b1b4b7c296fa80f53eed6362961eb85da</urn>
                                         -->
+                                        <urn>
+                                            net.openhft:zero-allocation-hashing:${zero-allocation-hashing.version}:jar:null:compile:9e32cfe154dca19e6024d2faa6027d6cad8cea3c
+                                        </urn>
                                         <urn>
                                             com.jayway.restassured:rest-assured:2.9.0:jar:null:test:d0d5b6720a58472ab99287c931a8205373d6e7b2
                                         </urn>

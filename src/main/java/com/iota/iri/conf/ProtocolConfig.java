@@ -1,5 +1,7 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.model.Hash;
+
 /**
  * Configuration for protocol rules. Controls what transactions will be accepted by the network, and how they will
  * be propagated to other nodes.
@@ -10,6 +12,11 @@ public interface ProtocolConfig extends Config {
      * @return Descriptions#MWM
      */
     int getMwm();
+
+    /**
+     * @return Descriptions#COORDINATOR
+     */
+    Hash getCoordinator();
 
     /**
      * @return Descriptions#TRANSACTION_PACKET_SIZE
@@ -39,6 +46,7 @@ public interface ProtocolConfig extends Config {
 
     interface Descriptions {
         String MWM = "The minimum weight magnitude is the number of trailing 0s that must appear in the end of a transaction hash. Increasing this number by 1 will result in proof of work that is 3 times as hard.";
+        String COORDINATOR = "The address of the coordinator";
         String TRANSACTION_PACKET_SIZE = "The size of the packet in bytes received by a node. In the mainnet the packet size should always be 1650. It consists of 1604 bytes of a received transaction and 46 bytes of a requested transaction hash. This value can be changed in order to create testnets with different rules.";
         String REQUEST_HASH_SIZE = "The size of the requested hash in a packet. Its size is derived from the minimal MWM value the network accepts. The larger the MWM -> the more trailing zeroes we can ignore -> smaller hash size.";
         String P_DROP_TRANSACTION = DescriptionHelper.PROB_OF + "dropping a received transaction. This is used only for testing purposes.";

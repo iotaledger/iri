@@ -893,3 +893,4 @@ public class TransactionViewModel {
         return "transaction " + hash.toString();
     }
 }
+

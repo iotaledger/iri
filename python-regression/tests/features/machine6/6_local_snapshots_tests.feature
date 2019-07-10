@@ -27,9 +27,9 @@ Feature: Test Bootstrapping With LS
     Given "nodeB" and "nodeA" are neighbors
     And "nodeB" and "nodeC" are neighbors
 
-    #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
-     #Default for test is to issue 10322
+    # Default for test is to issue 10323
     When milestone 10323 is issued on "nodeA"
+    #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
     And we wait "60" second/seconds
     Then "nodeB" is synced up to milestone 10323
     And A local snapshot was taken on "nodeB" at index 10220

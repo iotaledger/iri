@@ -1,12 +1,14 @@
 package com.iota.iri.storage;
 
-import java.util.Map.Entry;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.utils.Pair;
 
 public class PersistenceCache<T extends Persistable> implements DataCache<Indexable, T> {
 
@@ -21,6 +23,8 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
     private final int calculatedMaxSize;
 
     private Class<?> model;
+
+    int counter = 0;
 
     public PersistenceCache(PersistenceProvider persistance, int cacheSizeInBytes, Class<?> persistableModel) {
         this.persistance = persistance;
@@ -48,9 +52,9 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
     public void writeAll() throws CacheException {
         synchronized (lock) {
             try {
-                for (Entry<Indexable, T> entry : cache.entrySet()) {
-                    write(entry.getKey(), entry.getValue());
-                }
+                writeBatch(cache.entrySet().stream().map(entry -> {
+                    return new Pair<Indexable, Persistable>(entry.getKey(), entry.getValue());
+                }).collect(Collectors.toList()));
             } catch (Exception e) {
                 throw new CacheException(e.getMessage());
             }
@@ -61,11 +65,13 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
     public T get(Indexable key) throws CacheException {
         T tvm = cache.get(key);
         if (null != tvm) {
+            counter--;
             return tvm;
         }
 
         try {
             tvm = (T) persistance.get(model, key);
+            counter++;
         } catch (Exception e) {
             throw new CacheException(e.getMessage());
         }
@@ -92,21 +98,24 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
         synchronized (lock) {
             log.debug("Cleaning cache...");
             try {
+                // Write in batch to the database
+                writeBatch(cache.entrySet().stream().limit(getNumEvictions()).map(entry -> {
+                    return new Pair<Indexable, Persistable>(entry.getKey(), entry.getValue());
+                }).collect(Collectors.toList()));
+
+                // Then remove one by one
                 for (int i = 0; i < getNumEvictions(); i++) {
-                    Indexable oldest = cache.firstKey();
-                    write(oldest, cache.get(oldest));
-                    cache.remove(oldest);
+                    cache.remove(cache.firstKey());
                 }
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
     }
 
-    private void write(Indexable key, T value) throws Exception {
-        persistance.save(value, key);
+    private void writeBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
+        persistance.saveBatch(models);
     }
 
     private boolean isFullAfterAdd() {

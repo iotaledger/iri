@@ -74,8 +74,8 @@ def fetch_node_address(value):
     :return: The address of the referenced node in list format
     """
     host = world.machine['nodes'][value]['host']
-    port = world.machine['nodes'][value]['ports']['gossip-udp']
-    address = "udp://" + host + ":" + str(port)
+    port = world.machine['nodes'][value]['ports']['gossip-tcp']
+    address = "tcp://" + host + ":" + str(port)
     return [address.decode()]
 
 

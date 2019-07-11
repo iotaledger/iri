@@ -45,14 +45,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
-
     //Network
-    protected int udpReceiverPort = Defaults.UDP_RECEIVER_PORT;
-    protected int tcpReceiverPort = Defaults.TCP_RECEIVER_PORT;
+    protected String neighboringSocketAddress = Defaults.NEIGHBORING_SOCKET_ADDRESS;
+    protected int neighboringSocketPort = Defaults.NEIGHBORING_SOCKET_PORT;
+    protected int reconnectAttemptIntervalSeconds = Defaults.RECONNECT_ATTEMPT_INTERVAL_SECONDS;
+    protected boolean autoTetheringEnabled = Defaults.AUTO_TETHERING_ENABLED;
     protected double pRemoveRequest = Defaults.P_REMOVE_REQUEST;
     protected double pDropCacheEntry = Defaults.P_DROP_CACHE_ENTRY;
     protected int sendLimit = Defaults.SEND_LIMIT;
-    protected int maxPeers = Defaults.MAX_PEERS;
+    protected int maxNeighbors = Defaults.MAX_NEIGHBORS;
     protected boolean dnsRefresherEnabled = Defaults.DNS_REFRESHER_ENABLED;
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
     protected List<String> neighbors = new ArrayList<>();
@@ -151,7 +152,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--help", "-h"} , help = true, hidden = true)
+    @Parameter(names = {"--help", "-h"}, help = true, hidden = true)
     public void setHelp(boolean help) {
         this.help = help;
     }
@@ -278,26 +279,48 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.remoteAuth = remoteAuth;
     }
 
-    @Override
-    public int getUdpReceiverPort() {
-        return udpReceiverPort;
-    }
-
     @JsonProperty
-    @Parameter(names = {"-u", "--udp-receiver-port"}, description = NetworkConfig.Descriptions.UDP_RECEIVER_PORT)
-    public void setUdpReceiverPort(int udpReceiverPort) {
-        this.udpReceiverPort = udpReceiverPort;
+    @Parameter(names = {"--neighboring-socket-address"}, description = NetworkConfig.Descriptions.NEIGHBORING_SOCKET_ADDRESS)
+    public void setNeighboringSocketAddress(String neighboringSocketAddress) {
+        this.neighboringSocketAddress = neighboringSocketAddress;
     }
 
     @Override
-    public int getTcpReceiverPort() {
-        return tcpReceiverPort;
+    public String getNeighboringSocketAddress() {
+        return neighboringSocketAddress;
     }
 
     @JsonProperty
-    @Parameter(names = {"-t", "--tcp-receiver-port"}, description = NetworkConfig.Descriptions.TCP_RECEIVER_PORT)
-    protected void setTcpReceiverPort(int tcpReceiverPort) {
-        this.tcpReceiverPort = tcpReceiverPort;
+    @Parameter(names = {"--neighboring-socket-port", "-t"}, description = NetworkConfig.Descriptions.NEIGHBORING_SOCKET_PORT)
+    public void setNeighboringSocketPort(int neighboringSocketPort) {
+        this.neighboringSocketPort = neighboringSocketPort;
+    }
+
+    @Override
+    public int getNeighboringSocketPort() {
+        return neighboringSocketPort;
+    }
+
+    @Override
+    public int getReconnectAttemptIntervalSeconds() {
+        return reconnectAttemptIntervalSeconds;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--reconnect-attempt-interval-seconds"}, description = NetworkConfig.Descriptions.RECONNECT_ATTEMPT_INTERVAL_SECONDS)
+    protected void setReconnectAttemptIntervalSeconds(int reconnectAttemptIntervalSeconds) {
+        this.reconnectAttemptIntervalSeconds = reconnectAttemptIntervalSeconds;
+    }
+
+    @Override
+    public boolean isAutoTetheringEnabled() {
+        return autoTetheringEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--auto-tethering"}, description = NetworkConfig.Descriptions.AUTO_TETHERING_ENABLED, arity = 1)
+    protected void setAutoTetheringEnabled(boolean autoTetheringEnabled) {
+        this.autoTetheringEnabled = autoTetheringEnabled;
     }
 
     @Override
@@ -323,14 +346,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public int getMaxPeers() {
-        return maxPeers;
+    public int getMaxNeighbors() {
+        return maxNeighbors;
     }
 
     @JsonProperty
-    @Parameter(names = {"--max-peers"}, description = NetworkConfig.Descriptions.MAX_PEERS)
-    protected void setMaxPeers(int maxPeers) {
-        this.maxPeers = maxPeers;
+    @Parameter(names = {"--max-neighbors"}, description = NetworkConfig.Descriptions.MAX_NEIGHBORS)
+    protected void setMaxNeighbors(int maxNeighbors) {
+        this.maxNeighbors = maxNeighbors;
     }
 
     @Override
@@ -566,7 +589,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setLocalSnapshotsIntervalSynced(int localSnapshotsIntervalSynced) {
         if (localSnapshotsIntervalSynced < 1) {
             throw new ParameterException("LOCAL_SNAPSHOTS_INTERVAL_SYNCED should be at least 1 (found " +
-                    localSnapshotsIntervalSynced +")");
+                    localSnapshotsIntervalSynced + ")");
         }
 
         this.localSnapshotsIntervalSynced = localSnapshotsIntervalSynced;
@@ -583,7 +606,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setLocalSnapshotsIntervalUnsynced(int localSnapshotsIntervalUnsynced) {
         if (localSnapshotsIntervalUnsynced < 1) {
             throw new ParameterException("LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED should be at least 1 (found " +
-                    localSnapshotsIntervalUnsynced +")");
+                    localSnapshotsIntervalUnsynced + ")");
         }
 
         this.localSnapshotsIntervalUnsynced = localSnapshotsIntervalUnsynced;
@@ -600,7 +623,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         if (localSnapshotsDepth < Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN) {
             throw new ParameterException("LOCAL_SNAPSHOTS_DEPTH should be at least "
                     + Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN
-                    + "(found " + localSnapshotsDepth +")");
+                    + "(found " + localSnapshotsDepth + ")");
         }
 
         this.localSnapshotsDepth = localSnapshotsDepth;
@@ -892,11 +915,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String REMOTE_AUTH = "";
 
         //Network
-        int UDP_RECEIVER_PORT = 14600;
-        int TCP_RECEIVER_PORT = 15600;
+        String NEIGHBORING_SOCKET_ADDRESS = "0.0.0.0";
+        int NEIGHBORING_SOCKET_PORT = 15600;
+        int RECONNECT_ATTEMPT_INTERVAL_SECONDS = 60;
+        boolean AUTO_TETHERING_ENABLED = false;
         double P_REMOVE_REQUEST = 0.01d;
         int SEND_LIMIT = -1;
-        int MAX_PEERS = 0;
+        int MAX_NEIGHBORS = 5;
         boolean DNS_REFRESHER_ENABLED = true;
         boolean DNS_RESOLUTION_ENABLED = true;
 
@@ -925,7 +950,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int CACHE_SIZE_BYTES = 150_000;
 
 
-
         //Zmq
         int ZMQ_THREADS = 1;
         boolean ZMQ_ENABLE_IPC = false;
@@ -939,7 +963,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int TIP_SELECTION_TIMEOUT_SEC = 60;
 
         //Tip solidification
-        boolean TIP_SOLIDIFIER_ENABLED = true;
+        boolean TIP_SOLIDIFIER_ENABLED = false;
 
         //PearlDiver
         int POW_THREADS = 0;

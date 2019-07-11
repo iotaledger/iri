@@ -102,7 +102,7 @@ public class NeighborRouterTest {
         neighborRouterAThread.start();
         neighborRouterBThread.start();
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         // A should not have any neighbors
         assertEquals("should not have any neighbors yet", 0, neighborRouterA.getConnectedNeighbors().size());
@@ -112,7 +112,7 @@ public class NeighborRouterTest {
 
         neighborRouterA.addNeighbor(neighborBURI.toString());
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         // should now be connected with each other
         assertEquals("neighbor B should be connected", 1, neighborRouterA.getConnectedNeighbors().size());
@@ -126,7 +126,7 @@ public class NeighborRouterTest {
         neighborA.send(
                 Handshake.createHandshakePacket((char) 19000, Hash.NULL_HASH.bytes(), (byte) nodeConfigA.getMwm()));
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         assertEquals("should not have any connected neighbors anymore", 0,
                 neighborRouterA.getConnectedNeighbors().size());

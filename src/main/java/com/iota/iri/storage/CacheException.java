@@ -2,7 +2,7 @@ package com.iota.iri.storage;
 
 public class CacheException extends Exception {
 
-	/**
+    /**
      * Initializes a new instance of the CacheException.
      */
     public CacheException() {
@@ -10,7 +10,9 @@ public class CacheException extends Exception {
     }
 
     /**
-     * Initializes a new instance of the CacheException with the specified detail message.
+     * Initializes a new instance of the CacheException with the specified detail
+     * message.
+     * 
      * @param msg message shown in exception details.
      */
     public CacheException(String msg) {

@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
-        <undertow.version>1.4.26.Final</undertow.version>
+        <undertow.version>2.0.22.Final</undertow.version>
         <zero-allocation-hashing.version>0.8</zero-allocation-hashing.version>
         <jacoco.version>0.7.9</jacoco.version>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
@@ -112,7 +112,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.8</version>
+            <version>2.9.9</version>
         </dependency>
 
         <!-- undertow server -->

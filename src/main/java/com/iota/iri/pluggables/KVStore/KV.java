@@ -4,7 +4,7 @@ import java.util.*;
 
 public class KV {
     public String key;
-    public String value;
+    public Object value;
     public String project;
     public String tag;
 }

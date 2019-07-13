@@ -161,7 +161,7 @@ def get_balance():
     print("Balance of '%s' is [%s]" % (account, balance), file=sys.stderr)
     return balance
 
-@app.route('/get_file', methods=['GET'])
+@app.route('/get_file', methods=['POST'])
 def get_file():
     req_json = request.get_json()
 
@@ -178,9 +178,10 @@ def get_file():
     key = req_json[u'key']
     resp = cache.get_file(project, key)
 
-    print("[INFO] Result is:" + str(resp), file=sys.stderr)
+    print("[INFO] Result is:" + str(resp[u'trytes']), file=sys.stderr)
 
-    return 'ok'
+    ret_list = [x.encode('ascii') for x in resp[u'trytes']]
+    return str(ret_list)
 
 @app.route('/put_file', methods=['POST'])
 def put_file():

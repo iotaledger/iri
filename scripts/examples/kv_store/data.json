@@ -1,0 +1,12 @@
+{
+	"project":"diamond",
+	"key":"zhaoming-vip",
+	"value": {
+		"vipID" : "1234567890",
+		"developedVIP" : 20,
+		"vipType" : "ADVANCED",
+		"score" : 100
+	},
+	"tag":"KV"
+}
+

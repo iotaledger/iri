@@ -713,6 +713,7 @@ public class API {
                     fmt.tee = tee;
                     elements.add(new Gson().toJson(fmt));
                 } else { // should be key value
+		    log.info("[kv] {}", dec);
                     elements.add(dec);
                 }
             }
@@ -1033,6 +1034,8 @@ public class API {
         final Set<Hash> approveeTransactions = new HashSet<>();
 
         if (request.containsKey("project")) {
+            LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+	    List<Hash> order = provider.totalTopOrder();
            
             String project = (String)request.get("project");
             
@@ -1045,9 +1048,18 @@ public class API {
             log.debug("Query project: {}, key {}", project, key);
             String trytes = Converter.asciiToTrytes(project + "-" + key);
             keyTransactions.addAll(KeyViewModel.load(instance.tangle, HashFactory.TAG.create(trytes)).getHashes());
-            foundTransactions.addAll(keyTransactions);
 
-            containsKey = true;
+	    int pos = -1;
+	    Hash ret = null;
+	    for(Hash h : keyTransactions) {
+                int tmpPos = order.indexOf(h);
+                if(tmpPos > pos) {
+                    ret = h;
+                    pos = tmpPos;
+                }
+            }
+	    foundTransactions.add(ret); // only return the latest
+	    containsKey = true;
         } else {
             if (request.containsKey("bundles")) {
                 final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);

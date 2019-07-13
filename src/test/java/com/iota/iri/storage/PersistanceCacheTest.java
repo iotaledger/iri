@@ -5,6 +5,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,6 +40,11 @@ public class PersistanceCacheTest {
         cache = new PersistenceCache<Transaction>(persistence, amount, Transaction.class);
     }
 
+    @After
+    public void tearDown() {
+        cache.shutdown();
+    }
+
     @Test
     public void sizeTest() {
         assertEquals("Cache size should have been calculated based on TX size", CACHE_SIZE, cache.getMaxSize());
@@ -69,7 +75,7 @@ public class PersistanceCacheTest {
         // amount cleaned
         cache.get(A);
 
-        verify(persistence, atLeast(1)).save(Mockito.any(), Mockito.any());
+        verify(persistence, atLeast(1)).saveBatch(Mockito.any());
     }
 
     private void fillCacheWithGarbage() throws Exception {

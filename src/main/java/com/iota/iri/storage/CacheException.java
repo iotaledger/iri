@@ -10,6 +10,13 @@ public class CacheException extends Exception {
     }
 
     /**
+     * Initializes a new instance of the CacheException caused by another exception.
+     */
+    public CacheException(Exception e) {
+        super(e);
+    }
+
+    /**
      * Initializes a new instance of the CacheException with the specified detail
      * message.
      * 

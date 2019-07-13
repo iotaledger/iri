@@ -43,6 +43,7 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
             writeAll();
         } catch (CacheException e) {
             // We cannot handle this during shutdown
+            log.warn(e.getMessage());
             e.printStackTrace();
         }
         cache.clear();
@@ -53,9 +54,17 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
         synchronized (lock) {
             try {
                 writeBatch(cache.entrySet().stream().map(entry -> {
-                    return new Pair<Indexable, Persistable>(entry.getKey(), entry.getValue());
+                    try {
+
+                        return new Pair<Indexable, Persistable>(entry.getKey(), entry.getValue());
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                        e.printStackTrace();
+                    }
+                    return null;
                 }).collect(Collectors.toList()));
             } catch (Exception e) {
+                e.printStackTrace();
                 throw new CacheException(e.getMessage());
             }
         }

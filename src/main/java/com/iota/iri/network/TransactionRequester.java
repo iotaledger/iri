@@ -1,21 +1,21 @@
 package com.iota.iri.network;
 
+import java.security.SecureRandom;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
-import org.apache.commons.lang3.ArrayUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.security.SecureRandom;
-import java.util.*;
-
-/**
- * Created by paul on 3/27/17.
- */
 public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
@@ -142,7 +142,7 @@ public class TransactionRequester {
                     // we remove the transaction from the queue since we got it
                     iterator.remove();
                     // ... dump a log message ...
-                    log.info("Removed existing tx from request list: " + hash);
+                    log.debug("Removed existing tx from request list: " + hash);
                     tangle.publish("rtl %s", hash);
 
                     // ... and continue to the next element in the set

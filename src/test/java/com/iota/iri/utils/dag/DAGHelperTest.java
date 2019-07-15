@@ -1,6 +1,6 @@
 package com.iota.iri.utils.dag;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.HashSet;
 import java.util.LinkedList;

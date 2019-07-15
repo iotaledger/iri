@@ -27,7 +27,7 @@ public interface DbConfig extends Config {
     int getDbCacheSize();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#ROCKS_DB}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAIN_DB}
      *
      * @return {@value DbConfig.Descriptions#MAIN_DB}
      */

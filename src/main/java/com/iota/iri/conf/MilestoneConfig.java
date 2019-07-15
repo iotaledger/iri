@@ -9,21 +9,21 @@ import com.iota.iri.model.Hash;
 public interface MilestoneConfig extends Config {
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#COORDINATOR_ADDRESS}
+     * Default Value: {@link BaseIotaConfig.Defaults#COORDINATOR}
      *
      * @return {@value MilestoneConfig.Descriptions#COORDINATOR}
      */
     Hash getCoordinator();
 
     /**
-     * Default Value: <tt>false</tt>
+     * Default Value: {@value TestnetConfig.Defaults#DONT_VALIDATE_TESTNET_MILESTONE_SIG}
      *
      * @return {@value MilestoneConfig.Descriptions#DONT_VALIDATE_TESTNET_MILESTONE_SIG}
      */
     boolean isDontValidateTestnetMilestoneSig();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#NUM_KEYS_IN_MILESTONE}
+     * Default Value: {@value BaseIotaConfig.Defaults#NUMBER_OF_KEYS_IN_A_MILESTONE}
      * @return {@value Descriptions#NUMBER_OF_KEYS_IN_A_MILESTONE}
      */
     int getNumberOfKeysInMilestone();

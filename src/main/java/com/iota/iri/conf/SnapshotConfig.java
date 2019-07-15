@@ -48,7 +48,7 @@ public interface SnapshotConfig extends Config {
     int getLocalSnapshotsDepth();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#GLOBAL_SNAPSHOT_TIME}
+     * Default Value: {@value BaseIotaConfig.Defaults#SNAPSHOT_TIME}
      *
      * @return {@value SnapshotConfig.Descriptions#SNAPSHOT_TIME}
      */
@@ -62,7 +62,7 @@ public interface SnapshotConfig extends Config {
     String getSnapshotFile();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#SNAPSHOT_SIG_FILE}
+     * Default Value: {@value BaseIotaConfig.Defaults#SNAPSHOT_SIGNATURE_FILE}
      *
      * @return {@value SnapshotConfig.Descriptions#SNAPSHOT_SIGNATURE_FILE}
      */
@@ -83,7 +83,7 @@ public interface SnapshotConfig extends Config {
     String getLocalSnapshotsBasePath();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT}
+     * Default Value: {@value BaseIotaConfig.Defaults#PREVIOUS_EPOCHS_SPENT_ADDRESSES_FILE}
      *
      * @return {@value SnapshotConfig.Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
      */

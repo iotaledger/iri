@@ -10,7 +10,7 @@ public interface APIConfig extends Config {
 
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#API_PORT}
+     * Default Value: {@value BaseIotaConfig.Defaults#PORT}
      *
      * @return {@value APIConfig.Descriptions#PORT}
      */

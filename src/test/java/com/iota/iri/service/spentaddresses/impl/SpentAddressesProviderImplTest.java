@@ -1,9 +1,10 @@
 package com.iota.iri.service.spentaddresses.impl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.any;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -88,8 +89,10 @@ public class SpentAddressesProviderImplTest {
         provider.saveAddressesBatch(addresses);
         
         ArgumentMatcher<List<Pair<Indexable, Persistable>>> matcher = new ArgumentMatcher<List<Pair<Indexable,Persistable>>>() {
-            public boolean matches(Object list) {
-                return ((List) list).size() == 2;
+
+            @Override
+            public boolean matches(List<Pair<Indexable, Persistable>> list) {
+                return list.size() == 2;
             }
         };
         

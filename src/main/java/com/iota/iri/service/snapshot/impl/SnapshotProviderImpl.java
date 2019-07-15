@@ -7,7 +7,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
-import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -21,9 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Creates a data provider for the two {@link Snapshot} instances that are relevant for the node.<br />
- * <br />
- * It provides access to the two relevant {@link Snapshot} instances:<br />
+ * <p>
+ * Creates a data provider for the two {@link Snapshot} instances that are relevant for the node.
+ * </p>
+ * <p>
+ * It provides access to the two relevant {@link Snapshot} instances:
  * <ul>
  *     <li>
  *         the {@link #initialSnapshot} (the starting point of the ledger based on the last global or local Snapshot)
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
  *         milestone)
  *     </li>
  * </ul>
+ * </p>
  */
 public class SnapshotProviderImpl implements SnapshotProvider {
     /**
@@ -57,8 +59,9 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private static final Logger log = LoggerFactory.getLogger(SnapshotProviderImpl.class);
 
     /**
+     * <p>
      * Holds a cached version of the builtin snapshot.
-     *
+     * </p>
      * Note: The builtin snapshot is embedded in the iri.jar and will not change. To speed up tests that need the
      *       snapshot multiple times while creating their own version of the LocalSnapshotManager, we cache the instance
      *       here so they don't have to rebuild it from the scratch every time (massively speeds up the unit tests).
@@ -82,15 +85,18 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private Snapshot latestSnapshot;
 
     /**
-     * This method initializes the instance and registers its dependencies.<br />
-     * <br />
-     * It simply stores the passed in values in their corresponding private properties and loads the snapshots.<br />
-     * <br />
+     * <p>
+     * This method initializes the instance and registers its dependencies.
+     * </p>
+     * <p>
+     * It simply stores the passed in values in their corresponding private properties and loads the snapshots.
+     * </p>
+     * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
      *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
      *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
-     *       <br />
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * </p>
      *       {@code snapshotProvider = new SnapshotProviderImpl().init(...);}
      *
      * @param config Snapshot related configuration parameters
@@ -123,15 +129,18 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * {@inheritDoc}<br />
-     * <br />
+     * {@inheritDoc}
+     * 
+     * <p>
      * It first writes two temporary files, then renames the current files by appending them with a ".bkp" extension and
      * finally renames the temporary files. This mechanism reduces the chances of the files getting corrupted if IRI
      * crashes during the snapshot creation and always leaves the node operator with a set of backup files that can be
-     * renamed to resume node operation prior to the failed snapshot.<br />
-     * <br />
+     * renamed to resume node operation prior to the failed snapshot.
+     * </p>
+     * <p>
      * Note: We create the temporary files in the same folder as the "real" files to allow the operating system to
-     *       perform a "rename" instead of a "copy" operation.<br />
+     *       perform a "rename" instead of a "copy" operation.
+     * </p>
      */
     @Override
     public void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException {
@@ -174,15 +183,18 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     //region SNAPSHOT RELATED UTILITY METHODS //////////////////////////////////////////////////////////////////////////
 
     /**
+     * <p>
      * Loads the snapshots that are provided by this data provider.
-     *
+     * </p>
+     * <p>
      * We first check if a valid local {@link Snapshot} exists by trying to load it. If we fail to load the local
      * {@link Snapshot}, we fall back to the builtin one.
-     *
+     * </p>
+     * <p>
      * After the {@link #initialSnapshot} was successfully loaded we create a copy of it that will act as the "working
      * copy" that will keep track of the latest changes that get applied while the node operates and processes the new
      * confirmed transactions.
-     *
+     * </p>
      * @throws SnapshotException if anything goes wrong while loading the snapshots
      */
     private void loadSnapshots() throws SnapshotException, SpentAddressesException {
@@ -195,11 +207,14 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
+     * <p>
      * Loads the last local snapshot from the disk.
-     *
+     * </p>
+     * <p>
      * This method checks if local snapshot files are available on the hard disk of the node and tries to load them. If
      * no local snapshot files exist or local snapshots are not enabled we simply return null.
-     *
+     * </p>
+     * 
      * @return local snapshot of the node
      * @throws SnapshotException if local snapshot files exist but are malformed
      */
@@ -249,14 +264,17 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
+     * <p>
      * Loads the builtin snapshot (last global snapshot) that is embedded in the jar (if a different path is provided it
      * can also load from the disk).
-     *
+     * </p>
+     * <p>
      * We first verify the integrity of the snapshot files by checking the signature of the files and then construct
      * a {@link Snapshot} from the retrieved information.
-     *
+     * </p>
+     * <p>
      * We add the NULL_HASH as the only solid entry point and an empty list of seen milestones.
-     *
+     * </p>
      * @return the builtin snapshot (last global snapshot) that is embedded in the jar
      * @throws SnapshotException if anything goes wrong while loading the builtin {@link Snapshot}
      */
@@ -312,11 +330,14 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     //region SNAPSHOT STATE RELATED UTILITY METHODS ////////////////////////////////////////////////////////////////////
 
     /**
+     * <p>
      * This method reads the balances from the given file on the disk and creates the corresponding SnapshotState.
-     *
-     * It simply creates the corresponding reader and for the file on the given location and passes it on to
+     * </p>
+     * <p>
+     * It creates the corresponding reader and for the file on the given location and passes it on to
      * {@link #readSnapshotState(BufferedReader)}.
-     *
+     * </p>
+     * 
      * @param snapshotStateFilePath location of the snapshot state file
      * @return the unserialized version of the state file
      * @throws SnapshotException if anything goes wrong while reading the state file
@@ -330,10 +351,13 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
+     * <p>
      * This method reads the balances from the given file in the JAR and creates the corresponding SnapshotState.
-     *
-     * It simply creates the corresponding reader and for the file on the given location in the JAR and passes it on to
+     * </p>
+     * <p>
+     * It creates the corresponding reader and for the file on the given location in the JAR and passes it on to
      * {@link #readSnapshotState(BufferedReader)}.
+     * </p>
      *
      * @param snapshotStateFilePath location of the snapshot state file
      * @return the unserialized version of the state file
@@ -348,11 +372,14 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
+     * <p>
      * This method reads the balances from the given reader.
-     *
+     * </p>
+     * <p>
      * The format of the input is pairs of "address;balance" separated by newlines. It simply reads the input line by
      * line, adding the corresponding values to the map.
-     *
+     * </p>
+     * 
      * @param reader reader allowing us to retrieve the lines of the {@link SnapshotState} file
      * @return the unserialized version of the snapshot state state file
      * @throws IOException if something went wrong while trying to access the file
@@ -375,10 +402,13 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
+     * <p>
      * This method dumps the current state to a file.
-     *
+     * </p>
+     * <p>
      * It is used by local snapshots to persist the in memory states and allow IRI to resume from the local snapshot.
-     *
+     * </p>
+     * 
      * @param snapshotState state object that shall be written
      * @param snapshotPath location of the file that shall be written
      * @throws SnapshotException if anything goes wrong while writing the file
@@ -404,10 +434,13 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     //region SNAPSHOT METADATA RELATED UTILITY METHODS /////////////////////////////////////////////////////////////////
 
     /**
+     * <p>
      * This method retrieves the metadata of a snapshot from a file.
-     *
+     * </p>
+     * <p>
      * It is used by local snapshots to determine the relevant information about the saved snapshot.
-     *
+     * </p>
+     * 
      * @param snapshotMetaDataFile File object with the path to the snapshot metadata file
      * @return SnapshotMetaData instance holding all the relevant details about the snapshot
      * @throws SnapshotException if anything goes wrong while reading and parsing the file
@@ -610,11 +643,13 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
+     * <p>
      * This method writes a file containing a serialized version of the metadata object.
-     *
+     * </p>
+     * <p>
      * It can be used to store the current values and read them on a later point in time. It is used by the local
      * snapshot manager to generate and maintain the snapshot files.
-     *
+     * </p>
      * @param snapshotMetaData metadata object that shall be written
      * @param filePath location of the file that shall be written
      * @throws SnapshotException if anything goes wrong while writing the file

@@ -15,69 +15,76 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Creates a manager that proactively requests the missing "seen milestones" (defined in the local snapshot file).<br />
- * <br />
- * It simply stores the passed in dependencies in their corresponding properties and then makes a copy of the {@code
- * seenMilestones} of the initial snapshot which will consequently be requested.<br />
- * <br />
+ * <p>
+ * Creates a manager that proactively requests the missing "seen milestones" (defined in the local snapshot file).
+ * </p>
+ * <p>
+ * It stores the passed in dependencies in their corresponding properties and then makes a copy of the {@code
+ * seenMilestones} of the initial snapshot which will consequently be requested.
+ * </p>
+ * <p>
  * Once the manager finishes to request all "seen milestones" it will automatically {@link #shutdown()} (when being
- * {@link #start()}ed before).<br />
+ * {@link #start()}ed before).
+ * </p>
  */
 public class SeenMilestonesRetrieverImpl implements SeenMilestonesRetriever {
     /**
-     * Defines how far ahead of the latest solid milestone we are requesting the missing milestones.<br />
+     * Defines how far ahead of the latest solid milestone we are requesting the missing milestones.
      */
     private static final int RETRIEVE_RANGE = 50;
 
     /**
      * Defines the interval (in milliseconds) in which the background worker will check for new milestones to
-     * request.<br />
+     * request.
      */
     private static final int RESCAN_INTERVAL = 1000;
 
     /**
-     * Holds the logger of this class (a rate limited logger than doesn't spam the CLI output).<br />
+     * Holds the logger of this class (a rate limited logger than doesn't spam the CLI output).
      */
     private static final IntervalLogger log = new IntervalLogger(SeenMilestonesRetrieverImpl.class);
 
     /**
-     * Tangle object which acts as a database interface.<br />
+     * Tangle object which acts as a database interface.
      */
     private Tangle tangle;
 
     /**
-     * The snapshot provider which gives us access to the relevant snapshots to calculate our range.<br />
+     * The snapshot provider which gives us access to the relevant snapshots to calculate our range.
      */
     private SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the {@link TransactionRequester} that allows us to issue requests for the missing
-     * milestones.<br />
+     * milestones.
      */
     private TransactionRequester transactionRequester;
 
     /**
-     * Holds a reference to the manager of the background worker.<br />
+     * Holds a reference to the manager of the background worker.
      */
     private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
             "Seen Milestones Retriever", log.delegate());
 
     /**
-     * The list of seen milestones that need to be requested.<br />
+     * The list of seen milestones that need to be requested.
      */
     private Map<Hash, Integer> seenMilestones;
 
     /**
-     * This method initializes the instance and registers its dependencies.<br />
-     * <br />
-     * It simply stores the passed in values in their corresponding private properties and creates a working copy of the
-     * seen milestones (which will get processed by the background worker).<br />
-     * <br />
+     * <p>
+     * This method initializes the instance and registers its dependencies.
+     * </p>
+     * <p>
+     * It stores the passed in values in their corresponding private properties and creates a working copy of the
+     * seen milestones (which will get processed by the background worker).
+     * </p>
+     * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
      *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
      *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
-     *       <br />
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * </p>
      *       {@code seenMilestonesRetriever = new SeenMilestonesRetrieverImpl().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
@@ -99,16 +106,20 @@ public class SeenMilestonesRetrieverImpl implements SeenMilestonesRetriever {
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * It simply iterates over the set of seenMilestones and requests them if they are in the range of
      * [genesisMilestone ... latestSolidMilestone + RETRIEVE_RANGE]. Milestones that are older than this range get
      * deleted because they are irrelevant for the ledger state and milestones that are younger than this range get
-     * ignored to be processed later.<br />
-     * <br />
+     * ignored to be processed later.
+     * </p>
+     * <p>
      * This gives the node enough resources to solidify the next milestones without getting its requests queue filled
-     * with milestone requests that will become relevant only much later (this achieves a linear sync speed).<br />
-     * <br />
-     * Note: If no more seen milestones have to be requested, this manager shuts down automatically.<br />
+     * with milestone requests that will become relevant only much later (this achieves a linear sync speed).
+     * </p>
+     * <p>
+     * Note: If no more seen milestones have to be requested, this manager shuts down automatically.
+     * </p>
      */
     @Override
     public void retrieveSeenMilestones() {

@@ -1,5 +1,13 @@
 package com.iota.iri.service.spentaddresses.impl;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
@@ -13,13 +21,6 @@ import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
-import java.io.*;
-import java.util.Collection;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  *
  * Implementation of <tt>SpentAddressesProvider</tt>.
@@ -28,7 +29,6 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {
-    private static final Logger log = LoggerFactory.getLogger(SpentAddressesProviderImpl.class);
 
     private SnapshotConfig config;
 
@@ -49,8 +49,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
             this.provider = provider;
             this.provider.init();
             readPreviousEpochsSpentAddresses();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new SpentAddressesException("There is a problem with accessing stored spent addresses", e);
         }
         return this;
@@ -101,7 +100,6 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         try {
             // Its bytes are always new byte[0], therefore identical in storage
             SpentAddress spentAddressModel = new SpentAddress();
-
             provider.saveBatch(addressHash
                 .stream()
                 .map(address -> new Pair<Indexable, Persistable>(address, spentAddressModel))
@@ -110,5 +108,14 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
+    }
+
+    @Override
+    public List<Hash> getAllAddresses() {
+        List<Hash> addresses = new ArrayList<>();
+        for (byte[] bytes : provider.loadAllKeysFromTable(SpentAddress.class)) {
+            addresses.add(HashFactory.ADDRESS.create(bytes));
+        }
+        return addresses;
     }
 }

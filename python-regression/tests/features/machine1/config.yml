@@ -12,6 +12,8 @@ defaults: &api_tests_config_files
   '--testnet',
   'true'
   ]
+  java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
+
 seeds: # For internal use by the regression system. 
     - SEED
     - SIID

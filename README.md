@@ -27,7 +27,7 @@ The IOTA network is an independent peer-to-peer network with a first-user, frien
 - As a 'friend-to-friend' network, you have the privilege of joining new users into the network through your node
 by adding them to your approved neighbors list — ensuring that you both broadcast to them and also receive their broadcasts.
 
-You can **find neighbors** on the #nodesharing channel of our [[Discord server]](https://discord.gg/7Gu2mG5).
+You can **find neighbors** on the #nodesharing channel of our [[Discord server]](https://discord.iota.org/).
 
 Everyone will be welcoming and very happy to help you get connected.
 If you want to get tokens for your testcase, please just ask in one of the communication channels.

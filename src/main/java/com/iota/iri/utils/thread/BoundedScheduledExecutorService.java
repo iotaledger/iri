@@ -8,50 +8,58 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * <p>
  * This class represents a {@link SilentScheduledExecutorService} that accepts only a pre-defined amount of tasks that
  * can be queued or executed at the same time. All tasks exceeding the defined limit will be ignored (instead of being
  * queued) by either throwing a {@link RejectedExecutionException} or returning {@code null} depending on the method we
- * call (non-silent vs silent).<br />
- * <br />
+ * call (non-silent vs silent).
+ * </p>
+ * <p>
  * Whenever a non-recurring task finishes (or a recurring one is cancelled through its {@link Future}), it makes space
  * for a new task. This is useful for classes like the {@link com.iota.iri.utils.log.interval.IntervalLogger} that want
- * to delay an action if and only if there is no other delayed action queued already.<br />
- * <br />
+ * to delay an action if and only if there is no other delayed action queued already.
+ * </p>
+ * <p>
  * Note: In contrast to other existing implementations like the SizedScheduledExecutorService of the apache package,
  *       this class is thread-safe and will only allow to spawn and queue the exact amount of tasks defined during its
- *       creation (since it does not rely on approximate numbers like the queue size).<br />
+ *       creation (since it does not rely on approximate numbers like the queue size).
+ * </p>
  */
 public class BoundedScheduledExecutorService implements SilentScheduledExecutorService, ReportingExecutorService {
     /**
-     * Holds the maximum amount of tasks that can be submitted for execution.<br />
+     * Holds the maximum amount of tasks that can be submitted for execution.
      */
     private final int capacity;
 
     /**
-     * Holds the underlying {@link ScheduledExecutorService} that manages the Threads in the background.<br />
+     * Holds the underlying {@link ScheduledExecutorService} that manages the Threads in the background.
      */
     private final ScheduledExecutorService delegate;
 
     /**
      * Holds a set of scheduled tasks tasks that are going to be executed by this
-     * {@link ScheduledExecutorService}.<br />
+     * {@link ScheduledExecutorService}.
      */
     private final Set<TaskDetails> scheduledTasks = ConcurrentHashMap.newKeySet();
 
     /**
-     * Thread-safe counter that is used to determine how many tasks were exactly scheduled already.<br />
-     * <br />
-     * Note: Whenever a task finishes, we clean up the used resources and make space for new tasks.<br />
+     * Thread-safe counter that is used to determine how many tasks were exactly scheduled already.
+     * <p>
+     * Note: Whenever a task finishes, we clean up the used resources and make space for new tasks.
+     * </p>
      */
     private AtomicInteger scheduledTasksCounter = new AtomicInteger(0);
 
     /**
+     * <p>
      * Creates an executor service that that accepts only a pre-defined amount of tasks that can be queued and run at
-     * the same time.<br />
-     * <br />
+     * the same time.
+     * </p>
+     * <p>
      * All tasks exceeding the defined limit will be ignored (instead of being queued) by either throwing a
      * {@link RejectedExecutionException} or returning {@code null} depending on the method we call (non-silent vs
-     * silent).<br />
+     * silent).
+     * </p>
      *
      * @param capacity the amount of tasks that can be scheduled simultaneously
      */
@@ -65,8 +73,10 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
-     * It simply adds the task to the internal set of scheduled tasks.<br />
+     * 
+     * <p>
+     * It simply adds the task to the internal set of scheduled tasks.
+     * </p>
      */
     @Override
     public void onScheduleTask(TaskDetails taskDetails) {
@@ -90,9 +100,11 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * It frees the reserved resources by decrementing the {@link #scheduledTasksCounter} and removing the task from the
-     * {@link #scheduledTasks} set.<br />
+     * {@link #scheduledTasks} set.
+     * </p>
      */
     @Override
     public void onCompleteTask(TaskDetails taskDetails, Throwable error) {
@@ -106,10 +118,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link ScheduledFuture} returned by this method allows to cancel jobs without their unwinding
      *       logic being executed, we wrap the returned {@link ScheduledFuture} AND the {@link Runnable} to correctly
-     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.<br />
+     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.
+     * </p>
      */
     @Override
     public ScheduledFuture<?> silentSchedule(Runnable task, long delay, TimeUnit unit) {
@@ -124,10 +138,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link ScheduledFuture} returned by this method allows to cancel jobs without their unwinding
      *       logic being executed, we wrap the returned {@link ScheduledFuture} AND the {@link Callable} to correctly
-     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.<br />
+     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.
+     * </p>
      */
     @Override
     public <V> ScheduledFuture<V> silentSchedule(Callable<V> task, long delay, TimeUnit unit) {
@@ -142,10 +158,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link ScheduledFuture} returned by this method allows to cancel jobs without their unwinding
      *       logic being executed, we wrap the returned {@link ScheduledFuture} AND the {@link Runnable} to correctly
-     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.<br />
+     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.
+     * </p>
      */
     @Override
     public ScheduledFuture<?> silentScheduleAtFixedRate(Runnable task, long initialDelay, long period,
@@ -163,10 +181,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link ScheduledFuture} returned by this method allows to cancel jobs without their unwinding
      *       logic being executed, we wrap the returned {@link ScheduledFuture} AND the {@link Runnable} to correctly
-     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.<br />
+     *       free the resources if its {@link ScheduledFuture#cancel(boolean)} method is called.
+     * </p>
      */
     @Override
     public ScheduledFuture<?> silentScheduleWithFixedDelay(Runnable task, long initialDelay, long delay,
@@ -184,10 +204,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link Future} returned by this method allows to cancel jobs without their unwinding logic being
      *       executed, we wrap the returned {@link Future} AND the {@link Callable} to correctly free the resources if
-     *       its {@link Future#cancel(boolean)} method is called.<br />
+     *       its {@link Future#cancel(boolean)} method is called.
+     * </p>
      */
     @Override
     public <T> Future<T> silentSubmit(Callable<T> task) {
@@ -200,10 +222,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link Future} returned by this method allows to cancel jobs without their unwinding logic being
      *       executed, we wrap the returned {@link Future} AND the {@link Runnable} to correctly free the resources if
-     *       its {@link Future#cancel(boolean)} method is called.<br />
+     *       its {@link Future#cancel(boolean)} method is called.
+     * </p>
      */
     @Override
     public Future<?> silentSubmit(Runnable task) {
@@ -216,10 +240,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link Future} returned by this method allows to cancel jobs without their unwinding logic being
      *       executed, we wrap the returned {@link Future} AND the {@link Runnable} to correctly free the resources if
-     *       its {@link Future#cancel(boolean)} method is called.<br />
+     *       its {@link Future#cancel(boolean)} method is called.
+     * </p>
      */
     @Override
     public <T> Future<T> silentSubmit(Runnable task, T result) {
@@ -232,10 +258,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link Future}s will all be finished (and cannot be cancelled anymore) when the underlying method
      *       returns, we only wrap the {@link Callable}s to correctly free the resources and omit wrapping the returned
-     *       {@link Future}s.<br />
+     *       {@link Future}s.
+     * </p>
      */
     @Override
     public <T> List<Future<T>> silentInvokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
@@ -244,10 +272,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link Future}s will all be finished (and cannot be cancelled anymore) when the underlying method
      *       returns, we only wrap the {@link Callable}s to correctly free the resources and omit wrapping the returned
-     *       {@link Future}s.<br />
+     *       {@link Future}s.
+     * </p></p>
      */
     @Override
     public <T> List<Future<T>> silentInvokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
@@ -267,9 +297,11 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link Future}s are not passed to the caller, we only wrap the {@link Callable}s to correctly
-     *       free the resources and omit wrapping the {@link Future}s as well.<br />
+     *       free the resources and omit wrapping the {@link Future}s as well.
+     * </p>      
      */
     @Override
     public <T> T silentInvokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException,
@@ -280,9 +312,11 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since the {@link Future}s are not passed to the caller, we only wrap the {@link Callable}s to correctly
-     *       free the resources and omit wrapping the related {@link Future}s as well.<br />
+     *       free the resources and omit wrapping the related {@link Future}s as well.
+     * </p>
      */
     @Override
     public <T> T silentInvokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws
@@ -302,9 +336,11 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Note: Since there is no {@link Future} passed to the caller, we only wrap the {@link Runnable} to correctly free
-     *       the resources.<br />
+     *       the resources.
+     * </p>
      */
     @Override
     public void silentExecute(Runnable task) {
@@ -387,12 +423,14 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * In addition to delegating the method call to the internal {@link ScheduledExecutorService}, we call the cancel
      * logic for recurring tasks because shutdown prevents them from firing again. If these "cancelled" jobs are
      * scheduled for execution (and not running right now), we also call their
      * {@link #onCompleteTask(TaskDetails, Throwable)} callback to "report" that hey have finished (otherwise this will
-     * be fired inside the wrapped task).<br />
+     * be fired inside the wrapped task).
+     * </p>
      */
     @Override
     public void shutdown() {
@@ -411,11 +449,13 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * {@inheritDoc}
-     * <br />
+     * 
+     * <p>
      * Before delegating the method call to the internal {@link ScheduledExecutorService}, we call the
      * {@link #onCancelTask(TaskDetails)} callback for all scheduled tasks and fire the
      * {@link #onCompleteTask(TaskDetails, Throwable)} callback for all tasks that are not being executed right now
-     * (otherwise this will be fired inside the wrapped task).<br />
+     * (otherwise this will be fired inside the wrapped task).
+     * </p>
      */
     @Override
     public List<Runnable> shutdownNow() {
@@ -453,7 +493,7 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     /**
      * This interface is used to generically describe the lambda that is used to create the unwrapped future from the
-     * delegated {@link ScheduledExecutorService} by passing in the wrapped command.<br />
+     * delegated {@link ScheduledExecutorService} by passing in the wrapped command.
      *
      * @param <RESULT> the kind of future returned by this factory ({@link ScheduledFuture} vs {@link Future})
      * @param <ARGUMENT> type of the wrapped command that is passed in ({@link Runnable} vs {@link Callable})
@@ -473,30 +513,36 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     /**
      * This is a wrapper for the {@link Future}s returned by the {@link ScheduledExecutorService} that allows us to
      * override the behaviour of the {@link #cancel(boolean)} method (to be able to free the resources of a task that
-     * gets cancelled without being executed).<br />
+     * gets cancelled without being executed).
      *
      * @param <V> the type of the result returned by the task that is the origin of this {@link Future}.
      */
     private class WrappedFuture<V> implements Future<V> {
         /**
-         * Holds the metadata of the task that this {@link Future} belongs to.<br />
+         * Holds the metadata of the task that this {@link Future} belongs to.
          */
         protected final TaskDetails taskDetails;
 
         /**
-         * "Original" unwrapped {@link Future} that is returned by the delegated {@link ScheduledExecutorService}.<br />
-         * <br />
+         * <p>
+         * "Original" unwrapped {@link Future} that is returned by the delegated {@link ScheduledExecutorService}.
+         * </p>
+         * <p>
          * Note: All methods except the {@link #cancel(boolean)} are getting passed through without any
-         *       modifications.<br />
+         *       modifications.
+         * </p>
          */
         private Future<V> delegate;
 
         /**
+         * <p>
          * This creates a {@link WrappedFuture} that cleans up the reserved resources when it is cancelled while the
-         * task is still pending.<br />
-         * <br />
+         * task is still pending.
+         * </p>
+         * <p>
          * We do not hand in the {@link #delegate} in the constructor because we need to populate this instance to the
-         * wrapped task before we "launch" the processing of the task (see {@link #delegate(Future)}).<br />
+         * wrapped task before we "launch" the processing of the task (see {@link #delegate(Future)}).
+         * </p>
          *
          * @param taskDetails metadata holding the relevant information of the task
          */
@@ -505,13 +551,16 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
         }
 
         /**
-         * This method stores the delegated {@link Future} in its internal property.<br />
-         * <br />
+         * <p>
+         * This method stores the delegated {@link Future} in its internal property.
+         * </p>
+         * <p>
          * After the delegated {@link Future} is created, the underlying {@link ScheduledExecutorService} starts
          * processing the task. To be able to "address" this wrapped future before we start processing the task (the
          * wrapped task needs to access it), we populate this lazy (see
          * {@link #wrapFuture(FutureFactory, Runnable, TaskDetails)} and
-         * {@link #wrapFuture(FutureFactory, Callable, TaskDetails)}).<br />
+         * {@link #wrapFuture(FutureFactory, Callable, TaskDetails)}).
+         * </p>
          *
          * @param delegatedFuture the "original" future that handles the logic in the background
          * @return the instance itself (since we want to return the {@link WrappedFuture} after launching the underlying
@@ -524,10 +573,13 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
         }
 
         /**
-         * This method returns the delegated future.<br />
-         * <br />
+         * <p>
+         * This method returns the delegated future.
+         * </p>
+         * <p>
          * We define a getter for this property to be able to override it in the extending class and achieve a
-         * polymorphic behavior.<br />
+         * polymorphic behavior.
+         * </p>
          *
          * @return the original "unwrapped" {@link Future} that is used as a delegate for the methods of this class
          */
@@ -537,10 +589,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
         /**
          * {@inheritDoc}
-         * <br />
+         * 
+         * <p>
          * This method fires the {@link #onCancelTask(TaskDetails)} if the future has not been cancelled before.
          * Afterwards it also fires the {@link #onCompleteTask(TaskDetails, Throwable)} callback if the task is not
-         * running right now (otherwise this will be fired inside the wrapped task).<br />
+         * running right now (otherwise this will be fired inside the wrapped task).
+         * </p>
          */
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
@@ -579,26 +633,32 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     /**
      * This is a wrapper for the {@link ScheduledFuture}s returned by the {@link ScheduledExecutorService} that allows
      * us to override the behaviour of the {@link #cancel(boolean)} method (to be able to free the resources of a task
-     * that gets cancelled without being executed).<br />
+     * that gets cancelled without being executed).
      *
      * @param <V> the type of the result returned by the task that is the origin of this {@link ScheduledFuture}.
      */
     private class WrappedScheduledFuture<V> extends WrappedFuture<V> implements ScheduledFuture<V> {
         /**
+         * <p>
          * "Original" unwrapped {@link ScheduledFuture} that is returned by the delegated
-         * {@link ScheduledExecutorService}.<br />
-         * <br />
+         * {@link ScheduledExecutorService}.
+         * </p>
+         * <p>
          * Note: All methods except the {@link #cancel(boolean)} are getting passed through without any modifications.
+         * </p>
          */
         private ScheduledFuture<V> delegate;
 
         /**
+         * <p>
          * This creates a {@link ScheduledFuture} that cleans up the reserved resources when it is cancelled while the
-         * task is still pending.<br />
-         * <br />
+         * task is still pending.
+         * </p>
+         * <p>
          * We do not hand in the {@link #delegate} in the constructor because we need to populate this instance to the
          * wrapped task before we "launch" the processing of the task (see {@link #delegate(Future)}).
-         *
+         * </p>
+         * 
          * @param taskDetails metadata holding the relevant information of the task
          */
         private WrappedScheduledFuture(TaskDetails taskDetails) {
@@ -606,12 +666,15 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
         }
 
         /**
-         * This method stores the delegated {@link ScheduledFuture} in its internal property.<br />
-         * <br />
+         * <p>
+         * This method stores the delegated {@link ScheduledFuture} in its internal property.
+         * </p>
+         * <p>
          * After the delegated {@link ScheduledFuture} is created, the underlying {@link ScheduledExecutorService}
          * starts processing the task. To be able to "address" this wrapped future before we start processing the task
          * (the wrapped task needs to access it), we populate this lazy (see
-         * {@link #wrapScheduledFuture(FutureFactory, Runnable, TaskDetails)}).<br />
+         * {@link #wrapScheduledFuture(FutureFactory, Runnable, TaskDetails)}).
+         * </p>
          *
          * @param delegatedFuture the "original" future that handles the logic in the background
          * @return the instance itself (since we want to return the {@link WrappedFuture} immediately after launching
@@ -640,10 +703,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
         /**
          * {@inheritDoc}
-         * <br />
+         * 
+         * <p>
          * This method fires the {@link #onCancelTask(TaskDetails)} if the future has not been cancelled before.
          * Afterwards it also fires the {@link #onCompleteTask(TaskDetails, Throwable)} callback if the task is not
-         * running right now (otherwise this will be fired inside the wrapped task).<br />
+         * running right now (otherwise this will be fired inside the wrapped task).
+         * </p>
          */
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
@@ -665,9 +730,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
-     * This method wraps the passed in task to automatically call the callbacks for its lifecycle.<br />
-     * <br />
-     * The lifecycle methods are for example used to manage the resources that are reserved for this task.<br />
+     * <p>
+     * This method wraps the passed in task to automatically call the callbacks for its lifecycle.
+     * </p>
+     * <p>
+     * The lifecycle methods are for example used to manage the resources that are reserved for this task.
+     * </p>
      *
      * @param task the raw task that shall be wrapped with the resource freeing logic
      * @param taskDetails metadata holding the relevant information of the task
@@ -709,11 +777,14 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
+     * <p>
      * This method does the same as {@link #wrapTask(Callable, TaskDetails, Future)} but defaults to a task that is not
-     * associated to a user accessible {@link Future}.<br />
-     * <br />
+     * associated to a user accessible {@link Future}.
+     * </p>
+     * <p>
      * This method is used whenever the {@link Future} is not returned by the underlying method so we don't need to wrap
-     * it.<br />
+     * it.
+     * </p>
      *
      * @param task the raw task that shall be wrapped with the resource freeing logic
      * @param taskDetails metadata holding the relevant information of the task
@@ -725,9 +796,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
-     * This method wraps the passed in task to automatically call the callbacks for its lifecycle.<br />
-     * <br />
-     * The lifecycle methods are for example used to manage the resources that are reserved for this task.<br />
+     * <p>
+     * This method wraps the passed in task to automatically call the callbacks for its lifecycle.
+     * </p>
+     * <p>
+     * The lifecycle methods are for example used to manage the resources that are reserved for this task.
+     * </p>
      *
      * @param task the raw task that shall be wrapped with the resource freeing logic
      * @param taskDetails metadata holding the relevant information of the task
@@ -767,11 +841,14 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
+     * <p>
      * This method does the same as {@link #wrapTask(Runnable, TaskDetails, Future)} but defaults to a task that is not
-     * associated to a user accessible {@link Future}.<br />
-     * <br />
+     * associated to a user accessible {@link Future}.
+     * </p>
+     * <p>
      * This method is used whenever the {@link Future} is not returned by the underlying method so we don't need to wrap
-     * it.<br />
+     * it.
+     * </p>
      *
      * @param task the raw task that shall be wrapped with the resource freeing logic
      * @param taskDetails metadata holding the relevant information of the task
@@ -782,10 +859,13 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
-     * This is a utility method that wraps the task and the resulting {@link Future} in a single call.<br />
-     * <br />
+     * <p>
+     * This is a utility method that wraps the task and the resulting {@link Future} in a single call.
+     * </p>
+     * <p>
      * It creates the {@link WrappedFuture} and the wrapped task and starts the execution of the task by delegating
-     * the launch through the {@link FutureFactory}.<br />
+     * the launch through the {@link FutureFactory}.
+     * </p>
      *
      * @param futureFactory the lambda that returns the original "unwrapped" future from the wrapped task
      * @param task the task that shall be wrapped to clean up its reserved resources upon completion
@@ -803,10 +883,13 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
-     * This is a utility method that wraps the task and the resulting {@link Future} in a single call.<br />
-     * <br />
+     * <p>
+     * This is a utility method that wraps the task and the resulting {@link Future} in a single call.
+     * </p>
+     * <p>
      * It creates the {@link WrappedFuture} and the wrapped task and starts the execution of the task by delegating
-     * the launch through the {@link FutureFactory}.<br />
+     * the launch through the {@link FutureFactory}.
+     * </p>
      *
      * @param futureFactory the lambda that returns the original "unwrapped" future from the wrapped task
      * @param task the task that shall be wrapped to clean up its reserved resources upon completion
@@ -824,10 +907,13 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
-     * This is a utility method that wraps the task and the resulting {@link ScheduledFuture} in a single call.<br />
-     * <br />
+     * <p>
+     * This is a utility method that wraps the task and the resulting {@link ScheduledFuture} in a single call.
+     * </p>
+     * <p>
      * It creates the {@link WrappedScheduledFuture} and the wrapped task and starts the execution of the task by
-     * delegating the launch through the {@link FutureFactory}.<br />
+     * delegating the launch through the {@link FutureFactory}.
+     * </p>
      *
      * @param futureFactory the lambda that returns the original "unwrapped" future from the wrapped task
      * @param task the task that shall be wrapped to clean up its reserved resources upon completion
@@ -845,10 +931,13 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
-     * This is a utility method that wraps the task and the resulting {@link ScheduledFuture} in a single call.<br />
-     * <br />
+     * <p>
+     * This is a utility method that wraps the task and the resulting {@link ScheduledFuture} in a single call.
+     * </p>
+     * <p>
      * It creates the {@link WrappedScheduledFuture} and the wrapped task and starts the execution of the task by
-     * delegating the launch through the {@link FutureFactory}.<br />
+     * delegating the launch through the {@link FutureFactory}.
+     * </p>
      *
      * @param futureFactory the lambda that returns the original "unwrapped" future from the wrapped task
      * @param task the task that shall be wrapped to clean up its reserved resources upon completion
@@ -866,11 +955,14 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
+     * <p>
      * This is a utility method that wraps a {@link Collection} of {@link Callable}s to make them free their resources
-     * upon completion.<br />
-     * <br />
+     * upon completion.
+     * </p>
+     * <p>
      * It simply iterates over the tasks and wraps them one by one by calling
-     * {@link #wrapTask(Callable, TaskDetails)}.<br />
+     * {@link #wrapTask(Callable, TaskDetails)}.
+     * </p>
      *
      * @param tasks list of jobs that shall be wrapped
      * @param <T> the type of the values returned by the {@link Callable}s
@@ -888,11 +980,14 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
+     * <p>
      * This method checks if we have enough resources to schedule the given amount of tasks and reserves the space if
-     * the check is successful.<br />
-     * <br />
+     * the check is successful.
+     * </p>
+     * <p>
      * The reserved resources will be freed again once the tasks finish their execution or when they are cancelled
-     * through their corresponding {@link Future}.<br />
+     * through their corresponding {@link Future}.
+     * </p>
      *
      * @param requestedJobCount the amount of tasks that shall be scheduled
      * @return true if we could reserve the given space and false otherwise
@@ -908,11 +1003,14 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     /**
+     * <p>
      * This method is a utility method that simply checks the passed in object for being {@code null} and throws a
-     * {@link RejectedExecutionException} if it is.<br />
-     * <br />
+     * {@link RejectedExecutionException} if it is.
+     * </p>
+     * <p>
      * It is used to turn the silent methods into non-silent ones and conform with the {@link ScheduledExecutorService}
-     * interface.<br />
+     * interface.
+     * </p>
      *
      * @param result the object that shall be checked for being null (the result of a "silent" method call)
      * @param <V> the type of the result

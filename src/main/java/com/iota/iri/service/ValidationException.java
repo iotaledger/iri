@@ -1,6 +1,6 @@
 package com.iota.iri.service;
 
-public class ValidationException extends Exception {
+public class ValidationException extends RuntimeException {
 
     /**
      * Initializes a new instance of the ValidationException.

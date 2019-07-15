@@ -21,14 +21,17 @@ public interface TipSelConfig extends Config {
      */
     double getAlpha();
 
-    /*
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#TIP_SELECTION_TIMEOUT_SEC}
      *
-     * @return Descriptions#TIP_SELECTION_TIMEOUT_SEC
+     * @return {@value Descriptions#TIP_SELECTION_TIMEOUT_SEC}
      */
     int getTipSelectionTimeoutSec();
 
     /**
-     * @return Descriptions#BELOW_MAX_DEPTH_TRANSACTION_LIMIT
+     *  Default Value: {@value BaseIotaConfig.Defaults#BELOW_MAX_DEPTH_TRANSACTION_LIMIT}
+     *
+     * @return {@value Descriptions#BELOW_MAX_DEPTH_TRANSACTION_LIMIT}
      */
     int getBelowMaxDepthTransactionLimit();
 

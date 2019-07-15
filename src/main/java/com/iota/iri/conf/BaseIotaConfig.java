@@ -95,7 +95,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
     protected int tipSelectionTimeoutSec = Defaults.TIP_SELECTION_TIMEOUT_SEC;
-    private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
+    private int maxAnalyzedTransactions = Defaults.BELOW_MAX_DEPTH_TRANSACTION_LIMIT;
 
     //Tip Solidification
     protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
@@ -997,7 +997,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
                         "/previousEpochsSpentAddresses3.txt";
         long GLOBAL_SNAPSHOT_TIME = 1554904800;
         int MILESTONE_START_INDEX = 1050000;
-        int MAX_ANALYZED_TXS = 20_000;
+        int BELOW_MAX_DEPTH_TRANSACTION_LIMIT = 20_000;
 
     }
 }

@@ -31,20 +31,21 @@ public interface APIConfig extends Config {
      */
     List<String> getRemoteLimitApi();
 
-   /**
+    /**
+     * Default Value: {@link BaseIotaConfig.Defaults#REMOTE_TRUSTED_API_HOSTS}
      * @return {@value Descriptions#REMOTE_TRUSTED_API_HOSTS}
      */
     List<InetAddress> getRemoteTrustedApiHosts();
 
     /**
-     * Default Value: {@link BaseIotaConfig.Defaults#MAX_FIND_TRANSACTIONS}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_FIND_TRANSACTIONS}
      *
      * @return {@value APIConfig.Descriptions#MAX_FIND_TRANSACTIONS}
      */
     int getMaxFindTransactions();
 
     /**
-     * Default Value: {@link BaseIotaConfig.Defaults#MAX_REQUESTS_LIST}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_REQUESTS_LIST}
      *
      * @return {@value APIConfig.Descriptions#MAX_REQUESTS_LIST}
      */

@@ -2,13 +2,17 @@
 
 Run the official iotaledger/iri container, passing the mandatory -p option:
 
-```docker run iotaledger/iri:vX.X.X-RELEASE -p 14265```
+```sh
+docker run iotaledger/iri:vX.X.X-RELEASE -p 14265
+```
 
-This will get your a running IRI with its API listening on port 14265, no neighbours and an empty database. The IRI Docker container by default expects data at /iri/data. Use the `-v` option of the `docker run` command to mount volumes so to have persistent data. You can also pass more command line options to the docker run command and those will be passed to IRI.
+This will get your a running IRI with its API listening on port 14265, no neighbours and an empty database. The IRI Docker container by default expects data at `/iri/data`. Use the `-v` option of the `docker run` command to mount volumes so to have persistent data. You can also pass more command line options to the docker run command and those will be passed to IRI.
 
 If you want to use a iri.ini file with the docker container, supposing it's stored under /path/to/conf/iri.ini on your docker host, then pass `-v /path/to/conf:/iri/conf` and add -c /iri/conf/iri.ini as docker run arguments. So for example the `docker run` command above would become:
 
-```docker run -v /path/to/conf:/iri/conf -v /path/to/data:/iri/data iotaledger/iri:vX.X.X-RELEASE -p 14265 -c /iri/conf/iri.ini```
+```sh
+docker run -v /path/to/conf:/iri/conf -v /path/to/data:/iri/data iotaledger/iri:vX.X.X-RELEASE -p 14265 -c /iri/conf/iri.ini
+```
 
 Please refer to the IRI documentation for further command line options and iri.ini options.
 
@@ -55,7 +59,7 @@ It is important to note that other than --remote and --remote-limit-api "$DOCKER
 **At the time of writing, IRI requires -p to be passed either via INI or via command line. The entrypoint of this docker container does not do that for you.**
 
 ### Systemd Unit
-Here is a systemd unit example you can use with this Docker container. This is just an example and customisation is possible and recommended. In this example the docker network iri must be created and the paths /mnt/iri/conf and /mnt/iri/data are used on the docker host to serve respectively the neighbors file and the data directory. No INI files are used in this example, instead options are passed via command line options, such as --testnet and --zmq-enabled.
+Here is a systemd unit example you can use with this Docker container. This is just an example and customisation is possible and recommended. In this example the paths `/mnt/iri/conf` and `/mnt/iri/data` are used on the docker host to serve respectively the neighbors file and the data directory. No INI files are used in this example, instead options are passed via command line options, such as `--testnet true` and `--zmq-enabled false`.
 
 ```
 [Unit]
@@ -70,12 +74,11 @@ ExecStartPre=-/usr/bin/docker rm %n
 ExecStart=/usr/bin/docker run \
   --name %n \
   --hostname iri \
-  --net=iri \
+  --user=1000 \
+  --net=host \
+  --cap-drop=ALL
   -v /mnt/iri/conf:/iri/conf \
   -v /mnt/iri/data:/iri/data \
-  -p 14265:14265 \
-  -p 15600:15600 \
-  -p 14600:14600/udp  \
   -e DOCKER_IRI_REMOTE=true \
   iotaledger/iri:vX.X.X-RELEASE \
   --port 14265 \
@@ -88,3 +91,11 @@ ExecReload=/usr/bin/docker restart %n
 [Install]
 WantedBy=multi-user.target
 ```
+
+## Security Considerations
+
+It is highly recommended to run IRI with an unprivileged user and not as user `root`.
+
+An unprivileged user can be created on the host and the UID passed to the docker command (e.g. `--user 1001`). Directories that are mounted to the container from the host should be owned by this user.
+
+In addition the `--cap-drop=ALL` passed to docker restricts process capabilities and adheres to the principle of least privilege. See https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities for more information.

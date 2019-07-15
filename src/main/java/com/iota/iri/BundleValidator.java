@@ -3,6 +3,7 @@ package com.iota.iri;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.*;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
@@ -46,6 +47,7 @@ public class BundleValidator {
      * again.
      *</p>
      * @param tangle used to fetch the bundle's transactions from the persistence layer
+     * @param initialSnapshot the initial snapshot that defines the genesis for our ledger state
      * @param tailHash the hash of the last transaction in a bundle.
      * @return A list of transactions of the bundle contained in another list. If the bundle is valid then the tail
      * transaction's {@link TransactionViewModel#getValidity()} will return 1, else
@@ -53,7 +55,8 @@ public class BundleValidator {
      * If the bundle is invalid then an empty list will be returned.
      * @throws Exception if a persistence error occured
      */
-    public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash tailHash) throws Exception {
+    public List<List<TransactionViewModel>> validate(Tangle tangle, Snapshot initialSnapshot, Hash tailHash) throws Exception {
+
         TransactionViewModel tail = TransactionViewModel.fromHash(tangle, tailHash);
         if (tail.getCurrentIndex() != 0 || tail.getValidity() == -1) {
             return Collections.EMPTY_LIST;
@@ -93,12 +96,12 @@ public class BundleValidator {
                             || ((bundleValue = Math.addExact(bundleValue, transactionViewModel.value())) < -TransactionViewModel.SUPPLY
                             || bundleValue > TransactionViewModel.SUPPLY)
                             ) {
-                        instanceTransactionViewModels.get(0).setValidity(tangle, -1);
+                        instanceTransactionViewModels.get(0).setValidity(tangle, initialSnapshot, -1);
                         break;
                     }
                     //we lose the last trit by converting from bytes
                     if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
-                        instanceTransactionViewModels.get(0).setValidity(tangle, -1);
+                        instanceTransactionViewModels.get(0).setValidity(tangle, initialSnapshot, -1);
                         break;
                     }
 
@@ -145,7 +148,7 @@ public class BundleValidator {
                                             addressInstance.squeeze(addressTrits, 0, addressTrits.length);
                                             //signature verification
                                             if (! Arrays.equals(transactionViewModel.getAddressHash().trits(), addressTrits)) {
-                                                instanceTransactionViewModels.get(0).setValidity(tangle, -1);
+                                                instanceTransactionViewModels.get(0).setValidity(tangle, initialSnapshot, -1);
                                                 break MAIN_LOOP;
                                             }
                                         } else {
@@ -153,12 +156,12 @@ public class BundleValidator {
                                         }
                                     }
                                     //should only be reached after the above for loop is done
-                                    instanceTransactionViewModels.get(0).setValidity(tangle, 1);
+                                    instanceTransactionViewModels.get(0).setValidity(tangle, initialSnapshot, 1);
                                     transactions.add(instanceTransactionViewModels);
                                 }
                                 //bundle hash verification failed
                                 else {
-                                    instanceTransactionViewModels.get(0).setValidity(tangle, -1);
+                                    instanceTransactionViewModels.get(0).setValidity(tangle, initialSnapshot, -1);
                                 }
                             }
                             //bundle validity status is known
@@ -168,7 +171,7 @@ public class BundleValidator {
                         }
                         //total bundle value does not sum to 0
                         else {
-                            instanceTransactionViewModels.get(0).setValidity(tangle, -1);
+                            instanceTransactionViewModels.get(0).setValidity(tangle, initialSnapshot, -1);
                         }
                         //break from main loop
                         break;
@@ -191,10 +194,10 @@ public class BundleValidator {
     /**
      * Checks that the bundle's inputs and outputs are balanced.
      *
-     * @param transactionViewModels list of transactions that are in a bundle
+     * @param transactionViewModels collection of transactions that are in a bundle
      * @return {@code true} if balanced, {@code false} if unbalanced or {@code transactionViewModels} is empty
      */
-    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
+    public static boolean isInconsistent(Collection<TransactionViewModel> transactionViewModels) {
         long value = 0;
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
             if (bundleTransactionViewModel.value() != 0) {

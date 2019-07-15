@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
+import com.iota.iri.service.dto.ErrorResponse;
 import com.sun.nio.file.SensitivityWatchEventModifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,10 @@ import java.io.Reader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -183,16 +187,20 @@ public class IXI {
     }
 
     public AbstractResponse processCommand(final String command, Map<String, Object> request) {
+        if(command == null || command.isEmpty()) {
+            return ErrorResponse.create("Command can not be null or empty");
+        }
+
         Pattern pattern = Pattern.compile("^(.*)\\.(.*)$");
         Matcher matcher = pattern.matcher(command);
 
         if (matcher.find()) {
             Map<String, CallableRequest<AbstractResponse>> ixiMap = ixiAPI.get(matcher.group(1));
-            if (ixiMap != null) {
+            if (ixiMap != null && ixiMap.containsKey(matcher.group(2))) {
                 return ixiMap.get(matcher.group(2)).call(request);
             }
         }
-        return null;
+        return ErrorResponse.create("Command [" + command + "] is unknown");
     }
 
     private void loadModule(Path modulePath) {
@@ -202,7 +210,7 @@ public class IXI {
             log.info("No package.json found in {}", modulePath);
             return;
         }
-        final Map packageJson;
+        Map packageJson;
         Reader packageJsonReader;
         try {
             packageJsonReader = new FileReader(packageJsonPath.toFile());
@@ -275,6 +283,10 @@ public class IXI {
         ixiLifetime.remove(moduleName);
     }
 
+    /**
+     * Cleans up the environment, shutdown the dir watcher thread and wait till all running api calls are completed.
+     * @throws InterruptedException if directory watching thread was unexpected interrupted.
+     */
     public void shutdown() throws InterruptedException {
         if(dirWatchThread != null) {
             shutdown = true;

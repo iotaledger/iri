@@ -88,8 +88,6 @@ public class SimpleJobQueue implements JobQueue<TransactionPrunerJob> {
                 }
 
                 throw e;
-            } finally {
-                transactionPruner.saveState();
             }
         }
     }

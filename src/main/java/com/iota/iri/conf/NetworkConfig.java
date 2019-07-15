@@ -9,18 +9,27 @@ import java.util.List;
 public interface NetworkConfig extends Config {
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#UDP_RECEIVER_PORT}
      *
-     * @return {@value NetworkConfig.Descriptions#UDP_RECEIVER_PORT}
+     * @return Descriptions#NEIGHBORING_SOCKET_ADDRESS
      */
-    int getUdpReceiverPort();
+    String getNeighboringSocketAddress();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#TCP_RECEIVER_PORT}
      *
-     * @return {@value NetworkConfig.Descriptions#TCP_RECEIVER_PORT}
+     * @return Descriptions#NEIGHBORING_SOCKET_PORT
      */
-    int getTcpReceiverPort();
+    int getNeighboringSocketPort();
+
+    /**
+     *
+     * @return Descriptions#RECONNECT_ATTEMPT_INTERVAL_SECONDS
+     */
+    int getReconnectAttemptIntervalSeconds();
+
+    /**
+     * @return Descriptions#AUTO_TETHERING_ENABLED
+     */
+    boolean isAutoTetheringEnabled();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#P_REMOVE_REQUEST}
@@ -37,11 +46,10 @@ public interface NetworkConfig extends Config {
     int getSendLimit();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#MAX_PEERS}
      *
-     * @return {@value NetworkConfig.Descriptions#MAX_PEERS}
+     * @return Descriptions#MAX_NEIGHBORS
      */
-    int getMaxPeers();
+    int getMaxNeighbors();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#DNS_REFRESHER_ENABLED}
@@ -85,15 +93,18 @@ public interface NetworkConfig extends Config {
     int getCacheSizeBytes();
 
     interface Descriptions {
-        String UDP_RECEIVER_PORT = "The UDP Receiver Port.";
-        String TCP_RECEIVER_PORT = "The TCP Receiver Port.";
+        String NEIGHBORING_SOCKET_ADDRESS = "The address to bind the TCP server socket to.";
+        String NEIGHBORING_SOCKET_PORT = "The TCP Receiver Port.";
+        String RECONNECT_ATTEMPT_INTERVAL_SECONDS = "The interval at which to reconnect to wanted neighbors.";
+        String AUTO_TETHERING_ENABLED = "Whether to accept new connections from unknown neighbors. "
+                + "Unknown meaning neighbors which are not defined in the config and were not added via addNeighbors.";
         String P_REMOVE_REQUEST = DescriptionHelper.PROB_OF + " stopping to request a transaction. This number should be " +
-            "closer to 0 so non-existing transaction hashes will eventually be removed.";
+                "closer to 0 so non-existing transaction hashes will eventually be removed.";
         String SEND_LIMIT = "The maximum number of packets that may be sent by this node in a 1 second interval. If this number is below 0 then there is no limit.";
-        String MAX_PEERS = "The maximum number of non mutually tethered connections allowed. Works only in testnet mode";
+        String MAX_NEIGHBORS = "The maximum number of neighbors allowed to be connected.";
         String DNS_REFRESHER_ENABLED = "Reconnect to neighbors that have dynamic IPs.";
         String DNS_RESOLUTION_ENABLED = "Enable using DNS for neighbor peering.";
-        String NEIGHBORS = "Urls of peer iota nodes.";
+        String NEIGHBORS = "Urls of neighbor iota nodes.";
         String Q_SIZE_NODE = "The size of the REPLY, BROADCAST, and RECEIVE network queues.";
         String P_DROP_CACHE_ENTRY = DescriptionHelper.PROB_OF +
                 "dropping recently seen transactions out of the network cache. " +

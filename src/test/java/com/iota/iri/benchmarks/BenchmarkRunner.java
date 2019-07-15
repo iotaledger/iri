@@ -28,4 +28,19 @@ public class BenchmarkRunner {
         //possible to do assertions over run results
         new Runner(opts).run();
     }
+
+    @Test
+    public void launchCryptoBenchmark() throws RunnerException {
+        Options opts = new OptionsBuilder()
+          .include(this.getClass().getPackage().getName() + ".crypto")
+          .mode(Mode.Throughput)
+          .timeUnit(TimeUnit.SECONDS)
+          .warmupIterations(5)
+          .forks(1)
+          .measurementIterations(10)
+          .shouldFailOnError(true)
+          .shouldDoGC(false)
+          .build();
+        new Runner(opts).run();
+    }
 }

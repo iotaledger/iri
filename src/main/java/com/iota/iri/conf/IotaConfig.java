@@ -10,7 +10,7 @@ import java.io.File;
  *  In charge of how we parse the configuration from given inputs.
  */
 public interface IotaConfig extends APIConfig, NodeConfig,
-        IXIConfig, DbConfig, ConsensusConfig, ZMQConfig, TipSelConfig, PearlDiverConfig {
+        IXIConfig, DbConfig, ConsensusConfig, ZMQConfig, TipSelConfig, PearlDiverConfig, SolidificationConfig {
     File CONFIG_FILE = new File("iota.ini");
 
     /**

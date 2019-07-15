@@ -2,20 +2,15 @@ package com.iota.iri.service.snapshot.impl;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotState;
 import com.iota.iri.service.snapshot.SnapshotStateDiff;
-import com.iota.iri.utils.IotaIOUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -112,6 +107,10 @@ public class SnapshotStateImpl implements SnapshotState {
             if (balances.computeIfPresent(addressHash, (hash, aLong) -> balance + aLong) == null) {
                 balances.putIfAbsent(addressHash, balance);
             }
+
+            if (balances.get(addressHash) == 0) {
+                balances.remove(addressHash);
+            }
         });
     }
 
@@ -130,6 +129,24 @@ public class SnapshotStateImpl implements SnapshotState {
         return new SnapshotStateImpl(patchedBalances);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass(), balances);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (obj == null || !getClass().equals(obj.getClass())) {
+            return false;
+        }
+
+        return Objects.equals(balances, ((SnapshotStateImpl) obj).balances);
+    }
+
     /**
      * Returns all addresses that have a negative balance.
      *
@@ -143,8 +160,7 @@ public class SnapshotStateImpl implements SnapshotState {
         HashMap<Hash, Long> result = new HashMap<>();
         balances.forEach((key, value) -> {
             if (value < 0) {
-                log.info("negative value for address " + key + ": " + value);
-
+                log.debug("negative value for address {}: {}", key, value);
                 result.put(key, value);
             }
         });

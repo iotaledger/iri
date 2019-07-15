@@ -5,58 +5,64 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * <p>
  * This class represents a container for the metadata of a task that was scheduled through an
- * {@link java.util.concurrent.ExecutorService} that implements the {@link ReportingExecutorService} interface.<br />
- * <br />
+ * {@link java.util.concurrent.ExecutorService} that implements the {@link ReportingExecutorService} interface.
+ * </p>
+ * <p>
  * It can for example be used to show detailed log messages or even implement more sophisticated features like the
- * {@link BoundedScheduledExecutorService}.<br />
+ * {@link BoundedScheduledExecutorService}.
+ * </p>
  */
 public class TaskDetails {
     /**
-     * Holds the name of the {@link Thread} that created the task.<br />
+     * Holds the name of the {@link Thread} that created the task.
      */
     private final String threadName;
 
     /**
      * Holds a thread-safe flag that indicates if the task is currently scheduled for execution (false if running or
-     * done already).<br />
+     * done already).
      */
     private final AtomicBoolean scheduledForExecution;
 
     /**
-     * Holds a thread-safe counter for the amount of times this task was executed.<br />
+     * Holds a thread-safe counter for the amount of times this task was executed.
      */
     private final AtomicInteger executionCount;
 
     /**
      * Holds the initial delay that was provided when scheduling the task (or {@code null} if the task was set to run
-     * immediately).<br />
+     * immediately).
      */
     private Long delay = null;
 
     /**
-     * Holds the interval in which the task is repeated (or {@code null} for non-recurring tasks).<br />
+     * Holds the interval in which the task is repeated (or {@code null} for non-recurring tasks).
      */
     private Long interval = null;
 
     /**
      * Holds the timeout that a task can take to terminate before it gets interrupted (or {@code null} if none was
-     * provided).<br />
+     * provided).
      */
     private Long timeout = null;
 
     /**
      * Holds the time unit that the other values are denominated in (or {@code null} if no time based values are
-     * provided).<br />
+     * provided).
      */
     private TimeUnit timeUnit = null;
 
     /**
+     * <p>
      * Creates a container for the metadata of a task that was scheduled through an
-     * {@link java.util.concurrent.ExecutorService}.<br />
-     * <br />
+     * {@link java.util.concurrent.ExecutorService}.
+     * </p>
+     * <p>
      * It is automatically initiated with the calling {@link Thread} name, the {@link #scheduledForExecution} flag being
-     * set to {@code true} and the {@link #executionCount} being set to 0.<br />
+     * set to {@code true} and the {@link #executionCount} being set to 0.
+     * </p>
      */
     public TaskDetails() {
         this.threadName = Thread.currentThread().getName();
@@ -65,7 +71,7 @@ public class TaskDetails {
     }
 
     /**
-     * Getter for the internal {@link #threadName} property.<br />
+     * Getter for the internal {@link #threadName} property.
      *
      * @return name of the {@link Thread} that scheduled the task.
      */
@@ -74,10 +80,11 @@ public class TaskDetails {
     }
 
     /**
-     * Getter for the internal {@link #scheduledForExecution} property.<br />
-     * <br />
+     * Getter for the internal {@link #scheduledForExecution} property.
+     * <p>
      * Note: There is no setter for this property because it returns a mutable object that is not supposed be
-     * overwritten.<br />
+     * overwritten.
+     * </p>
      *
      * @return a thread-safe flag that indicates if the task is currently scheduled for execution
      */
@@ -86,10 +93,11 @@ public class TaskDetails {
     }
 
     /**
-     * Getter for the internal {@link #executionCount} property.<br />
-     * <br />
+     * Getter for the internal {@link #executionCount} property.
+     * <p>
      * Note: There is no setter for this property because it returns a mutable object that is not supposed be
-     * overwritten.<br />
+     * overwritten.
+     * </p>
      *
      * @return a thread-safe counter for the amount of times this task was executed
      */
@@ -98,7 +106,7 @@ public class TaskDetails {
     }
 
     /**
-     * Setter for the internal {@link #delay} property.<br />
+     * Setter for the internal {@link #delay} property.
      *
      * @param delay the initial delay that was provided when scheduling the task
      * @return the instance of TaskDetails itself to allow the chaining of calls
@@ -110,7 +118,7 @@ public class TaskDetails {
     }
 
     /**
-     * Getter for the internal {@link #delay} property.<br />
+     * Getter for the internal {@link #delay} property.
      *
      * @return the initial delay that was provided when scheduling the task (or {@code null} if the task was set to run
      *         immediately)
@@ -120,7 +128,7 @@ public class TaskDetails {
     }
 
     /**
-     * Setter for the internal {@link #interval} property.<br />
+     * Setter for the internal {@link #interval} property.
      *
      * @param interval the interval in which the task is repeated (or {@code null} for non-recurring tasks)
      * @return the instance of TaskDetails itself to allow the chaining of calls
@@ -132,7 +140,7 @@ public class TaskDetails {
     }
 
     /**
-     * Getter for the internal {@link #interval} property.<br />
+     * Getter for the internal {@link #interval} property.
      *
      * @return the interval in which the task is repeated (or {@code null} for non-recurring tasks)
      */
@@ -141,7 +149,7 @@ public class TaskDetails {
     }
 
     /**
-     * Setter for the internal {@link #timeout} property.<br />
+     * Setter for the internal {@link #timeout} property.
      *
      * @param timeout the timeout that a task can take to terminate before it gets interrupted (or {@code null} if none
      *                was provided)
@@ -154,7 +162,7 @@ public class TaskDetails {
     }
 
     /**
-     * Getter for the internal {@link #timeout} property.<br />
+     * Getter for the internal {@link #timeout} property.
      *
      * @return the timeout that a task can take to terminate before it gets interrupted (or {@code null} if none was
      *         provided)
@@ -164,7 +172,7 @@ public class TaskDetails {
     }
 
     /**
-     * Setter for the internal {@link #timeUnit} property.<br />
+     * Setter for the internal {@link #timeUnit} property.
      *
      * @param timeUnit the time unit that the other values are denominated in (or {@code null} if no time based values
      *                 are provided)
@@ -177,7 +185,7 @@ public class TaskDetails {
     }
 
     /**
-     * Getter for the internal {@link #timeUnit} property.<br />
+     * Getter for the internal {@link #timeUnit} property.
      *
      * @return the time unit that the other values are denominated in (or {@code null} if no time based values are
      *         provided)

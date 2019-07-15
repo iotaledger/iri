@@ -2,25 +2,27 @@ package com.iota.iri.service;
 
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
-
-import static com.iota.iri.controllers.TransactionViewModel.*;
-
-import com.iota.iri.conf.*;
+import com.iota.iri.conf.IXIConfig;
+import com.iota.iri.conf.TestnetConfig;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.network.Node;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static com.iota.iri.controllers.TransactionViewModel.*;
 
 public class NodeIntegrationTests {
 
@@ -41,22 +43,29 @@ public class NodeIntegrationTests {
     public void testGetsSolid() throws Exception {
         int count = 1;
         long spacing = 5000;
-        Iota iotaNodes[] = new Iota[count];
-        API api[] = new API[count];
-        IXI ixi[] = new IXI[count];
+
+        Iota[] iotaNodes = new Iota[count];
+        API[] api = new API[count];
+        IXI[] ixi = new IXI[count];
         Thread cooThread, master;
         TemporaryFolder[] folders = new TemporaryFolder[count*2];
         for(int i = 0; i < count; i++) {
             folders[i*2] = new TemporaryFolder();
             folders[i*2 + 1] = new TemporaryFolder();
-            iotaNodes[i] = newNode(i, folders[i*2], folders[i*2+1]);
+            TestnetConfig conf = new TestnetConfig();
+            iotaNodes[i] = newNode(i, conf, folders[i*2], folders[i*2+1]);
             ixi[i] = new IXI(iotaNodes[i]);
             ixi[i].init(IXIConfig.IXI_DIR);
-            api[i] = new API(iotaNodes[i], ixi[i]);
-            api[i].init();
+            
+            api[i] = new API(conf, ixi[i], iotaNodes[i].transactionRequester,
+                    iotaNodes[i].spentAddressesService, iotaNodes[i].tangle, iotaNodes[i].bundleValidator,
+                    iotaNodes[i].snapshotProvider, iotaNodes[i].ledgerService, iotaNodes[i].neighborRouter,
+                    iotaNodes[i].tipsSelector, iotaNodes[i].tipsViewModel, iotaNodes[i].transactionValidator,
+                    iotaNodes[i].latestMilestoneTracker, iotaNodes[i].txPipeline);
+            
+            api[i].init(new RestEasy(conf));
         }
-        Node.uri("udp://localhost:14701").ifPresent(uri -> iotaNodes[0].node.addNeighbor(iotaNodes[0].node.newNeighbor(uri, true)));
-        //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.addNeighbor(iotaNodes[1].node.newNeighbor(uri, true)));
+        iotaNodes[0].neighborRouter.addNeighbor("tcp://localhost:14701");
 
         cooThread = new Thread(spawnCoordinator(api[0], spacing), "Coordinator");
         master = new Thread(spawnMaster(), "master");
@@ -79,14 +88,12 @@ public class NodeIntegrationTests {
         }
     }
 
-    private Iota newNode(int index, TemporaryFolder db, TemporaryFolder log) throws Exception {
+    private Iota newNode(int index, TestnetConfig conf, TemporaryFolder db, TemporaryFolder log) throws Exception {
         db.create();
         log.create();
-        TestnetConfig conf = new TestnetConfig();
         Iota iota;
         conf.setPort(14800 + index);
-        conf.setUdpReceiverPort((14700 + index));
-        conf.setUdpReceiverPort((14700 + index));
+        conf.setNeighboringSocketPort(14700 + index);
         conf.setDbPath(db.getRoot().getAbsolutePath());
         conf.setDbLogPath(log.getRoot().getAbsolutePath());
         iota = new Iota(conf);
@@ -140,7 +147,7 @@ public class NodeIntegrationTests {
         transactions.add(new byte[TRINARY_SIZE]);
         Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
         transactions.add(Arrays.copyOf(transactions.get(0), TRINARY_SIZE));
-        Hash coordinator = HashFactory.ADDRESS.create(new TestnetConfig().getCoordinator());
+        Hash coordinator = new TestnetConfig().getCoordinator();
         System.arraycopy(coordinator.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
         List<String> elements = api.attachToTangleStatement(tips.get(0), tips.get(0), 13, transactions.stream().map(Converter::trytes).collect(Collectors.toList()));

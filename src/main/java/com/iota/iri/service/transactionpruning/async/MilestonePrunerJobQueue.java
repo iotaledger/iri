@@ -11,13 +11,14 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Stream;
 
 /**
- * Represents a queue of {@link MilestonePrunerJob}s thar are being executed by the {@link AsyncTransactionPruner}.
+ * Represents a queue of {@link MilestonePrunerJob}s that are being executed by the {@link AsyncTransactionPruner}.
  *
  * The {@link AsyncTransactionPruner} uses a separate queue for every job type, to be able to adjust the processing
  * logic based on the type of the job.
  */
 public class MilestonePrunerJobQueue implements JobQueue<MilestonePrunerJob> {
-    /**
+    
+    /** 
      * Holds the youngest (highest) milestone index that was successfully cleaned (gets updated when a job finishes).
      */
     private int youngestFullyCleanedMilestoneIndex;
@@ -110,21 +111,17 @@ public class MilestonePrunerJobQueue implements JobQueue<MilestonePrunerJob> {
     public void processJobs() throws TransactionPruningException {
         MilestonePrunerJob currentJob;
         while (!Thread.currentThread().isInterrupted() && (currentJob = jobs.peek()) != null) {
-            try {
-                currentJob.process();
+            currentJob.process();
 
-                youngestFullyCleanedMilestoneIndex = currentJob.getTargetIndex();
+            youngestFullyCleanedMilestoneIndex = currentJob.getTargetIndex();
 
-                // we always leave the last job in the queue to be able to "serialize" the queue status and allow
-                // to skip already processed milestones even when IRI restarts
-                if (jobs.size() == 1) {
-                    break;
-                }
-
-                jobs.poll();
-            } finally {
-                transactionPruner.saveState();
+            // we always leave the last job in the queue to be able to "serialize" the queue status and allow
+            // to skip already processed milestones even when IRI restarts
+            if (jobs.size() == 1) {
+                break;
             }
+
+            jobs.poll();
         }
     }
 

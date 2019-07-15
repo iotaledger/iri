@@ -1,6 +1,6 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.SnapshotConfig;
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -9,6 +9,7 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +25,10 @@ public class TransactionValidator {
     public static final int SOLID_SLEEP_TIME = 500;
 
     private final Tangle tangle;
+    private final SnapshotProvider snapshotProvider;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
     private int minWeightMagnitude = 81;
-    private final long snapshotTimestamp;
-    private final long snapshotTimestampMs;
     private static final long MAX_TIMESTAMP_FUTURE = 2L * 60L * 60L;
     private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1_000L;
 
@@ -56,17 +56,15 @@ public class TransactionValidator {
      * Constructor for Tangle Validator
      *
      * @param tangle relays tangle data to and from the persistence layer
+     * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param tipsViewModel container that gets updated with the latest tips (transactions with no children)
      * @param transactionRequester used to request missing transactions from neighbors
-     * @param config configuration for obtaining snapshot data
      */
-    TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester,
-                                SnapshotConfig config) {
+    TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
         this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
-        this.snapshotTimestamp = config.getSnapshotTime();
-        this.snapshotTimestampMs = snapshotTimestamp * 1000;
     }
 
     /**
@@ -91,7 +89,7 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
@@ -132,13 +130,16 @@ public class TransactionValidator {
      * Else returns <tt>false</tt>.
      */
     private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
+        // ignore invalid timestamps for transactions that were requested by our node while solidifying a milestone
+        if(transactionRequester.isTransactionRequested(transactionViewModel.getHash(), true)) {
+            return false;
+        }
+
         if (transactionViewModel.getAttachmentTimestamp() == 0) {
-            return transactionViewModel.getTimestamp() < snapshotTimestamp
-                    //you are valid if you are the genesis
-                    && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
+            return transactionViewModel.getTimestamp() < snapshotProvider.getInitialSnapshot().getTimestamp() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(transactionViewModel.getHash())
                     || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
         }
-        return transactionViewModel.getAttachmentTimestamp() < snapshotTimestampMs
+        return transactionViewModel.getAttachmentTimestamp() < (snapshotProvider.getInitialSnapshot().getTimestamp() * 1000L)
                 || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
     }
 
@@ -246,7 +247,7 @@ public class TransactionValidator {
         if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
-        Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
+        LinkedHashSet<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
         if(maxProcessedTransactions != Integer.MAX_VALUE) {
             maxProcessedTransactions += analyzedHashes.size();
         }
@@ -254,29 +255,31 @@ public class TransactionValidator {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (analyzedHashes.add(hashPointer)) {
-                if(analyzedHashes.size() >= maxProcessedTransactions) {
-                    return false;
-                }
+            if (!analyzedHashes.add(hashPointer)) {
+                continue;
+            }
 
-                final TransactionViewModel transaction = fromHash(tangle, hashPointer);
-                if(!transaction.isSolid()) {
-                    if (transaction.getType() == PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                        solid = false;
+            if (analyzedHashes.size() >= maxProcessedTransactions) {
+                return false;
+            }
 
-                        if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
-                            transactionRequester.requestTransaction(hashPointer, milestone);
-                            break;
-                        }
-                    } else {
-                        nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                        nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+            TransactionViewModel transaction = fromHash(tangle, hashPointer);
+            if (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
+                if (transaction.getType() == PREFILLED_SLOT) {
+                    solid = false;
+
+                    if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
+                        transactionRequester.requestTransaction(hashPointer, milestone);
+                        continue;
                     }
+                } else {
+                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                 }
             }
         }
         if (solid) {
-            updateSolidTransactions(tangle, analyzedHashes);
+            updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), analyzedHashes);
         }
         analyzedHashes.clear();
         return solid;
@@ -315,7 +318,7 @@ public class TransactionValidator {
      * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
      * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
      */
-    //Package private for testing
+    @VisibleForTesting
     void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
@@ -339,7 +342,7 @@ public class TransactionValidator {
                 for(Hash h: approvers) {
                     TransactionViewModel tx = fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
-                        tx.update(tangle, "solid|height");
+                        tx.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
                         tipsViewModel.setSolid(h);
                         addSolidTransaction(h);
                     }
@@ -384,7 +387,7 @@ public class TransactionValidator {
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
 
         if(quickSetSolid(transactionViewModel)) {
-            transactionViewModel.update(tangle, "solid|height");
+            transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
             tipsViewModel.setSolid(transactionViewModel.getHash());
             addSolidTransaction(transactionViewModel.getHash());
         }
@@ -422,7 +425,7 @@ public class TransactionValidator {
             }
             if(solid) {
                 transactionViewModel.updateSolid(true);
-                transactionViewModel.updateHeights(tangle);
+                transactionViewModel.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
                 return true;
             }
         }
@@ -436,17 +439,19 @@ public class TransactionValidator {
      * @throws Exception if we encounter an error while requesting a transaction
      */
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
-        if(approovee.getType() == PREFILLED_SLOT) {
-            transactionRequester.requestTransaction(approovee.getHash(), false);
-            return false;
-        }
-        if(approovee.getHash().equals(Hash.NULL_HASH)) {
+        if(snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(approovee.getHash())) {
             return true;
+        }
+        if(approovee.getType() == PREFILLED_SLOT) {
+            // don't solidify from the bottom until cuckoo filters can identify where we deleted -> otherwise we will
+            // continue requesting old transactions forever
+            //transactionRequester.requestTransaction(approovee.getHash(), false);
+            return false;
         }
         return approovee.isSolid();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }

@@ -9,6 +9,7 @@ import com.iota.iri.service.snapshot.SnapshotStateDiff;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -55,15 +56,17 @@ public class SnapshotImpl implements Snapshot {
     }
 
     /**
-     * Creates a deep clone of the passed in {@link Snapshot}.
+     * Creates a deep clone of the passed in snapshot.
      *
      * @param snapshot object that shall be cloned
      */
-    public SnapshotImpl(Snapshot snapshot) {
+    private SnapshotImpl(SnapshotImpl snapshot) {
         this(
-            new SnapshotStateImpl(((SnapshotImpl) snapshot).state),
-            new SnapshotMetaDataImpl(((SnapshotImpl) snapshot).metaData)
+            new SnapshotStateImpl(snapshot.state),
+            new SnapshotMetaDataImpl(snapshot.metaData)
         );
+
+        skippedMilestones.addAll(snapshot.skippedMilestones);
     }
 
     /**
@@ -129,8 +132,32 @@ public class SnapshotImpl implements Snapshot {
         }
     }
 
-    //region [THREAD-SAFE METADATA METHODS] ////////////////////////////////////////////////////////////////////////////
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass(), state.hashCode(), metaData.hashCode(), skippedMilestones);
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (obj == null || !getClass().equals(obj.getClass())) {
+            return false;
+        }
+
+        return Objects.equals(state, ((SnapshotImpl) obj).state) &&
+               Objects.equals(metaData, ((SnapshotImpl) obj).metaData) &&
+               Objects.equals(skippedMilestones, ((SnapshotImpl) obj).skippedMilestones);
+    }
+
+    @Override
+    public SnapshotImpl clone() {
+        return new SnapshotImpl(this);
+    }
+
+    //region [THREAD-SAFE METADATA METHODS] ////////////////////////////////////////////////////////////////////////////
 
     /**
      * {@inheritDoc}

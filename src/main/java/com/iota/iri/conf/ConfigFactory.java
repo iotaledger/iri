@@ -13,8 +13,17 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * Creates the global {@link IotaConfig} object with iri specific settings.
+ */
 public class ConfigFactory {
 
+    /**
+     * Creates the {@link IotaConfig} object for {@link TestnetConfig} or {@link MainnetConfig}.
+     *
+     * @param isTestnet true if {@link TestnetConfig} should be created.
+     * @return return the {@link IotaConfig} configuration.
+     */
     public static IotaConfig createIotaConfig(boolean isTestnet) {
         IotaConfig iotaConfig;
         if (isTestnet) {
@@ -26,8 +35,18 @@ public class ConfigFactory {
         return iotaConfig;
     }
 
-    public static IotaConfig createFromFile(File configFile, boolean testnet) throws IOException,
-            IllegalArgumentException {
+    /**
+     * Creates the {@link IotaConfig} object for {@link TestnetConfig} or {@link MainnetConfig} from config file. Parse
+     * the config file for <code>TESTNET=true</code>. If <code>TESTNET=true</code> is found we creates the
+     * {@link TestnetConfig} object, else creates the {@link MainnetConfig}.
+     *
+     * @param configFile A property file with configuration options.
+     * @param testnet When true a {@link TestnetConfig} is created.
+     * @return the {@link IotaConfig} configuration.
+     *
+     * @throws IOException When config file could not be found.
+     */
+    public static IotaConfig createFromFile(File configFile, boolean testnet) throws IOException {
         IotaConfig iotaConfig;
 
         try (FileInputStream confStream = new FileInputStream(configFile)) {

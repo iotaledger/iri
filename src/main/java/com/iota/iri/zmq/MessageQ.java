@@ -31,39 +31,31 @@ import java.util.concurrent.TimeUnit;
  *    For a complete list and detailed topic specification please refer to the README.md.
  * </p>
  */
-public class MessageQ {
+class MessageQ {
     private final static Logger LOG = LoggerFactory.getLogger(MessageQ.class);
 
     private final ZMQ.Context context;
     private final ZMQ.Socket publisher;
-    private boolean enabled = false;
 
     private final ExecutorService publisherService = Executors.newSingleThreadExecutor();
 
     public static MessageQ createWith(ZMQConfig config) {
-        return new MessageQ(config.getZmqPort(), config.getZmqIpc(), config.getZmqThreads(), config.isZmqEnabled());
+        return new MessageQ(config);
     }
 
     /**
      * Creates and starts a ZMQ publisher.
      *
-     * @param port port the publisher will be bound to
-     * @param ipc IPC socket the publisher will be bound to
-     * @param nthreads number of threads used by the ZMQ publisher
-     * @param enabled boolean enable flag; by default the publisher will not be started
+     * @param config {@link ZMQConfig} that should be used.
      */
-    private MessageQ(int port, String ipc, int nthreads, boolean enabled) {
-        if (enabled) {
-            context = ZMQ.context(nthreads);
-            publisher = context.socket(ZMQ.PUB);
-            publisher.bind(String.format("tcp://*:%d", port));
-            if (ipc != null) {
-                publisher.bind(ipc);
-            }
-            this.enabled = true;
-        } else {
-            context = null;
-            publisher = null;
+    private MessageQ(ZMQConfig config) {
+        context = ZMQ.context(config.getZmqThreads());
+        publisher = context.socket(ZMQ.PUB);
+        if (config.isZmqEnableTcp()) {
+            publisher.bind(String.format("tcp://*:%d", config.getZmqPort()));
+        }
+        if (config.isZmqEnableIpc()) {
+            publisher.bind(config.getZmqIpc());
         }
     }
 
@@ -74,10 +66,8 @@ public class MessageQ {
      * @param objects arguments referenced by the message body, similar to a format string
      */
     public void publish(String message, Object... objects) {
-        if (enabled) {
-            String toSend = String.format(message, objects);
-            publisherService.submit(() -> publisher.send(toSend));
-        }
+        String toSend = String.format(message, objects);
+        publisherService.submit(() -> publisher.send(toSend));
     }
 
     /**

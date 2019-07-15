@@ -11,11 +11,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * <p>
  * This class represents a wrapper for the {@link org.slf4j.Logger} used by IRI that implements a logic to rate limits
  * the output on the console.
- *
+ * </p>
+ * <p>
  * Instead of printing all messages immediately and unnecessarily spamming the console, it only prints messages every
  * few seconds and if the message has changed since the last output.
+ * </p>
  */
 public class IntervalLogger implements Logger {
     /**
@@ -26,7 +29,7 @@ public class IntervalLogger implements Logger {
     /**
      * Holds a reference to the underlying logback logger.
      */
-    private final org.slf4j.Logger logger;
+    private final org.slf4j.Logger delegate;
 
     /**
      * Holds the interval in milliseconds that status messages get printed.
@@ -82,10 +85,10 @@ public class IntervalLogger implements Logger {
      * Does the same as {@link #IntervalLogger(org.slf4j.Logger, int)} but defaults to the {@link #DEFAULT_LOG_INTERVAL}
      * for the interval.
      *
-     * @param logger logback logger for issuing the messages
+     * @param delegate logback logger for issuing the messages
      */
-    public IntervalLogger(org.slf4j.Logger logger) {
-        this(logger, DEFAULT_LOG_INTERVAL);
+    public IntervalLogger(org.slf4j.Logger delegate) {
+        this(delegate, DEFAULT_LOG_INTERVAL);
     }
 
     /**
@@ -102,21 +105,36 @@ public class IntervalLogger implements Logger {
     /**
      * Creates a {@link Logger} for the given class that prints messages only every {@code logInterval} milliseconds.
      *
-     * It simply stores the passed in parameters in its private properties to be able to access them later on.
+     * It stores the passed in parameters in its private properties to be able to access them later on.
      *
-     * @param logger logback logger for issuing the messages
+     * @param delegate logback logger for issuing the messages
      * @param logInterval time in milliseconds between log messages
      */
-    public IntervalLogger(org.slf4j.Logger logger, int logInterval) {
-        this.logger = logger;
+    public IntervalLogger(org.slf4j.Logger delegate, int logInterval) {
+        this.delegate = delegate;
         this.logInterval = logInterval;
+    }
+
+    /**
+     * This method returns the underlying logback Logger.
+     * <p>
+     * It can be used to issue log entries directly to the underlying logger without interfering with the logic of this
+     * class.
+     * </p>
+     * 
+     * @return the underlying logback Logger
+     */
+    public org.slf4j.Logger delegate() {
+        return delegate;
     }
 
     /**
      * {@inheritDoc}
      *
+     * <p>
      * It checks if the given message is new and then triggers the output.
-     *
+     * </p>
+     * 
      * @param message info message that shall get printed
      */
     @Override
@@ -135,7 +153,9 @@ public class IntervalLogger implements Logger {
     /**
      * {@inheritDoc}
      *
+     * <p>
      * It checks if the given message is new and then triggers the output.
+     * </p>
      */
     @Override
     public IntervalLogger debug(String message) {
@@ -153,11 +173,14 @@ public class IntervalLogger implements Logger {
     /**
      * {@inheritDoc}
      *
+     * <p>
      * It checks if the given message is new and then triggers the output.
-     *
+     * </p>
+     * <p>
      * Error messages will always get dumped immediately instead of scheduling their output. Since error messages are
      * usually a sign of some misbehaviour of the node we want to be able to see them when they appear (to be able to
      * track down bugs more easily).
+     * </p>
      */
     @Override
     public IntervalLogger error(String message) {
@@ -166,12 +189,15 @@ public class IntervalLogger implements Logger {
 
     /**
      * {@inheritDoc}
-     *
+     * 
+     * <p>
      * It checks if the given message is new and then triggers the output.
-     *
+     * </p>
+     * <p>
      * Error messages will always get dumped immediately instead of scheduling their output. Since error messages are
      * usually a sign of some misbehaviour of the node we want to be able to see them when they appear (to be able to
      * track down bugs more easily).
+     * </p>
      */
     @Override
     public IntervalLogger error(String message, Throwable cause) {
@@ -213,11 +239,14 @@ public class IntervalLogger implements Logger {
     }
 
     /**
+     * <p>
      * Triggers the output of the last received message.
-     *
+     * </p>
+     * <p>
      * It either prints the message immediately (if enough time has passed since the last output or requested by the
      * caller) or schedules it for the next interval.
-     *
+     * </p>
+     * 
      * @param printImmediately flag indicating if the messages should be scheduled or printed immediately
      */
     public void triggerOutput(boolean printImmediately) {
@@ -231,11 +260,14 @@ public class IntervalLogger implements Logger {
     }
 
     /**
+     * <p>
      * This method schedules the output of the last received message by spawning a {@link Thread} that will print the
      * new message after the given timeout.
-     *
+     * </p>
+     * <p>
      * When creating the {@link Thread} it copies its name so the output is "transparent" to the user and the effect
      * is the same as dumping the message manually through the {@link org.slf4j.Logger} object itself.
+     * </p>
      */
     private void scheduleOutput() {
         if (outputScheduled.compareAndSet(false, true)) {
@@ -261,7 +293,7 @@ public class IntervalLogger implements Logger {
         /**
          * Creates a message that gets managed by this logger.
          *
-         * It simply stores the provided message in the internal property.
+         * It stores the provided message in the internal property.
          *
          * @param message message that shall get printed
          */
@@ -272,9 +304,11 @@ public class IntervalLogger implements Logger {
         /**
          * This method triggers the output of the given message.
          *
+         * <p>
          * It first cancels any scheduled job because the latest provided message will be printed by this call already
          * and then triggers the printing of the message through the instance specific {@link #print()} method.
-         *
+         * </p>
+         * 
          * We only print the message if the same method was not printed already, before.
          */
         public void output() {
@@ -328,10 +362,11 @@ public class IntervalLogger implements Logger {
 
         /**
          * This method handles the actual output of messages through the {@link org.slf4j.Logger} instance.
-         *
+         * <p>
          * It first checks if the message that shall get printed differs from the last message that was printed and then
          * issues the output of the message. After printing the message, it updates the internal variables to handle the
          * next message accordingly.
+         * </p>
          */
         protected abstract void print();
     }
@@ -354,7 +389,7 @@ public class IntervalLogger implements Logger {
          */
         @Override
         protected void print() {
-            logger.info(message);
+            delegate().info(message);
         }
     }
 
@@ -376,7 +411,7 @@ public class IntervalLogger implements Logger {
          */
         @Override
         protected void print() {
-            logger.debug(message);
+            delegate().debug(message);
         }
     }
 
@@ -425,9 +460,9 @@ public class IntervalLogger implements Logger {
         @Override
         protected void print() {
             if (cause == null) {
-                logger.error(message);
+                delegate().error(message);
             } else {
-                logger.error(message, cause);
+                delegate().error(message, cause);
             }
         }
     }

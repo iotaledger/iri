@@ -1,9 +1,5 @@
 package com.iota.iri.model;
 
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Objects;
-
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.model.safe.ByteSafe;
@@ -11,12 +7,33 @@ import com.iota.iri.model.safe.TritSafe;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
 
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
+
+/**
+ * Base implementation of a hash object
+ */
 public abstract class AbstractHash implements Hash, Serializable {
     private final Object lock = new Object();
 
     private ByteSafe byteSafe;
     private TritSafe tritSafe;
 
+    /**
+     * Empty Constructor for a placeholder hash identifier object. Creates a hash identifier object with no properties.
+     */
+    public AbstractHash() {
+    }
+
+    /**
+     * Constructor for a hash object using a trit or byte source array. A null safe byte array of the
+     * same size as the source will be created, storing a copy of the input values in the object.
+     *
+     * @param source A byte array containing the source transaction information in either trit or byte format
+     * @param sourceOffset The offset defining the start point for the hash object in the source
+     * @param sourceSize The size of the hash object that will be created
+     */
     public AbstractHash(byte[] source, int sourceOffset, int sourceSize) {
         if(sourceSize < SIZE_IN_TRITS) {
             byte[] dest = new byte[SIZE_IN_BYTES];
@@ -29,6 +46,12 @@ public abstract class AbstractHash implements Hash, Serializable {
         }
     }
 
+    /**
+     * Assigns the input byte data to the hash object. Each hash object can only be initialized with data
+     * once.If the byte or trit arrays are not null, an <tt>IllegalStateException</tt> is thrown.
+     *
+     * @param bytes A byte array containing the source bytes
+     */
     @Override
     public void read(byte[] bytes) {
         if (bytes != null) {
@@ -43,6 +66,13 @@ public abstract class AbstractHash implements Hash, Serializable {
         }
     }
 
+    /**
+     * Checks if the hash object is storing a byte array. If the object's byte array is <tt>null</tt>,
+     * then a byte array conversion of the object's trit array will be created and stored. If there
+     * is no trit array present, a <tt>NullPointerException</tt> will be thrown.
+     *
+     * @return The stored byte array containing the hash values
+     */
     @Override
     public byte[] bytes() {
         ByteSafe safe = byteSafe;
@@ -61,6 +91,13 @@ public abstract class AbstractHash implements Hash, Serializable {
         return safe.getData();
     }
 
+    /**
+     * Checks if the hash object is storing a trit array. If the object's trit array is <tt>null</tt>,
+     * then a trit array conversion of the object's byte array will be created. If there is no byte
+     * array present, a <tt>NullPointerException</tt> will be thrown.
+     *
+     * @return The stored trit array containing the hash values
+     */
     @Override
     public byte[] trits() {
         TritSafe safe = tritSafe;
@@ -79,6 +116,9 @@ public abstract class AbstractHash implements Hash, Serializable {
         return safe.getData();
     }
 
+    /**
+     * @return The number of zero value trits at the end of the hash object's trit array
+     */
     @Override
     public int trailingZeros() {
         byte[] trits = trits();

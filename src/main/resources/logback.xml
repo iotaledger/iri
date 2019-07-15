@@ -24,7 +24,7 @@
             <onMismatch>DENY</onMismatch>
         </filter>
         <encoder>
-            <pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+            <pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{0}:%L - %msg%n
             </pattern>
         </encoder>
     </appender>
@@ -37,7 +37,7 @@
             <onMismatch>DENY</onMismatch>
         </filter>
         <encoder>
-            <pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+            <pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{0}:%L - %msg%n
             </pattern>
         </encoder>
     </appender>

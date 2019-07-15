@@ -1,10 +1,8 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.*;
@@ -12,9 +10,6 @@ import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.*;
 
-/**
- * Created by paul on 4/11/17.
- */
 public class MilestoneViewModelTest {
     final TemporaryFolder dbFolder = new TemporaryFolder();
     final TemporaryFolder logFolder = new TemporaryFolder();
@@ -26,8 +21,9 @@ public class MilestoneViewModelTest {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
     }
@@ -175,8 +171,7 @@ public class MilestoneViewModelTest {
         int next = first + 1;
         new MilestoneViewModel(next, HashFactory.TRANSACTION.create("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         new MilestoneViewModel(first, HashFactory.TRANSACTION.create("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        assertEquals(next, MilestoneViewModel.findClosestNextMilestone(
-                tangle, first, next).index().intValue());
+        assertEquals("the found milestone should be following the previous one", next, MilestoneViewModel.findClosestNextMilestone(tangle, first, next).index().intValue());
     }
 
     @Test

@@ -30,30 +30,4 @@ public interface TransactionPruner {
      */
     void processJobs() throws TransactionPruningException;
 
-    /**
-     * This method saves the current state of the {@link TransactionPruner}, so it can later be restored by
-     * {@link #restoreState()}.
-     *
-     * It is used to maintain the state between IRI restarts and pick up pruning where it stopped when IRI shut down.
-     *
-     * @throws TransactionPruningException if anything goes wrong while saving the current state
-     */
-    void saveState() throws TransactionPruningException;
-
-    /**
-     * Restores the state of the {@link TransactionPruner} after being saved before by {@link #saveState()}.
-     *
-     * It is used to keep the state between IRI restarts and pick up pruning where it stopped when IRI shut down.
-     *
-     * @throws TransactionPruningException if anything goes wrong while restoring the state
-     */
-    void restoreState() throws TransactionPruningException;
-
-    /**
-     * This method removes all queued jobs and resets the state of the {@link TransactionPruner}. It can for example be
-     * used to cleanup after tests.
-     *
-     * @throws TransactionPruningException if anything goes wrong while clearing the jobs
-     * */
-    void clear() throws TransactionPruningException;
 }

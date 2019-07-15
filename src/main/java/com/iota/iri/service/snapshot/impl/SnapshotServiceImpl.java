@@ -1,28 +1,24 @@
 package com.iota.iri.service.snapshot.impl;
 
-import com.iota.iri.MilestoneTracker;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.snapshot.SnapshotMetaData;
-import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJob;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.log.ProgressLogger;
-import com.iota.iri.utils.log.interval.IntervalProgressLogger;
 import com.iota.iri.utils.dag.DAGHelper;
 import com.iota.iri.utils.dag.TraversalException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.iota.iri.utils.log.ProgressLogger;
+import com.iota.iri.utils.log.interval.IntervalProgressLogger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,8 +27,16 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * Implements the basic contract of the {@link SnapshotService}.
+ * <p>
+ * Creates a service instance that allows us to access the business logic for {@link Snapshot}s.
+ * </p>
+ * <p>
+ * The service instance is stateless and can be shared by multiple other consumers.
+ * </p>
  */
 public class SnapshotServiceImpl implements SnapshotService {
     /**
@@ -41,27 +45,102 @@ public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger log = LoggerFactory.getLogger(SnapshotServiceImpl.class);
 
     /**
-     * If transactions got orphaned we wait this additional time (in seconds) until we consider them orphaned.
+     * <p>
+     * Holds a limit for the amount of milestones we go back in time when generating the solid entry points (to speed up
+     * the snapshot creation).
+     * </p>
+     * <p>
+     * Note: Since the snapshot creation is a "continuous" process where we build upon the information gathered during
+     *       the creation of previous snapshots, we do not need to analyze all previous milestones but can rely on
+     *       slowly gathering the missing information over time. While this might lead to a situation where the very
+     *       first snapshots taken by a node might generate snapshot files that can not reliably be used by other nodes
+     *       to sync it is still a reasonable trade-off to reduce the load on the nodes. We just assume that anybody who
+     *       wants to share his snapshots with the community as a way to bootstrap new nodes will run his snapshot
+     *       enabled node for a few hours before sharing his files (this is a problem in very rare edge cases when
+     *       having back-referencing transactions anyway).
+     * </p>
      */
-    private static final int ORPHANED_TRANSACTION_GRACE_TIME = 3600;
+    private static final int OUTER_SHELL_SIZE = 100;
 
     /**
+     * <p>
      * Maximum age in milestones since creation of solid entry points.
-     *
+     * </p>
+     * <p>
      * Since it is possible to artificially keep old solid entry points alive by periodically attaching new transactions
      * to them, we limit the life time of solid entry points and ignore them whenever they become too old. This is a
      * measure against a potential attack vector where somebody might try to blow up the meta data of local snapshots.
+     * </p>
      */
     private static final int SOLID_ENTRY_POINT_LIFETIME = 1000;
 
     /**
+     * Holds the tangle object which acts as a database interface.
+     */
+    private Tangle tangle;
+
+    /**
+     * Holds the snapshot provider which gives us access to the relevant snapshots.
+     */
+    private SnapshotProvider snapshotProvider;
+
+    /**
+     * Holds the config with important snapshot specific settings.
+     */
+    private SnapshotConfig config;
+
+    private SpentAddressesService spentAddressesService;
+
+    private SpentAddressesProvider spentAddressesProvider;
+
+    /**
+     * <p>
+     * This method initializes the instance and registers its dependencies.
+     * </p>
+     * <p>
+     * It stores the passed in values in their corresponding private properties.
+     * </p>
+     * <p>
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * </p>
+     *       {@code snapshotService = new SnapshotServiceImpl().init(...);}
+     *
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshotProvider data provider for the snapshots that are relevant for the node
+     * @param config important snapshot related configuration parameters
+     * @return the initialized instance itself to allow chaining
+     */
+    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
+            SpentAddressesService spentAddressesService, SpentAddressesProvider spentAddressesProvider,
+            SnapshotConfig config) {
+
+        this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
+        this.spentAddressesService = spentAddressesService;
+        this.spentAddressesProvider = spentAddressesProvider;
+        this.config = config;
+
+        return this;
+    }
+
+    /**
      * {@inheritDoc}
+     * 
+     * <p>
+     * To increase the performance of this operation, we do not apply every single milestone separately but first
+     * accumulate all the necessary changes and then apply it to the snapshot in a single run. This allows us to
+     * modify its values without having to create a "copy" of the initial state to possibly roll back the changes if
+     * anything unexpected happens (creating a backup of the state requires a lot of memory).
+     * </p>
      */
     @Override
-    public void replayMilestones(Tangle tangle, Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
-        snapshot.lockWrite();
-
-        Snapshot snapshotBeforeChanges = new SnapshotImpl(snapshot);
+    public void replayMilestones(Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
+        Map<Hash, Long> balanceChanges = new HashMap<>();
+        Set<Integer> skippedMilestones = new HashSet<>();
+        MilestoneViewModel lastAppliedMilestone = null;
 
         try {
             for (int currentMilestoneIndex = snapshot.getIndex() + 1; currentMilestoneIndex <= targetMilestoneIndex;
@@ -71,30 +150,41 @@ public class SnapshotServiceImpl implements SnapshotService {
                 if (currentMilestone != null) {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, currentMilestone.getHash());
                     if(!stateDiffViewModel.isEmpty()) {
-                        snapshot.applyStateDiff(new SnapshotStateDiffImpl(stateDiffViewModel.getDiff()));
+                        stateDiffViewModel.getDiff().forEach((address, change) -> {
+                            balanceChanges.compute(address, (k, balance) -> (balance == null ? 0 : balance) + change);
+                        });
                     }
 
-                    snapshot.setIndex(currentMilestone.index());
-                    snapshot.setHash(currentMilestone.getHash());
-
-                    TransactionViewModel currentMilestoneTransaction = TransactionViewModel.fromHash(tangle,
-                            currentMilestone.getHash());
-
-                    if(currentMilestoneTransaction != null &&
-                            currentMilestoneTransaction.getType() != TransactionViewModel.PREFILLED_SLOT) {
-
-                        snapshot.setTimestamp(currentMilestoneTransaction.getTimestamp());
-                    }
+                    lastAppliedMilestone = currentMilestone;
                 } else {
-                    snapshot.addSkippedMilestone(currentMilestoneIndex);
+                    skippedMilestones.add(currentMilestoneIndex);
+                }
+            }
+
+            if (lastAppliedMilestone != null) {
+                try {
+                    snapshot.lockWrite();
+
+                    snapshot.applyStateDiff(new SnapshotStateDiffImpl(balanceChanges));
+
+                    snapshot.setIndex(lastAppliedMilestone.index());
+                    snapshot.setHash(lastAppliedMilestone.getHash());
+
+                    TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle,
+                            lastAppliedMilestone.getHash());
+                    if(milestoneTransaction.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                        snapshot.setTimestamp(milestoneTransaction.getTimestamp());
+                    }
+
+                    for (int skippedMilestoneIndex : skippedMilestones) {
+                        snapshot.addSkippedMilestone(skippedMilestoneIndex);
+                    }
+                } finally {
+                    snapshot.unlockWrite();
                 }
             }
         } catch (Exception e) {
-            snapshot.update(snapshotBeforeChanges);
-
-            throw new SnapshotException("failed to replay the the state of the ledger", e);
-        } finally {
-            snapshot.unlockWrite();
+            throw new SnapshotException("failed to replay the state of the ledger", e);
         }
     }
 
@@ -102,16 +192,14 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void rollBackMilestones(Tangle tangle, Snapshot snapshot, int targetMilestoneIndex) throws
-            SnapshotException {
-
+    public void rollBackMilestones(Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
         if(targetMilestoneIndex <= snapshot.getInitialIndex() || targetMilestoneIndex > snapshot.getIndex()) {
             throw new SnapshotException("invalid milestone index");
         }
 
         snapshot.lockWrite();
 
-        Snapshot snapshotBeforeChanges = new SnapshotImpl(snapshot);
+        Snapshot snapshotBeforeChanges = snapshot.clone();
 
         try {
             boolean rollbackSuccessful = true;
@@ -135,17 +223,19 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void takeLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            MilestoneTracker milestoneTracker, TransactionPruner transactionPruner) throws SnapshotException {
+    public void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner)
+            throws SnapshotException {
 
         MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config);
 
-        Snapshot newSnapshot = generateSnapshot(tangle, snapshotProvider, config, milestoneTracker, targetMilestone);
+        Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
-        cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
-                newSnapshot.getSolidEntryPoints(), transactionPruner);
+        if (transactionPruner != null) {
+            cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
+                    newSnapshot.getSolidEntryPoints(), transactionPruner);
 
-        cleanupOldData(config, transactionPruner, targetMilestone);
+            cleanupOldData(config, transactionPruner, targetMilestone);
+        }
 
         persistLocalSnapshot(snapshotProvider, newSnapshot, config);
     }
@@ -154,8 +244,8 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Snapshot generateSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            MilestoneTracker milestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException {
+    public Snapshot generateSnapshot(LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone)
+            throws SnapshotException {
 
         if (targetMilestone == null) {
             throw new SnapshotException("the target milestone must not be null");
@@ -176,21 +266,21 @@ public class SnapshotServiceImpl implements SnapshotService {
                     targetMilestone.index());
 
             if (distanceFromInitialSnapshot <= distanceFromLatestSnapshot) {
-                snapshot = new SnapshotImpl(snapshotProvider.getInitialSnapshot());
+                snapshot = snapshotProvider.getInitialSnapshot().clone();
 
-                replayMilestones(tangle, snapshot, targetMilestone.index());
+                replayMilestones(snapshot, targetMilestone.index());
             } else {
-                snapshot = new SnapshotImpl(snapshotProvider.getLatestSnapshot());
+                snapshot = snapshotProvider.getLatestSnapshot().clone();
 
-                rollBackMilestones(tangle, snapshot, targetMilestone.index() + 1);
+                rollBackMilestones(snapshot, targetMilestone.index() + 1);
             }
         } finally {
             snapshotProvider.getInitialSnapshot().unlockRead();
             snapshotProvider.getLatestSnapshot().unlockRead();
         }
 
-        snapshot.setSolidEntryPoints(generateSolidEntryPoints(tangle, snapshotProvider, targetMilestone));
-        snapshot.setSeenMilestones(generateSeenMilestones(tangle, config, milestoneTracker, targetMilestone));
+        snapshot.setSolidEntryPoints(generateSolidEntryPoints(targetMilestone));
+        snapshot.setSeenMilestones(generateSeenMilestones(latestMilestoneTracker, targetMilestone));
 
         return snapshot;
     }
@@ -199,9 +289,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Map<Hash, Integer> generateSolidEntryPoints(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneViewModel targetMilestone) throws SnapshotException {
-
+    public Map<Hash, Integer> generateSolidEntryPoints(MilestoneViewModel targetMilestone) throws SnapshotException {
         Map<Hash, Integer> solidEntryPoints = new HashMap<>();
         solidEntryPoints.put(Hash.NULL_HASH, targetMilestone.index());
 
@@ -215,8 +303,8 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Map<Hash, Integer> generateSeenMilestones(Tangle tangle, SnapshotConfig config,
-            MilestoneTracker milestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException {
+    public Map<Hash, Integer> generateSeenMilestones(LatestMilestoneTracker latestMilestoneTracker,
+            MilestoneViewModel targetMilestone) throws SnapshotException {
 
         ProgressLogger progressLogger = new IntervalProgressLogger(
                 "Taking local snapshot [processing seen milestones]", log)
@@ -226,7 +314,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             MilestoneViewModel seenMilestone = targetMilestone;
             while ((seenMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, seenMilestone.index(),
-                    milestoneTracker.latestMilestoneIndex)) != null) {
+                    latestMilestoneTracker.getLatestMilestoneIndex())) != null) {
 
                 seenMilestones.put(seenMilestone.getHash(), seenMilestone.index());
 
@@ -244,12 +332,14 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method reverts the changes caused by the last milestone that was applied to this snapshot.
-     *
+     * </p>
+     * <p>
      * It first checks if we didn't arrive at the initial index yet and then reverts the balance changes that were
      * caused by the last milestone. Then it checks if any milestones were skipped while applying the last milestone and
      * determines the {@link SnapshotMetaData} that this Snapshot had before and restores it.
-     *
+     * </p>
      * @param tangle Tangle object which acts as a database interface
      * @return true if the snapshot was rolled back or false otherwise
      * @throws SnapshotException if anything goes wrong while accessing the database
@@ -316,11 +406,14 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method determines the milestone that shall be used for the local snapshot.
-     *
+     * </p>
+     * <p>
      * It determines the milestone by subtracting the {@link SnapshotConfig#getLocalSnapshotsDepth()} from the latest
      * solid milestone index and retrieving the next milestone before this point.
-     *
+     * </p>
+     * 
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param config important snapshot related configuration parameters
@@ -347,15 +440,18 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method creates {@link com.iota.iri.service.transactionpruning.TransactionPrunerJob}s for the expired solid
      * entry points, which removes the unconfirmed subtangles branching off of these transactions.
-     *
+     * </p>
+     * <p>
      * We only clean up these subtangles if the transaction that they are branching off has been cleaned up already by a
      * {@link MilestonePrunerJob}. If the corresponding milestone has not been processed we leave them in the database
      * so we give the node a little bit more time to "use" these transaction for references from future milestones. This
      * is used to correctly reflect the {@link SnapshotConfig#getLocalSnapshotsPruningDelay()}, where we keep old data
      * prior to a snapshot.
-     *
+     * </p>
+     * 
      * @param tangle Tangle object which acts as a database interface
      * @param oldSolidEntryPoints solid entry points of the current initial {@link Snapshot}
      * @param newSolidEntryPoints solid entry points of the new initial {@link Snapshot}
@@ -382,12 +478,15 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method creates the {@link com.iota.iri.service.transactionpruning.TransactionPrunerJob}s that are
      * responsible for removing the old data.
-     *
+     * </p>
+     * <p>
      * It first calculates the range of milestones that shall be deleted and then issues a {@link MilestonePrunerJob}
      * for this range (if it is not empty).
-     *
+     * </p>
+     * 
      * @param config important snapshot related configuration parameters
      * @param transactionPruner  manager for the pruning jobs that takes care of cleaning up the old data that
      * @param targetMilestone milestone that was used as a reference point for the local snapshot
@@ -409,11 +508,14 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method persists the local snapshot on the disk and updates the instances used by the
      * {@link SnapshotProvider}.
-     *
+     * </p>
+     * <p>
      * It first writes the files to the disk and then updates the two {@link Snapshot}s accordingly.
-     *
+     * </p>
+     * 
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param newSnapshot Snapshot that shall be persisted
      * @param config important snapshot related configuration parameters
@@ -424,29 +526,29 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         snapshotProvider.writeSnapshotToDisk(newSnapshot, config.getLocalSnapshotsBasePath());
 
-        snapshotProvider.getInitialSnapshot().lockWrite();
         snapshotProvider.getLatestSnapshot().lockWrite();
-
-        snapshotProvider.getInitialSnapshot().update(newSnapshot);
-
         snapshotProvider.getLatestSnapshot().setInitialHash(newSnapshot.getHash());
         snapshotProvider.getLatestSnapshot().setInitialIndex(newSnapshot.getIndex());
         snapshotProvider.getLatestSnapshot().setInitialTimestamp(newSnapshot.getTimestamp());
-
-        snapshotProvider.getInitialSnapshot().unlockWrite();
         snapshotProvider.getLatestSnapshot().unlockWrite();
+
+        snapshotProvider.getInitialSnapshot().update(newSnapshot);
     }
 
     /**
+     * <p>
      * This method determines if a transaction is orphaned.
-     *
+     * </p>
+     * <p>
      * Since there is no hard definition for when a transaction can be considered to be orphaned, we define orphaned in
      * relation to a referenceTransaction. If the transaction or any of its direct or indirect approvers saw a
      * transaction being attached to it, that arrived after our reference transaction, we consider it "not orphaned".
-     *
+     * </p>
+     * <p>
      * Since we currently use milestones as reference transactions that are sufficiently old, this definition in fact is
      * a relatively safe way to determine if a subtangle "above" a transaction got orphaned.
-     *
+     * </p>
+     * 
      * @param tangle Tangle object which acts as a database interface
      * @param transaction transaction that shall be checked
      * @param referenceTransaction transaction that acts as a judge to the other transaction
@@ -457,18 +559,13 @@ public class SnapshotServiceImpl implements SnapshotService {
     private boolean isOrphaned(Tangle tangle, TransactionViewModel transaction,
             TransactionViewModel referenceTransaction, Set<Hash> processedTransactions) throws SnapshotException {
 
-        long arrivalTime = transaction.getArrivalTime() / 1000L + ORPHANED_TRANSACTION_GRACE_TIME;
-        if (arrivalTime > referenceTransaction.getTimestamp()) {
-            return false;
-        }
-
         AtomicBoolean nonOrphanedTransactionFound = new AtomicBoolean(false);
         try {
             DAGHelper.get(tangle).traverseApprovers(
                     transaction.getHash(),
                     currentTransaction -> !nonOrphanedTransactionFound.get(),
                     currentTransaction -> {
-                        if (arrivalTime > referenceTransaction.getTimestamp()) {
+                        if (currentTransaction.getArrivalTime() / 1000L > referenceTransaction.getTimestamp()) {
                             nonOrphanedTransactionFound.set(true);
                         }
                     },
@@ -482,19 +579,24 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method checks if a transaction is a solid entry point for the targetMilestone.
-     *
+     * </p>
+     * <p>
      * A transaction is considered a solid entry point if it has non-orphaned approvers.
-     *
+     * </p>
+     * <p>
      * To check if the transaction has non-orphaned approvers we first check if any of its approvers got confirmed by a
      * future milestone, since this is very cheap. If none of them got confirmed by another milestone we do the more
      * expensive check from {@link #isOrphaned(Tangle, TransactionViewModel, TransactionViewModel, Set)}.
-     *
+     * </p>
+     * <p>
      * Since solid entry points have a limited life time and to prevent potential problems due to temporary errors in
      * the database, we assume that the checked transaction is a solid entry point if any error occurs while determining
      * its status. This is a storage <=> reliability trade off, since the only bad effect of having too many solid entry
      * points) is a bigger snapshot file.
-     *
+     * </p>
+     * 
      * @param tangle Tangle object which acts as a database interface
      * @param transactionHash hash of the transaction that shall be checked
      * @param targetMilestone milestone that is used as an anchor for our checks
@@ -531,11 +633,14 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method analyzes the old solid entry points and determines if they are still not orphaned.
-     *
+     * </p>
+     * <p>
      * It simply iterates through the old solid entry points and checks them one by one. If an old solid entry point
      * is found to still be relevant it is added to the passed in map.
-     *
+     * </p>
+     * 
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param targetMilestone milestone that is used to generate the solid entry points
@@ -563,12 +668,15 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     /**
+     * <p>
      * This method retrieves the new solid entry points of the snapshot reference given by the target milestone.
-     *
+     * </p>
+     * <p>
      * It iterates over all unprocessed milestones and analyzes their directly and indirectly approved transactions.
      * Every transaction is checked for being a solid entry point and added to the passed in map (if it was found to be
      * one).
-     *
+     * </p>
+     * 
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param targetMilestone milestone that is used to generate the solid entry points
@@ -582,7 +690,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                 "Taking local snapshot [generating solid entry points]", log);
 
         try {
-            progressLogger.start(targetMilestone.index() - snapshotProvider.getInitialSnapshot().getIndex());
+            progressLogger.start(Math.min(targetMilestone.index() - snapshotProvider.getInitialSnapshot().getIndex(),
+                    OUTER_SHELL_SIZE));
 
             MilestoneViewModel nextMilestone = targetMilestone;
             while (nextMilestone != null && nextMilestone.index() > snapshotProvider.getInitialSnapshot().getIndex() &&

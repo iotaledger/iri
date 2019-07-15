@@ -2,6 +2,8 @@ package com.iota.iri.service.transactionpruning.jobs;
 
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJob;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
@@ -21,6 +23,16 @@ public abstract class AbstractTransactionPrunerJob implements TransactionPrunerJ
      * Holds a reference to the manager of the job that schedules it execution.
      */
     private TransactionPruner transactionPruner;
+
+    /**
+     * Ascertains that pruned transactions are recorded as spent addresses where necessary.
+     */
+    protected SpentAddressesService spentAddressesService;
+
+    /**
+     * Ascertains whether transactions are already added to the underlying persistence layer.
+     */
+    protected SpentAddressesProvider spentAddressesProvider;
 
     /**
      * Holds a reference to the tangle object which acts as a database interface.
@@ -83,6 +95,16 @@ public abstract class AbstractTransactionPrunerJob implements TransactionPrunerJ
     @Override
     public TipsViewModel getTipsViewModel() {
         return tipsViewModel;
+    }
+
+    @Override
+    public void setSpentAddressesService(SpentAddressesService spentAddressesService) {
+        this.spentAddressesService = spentAddressesService;
+    }
+
+    @Override
+    public void setSpentAddressesProvider(SpentAddressesProvider spentAddressesProvider) {
+        this.spentAddressesProvider = spentAddressesProvider;
     }
 
     /**

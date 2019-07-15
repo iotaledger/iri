@@ -11,5 +11,5 @@ exec java \
   -Xmx$JAVA_MAX_MEMORY \
   -Djava.net.preferIPv4Stack=true \
   -jar $DOCKER_IRI_JAR_PATH \
-  --remote --remote-limit-api "$DOCKER_IRI_REMOTE_LIMIT_API" \
+  --remote true --remote-limit-api "$DOCKER_IRI_REMOTE_LIMIT_API" \
   "$@"

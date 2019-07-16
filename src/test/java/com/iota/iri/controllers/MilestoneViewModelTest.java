@@ -175,7 +175,7 @@ public class MilestoneViewModelTest {
     }
 
     @Test
-    public void PrevBefore() throws Exception {
+    public void prevBefore() throws Exception {
         int first = 8;
         int next = 9;
         new MilestoneViewModel(next, HashFactory.TRANSACTION.create("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);

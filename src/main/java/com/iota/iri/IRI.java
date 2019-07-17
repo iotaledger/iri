@@ -6,6 +6,7 @@ import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.network.NetworkInjectionConfiguration;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
@@ -120,7 +121,9 @@ public class IRI {
             String version = IotaUtils.getIriVersion();
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, version);
 
-            Injector injector = Guice.createInjector(new InjectionConfiguration(config));
+            Injector injector = Guice.createInjector(
+                    new MainInjectionConfiguration(config),
+                    new NetworkInjectionConfiguration(config));
 
             iota = injector.getInstance(Iota.class);
             ixi = injector.getInstance(IXI.class);

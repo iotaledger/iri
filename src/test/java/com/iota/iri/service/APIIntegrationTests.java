@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.iota.iri.IXI;
-import com.iota.iri.InjectionConfiguration;
+import com.iota.iri.MainInjectionConfiguration;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IXIConfig;
@@ -13,6 +13,7 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
+import com.iota.iri.network.NetworkInjectionConfiguration;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.utils.Converter;
@@ -91,7 +92,8 @@ public class APIIntegrationTests {
             String[] args = {"-p", portStr, "--testnet", String.valueOf(true), "--max-neighbors", String.valueOf(5), "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
             configuration.parseConfigFromArgs(args);
-            Injector injector = Guice.createInjector(new InjectionConfiguration(configuration));
+            Injector injector = Guice.createInjector(new MainInjectionConfiguration(configuration),
+                    new NetworkInjectionConfiguration(configuration));
 
             //create node
             iota = injector.getInstance(Iota.class);

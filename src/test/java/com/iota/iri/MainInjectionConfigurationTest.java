@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.iota.iri.conf.BaseIotaConfig;
@@ -32,7 +33,7 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class InjectionConfigurationTest {
+public class MainInjectionConfigurationTest {
 
     @Test
     public void provideSnapshotProvider() {
@@ -47,11 +48,6 @@ public class InjectionConfigurationTest {
     @Test
     public void provideSnapshotService() {
         assertNotNull("instance creation did not work", testInjector().getInstance(SnapshotService.class));
-    }
-
-    @Test
-    public void provideTransactionRequester() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(TransactionRequester.class));
     }
 
     @Test
@@ -94,24 +90,21 @@ public class InjectionConfigurationTest {
         IotaConfig config = mock(IotaConfig.class);
         when(config.getLocalSnapshotsPruningEnabled()).thenReturn(true);
         when(config.getLocalSnapshotsEnabled()).thenReturn(true);
-        Injector injector = Guice.createInjector(new InjectionConfiguration(config));
-        assertNotNull("instance creation did not work", injector.getInstance(TransactionPruner.class));
+        assertNotNull("instance creation did not work", testInjector(config).getInstance(TransactionPruner.class));
     }
 
     @Test
     public void givenLocalSnapshotsDisabledWhenProvideTransactionPrunerThenNull() {
         IotaConfig config = mock(IotaConfig.class);
         when(config.getLocalSnapshotsPruningEnabled()).thenReturn(true);
-        Injector injector = Guice.createInjector(new InjectionConfiguration(config));
-        assertNull("instance should be null because of configuration", injector.getInstance(TransactionPruner.class));
+        assertNull("instance should be null because of configuration", testInjector(config).getInstance(TransactionPruner.class));
     }
 
     @Test
     public void givenPruningDisabledWhenProvideTransactionPrunerThenNull() {
         IotaConfig config = mock(IotaConfig.class);
         when(config.getLocalSnapshotsEnabled()).thenReturn(true);
-        Injector injector = Guice.createInjector(new InjectionConfiguration(config));
-        assertNull("instance should be null because of configuration", injector.getInstance(TransactionPruner.class));
+        assertNull("instance should be null because of configuration", testInjector(config).getInstance(TransactionPruner.class));
     }
 
     @Test
@@ -127,28 +120,8 @@ public class InjectionConfigurationTest {
     }
 
     @Test
-    public void provideTransactionRequesterWorker() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(TransactionRequesterWorker.class));
-    }
-
-    @Test
     public void provideTransactionValidator() {
         assertNotNull("instance creation did not work", testInjector().getInstance(TransactionValidator.class));
-    }
-
-    @Test
-    public void provideNeighborRouter() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(NeighborRouter.class));
-    }
-
-    @Test
-    public void provideTipsRequester() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(TipsRequester.class));
-    }
-
-    @Test
-    public void provideTransactionProcessingPipeline() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(TransactionProcessingPipeline.class));
     }
 
     @Test
@@ -186,7 +159,20 @@ public class InjectionConfigurationTest {
     }
 
     private Injector testInjector(IotaConfig config) {
-        return Guice.createInjector(new InjectionConfiguration(config));
+        return Guice.createInjector(new MainInjectionConfiguration(config), new MockedDependencies());
+    }
+
+    private class MockedDependencies extends AbstractModule {
+
+        @Override
+        protected void configure() {
+            bind(TransactionRequester.class).toInstance(mock(TransactionRequester.class));
+            bind(TransactionRequesterWorker.class).toInstance(mock(TransactionRequesterWorker.class));
+            bind(TipsRequester.class).toInstance(mock(TipsRequester.class));
+            bind(TransactionProcessingPipeline.class).toInstance(mock(TransactionProcessingPipeline.class));
+            bind(NeighborRouter.class).toInstance(mock(NeighborRouter.class));
+        }
+
     }
 
 }

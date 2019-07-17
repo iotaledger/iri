@@ -7,14 +7,10 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;
-import com.iota.iri.network.NeighborRouterImpl;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.TransactionRequesterWorker;
-import com.iota.iri.network.impl.TipsRequesterImpl;
-import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.service.API;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.LedgerService;
@@ -63,7 +59,7 @@ import java.util.HashMap;
 /**
  * Guice module. Configuration class for dependency injection.
  */
-public class InjectionConfiguration extends AbstractModule {
+public class MainInjectionConfiguration extends AbstractModule {
 
     private final IotaConfig configuration;
 
@@ -72,7 +68,7 @@ public class InjectionConfiguration extends AbstractModule {
      * @param configuration The iota configuration used for conditional bean creation and constructing beans with
      *                      configuration parameters.
      */
-    public InjectionConfiguration(IotaConfig configuration) {
+    public MainInjectionConfiguration(IotaConfig configuration) {
         this.configuration = configuration;
     }
 
@@ -98,13 +94,6 @@ public class InjectionConfiguration extends AbstractModule {
     @Provides
     SnapshotService provideSnapshotService(Tangle tangle, SnapshotProvider snapshotProvider) {
         return new SnapshotServiceImpl(tangle, snapshotProvider, configuration);
-    }
-
-    // TODO move to network module
-    @Singleton
-    @Provides
-    TransactionRequester provideTransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider) {
-        return new TransactionRequester(tangle, snapshotProvider, configuration.getpRemoveRequest());
     }
 
     @Singleton
@@ -167,12 +156,6 @@ public class InjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    TransactionRequesterWorker provideTransactionRequesterWorker(Tangle tangle, TransactionRequester transactionRequester, TipsViewModel tipsViewModel, NeighborRouter neighborRouter) {
-        return new TransactionRequesterWorkerImpl(tangle, transactionRequester, tipsViewModel, neighborRouter);
-    }
-
-    @Singleton
-    @Provides
     TransactionValidator provideTransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
         return new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester, configuration.isTestnet(), configuration.getMwm());
     }
@@ -181,22 +164,6 @@ public class InjectionConfiguration extends AbstractModule {
     @Provides
     TipsSolidifier provideTipsSolidifier(Tangle tangle,  TransactionValidator transactionValidator, TipsViewModel tipsViewModel) {
         return new TipsSolidifier(tangle, transactionValidator, tipsViewModel, configuration);
-    }
-
-    // TODO move to network module
-    @Singleton
-    @Provides
-    NeighborRouter provideNeighborRouter(TransactionRequester transactionRequester, TransactionProcessingPipeline transactionProcessingPipeline) {
-        return new NeighborRouterImpl(configuration, configuration, transactionRequester, transactionProcessingPipeline);
-    }
-
-    // TODO move to network module
-    @Singleton
-    @Provides
-    TransactionProcessingPipeline provideTransactionProcessingPipeline(NeighborRouter neighborRouter, TransactionValidator txValidator, Tangle tangle,
-                                                                       SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
-                                                                       LatestMilestoneTracker latestMilestoneTracker) {
-        return new TransactionProcessingPipelineImpl(neighborRouter, configuration, txValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker);
     }
 
     @Singleton
@@ -210,13 +177,6 @@ public class InjectionConfiguration extends AbstractModule {
         Walker walker = new WalkerAlpha(tailFinder, tangle, new SecureRandom(), configuration);
         return new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
                 walker, configuration);
-    }
-
-    // TODO move to network module
-    @Singleton
-    @Provides
-    TipsRequester provideTipsRequester(NeighborRouter neighborRouter, Tangle tangle, LatestMilestoneTracker latestMilestoneTracker, TransactionRequester txRequester) {
-        return new TipsRequesterImpl(neighborRouter, tangle, latestMilestoneTracker, txRequester);
     }
 
     @Singleton

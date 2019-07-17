@@ -3,7 +3,7 @@ package com.iota.iri.service;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.iota.iri.IXI;
-import com.iota.iri.InjectionConfiguration;
+import com.iota.iri.MainInjectionConfiguration;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.IXIConfig;
 import com.iota.iri.conf.TestnetConfig;
@@ -11,6 +11,7 @@ import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.NetworkInjectionConfiguration;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
@@ -41,7 +42,6 @@ public class NodeIntegrationTests {
     public void tearDown() throws Exception {
     }
 
-
     //@Test
     public void testGetsSolid() throws Exception {
         int count = 1;
@@ -56,7 +56,8 @@ public class NodeIntegrationTests {
             folders[i*2] = new TemporaryFolder();
             folders[i*2 + 1] = new TemporaryFolder();
             TestnetConfig conf = newNodeConfig(i, folders[i*2], folders[i*2+1]);
-            Injector injector = Guice.createInjector(new InjectionConfiguration(conf));
+            Injector injector = Guice.createInjector(new MainInjectionConfiguration(conf),
+                    new NetworkInjectionConfiguration(conf));
 
             iotaNodes[i] = injector.getInstance(Iota.class);
             iotaNodes[i].init();

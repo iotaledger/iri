@@ -111,6 +111,9 @@ public class CumulativeWeightCalculator implements RatingCalculator{
 
         Iterator<Hash> txHashIterator = txsToRate.iterator();
         while (txHashIterator.hasNext()) {
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
             Hash txHash = txHashIterator.next();
             txHashToCumulativeWeight = updateCw(txHashToApprovers, txHashToCumulativeWeight, txHash);
             txHashToApprovers = updateApproversAndReleaseMemory(txHashToApprovers, txHash);
@@ -121,7 +124,7 @@ public class CumulativeWeightCalculator implements RatingCalculator{
 
 
     private UnIterableMap<HashId, Set<HashId>> updateApproversAndReleaseMemory(UnIterableMap<HashId,
-                    Set<HashId>> txHashToApprovers, Hash txHash) throws Exception {
+            Set<HashId>> txHashToApprovers, Hash txHash) throws Exception {
         Set<HashId> approvers = SetUtils.emptyIfNull(txHashToApprovers.get(txHash));
 
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
@@ -156,7 +159,7 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     }
 
     private static UnIterableMap<HashId, Set<HashId>> createTxHashToApproversPrefixMap() {
-       return new TransformingMap<>(HashPrefix::createPrefix, null);
+        return new TransformingMap<>(HashPrefix::createPrefix, null);
     }
 
     private static UnIterableMap<HashId, Integer> createTxHashToCumulativeWeightMap(int size) {

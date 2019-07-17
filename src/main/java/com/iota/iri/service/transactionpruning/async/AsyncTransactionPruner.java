@@ -14,23 +14,22 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * <p>
  * Creates a {@link TransactionPruner} that is able to process it's jobs asynchronously in the background and persists
- * its state in a file on the hard disk of the node.<br />
- * <br />
+ * its state in a file on the hard disk of the node.
+ * </p>
+ * <p>
  * The asynchronous processing of the jobs is done through {@link Thread}s that are started and stopped by invoking the
  * corresponding {@link #start()} and {@link #shutdown()} methods. Since some of the builtin jobs require a special
- * logic for the way they are executed, we register the builtin job types here.<br />
+ * logic for the way they are executed, we register the builtin job types here.
+ * </p>
  */
 public class AsyncTransactionPruner implements TransactionPruner {
     /**
@@ -40,8 +39,9 @@ public class AsyncTransactionPruner implements TransactionPruner {
     private static final int GARBAGE_COLLECTOR_RESCAN_INTERVAL = 10000;
 
     /**
+     * <p>
      * The interval (in milliseconds) in which the {@link AsyncTransactionPruner} will persist its state.
-     *
+     * </p>
      * Note: Since the worst thing that could happen when not having a 100% synced state file is to have a few floating
      *       "zombie" transactions in the database, we do not persist the state immediately but in intervals in a
      *       separate {@link Thread} (to save performance - until a db-based version gets introduced).
@@ -85,17 +85,19 @@ public class AsyncTransactionPruner implements TransactionPruner {
 
     /**
      * Holds a reference to the {@link ThreadIdentifier} for the cleanup thread.
-     *
+     * <p>
      * Using a {@link ThreadIdentifier} for spawning the thread allows the {@link ThreadUtils} to spawn exactly one
      * thread for this instance even when we call the {@link #start()} method multiple times.
+     * </p>
      */
     private final ThreadIdentifier cleanupThreadIdentifier = new ThreadIdentifier("Transaction Pruner");
 
     /**
      * Holds a reference to the {@link ThreadIdentifier} for the state persistence thread.
-     *
+     * <p>
      * Using a {@link ThreadIdentifier} for spawning the thread allows the {@link ThreadUtils} to spawn exactly one
      * thread for this instance even when we call the {@link #start()} method multiple times.
+     * </p>
      */
     private final ThreadIdentifier persisterThreadIdentifier = new ThreadIdentifier("Transaction Pruner Persister");
 
@@ -111,15 +113,18 @@ public class AsyncTransactionPruner implements TransactionPruner {
     private final Map<Class<? extends TransactionPrunerJob>, JobQueue> jobQueues = new HashMap<>();
 
     /**
-     * This method initializes the instance and registers its dependencies.<br />
-     * <br />
-     * It simply stores the passed in values in their corresponding private properties.<br />
-     * <br />
+     * <p>
+     * This method initializes the instance and registers its dependencies.
+     * </p>
+     * <p>
+     * It simply stores the passed in values in their corresponding private properties.
+     * </p>
+     * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
      *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
      *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
-     *       <br />
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * </p>
      *       {@code asyncTransactionPruner = new AsyncTransactionPruner().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
@@ -172,8 +177,10 @@ public class AsyncTransactionPruner implements TransactionPruner {
     /**
      * {@inheritDoc}
      *
+     * <p>
      * It iterates through all available queues and triggers the processing of their jobs.
-     *
+     * </p>
+     * 
      * @throws TransactionPruningException if anything goes wrong while processing the cleanup jobs
      */
     @Override
@@ -189,9 +196,10 @@ public class AsyncTransactionPruner implements TransactionPruner {
 
 
     /**
+     * <p>
      * This method removes all queued jobs and resets the state of the {@link TransactionPruner}. It can for example be
      * used to cleanup after tests.
-     *
+     * </p>
      * It cycles through all registered {@link JobQueue}s and clears them before persisting the state.
      */
     void clear() {
@@ -201,11 +209,14 @@ public class AsyncTransactionPruner implements TransactionPruner {
     }
 
     /**
+     * <p>
      * This method starts the cleanup and persistence {@link Thread}s that asynchronously process the queued jobs in the
      * background.
-     *
+     * </p>
+     * <p>
      * Note: This method is thread safe since we use a {@link ThreadIdentifier} to address the {@link Thread}. The
      *       {@link ThreadUtils} take care of only launching exactly one {@link Thread} that is not terminated.
+     * </p>
      */
     public void start() {
         ThreadUtils.spawnThread(this::processJobsThread, cleanupThreadIdentifier);
@@ -252,9 +263,11 @@ public class AsyncTransactionPruner implements TransactionPruner {
     /**
      * This method allows to register a {@link JobParser} for a given job type.
      *
+     * <p>
      * When we serialize the pending jobs to save the current state, we also dump their class names, which allows us to
      * generically parse their serialized representation using the registered parser function back into the
      * corresponding job.
+     * </p>
      *
      * @param jobClass class of the job that the TransactionPruner shall be able to handle
      * @param jobParser parser function for the serialized version of jobs of the given type

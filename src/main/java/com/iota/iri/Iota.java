@@ -1,7 +1,9 @@
 package com.iota.iri;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
@@ -11,11 +13,13 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.network.Node;
+import com.iota.iri.model.persistables.SpentAddress;
+import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.UDPReceiver;
+import com.iota.iri.network.impl.TipsRequesterImpl;
 import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
-import com.iota.iri.network.replicator.Replicator;
+import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
 import com.iota.iri.service.milestone.impl.LatestMilestoneTrackerImpl;
@@ -52,27 +56,27 @@ import com.iota.iri.zmq.ZmqMessageQueueProvider;
 
 /**
  *
- * The main class of IRI. This will propagate transactions into and throughout the network.
- * This data is stored as a {@link Tangle}, a form of a Directed acyclic graph.
- * All incoming data will be stored in one or more implementations of {@link PersistenceProvider}.
+ * The main class of IRI. This will propagate transactions into and throughout the network. This data is stored as a
+ * {@link Tangle}, a form of a Directed acyclic graph. All incoming data will be stored in one or more implementations
+ * of {@link PersistenceProvider}.
  *
  * <p>
- *     During initialization, all the Providers can be set to rescan or revalidate their transactions.
- *     After initialization, an asynchronous process has started which will process inbound and outbound transactions.
- *     Each full node should be peered with 7-9 other full nodes (neighbors) to function optimally.
+ * During initialization, all the Providers can be set to rescan or revalidate their transactions. After initialization,
+ * an asynchronous process has started which will process inbound and outbound transactions. Each full node should be
+ * peered with 3-5 other full nodes (neighbors) to function optimally.
  * </p>
  * <p>
- *     If this node has no Neighbors defined, no data is transferred.
- *     However, if the node has Neighbors, but no Internet connection,
- *     synchronization will continue after Internet connection is established.
- *     Any transactions sent to this node in its local network will then be processed.
- *     This makes IRI able to run partially offline if an already existing database exists on this node.
+ * If this node has no Neighbors defined, no data is transferred. However, if the node has Neighbors, but no Internet
+ * connection, synchronization will continue after Internet connection is established. Any transactions sent to this
+ * node in its local network will then be processed. This makes IRI able to run partially offline if an already existing
+ * database exists on this node.
  * </p>
  * <p>
  *     Validation of a transaction is the process by which other devices choose the transaction.
  *     This is done via a {@link TipSelector} algorithm, after which the transaction performs
- *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips. <br/>
- *
+ *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips.
+ * </p>
+ * <p>
  *     As many other transactions repeat this process on top of each other,
  *     validation of the transaction in question slowly builds up enough verifications.
  *     Eventually this will reach a minimum acceptable verification threshold.
@@ -82,6 +86,7 @@ import com.iota.iri.zmq.ZmqMessageQueueProvider;
  *
  */
 public class Iota {
+
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
     public final SpentAddressesProviderImpl spentAddressesProvider;
@@ -116,9 +121,9 @@ public class Iota {
     public final TransactionValidator transactionValidator;
     public final TipsSolidifier tipsSolidifier;
     public final TransactionRequester transactionRequester;
-    public final Node node;
-    public final UDPReceiver udpReceiver;
-    public final Replicator replicator;
+    public final TipsRequesterImpl tipRequester;
+    public final TransactionProcessingPipeline txPipeline;
+    public final NeighborRouter neighborRouter;
     public final IotaConfig configuration;
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
@@ -128,10 +133,11 @@ public class Iota {
      *
      * @param configuration Information about how this node will be configured.
      * @throws TransactionPruningException If the TransactionPruner could not restore its state.
-     * @throws SnapshotException If the Snapshot fails to initialize.
-     *                           This can happen if the snapshot signature is invalid or the file cannot be read.
+     * @throws SnapshotException           If the Snapshot fails to initialize. This can happen if the snapshot
+     *                                     signature is invalid or the file cannot be read.
      */
-    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException, SpentAddressesException {
+    public Iota(IotaConfig configuration)
+            throws TransactionPruningException, SnapshotException, SpentAddressesException {
         this.configuration = configuration;
 
         // new refactored instances
@@ -139,18 +145,19 @@ public class Iota {
         spentAddressesService = new SpentAddressesServiceImpl();
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = configuration.getLocalSnapshotsEnabled()
-                             ? new LocalSnapshotManagerImpl()
-                             : null;
+        localSnapshotManager = configuration.getLocalSnapshotsEnabled() ? new LocalSnapshotManagerImpl() : null;
         milestoneService = new MilestoneServiceImpl();
         latestMilestoneTracker = new LatestMilestoneTrackerImpl();
         latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
         transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
-                          ? new AsyncTransactionPruner()
-                          : null;
+                ? new AsyncTransactionPruner()
+                : null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
+        neighborRouter = new NeighborRouter();
+        txPipeline = new TransactionProcessingPipelineImpl();
+        tipRequester = new TipsRequesterImpl();
 
         // legacy code
         bundleValidator = new BundleValidator();
@@ -158,10 +165,7 @@ public class Iota {
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, snapshotProvider);
         transactionValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester);
-        node = new Node(tangle, snapshotProvider, transactionValidator, transactionRequester, tipsViewModel,
-                latestMilestoneTracker, configuration);
-        replicator = new Replicator(node, configuration);
-        udpReceiver = new UDPReceiver(node, configuration);
+
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel, configuration);
         tipsSelector = createTipSelector(configuration);
 
@@ -169,18 +173,20 @@ public class Iota {
     }
 
     /**
+     * <p>
      * Adds all database providers, and starts initialization of our services.
-     * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.<br/>
+     * According to the {@link IotaConfig}, data is optionally cleared, reprocessed and reverified.
+     * </p>
      * After this function, incoming and outbound transaction processing has started.
      *
-     * @throws Exception If along the way a service fails to initialize.
-     *                   Most common cause is a file read or database error.
+     * @throws Exception If along the way a service fails to initialize. Most common cause is a file read or database
+     *                   error.
      */
     public void init() throws Exception {
         initializeTangle();
         tangle.init();
 
-        if (configuration.isRescanDb()){
+        if (configuration.isRescanDb()) {
             rescanDb();
         }
 
@@ -193,9 +199,10 @@ public class Iota {
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
         tipsSolidifier.init();
         transactionRequester.init(configuration.getpRemoveRequest());
-        udpReceiver.init();
-        replicator.init();
-        node.init();
+
+        txPipeline.start();
+        neighborRouter.start();
+        tipRequester.start();
 
         latestMilestoneTracker.start();
         latestSolidMilestoneTracker.start();
@@ -212,15 +219,23 @@ public class Iota {
     }
 
     private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
-        //snapshot provider must be initialized first
-        //because we check whether spent addresses data exists
+        // snapshot provider must be initialized first
+        // because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
-        spentAddressesProvider.init(configuration);
+        spentAddressesProvider.init(configuration, createRocksDbProvider(
+                configuration.getSpentAddressesDbPath(),
+                configuration.getSpentAddressesDbLogPath(),
+                1000,
+                new HashMap<String, Class<? extends Persistable>>(1)
+                {{put("spent-addresses", SpentAddress.class);}}, null)
+            );
+        
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
         }
+
         milestoneService.init(tangle, snapshotProvider, snapshotService, bundleValidator, configuration);
         latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
                 configuration);
@@ -233,11 +248,15 @@ public class Iota {
         if (transactionPruner != null) {
             transactionPruner.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, tipsViewModel, configuration);
         }
-        transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
+        transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, neighborRouter);
+        neighborRouter.init(configuration, configuration, transactionRequester, txPipeline);
+        txPipeline.init(neighborRouter, configuration, transactionValidator, tangle, snapshotProvider, tipsViewModel,
+                latestMilestoneTracker);
+        tipRequester.init(neighborRouter, tangle, latestMilestoneTracker, transactionRequester);
     }
 
     private void rescanDb() throws Exception {
-        //delete all transaction indexes
+        // delete all transaction indexes
         tangle.clearColumn(com.iota.iri.model.persistables.Address.class);
         tangle.clearColumn(com.iota.iri.model.persistables.Bundle.class);
         tangle.clearColumn(com.iota.iri.model.persistables.Approvee.class);
@@ -247,7 +266,7 @@ public class Iota {
         tangle.clearColumn(com.iota.iri.model.StateDiff.class);
         tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
 
-        //rescan all tx & refill the columns
+        // rescan all tx & refill the columns
         TransactionViewModel tx = TransactionViewModel.first(tangle);
         int counter = 0;
         while (tx != null) {
@@ -262,8 +281,8 @@ public class Iota {
     }
 
     /**
-     * Gracefully shuts down by calling <tt>shutdown()</tt> on all used services.
-     * Exceptions during shutdown are not caught.
+     * Gracefully shuts down by calling <tt>shutdown()</tt> on all used services. Exceptions during shutdown are not
+     * caught.
      */
     public void shutdown() throws Exception {
         // shutdown in reverse starting order (to not break any dependencies)
@@ -281,9 +300,9 @@ public class Iota {
         }
 
         tipsSolidifier.shutdown();
-        node.shutdown();
-        udpReceiver.shutdown();
-        replicator.shutdown();
+        tipRequester.shutdown();
+        txPipeline.shutdown();
+        neighborRouter.shutdown();
         transactionValidator.shutdown();
         tangle.shutdown();
 
@@ -294,7 +313,7 @@ public class Iota {
     private void initializeTangle() {
         switch (configuration.getMainDb()) {
             case "rocksdb": {
-                tangle.addPersistenceProvider(new RocksDBPersistenceProvider(
+                tangle.addPersistenceProvider(createRocksDbProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
                         configuration.getDbCacheSize(),
@@ -310,6 +329,23 @@ public class Iota {
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
+    }
+    
+    /**
+     * Creates a new Persistable provider with the supplied settings
+     * 
+     * @param path The location where the database will be stored
+     * @param log The location where the log files will be stored
+     * @param cacheSize the size of the cache used by the database implementation
+     * @param columnFamily A map of the names related to their Persistable class
+     * @param metadata Map of metadata used by the Persistable class, can be <code>null</code>
+     * @return A new Persistance provider
+     */
+    private PersistenceProvider createRocksDbProvider(String path, String log, int cacheSize, 
+            Map<String, Class<? extends Persistable>> columnFamily,
+            Map.Entry<String, Class<? extends Persistable>> metadata) {
+        return new RocksDBPersistenceProvider(
+                path, log, cacheSize, columnFamily, metadata);
     }
 
     private TipSelector createTipSelector(TipSelConfig config) {

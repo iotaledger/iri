@@ -712,12 +712,12 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT;
     }
 
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final Set<Hash> analyzedHashes)
+    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final LinkedHashSet<Hash> analyzedHashes)
             throws Exception {
-        Iterator<Hash> hashIterator = analyzedHashes.iterator();
+        Object[] hashes = analyzedHashes.toArray();
         TransactionViewModel transactionViewModel;
-        while (hashIterator.hasNext()) {
-            transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
+        for(int i = hashes.length -1; i >= 0; i--){
+            transactionViewModel = TransactionViewModel.fromHash(tangle, (Hash) hashes[i]);
 
             transactionViewModel.updateHeights(tangle, initialSnapshot);
 
@@ -778,12 +778,10 @@ public class TransactionViewModel {
      * milestone accordingly. It first checks if the {@link Transaction#milestone} flag has changed and if so, it issues
      * a database update.
      *
-     * @param tangle Tangle instance which acts as a database interface <<<<<<< HEAD
-     * @param isMilestone True if the {@link Transaction} is a milestone and False if not
-     * @throws Exception Thrown if there is an error while saving the changes to the database =======
+     * @param tangle Tangle instance which acts as a database interface
      * @param initialSnapshot the snapshot representing the starting point of our ledger
      * @param isMilestone true if the transaction is a milestone and false otherwise
-     * @throws Exception if something goes wrong while saving the changes to the database >>>>>>> release-v1.5.6
+     * @throws Exception if something goes wrong while saving the changes to the database
      */
     public void isMilestone(Tangle tangle, Snapshot initialSnapshot, final boolean isMilestone) throws Exception {
         if (isMilestone != transaction.milestone) {
@@ -895,3 +893,4 @@ public class TransactionViewModel {
         return "transaction " + hash.toString();
     }
 }
+

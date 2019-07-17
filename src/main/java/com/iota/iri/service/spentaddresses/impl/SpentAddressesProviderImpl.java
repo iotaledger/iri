@@ -1,5 +1,13 @@
 package com.iota.iri.service.spentaddresses.impl;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
@@ -9,17 +17,9 @@ import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
-
-import java.io.*;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -29,33 +29,27 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {
-    private static final Logger log = LoggerFactory.getLogger(SpentAddressesProviderImpl.class);
-
-    private RocksDBPersistenceProvider rocksDBPersistenceProvider;
 
     private SnapshotConfig config;
+
+    private PersistenceProvider provider;
 
     /**
      * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
      *
      * @param config The snapshot configuration used for file location
+     * @param provider A persistence provider for load/save the spent addresses
      * @return the current instance
      * @throws SpentAddressesException if we failed to create a file at the designated location
      */
-    public SpentAddressesProviderImpl init(SnapshotConfig config)
+    public SpentAddressesProviderImpl init(SnapshotConfig config, PersistenceProvider provider)
             throws SpentAddressesException {
         this.config = config;
         try {
-            this.rocksDBPersistenceProvider = new RocksDBPersistenceProvider(
-                    config.getSpentAddressesDbPath(),
-                    config.getSpentAddressesDbLogPath(),
-                    1000,
-                    new HashMap<String, Class<? extends Persistable>>(1)
-                    {{put("spent-addresses", SpentAddress.class);}}, null);
-            this.rocksDBPersistenceProvider.init();
+            this.provider = provider;
+            this.provider.init();
             readPreviousEpochsSpentAddresses();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new SpentAddressesException("There is a problem with accessing stored spent addresses", e);
         }
         return this;
@@ -86,7 +80,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public boolean containsAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            return rocksDBPersistenceProvider.exists(SpentAddress.class, addressHash);
+            return provider.exists(SpentAddress.class, addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
@@ -95,7 +89,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public void saveAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            rocksDBPersistenceProvider.save(new SpentAddress(), addressHash);
+            provider.save(new SpentAddress(), addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
@@ -106,8 +100,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         try {
             // Its bytes are always new byte[0], therefore identical in storage
             SpentAddress spentAddressModel = new SpentAddress();
-
-            rocksDBPersistenceProvider.saveBatch(addressHash
+            provider.saveBatch(addressHash
                 .stream()
                 .map(address -> new Pair<Indexable, Persistable>(address, spentAddressModel))
                 .collect(Collectors.toList())
@@ -115,5 +108,14 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
+    }
+
+    @Override
+    public List<Hash> getAllAddresses() {
+        List<Hash> addresses = new ArrayList<>();
+        for (byte[] bytes : provider.loadAllKeysFromTable(SpentAddress.class)) {
+            addresses.add(HashFactory.ADDRESS.create(bytes));
+        }
+        return addresses;
     }
 }

@@ -59,7 +59,7 @@ public class WalkerAlphaTest {
 
         TailFinder tailFinder = Mockito.mock(TailFinder.class);
         Mockito.when(tailFinder.findTail(Mockito.any(Hash.class)))
-                .then(args -> Optional.of(args.getArgumentAt(0, Hash.class)));
+                .then(args -> Optional.of(args.getArgument(0)));
         walker = new WalkerAlpha(tailFinder, tangle, new Random(1), new MainnetConfig());
     }
 
@@ -94,9 +94,9 @@ public class WalkerAlphaTest {
             //select
             Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
-            Assert.assertTrue(tip != null);
+            Assert.assertNotNull(tip);
             //log.info("selected tip: " + tip.toString());
-            Assert.assertTrue(!transaction4.getHash().equals(tip));
+            Assert.assertFalse(transaction4.getHash().equals(tip));
         }
     }
 

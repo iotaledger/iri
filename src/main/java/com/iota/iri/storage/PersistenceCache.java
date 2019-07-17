@@ -157,13 +157,23 @@ public class PersistenceCache<T extends Persistable> implements DataCache<Indexa
     private void cleanUp() throws CacheException {
         log.debug("Cleaning cache...");
         try {
+            List<Pair<Indexable, Persistable>> listBatch = null;
+            try {
+                listBatch = cache.entrySet().stream().limit(getNumEvictions()).map(entry -> {
+                    System.out.println("cleaning batch entry: " + entry);
+                    return new Pair<Indexable, Persistable>(entry.getKey(), entry.getValue());
+                }).collect(Collectors.toList());
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+
             // Write in batch to the database
-            writeBatch(cache.entrySet().stream().limit(getNumEvictions()).map(entry -> {
-                return new Pair<Indexable, Persistable>(entry.getKey(), entry.getValue());
-            }).collect(Collectors.toList()));
+            writeBatch(listBatch);
 
             // Then remove one by one
             for (int i = 0; i < getNumEvictions(); i++) {
+                System.out.println("Cache remove " + i);
                 cache.remove(cache.firstKey());
             }
 

@@ -2,13 +2,14 @@ package com.iota.iri;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.network.Node;
+import com.iota.iri.network.NeighborRouter;
+import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.TransactionRequesterWorker;
-import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.network.replicator.Replicator;
+import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.LedgerService;
@@ -122,8 +123,7 @@ public class InjectionConfigurationTest {
     public void provideLocalSnapshotManager() {
         IotaConfig config = mock(IotaConfig.class);
         when(config.getLocalSnapshotsEnabled()).thenReturn(true);
-        Injector injector = Guice.createInjector(new InjectionConfiguration(config));
-        assertNotNull("instance creation did not work", injector.getInstance(LocalSnapshotManager.class));
+        assertNotNull("instance creation did not work", testInjector(config).getInstance(LocalSnapshotManager.class));
     }
 
     @Test
@@ -137,18 +137,18 @@ public class InjectionConfigurationTest {
     }
 
     @Test
-    public void provideNode() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(Node.class));
+    public void provideNeighborRouter() {
+        assertNotNull("instance creation did not work", testInjector().getInstance(NeighborRouter.class));
     }
 
     @Test
-    public void provideReplicator() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(Replicator.class));
+    public void provideTipsRequester() {
+        assertNotNull("instance creation did not work", testInjector().getInstance(TipsRequester.class));
     }
 
     @Test
-    public void provideUdpReceiver() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(UDPReceiver.class));
+    public void provideTransactionProcessingPipeline() {
+        assertNotNull("instance creation did not work", testInjector().getInstance(TransactionProcessingPipeline.class));
     }
 
     @Test
@@ -180,7 +180,13 @@ public class InjectionConfigurationTest {
     }
 
     private Injector testInjector() {
-        return Guice.createInjector(new InjectionConfiguration(mock(IotaConfig.class)));
+        IotaConfig config = mock(IotaConfig.class);
+        when(config.getCoordinator()).thenReturn(BaseIotaConfig.Defaults.COORDINATOR_ADDRESS);
+        return testInjector(config);
+    }
+
+    private Injector testInjector(IotaConfig config) {
+        return Guice.createInjector(new InjectionConfiguration(config));
     }
 
 }

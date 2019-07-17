@@ -53,7 +53,7 @@ public interface NetworkConfig extends Config {
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#MAX_NEIGHBORS}
      *
-     * @return {@value Descriptions#MAX_NEIGHBORS}
+     * @return {@value NetworkConfig.Descriptions#MAX_NEIGHBORS}
      */
     int getMaxNeighbors();
 

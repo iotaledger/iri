@@ -92,14 +92,14 @@ public interface SnapshotConfig extends Config {
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#SPENT_ADDRESSES_DB_PATH}
      *
-     * @return {@value Descriptions#SPENT_ADDRESSES_DB_PATH}
+     * @return {@value SnapshotConfig.Descriptions#SPENT_ADDRESSES_DB_PATH}
      */
     String getSpentAddressesDbPath();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#SPENT_ADDRESSES_DB_LOG_PATH}
      *
-     * @return {@value Descriptions#SPENT_ADDRESSES_DB_LOG_PATH}
+     * @return {@value SnapshotConfig.Descriptions#SPENT_ADDRESSES_DB_LOG_PATH}
      */
     String getSpentAddressesDbLogPath();
 

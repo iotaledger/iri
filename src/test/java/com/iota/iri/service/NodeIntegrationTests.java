@@ -2,15 +2,12 @@ package com.iota.iri.service;
 
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
-
-import static com.iota.iri.controllers.TransactionViewModel.*;
-
-import com.iota.iri.conf.*;
+import com.iota.iri.conf.IXIConfig;
+import com.iota.iri.conf.TestnetConfig;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.Node;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
@@ -18,9 +15,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static com.iota.iri.controllers.TransactionViewModel.*;
 
 public class NodeIntegrationTests {
 
@@ -41,6 +43,7 @@ public class NodeIntegrationTests {
     public void testGetsSolid() throws Exception {
         int count = 1;
         long spacing = 5000;
+
         Iota[] iotaNodes = new Iota[count];
         API[] api = new API[count];
         IXI[] ixi = new IXI[count];
@@ -56,14 +59,13 @@ public class NodeIntegrationTests {
             
             api[i] = new API(conf, ixi[i], iotaNodes[i].transactionRequester,
                     iotaNodes[i].spentAddressesService, iotaNodes[i].tangle, iotaNodes[i].bundleValidator,
-                    iotaNodes[i].snapshotProvider, iotaNodes[i].ledgerService, iotaNodes[i].node, 
+                    iotaNodes[i].snapshotProvider, iotaNodes[i].ledgerService, iotaNodes[i].neighborRouter,
                     iotaNodes[i].tipsSelector, iotaNodes[i].tipsViewModel, iotaNodes[i].transactionValidator,
-                    iotaNodes[i].latestMilestoneTracker);
+                    iotaNodes[i].latestMilestoneTracker, iotaNodes[i].txPipeline);
             
             api[i].init(new RestEasy(conf));
         }
-        Node.uri("udp://localhost:14701").ifPresent(uri -> iotaNodes[0].node.addNeighbor(iotaNodes[0].node.newNeighbor(uri, true)));
-        //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.addNeighbor(iotaNodes[1].node.newNeighbor(uri, true)));
+        iotaNodes[0].neighborRouter.addNeighbor("tcp://localhost:14701");
 
         cooThread = new Thread(spawnCoordinator(api[0], spacing), "Coordinator");
         master = new Thread(spawnMaster(), "master");
@@ -91,8 +93,7 @@ public class NodeIntegrationTests {
         log.create();
         Iota iota;
         conf.setPort(14800 + index);
-        conf.setUdpReceiverPort((14700 + index));
-        conf.setUdpReceiverPort((14700 + index));
+        conf.setNeighboringSocketPort(14700 + index);
         conf.setDbPath(db.getRoot().getAbsolutePath());
         conf.setDbLogPath(log.getRoot().getAbsolutePath());
         iota = new Iota(conf);

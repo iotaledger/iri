@@ -1,33 +1,32 @@
 package com.iota.iri.network.impl;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-
-import org.mockito.Answers;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
-
 import com.iota.iri.TangleMockUtils;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.network.Node;
+import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.mockito.Answers;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.iota.iri.TransactionTestUtils.getTransaction;
 import static com.iota.iri.TransactionTestUtils.get9Transaction;
 import static com.iota.iri.TransactionTestUtils.buildTransaction;
 import static com.iota.iri.TransactionTestUtils.getTransactionHash;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 public class TransactionRequesterWorkerImplTest {
@@ -58,7 +57,7 @@ public class TransactionRequesterWorkerImplTest {
     private Tangle tangle;
     
     @Mock
-    private Node node;
+    private NeighborRouter neighborRouter;
     
     @Mock
     private TipsViewModel tipsVM;
@@ -66,9 +65,10 @@ public class TransactionRequesterWorkerImplTest {
     @Before
     public void before() {
         requester = new TransactionRequester(tangle, snapshotProvider);
-        
+
         worker = new TransactionRequesterWorkerImpl();
-        worker.init(tangle, requester, tipsVM, node);
+        when(neighborRouter.getConnectedNeighbors()).thenReturn(new ConcurrentHashMap<>());
+        worker.init(tangle, requester, tipsVM, neighborRouter);
     }
     
     @After

@@ -55,10 +55,13 @@ Feature: Test API calls on Machine 1
 		|keys						|
 		|address					|
 		|numberOfAllTransactions			|
-		|numberOfRandomTransactionRequests		|
 		|numberOfNewTransactions			|
 		|numberOfInvalidTransactions			|
+		|numberOfStaleTransactions			|
 		|numberOfSentTransactions			|
+		|numberOfRandomTransactionRequests		|
+		|numberOfDroppedSentPackets			|
+		|connected				|
 		|connectionType					|
 
 

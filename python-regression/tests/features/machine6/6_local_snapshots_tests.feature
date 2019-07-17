@@ -13,8 +13,10 @@ Feature: Test Bootstrapping With LS
     Given "nodeA" and "nodeB" are neighbors
     And "nodeA" and "nodeC" are neighbors
 
-    When we wait "30" second/seconds
-    Then "nodeA" is synced up to milestone 10321
+    #Default for test is to issue 10322
+    When milestone 10322 is issued on "nodeA"
+    And we wait "60" second/seconds
+    Then "nodeA" is synced up to milestone 10322
 
 
   Scenario: DB node is synced, and files contain expected values
@@ -25,9 +27,11 @@ Feature: Test Bootstrapping With LS
     Given "nodeB" and "nodeA" are neighbors
     And "nodeB" and "nodeC" are neighbors
 
+    # Default for test is to issue 10323
+    When milestone 10323 is issued on "nodeA"
     #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
-    And we wait "30" second/seconds
-    Then "nodeB" is synced up to milestone 10321
+    And we wait "60" second/seconds
+    Then "nodeB" is synced up to milestone 10323
     And A local snapshot was taken on "nodeB" at index 10220
 
     When reading the local snapshot state on "nodeB" returns with:
@@ -46,9 +50,11 @@ Feature: Test Bootstrapping With LS
     Given "nodeC" and "nodeA" are neighbors
     And "nodeC" and "nodeB" are neighbors
 
+    #Default for test is to issue 10324
+    When milestone 10324 is issued on "nodeA"
     #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
-    When we wait "30" second/seconds
-    Then "nodeC" is synced up to milestone 10321
+    And we wait "180" second/seconds
+    Then "nodeC" is synced up to milestone 10324
 
 
   Scenario: Check DB for milestone hashes
@@ -57,13 +63,15 @@ Feature: Test Bootstrapping With LS
 
     #First make sure nodes are neighbored
     Given "nodeC" and "nodeA" are neighbors
+     #Default for test is to issue 10325
+    When milestone 10325 is issued on "nodeA"
     And we wait "60" second/seconds
 
-    When "checkConsistency" is called on "nodeC" with:
+    Then "checkConsistency" is called on "nodeC" with:
       |keys                       |values                   |type             |
       |tails                      |LS_TEST_MILESTONE_HASHES |staticValue      |
 
-    Then the response for "checkConsistency" should return with:
+    And the response for "checkConsistency" should return with:
       |keys                       |values                   |type             |
       |state                      |True                     |bool             |
 

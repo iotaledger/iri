@@ -36,7 +36,6 @@ public class KerlTest {
 
     @Test
     public void bytesFromBigInt() throws Exception {
-        int byteSize = 48;
         BigInteger bigInteger = new BigInteger("13190295509826637194583200125168488859623001289643321872497025844241981297292953903419783680940401133507992851240799");
         byte[] outBytes = new byte[Kerl.BYTE_HASH_LENGTH];
         Kerl.bytesFromBigInt(bigInteger, outBytes);
@@ -68,7 +67,6 @@ public class KerlTest {
     @Test
     public void loopRandTritsFromBigInt() throws Exception {
         //generate random bytes, turn them to trits and back
-        int byteSize = 48;
         int tritSize = 243;
         byte[] inTrits;
         byte[] bytes = new byte[Kerl.BYTE_HASH_LENGTH];
@@ -121,13 +119,11 @@ public class KerlTest {
     //@Test
     public void benchmarkCurl() {
         int i;
-        Hash hash;
         long start, diff;
         long maxdiff = 0, sumdiff = 0, subSumDiff = 0;
         int max = 100;// was 10000;
         int interval = 1000;
 
-        String test = "curl";
         for (i = 0; i++ < max; ) {
             //pre
             int size = 8019;
@@ -149,7 +145,7 @@ public class KerlTest {
 
             diff = System.nanoTime() - start;
             //post
-            String outTrytes = Converter.trytes(hashTrits);
+            Converter.trytes(hashTrits);
 
             sumdiff += diff;
             subSumDiff += diff;

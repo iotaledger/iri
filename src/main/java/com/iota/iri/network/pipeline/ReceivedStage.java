@@ -1,12 +1,13 @@
 package com.iota.iri.network.pipeline;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The {@link ReceivedStage} stores the given transaction in the database, updates the arrival time and sender and then
@@ -49,6 +50,7 @@ public class ReceivedStage implements Stage {
         boolean stored;
         try {
             stored = tvm.store(tangle, snapshotProvider.getInitialSnapshot());
+            tangle.saveBatch(tvm.getMetadataSaveBatch());
         } catch (Exception e) {
             log.error("error persisting newly received tx", e);
             if (originNeighbor != null) {

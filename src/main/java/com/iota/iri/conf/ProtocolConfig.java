@@ -17,12 +17,12 @@ public interface ProtocolConfig extends Config {
 
     /**
      *
-     * @return Descriptions#COORDINATOR
+     * @return {@value ProtocolConfig.Descriptions#COORDINATOR}
      */
     Hash getCoordinator();
 
     /**
-     * @return Descriptions#TRANSACTION_PACKET_SIZE
+     * @return {@value ProtocolConfig.Descriptions#TRANSACTION_PACKET_SIZE}
      */
     int getTransactionPacketSize();
 

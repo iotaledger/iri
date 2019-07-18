@@ -11,28 +11,28 @@ public interface NetworkConfig extends Config {
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#NEIGHBORING_SOCKET_ADDRESS}
      *
-     * @return {@value Descriptions#NEIGHBORING_SOCKET_ADDRESS}
+     * @return {@value NetworkConfig.Descriptions#NEIGHBORING_SOCKET_ADDRESS}
      */
     String getNeighboringSocketAddress();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#NEIGHBORING_SOCKET_PORT}
      *
-     * @return {@value Descriptions#NEIGHBORING_SOCKET_PORT}
+     * @return {@value NetworkConfig.Descriptions#NEIGHBORING_SOCKET_PORT}
      */
     int getNeighboringSocketPort();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#RECONNECT_ATTEMPT_INTERVAL_SECONDS}
      *
-     * @return Descriptions#RECONNECT_ATTEMPT_INTERVAL_SECONDS
+     * @return {@value NetworkConfig.Descriptions#RECONNECT_ATTEMPT_INTERVAL_SECONDS}
      */
     int getReconnectAttemptIntervalSeconds();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#AUTO_TETHERING_ENABLED}
      *
-     * @return Descriptions#AUTO_TETHERING_ENABLED
+     * @return {@value NetworkConfig.Descriptions#AUTO_TETHERING_ENABLED{
      */
     boolean isAutoTetheringEnabled();
 

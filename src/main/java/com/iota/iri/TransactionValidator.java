@@ -131,7 +131,7 @@ public class TransactionValidator {
      */
     private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         // ignore invalid timestamps for transactions that were requested by our node while solidifying a milestone
-        if(transactionRequester.isTransactionRequested(transactionViewModel.getHash(), true)) {
+        if(transactionRequester.isTransactionRequested(transactionViewModel.getHash())) {
             return false;
         }
 
@@ -211,16 +211,15 @@ public class TransactionValidator {
     }
 
     /**
-     * This method does the same as {@link #checkSolidity(Hash, boolean, int)} but defaults to an unlimited amount
+     * This method does the same as {@link #checkSolidity(Hash, int)} but defaults to an unlimited amount
      * of transactions that are allowed to be traversed.
      *
      * @param hash hash of the transactions that shall get checked
-     * @param milestone true if the solidity check was issued while trying to solidify a milestone and false otherwise
      * @return true if the transaction is solid and false otherwise
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
-    public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
-        return checkSolidity(hash, milestone, Integer.MAX_VALUE);
+    public boolean checkSolidity(Hash hash) throws Exception {
+        return checkSolidity(hash, Integer.MAX_VALUE);
     }
 
     /**
@@ -238,12 +237,11 @@ public class TransactionValidator {
      * solidification threads).
      *
      * @param hash hash of the transactions that shall get checked
-     * @param milestone true if the solidity check was issued while trying to solidify a milestone and false otherwise
      * @param maxProcessedTransactions the maximum amount of transactions that are allowed to be traversed
      * @return true if the transaction is solid and false otherwise
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
-    public boolean checkSolidity(Hash hash, boolean milestone, int maxProcessedTransactions) throws Exception {
+    public boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception {
         if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
@@ -268,8 +266,8 @@ public class TransactionValidator {
                 if (transaction.getType() == PREFILLED_SLOT) {
                     solid = false;
 
-                    if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
-                        transactionRequester.requestTransaction(hashPointer, milestone);
+                    if (!transactionRequester.isTransactionRequested(hashPointer)) {
+                        transactionRequester.requestTransaction(hashPointer);
                         continue;
                     }
                 } else {

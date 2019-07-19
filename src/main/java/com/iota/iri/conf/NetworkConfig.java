@@ -30,11 +30,6 @@ public interface NetworkConfig extends Config {
     boolean isAutoTetheringEnabled();
 
     /**
-     * @return Descriptions#P_REMOVE_REQUEST
-     */
-    double getpRemoveRequest();
-
-    /**
      * @return Descriptions#SEND_LIMIT
      */
     int getSendLimit();

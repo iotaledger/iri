@@ -50,7 +50,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int neighboringSocketPort = Defaults.NEIGHBORING_SOCKET_PORT;
     protected int reconnectAttemptIntervalSeconds = Defaults.RECONNECT_ATTEMPT_INTERVAL_SECONDS;
     protected boolean autoTetheringEnabled = Defaults.AUTO_TETHERING_ENABLED;
-    protected double pRemoveRequest = Defaults.P_REMOVE_REQUEST;
     protected double pDropCacheEntry = Defaults.P_DROP_CACHE_ENTRY;
     protected int sendLimit = Defaults.SEND_LIMIT;
     protected int maxNeighbors = Defaults.MAX_NEIGHBORS;
@@ -321,17 +320,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--auto-tethering"}, description = NetworkConfig.Descriptions.AUTO_TETHERING_ENABLED, arity = 1)
     protected void setAutoTetheringEnabled(boolean autoTetheringEnabled) {
         this.autoTetheringEnabled = autoTetheringEnabled;
-    }
-
-    @Override
-    public double getpRemoveRequest() {
-        return pRemoveRequest;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-remove-request"}, description = NetworkConfig.Descriptions.P_REMOVE_REQUEST)
-    protected void setpRemoveRequest(double pRemoveRequest) {
-        this.pRemoveRequest = pRemoveRequest;
     }
 
     @Override
@@ -919,7 +907,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int NEIGHBORING_SOCKET_PORT = 15600;
         int RECONNECT_ATTEMPT_INTERVAL_SECONDS = 60;
         boolean AUTO_TETHERING_ENABLED = false;
-        double P_REMOVE_REQUEST = 0.01d;
         int SEND_LIMIT = -1;
         int MAX_NEIGHBORS = 5;
         boolean DNS_REFRESHER_ENABLED = true;

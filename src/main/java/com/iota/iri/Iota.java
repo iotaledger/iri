@@ -180,7 +180,6 @@ public class Iota {
 
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
         tipsSolidifier.init();
-        transactionRequester.init(configuration.getpRemoveRequest());
 
         txPipeline.start();
         neighborRouter.start();

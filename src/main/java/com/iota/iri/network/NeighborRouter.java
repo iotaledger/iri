@@ -935,7 +935,7 @@ public class NeighborRouter {
             throws Exception {
         byte[] requestedHash = null;
         if (!useHashOfTVM) {
-            Hash hash = txRequester.transactionToRequest(rnd.nextDouble() < protocolConfig.getpSelectMilestoneChild());
+            Hash hash = txRequester.transactionToRequest();
             if (hash != null) {
                 requestedHash = hash.bytes();
             }

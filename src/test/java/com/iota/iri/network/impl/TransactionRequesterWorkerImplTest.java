@@ -143,6 +143,6 @@ public class TransactionRequesterWorkerImplTest {
     private void addRequest() throws Exception {
         Hash randomHash = getTransactionHash();
         TangleMockUtils.mockTransaction(tangle, randomHash);
-        requester.requestTransaction(randomHash, false);
+        requester.requestTransaction(randomHash);
     }
 }

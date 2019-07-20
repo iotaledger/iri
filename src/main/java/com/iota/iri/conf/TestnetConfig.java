@@ -156,17 +156,6 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    public int getTransactionPacketSize() {
-        return transactionPacketSize;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--packet-size"}, description = ProtocolConfig.Descriptions.TRANSACTION_PACKET_SIZE)
-    protected void setTransactionPacketSize(int transactionPacketSize) {
-        this.transactionPacketSize = transactionPacketSize;
-    }
-
-    @Override
     public int getRequestHashSize() {
         return requestHashSize;
     }

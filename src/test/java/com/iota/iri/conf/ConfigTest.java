@@ -316,7 +316,9 @@ public class ConfigTest {
                 .map(Enum::name)
                 // make it explicit that we have removed some configs
                 .filter(config -> !ArrayUtils.contains(new String[]{"CONFIG", "TESTNET", "DEBUG",
-                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS", "UDP_RECEIVER_PORT", "TCP_RECEIVER_PORT", "P_REMOVE_REQUEST"}, config))
+                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS", "UDP_RECEIVER_PORT", "TCP_RECEIVER_PORT",
+                        "P_REMOVE_REQUEST", "P_SELECT_MILESTONE", "P_PROPAGATE_REQUEST", "P_DROP_TRANSACTION",
+                        "P_SELECT_MILESTONE_CHILD", "TRANSACTION_PACKET_SIZE", "P_REPLY_RANDOM_TIP"}, config))
                 .forEach(config ->
                         Assert.assertThat(configNames, IsCollectionContaining.hasItem(config)));
     }

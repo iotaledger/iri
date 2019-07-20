@@ -69,11 +69,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
     //Protocol
-    protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
-    protected double pDropTransaction = Defaults.P_DROP_TRANSACTION;
-    protected double pSelectMilestoneChild = Defaults.P_SELECT_MILESTONE_CHILD;
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
-    protected double pPropagateRequest = Defaults.P_PROPAGATE_REQUEST;
 
     //ZMQ
     protected boolean zmqEnableTcp = Defaults.ZMQ_ENABLE_TCP;
@@ -460,46 +456,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public int getTransactionPacketSize() {
-        return Defaults.PACKET_SIZE;
-    }
-
-    @Override
     public int getRequestHashSize() {
         return Defaults.REQ_HASH_SIZE;
-    }
-
-    @Override
-    public double getpReplyRandomTip() {
-        return pReplyRandomTip;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-reply-random"}, description = ProtocolConfig.Descriptions.P_REPLY_RANDOM_TIP)
-    protected void setpReplyRandomTip(double pReplyRandomTip) {
-        this.pReplyRandomTip = pReplyRandomTip;
-    }
-
-    @Override
-    public double getpDropTransaction() {
-        return pDropTransaction;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-drop-transaction"}, description = ProtocolConfig.Descriptions.P_DROP_TRANSACTION)
-    protected void setpDropTransaction(double pDropTransaction) {
-        this.pDropTransaction = pDropTransaction;
-    }
-
-    @Override
-    public double getpSelectMilestoneChild() {
-        return pSelectMilestoneChild;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-select-milestone"}, description = ProtocolConfig.Descriptions.P_SELECT_MILESTONE)
-    protected void setpSelectMilestoneChild(double pSelectMilestoneChild) {
-        this.pSelectMilestoneChild = pSelectMilestoneChild;
     }
 
     @Override
@@ -511,17 +469,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--p-send-milestone"}, description = ProtocolConfig.Descriptions.P_SEND_MILESTONE)
     protected void setpSendMilestone(double pSendMilestone) {
         this.pSendMilestone = pSendMilestone;
-    }
-
-    @Override
-    public double getpPropagateRequest() {
-        return pPropagateRequest;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-propagate-request"}, description = ProtocolConfig.Descriptions.P_PROPAGATE_REQUEST)
-    protected void setpPropagateRequest(double pPropagateRequest) {
-        this.pPropagateRequest = pPropagateRequest;
     }
 
     @Override
@@ -924,13 +871,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean RESCAN_DB = false;
 
         //Protocol
-        double P_REPLY_RANDOM_TIP = 0.66d;
-        double P_DROP_TRANSACTION = 0d;
-        double P_SELECT_MILESTONE_CHILD = 0.7d;
         double P_SEND_MILESTONE = 0.02d;
-        double P_PROPAGATE_REQUEST = 0.01d;
         int MWM = 14;
-        int PACKET_SIZE = 1650;
         int REQ_HASH_SIZE = 46;
         int QUEUE_SIZE = 1_000;
         double P_DROP_CACHE_ENTRY = 0.02d;

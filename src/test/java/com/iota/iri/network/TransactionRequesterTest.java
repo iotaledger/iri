@@ -4,7 +4,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,11 +29,6 @@ public class TransactionRequesterTest {
     @Before
     public void setUp() throws Exception {
         Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
-    }
-
-    @After
-    public void tearDown() throws Exception {
-
     }
 
     @Test

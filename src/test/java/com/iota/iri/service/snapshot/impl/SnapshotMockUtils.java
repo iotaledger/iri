@@ -113,7 +113,7 @@ public class SnapshotMockUtils {
     }
 
     /**
-     * Creates a real snapshot which can be used directly or to mock a snapshot provider.
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
      * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
      * Genesis timestamp set to {@value #DEFAULT_GENESIS_TIMESTAMP}.
      * Initial snapshot hash set to DEFAULT_GENESIS_ADDRESS.
@@ -126,7 +126,7 @@ public class SnapshotMockUtils {
     }
 
     /**
-     * Creates a real snapshot which can be used directly or to mock a snapshot provider.
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
      * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
      * Genesis timestamp set to {@value #DEFAULT_GENESIS_TIMESTAMP}.
      * Initial snapshot hash set to DEFAULT_GENESIS_ADDRESS.
@@ -139,7 +139,7 @@ public class SnapshotMockUtils {
     }
 
     /**
-     * Creates a real snapshot which can be used directly or to mock a snapshot provider.
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
      * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
      * Genesis timestamp set to {@value #DEFAULT_GENESIS_TIMESTAMP}.
      *
@@ -153,7 +153,7 @@ public class SnapshotMockUtils {
     }
 
     /**
-     * Creates a real snapshot which can be used directly or to mock a snapshot provider.
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
      * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
      *
      * @param milestoneStartIndex The index we use for the genesis/initial snapshot
@@ -170,7 +170,7 @@ public class SnapshotMockUtils {
     }
 
     /**
-     * Creates a real snapshot which can be used directly or to mock a snapshot provider.
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
      *
      * @param milestoneStartIndex The index we use for the genesis/initial snapshot
      * @param genesisHash The Genesis hash

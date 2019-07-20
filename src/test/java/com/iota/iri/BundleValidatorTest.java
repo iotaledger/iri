@@ -8,7 +8,9 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.controllers.TransactionViewModel;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Arrays;

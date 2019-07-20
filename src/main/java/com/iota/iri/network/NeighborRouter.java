@@ -334,7 +334,6 @@ public class NeighborRouter {
             }
             if (channel.finishConnect()) {
                 log.info("established connection to neighbor {}, now performing handshake...", identity);
-                removeFromReconnectPool(neighbor);
                 // remove connect interest
                 key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                 // add handshaking packet as the initial packet to send

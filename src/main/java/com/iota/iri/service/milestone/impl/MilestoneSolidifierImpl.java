@@ -30,7 +30,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     /**
      * Defines the amount of milestones that we "simultaneously" try to solidify in one pass.
      */
-    private static final int SOLIDIFICATION_QUEUE_SIZE = 10;
+    private static final int SOLIDIFICATION_QUEUE_SIZE = 20;
 
     /**
      * Defines the interval in which solidity checks are issued (in milliseconds).

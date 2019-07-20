@@ -1,13 +1,16 @@
 package com.iota.iri.network;
 
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.iota.iri.TransactionTestUtils.getTransactionHash;
 
@@ -17,19 +20,21 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-
+@RunWith(MockitoJUnitRunner.class)
 public class TransactionRequesterTest {
     private static Tangle tangle = new Tangle();
-    private static SnapshotProvider snapshotProvider;
+
+    @Mock
+    private SnapshotProvider snapshotProvider;
 
     @Before
     public void setUp() throws Exception {
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     }
 
     @After
     public void tearDown() throws Exception {
-        snapshotProvider.shutdown();
+
     }
 
     @Test

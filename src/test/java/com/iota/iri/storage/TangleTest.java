@@ -1,12 +1,11 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service .snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.After;
 import org.junit.Assert;
@@ -22,7 +21,7 @@ public class TangleTest {
     private final TemporaryFolder dbFolder = new TemporaryFolder();
     private final TemporaryFolder logFolder = new TemporaryFolder();
     private Tangle tangle = new Tangle();
-    private static SnapshotProvider snapshotProvider;
+    private Snapshot snapshot;
 
     private static final Random seed = new Random();
 
@@ -36,13 +35,12 @@ public class TangleTest {
                 Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        snapshot = SnapshotMockUtils.createSnapshot();
     }
 
     @After
     public void tearDown() throws Exception {
         tangle.shutdown();
-        snapshotProvider.shutdown();
     }
 
     @Test
@@ -53,7 +51,7 @@ public class TangleTest {
     public void getKeysStartingWithValue() throws Exception {
         byte[] trits = getRandomTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
-        transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
+        transactionViewModel.store(tangle, snapshot);
         Set<Indexable> tag = tangle.keysStartingWith(Tag.class, Arrays.copyOf(transactionViewModel.getTagValue().bytes(), 15));
         Assert.assertNotEquals(tag.size(), 0);
     }

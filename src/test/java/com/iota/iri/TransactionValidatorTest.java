@@ -1,56 +1,66 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TransactionValidatorTest {
 
   private static final int MAINNET_MWM = 14;
   private static final TemporaryFolder dbFolder = new TemporaryFolder();
   private static final TemporaryFolder logFolder = new TemporaryFolder();
   private static Tangle tangle;
-  private static SnapshotProvider snapshotProvider;
   private static TransactionValidator txValidator;
+
+  @Mock
+  private static SnapshotProvider snapshotProvider;
 
   @BeforeClass
   public static void setUp() throws Exception {
     dbFolder.create();
     logFolder.create();
     tangle = new Tangle();
-    snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
     tangle.addPersistenceProvider(
         new RocksDBPersistenceProvider(
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
     tangle.init();
-    TipsViewModel tipsViewModel = new TipsViewModel();
-    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
-    txValidator.setMwm(false, MAINNET_MWM);
   }
 
   @AfterClass
   public static void tearDown() throws Exception {
     tangle.shutdown();
-    snapshotProvider.shutdown();
     dbFolder.delete();
     logFolder.delete();
+  }
+
+  @Before
+  public void setUpEach() {
+    Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
+    TipsViewModel tipsViewModel = new TipsViewModel();
+    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
+    txValidator.setMwm(false, MAINNET_MWM);
   }
 
   @Test

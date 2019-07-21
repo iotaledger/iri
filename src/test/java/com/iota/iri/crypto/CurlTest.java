@@ -1,11 +1,12 @@
 package com.iota.iri.crypto;
 
-import com.iota.iri.utils.Converter;
-import com.iota.iri.utils.Pair;
+import java.util.Random;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Random;
+import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.Pair;
 
 /**
  * Created by paul on 4/15/17.
@@ -18,69 +19,69 @@ public class CurlTest {
     @Test
     public void normalHashWorks() {
         int size = 8019;
-        byte[] in_trits = new byte[size];
-        Converter.trits(trytes, in_trits, 0);
-        byte[] hash_trits = new byte[Curl.HASH_LENGTH];
+        byte[] inTrits = new byte[size];
+        Converter.trits(trytes, inTrits, 0);
+        byte[] hashTrits = new byte[Curl.HASH_LENGTH];
         Sponge curl;
         curl = new Curl(SpongeFactory.Mode.CURLP81);
-        curl.absorb(in_trits, 0, in_trits.length);
-        curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
-        String out_trytes = Converter.trytes(hash_trits);
-        Assert.assertEquals(hash, out_trytes);
+        curl.absorb(inTrits, 0, inTrits.length);
+        curl.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
+        String outTrytes = Converter.trytes(hashTrits);
+        Assert.assertEquals(hash, outTrytes);
     }
 
     @Test
     public void pairHashWorks() {
         int size = 8019;
-        byte[] in_trits = new byte[size];
-        Converter.trits(trytes, in_trits, 0);
+        byte[] inTrits = new byte[size];
+        Converter.trits(trytes, inTrits, 0);
         Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         Curl curl;
         curl = new Curl(true, SpongeFactory.Mode.CURLP81);
-        curl.absorb(Converter.longPair(in_trits), 0, in_trits.length);
+        curl.absorb(Converter.longPair(inTrits), 0, inTrits.length);
         curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
-        byte[] hash_trits = Converter.trits(hashPair.low, hashPair.hi);
-        String out_trytes = Converter.trytes(hash_trits);
-        Assert.assertEquals(hash, out_trytes);
+        byte[] hashTrits = Converter.trits(hashPair.low, hashPair.hi);
+        String outTrytes = Converter.trytes(hashTrits);
+        Assert.assertEquals(hash, outTrytes);
     }
 
     @Test
     public void pairHashIsFasterThanNormalHash() {
         int size = 8019;
         long start1, diff1, start2, diff2;
-        byte[] in_trits = new byte[size];
-        Converter.trits(trytes, in_trits, 0);
-        final byte[] hash_trits = new byte[Curl.HASH_LENGTH];
+        byte[] inTrits = new byte[size];
+        Converter.trits(trytes, inTrits, 0);
+        final byte[] hashTrits = new byte[Curl.HASH_LENGTH];
         Curl curl, curl1;
         curl = new Curl(true, SpongeFactory.Mode.CURLP81);
         curl1 = new Curl(SpongeFactory.Mode.CURLP81);
-        Pair<long[], long[]> in_pair = Converter.longPair(in_trits);
+        Pair<long[], long[]> inPair = Converter.longPair(inTrits);
         Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         int iteration = 0;
         while(iteration++ < 10) {
-            curl.absorb(in_pair, 0, in_trits.length);
+            curl.absorb(inPair, 0, inTrits.length);
             curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
             curl.reset(true);
-            curl1.absorb(in_trits, 0, in_trits.length);
-            curl1.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+            curl1.absorb(inTrits, 0, inTrits.length);
+            curl1.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
             curl1.reset();
         }
         int serialCount = 64;
         start1 = System.nanoTime();
         while(serialCount-- > 0) {
-            curl1.absorb(in_trits, 0, in_trits.length);
-            curl1.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+            curl1.absorb(inTrits, 0, inTrits.length);
+            curl1.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
             curl1.reset();
         }
         diff1 = System.nanoTime() - start1;
         hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         start2 = System.nanoTime();
-        curl.absorb(in_pair, 0, in_trits.length);
+        curl.absorb(inPair, 0, inTrits.length);
         curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
         diff2 = System.nanoTime() - start2;
-        System.arraycopy(Converter.trits(hashPair.low, hashPair.hi), 0, hash_trits, 0, Curl.HASH_LENGTH);
-        String out_trytes = Converter.trytes(hash_trits);
-        Assert.assertEquals(hash, out_trytes);
+        System.arraycopy(Converter.trits(hashPair.low, hashPair.hi), 0, hashTrits, 0, Curl.HASH_LENGTH);
+        String outTrytes = Converter.trytes(hashTrits);
+        Assert.assertEquals(hash, outTrytes);
         System.out.println(diff1);
         System.out.println(diff2);
         System.out.println(diff1/diff2);

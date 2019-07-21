@@ -267,19 +267,19 @@ public class TransactionTestUtils {
      * @return The created transaction
      */
     public static Transaction buildTransaction(byte[] trits) {  
-        TransactionViewModel TVM = new TransactionViewModel(trits, Hash.NULL_HASH);
+        TransactionViewModel tvm = new TransactionViewModel(trits, Hash.NULL_HASH);
         
         //Getters obtain and load values from TVM trits ("lazy loading")
-        TVM.getAddressHash();
-        TVM.getTrunkTransactionHash();
-        TVM.getBranchTransactionHash();
-        TVM.getBundleHash();
-        TVM.getTagValue();
-        TVM.getObsoleteTagValue();
-        TVM.setAttachmentData();
-        TVM.setMetadata();
+        tvm.getAddressHash();
+        tvm.getTrunkTransactionHash();
+        tvm.getBranchTransactionHash();
+        tvm.getBundleHash();
+        tvm.getTagValue();
+        tvm.getObsoleteTagValue();
+        tvm.setAttachmentData();
+        tvm.setMetadata();
         
-        return TVM.getTransaction();
+        return tvm.getTransaction();
     }
 
     /**

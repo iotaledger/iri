@@ -8,22 +8,30 @@ package com.iota.iri.conf;
 public interface TipSelConfig extends Config {
 
     /**
-     * @return Descriptions#MAX_DEPTH
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_DEPTH}
+     *
+     * @return {@value TipSelConfig.Descriptions#MAX_DEPTH}
      */
     int getMaxDepth();
 
-     /**
-     * @return Descriptions#ALPHA
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#ALPHA}
+     *
+     * @return {@value TipSelConfig.Descriptions#ALPHA}
      */
     double getAlpha();
 
     /**
-     * @return Descriptions#TIP_SELECTION_TIMEOUT_SEC
+     * Default Value: {@value BaseIotaConfig.Defaults#TIP_SELECTION_TIMEOUT_SEC}
+     *
+     * @return {@value TipSelConfig.Descriptions#TIP_SELECTION_TIMEOUT_SEC}
      */
     int getTipSelectionTimeoutSec();
 
     /**
-     * @return Descriptions#BELOW_MAX_DEPTH_TRANSACTION_LIMIT
+     *  Default Value: {@value BaseIotaConfig.Defaults#BELOW_MAX_DEPTH_TRANSACTION_LIMIT}
+     *
+     * @return {@value TipSelConfig.Descriptions#BELOW_MAX_DEPTH_TRANSACTION_LIMIT}
      */
     int getBelowMaxDepthTransactionLimit();
 

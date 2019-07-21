@@ -9,20 +9,30 @@ import com.iota.iri.model.Hash;
 public interface ProtocolConfig extends Config {
 
     /**
-     * @return Descriptions#MWM
+     * Default Value: {@value BaseIotaConfig.Defaults#MWM}
+     *
+     * @return {@value ProtocolConfig.Descriptions#MWM}
      */
     int getMwm();
 
     /**
-     * @return Descriptions#COORDINATOR
+     *
+     * @return {@value ProtocolConfig.Descriptions#COORDINATOR}
      */
     Hash getCoordinator();
 
     /**
-     * @return Descriptions#REQUEST_HASH_SIZE
+     * Default Value: {@value BaseIotaConfig.Defaults#REQUEST_HASH_SIZE}
+     *
+     * @return {@value ProtocolConfig.Descriptions#REQUEST_HASH_SIZE}
      */
     int getRequestHashSize();
 
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#P_SEND_MILESTONE}
+     *
+     * @return {@value ProtocolConfig.Descriptions#P_SEND_MILESTONE}
+     */
     double getpSendMilestone();
 
     interface Descriptions {

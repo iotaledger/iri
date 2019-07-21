@@ -423,7 +423,7 @@ public class API {
      * @return <tt>false</tt> if we received at least a solid milestone, otherwise <tt>true</tt>
      */
     public boolean invalidSubtangleStatus() {
-        return latestMilestoneTracker.getLatestMilestoneIndex() -1 > snapshotProvider.getLatestSnapshot().getIndex();
+        return (snapshotProvider.getLatestSnapshot().getIndex() == snapshotProvider.getInitialSnapshot().getIndex());
     }
 
     /**

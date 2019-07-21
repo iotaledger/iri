@@ -436,7 +436,7 @@
                                             org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
                                         </urn>
                                         <urn>
-                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:c734273ce7696c6436e4dc6569f3c513151e8f62
+                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:211dfab27bdd15a569247fee4690a07a177044f8
                                         </urn>
                                         <urn>
                                             com.beust:jcommander:1.72:jar:null:compile:6375e521c1e11d6563d4f25a07ce124ccf8cd171

@@ -1,13 +1,9 @@
 package com.iota.iri.service.ledger.impl;
 
-import com.iota.iri.BundleValidator;
-import com.iota.iri.TangleMockUtils;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.service.milestone.MilestoneService;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.service.spentaddresses.SpentAddressesService;
-import com.iota.iri.storage.Tangle;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -21,10 +17,14 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.iota.iri.BundleValidator;
+import com.iota.iri.TangleMockUtils;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
+import com.iota.iri.storage.Tangle;
 
 
 public class LedgerServiceImplTest {
@@ -65,7 +65,7 @@ public class LedgerServiceImplTest {
     }
 
     @Test
-    public void generateBalanceDiff_persistsSpentAddresses() throws Exception {
+    public void generateBalanceDiffWithPersistsSpentAddresses() throws Exception {
         List<TransactionViewModel> bundle = TangleMockUtils.mockValidBundle(tangle, bundleValidator, 1,
                 "A", "Z");
         TransactionViewModel tailTx = bundle.get(0);

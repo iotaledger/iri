@@ -1,16 +1,17 @@
 package com.iota.iri.crypto;
 
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.Converter;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Random;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Random;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.Converter;
 
 /**
  * Created by alon on 04/08/17.
@@ -35,56 +36,54 @@ public class KerlTest {
 
     @Test
     public void bytesFromBigInt() throws Exception {
-        int byte_size = 48;
         BigInteger bigInteger = new BigInteger("13190295509826637194583200125168488859623001289643321872497025844241981297292953903419783680940401133507992851240799");
         byte[] outBytes = new byte[Kerl.BYTE_HASH_LENGTH];
         Kerl.bytesFromBigInt(bigInteger, outBytes);
-        BigInteger out_bigInteger = new BigInteger(outBytes);
-        Assert.assertTrue(bigInteger.equals(out_bigInteger));
+        BigInteger outBigInteger = new BigInteger(outBytes);
+        Assert.assertTrue(bigInteger.equals(outBigInteger));
     }
 
     @Test
     public void loopRandBytesFromBigInt() throws Exception {
         //generate random bytes, turn them to trits and back
-        int byte_size = 48;
-        int trit_size = 243;
-        byte[] inBytes = new byte[byte_size];
+        int byteSize = 48;
+        int tritSize = 243;
+        byte[] inBytes = new byte[byteSize];
         byte[] trits = new byte[Kerl.HASH_LENGTH];
         byte[] outBytes = new byte[Kerl.BYTE_HASH_LENGTH];
         for (int i = 0; i < 10_000; i++) {
             seed.nextBytes(inBytes);
-            BigInteger in_bigInteger = new BigInteger(inBytes);
-            Kerl.tritsFromBigInt(in_bigInteger, trits, 0, trit_size);
-            BigInteger out_bigInteger = Kerl.bigIntFromTrits(trits, 0, trit_size);
-            Kerl.bytesFromBigInt(out_bigInteger, outBytes);
+            BigInteger inBigInteger = new BigInteger(inBytes);
+            Kerl.tritsFromBigInt(inBigInteger, trits, 0, tritSize);
+            BigInteger outBigInteger = Kerl.bigIntFromTrits(trits, 0, tritSize);
+            Kerl.bytesFromBigInt(outBigInteger, outBytes);
             if (i % 1_000 == 0) {
-                System.out.println(String.format("%d iteration: %s", i, in_bigInteger));
+                System.out.println(String.format("%d iteration: %s", i, inBigInteger));
             }
-            Assert.assertTrue(String.format("bigInt that failed: %s", in_bigInteger), Arrays.equals(inBytes, outBytes));
+            Assert.assertTrue(String.format("bigInt that failed: %s", inBigInteger), Arrays.equals(inBytes, outBytes));
         }
     }
 
     @Test
     public void loopRandTritsFromBigInt() throws Exception {
         //generate random bytes, turn them to trits and back
-        int byte_size = 48;
-        int trit_size = 243;
+        int tritSize = 243;
         byte[] inTrits;
         byte[] bytes = new byte[Kerl.BYTE_HASH_LENGTH];
         byte[] outTrits = new byte[Kerl.HASH_LENGTH];
         for (int i = 0; i < 10_000; i++) {
-            inTrits = getRandomTrits(trit_size);
+            inTrits = getRandomTrits(tritSize);
             inTrits[242] = 0;
 
-            BigInteger in_bigInteger = Kerl.bigIntFromTrits(inTrits, 0, trit_size);
-            Kerl.bytesFromBigInt(in_bigInteger, bytes);
-            BigInteger out_bigInteger = new BigInteger(bytes);
-            Kerl.tritsFromBigInt(out_bigInteger, outTrits, 0, trit_size);
+            BigInteger inBigInteger = Kerl.bigIntFromTrits(inTrits, 0, tritSize);
+            Kerl.bytesFromBigInt(inBigInteger, bytes);
+            BigInteger outBigInteger = new BigInteger(bytes);
+            Kerl.tritsFromBigInt(outBigInteger, outTrits, 0, tritSize);
 
             if (i % 1_000 == 0) {
-                System.out.println(String.format("%d iteration: %s", i, in_bigInteger));
+                System.out.println(String.format("%d iteration: %s", i, inBigInteger));
             }
-            Assert.assertTrue(String.format("bigInt that failed: %s", in_bigInteger), Arrays.equals(inTrits, outTrits));
+            Assert.assertTrue(String.format("bigInt that failed: %s", inBigInteger), Arrays.equals(inTrits, outTrits));
         }
     }
 
@@ -108,47 +107,45 @@ public class KerlTest {
     public void generateBytesFromBigInt() throws Exception {
         System.out.println("bigInteger,ByteArray");
         for (int i = 0; i < 100_000; i++) {
-            int byte_size = 48;
-            byte[] outBytes = new byte[byte_size];
+            int byteSize = 48;
+            byte[] outBytes = new byte[byteSize];
             seed.nextBytes(outBytes);
-            BigInteger out_bigInteger = new BigInteger(outBytes);
-            System.out.println(String.format("%s,%s", out_bigInteger, Arrays.toString(out_bigInteger.toByteArray())));
-            //Assert.assertTrue(bigInteger.equals(out_bigInteger));
+            BigInteger outBigInteger = new BigInteger(outBytes);
+            System.out.println(String.format("%s,%s", outBigInteger, Arrays.toString(outBigInteger.toByteArray())));
+            // Assert.assertTrue(bigInteger.equals(outBigInteger));
         }
     }
 
     //@Test
     public void benchmarkCurl() {
         int i;
-        Hash hash;
         long start, diff;
         long maxdiff = 0, sumdiff = 0, subSumDiff = 0;
         int max = 100;// was 10000;
         int interval = 1000;
 
-        String test = "curl";
         for (i = 0; i++ < max; ) {
             //pre
             int size = 8019;
-            byte[] in_trits = getRandomTrits(size);
-            byte[] hash_trits = new byte[Curl.HASH_LENGTH];
+            byte[] inTrits = getRandomTrits(size);
+            byte[] hashTrits = new byte[Curl.HASH_LENGTH];
 
             start = System.nanoTime();
             //measured
 
 //            Curl curl;
 //            curl = new Curl();
-//            curl.absorb(in_trits, 0, in_trits.length);
-//            curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+//            curl.absorb(inTrits, 0, inTrits.length);
+//            curl.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
 
             Kerl kerl;
             kerl = new Kerl();
-            kerl.absorb(in_trits, 0, in_trits.length);
-            kerl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+            kerl.absorb(inTrits, 0, inTrits.length);
+            kerl.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
 
             diff = System.nanoTime() - start;
             //post
-            String out_trytes = Converter.trytes(hash_trits);
+            Converter.trytes(hashTrits);
 
             sumdiff += diff;
             subSumDiff += diff;
@@ -169,34 +166,37 @@ public class KerlTest {
 
     @Test
     public void kerlOneAbsorb() throws Exception {
-        byte[] initial_value = Converter.allocatingTritsFromTrytes("EMIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
+        byte[] initialValue = Converter.allocatingTritsFromTrytes(
+                "EMIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-        k.absorb(initial_value, 0, initial_value.length);
-        byte[] hash_value = new byte[Curl.HASH_LENGTH];
-        k.squeeze(hash_value, 0, hash_value.length);
-        String hash = Converter.trytes(hash_value);
+        k.absorb(initialValue, 0, initialValue.length);
+        byte[] hashValue = new byte[Curl.HASH_LENGTH];
+        k.squeeze(hashValue, 0, hashValue.length);
+        String hash = Converter.trytes(hashValue);
         Assert.assertEquals("EJEAOOZYSAWFPZQESYDHZCGYNSTWXUMVJOVDWUNZJXDGWCLUFGIMZRMGCAZGKNPLBRLGUNYWKLJTYEAQX", hash);
     }
 
     @Test
     public void kerlMultiSqueeze() throws Exception {
-        byte[] initial_value = Converter.allocatingTritsFromTrytes("9MIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
+        byte[] initialValue = Converter.allocatingTritsFromTrytes(
+                "9MIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-        k.absorb(initial_value, 0, initial_value.length);
-        byte[] hash_value = new byte[Curl.HASH_LENGTH * 2];
-        k.squeeze(hash_value, 0, hash_value.length);
-        String hash = Converter.trytes(hash_value);
+        k.absorb(initialValue, 0, initialValue.length);
+        byte[] hashValue = new byte[Curl.HASH_LENGTH * 2];
+        k.squeeze(hashValue, 0, hashValue.length);
+        String hash = Converter.trytes(hashValue);
         Assert.assertEquals("G9JYBOMPUXHYHKSNRNMMSSZCSHOFYOYNZRSZMAAYWDYEIMVVOGKPJBVBM9TDPULSFUNMTVXRKFIDOHUXXVYDLFSZYZTWQYTE9SPYYWYTXJYQ9IFGYOLZXWZBKWZN9QOOTBQMWMUBLEWUEEASRHRTNIQWJQNDWRYLCA", hash);
     }
 
     @Test
     public void kerlMultiAbsorbMultiSqueeze() throws Exception {
-        byte[] initial_value = Converter.allocatingTritsFromTrytes("G9JYBOMPUXHYHKSNRNMMSSZCSHOFYOYNZRSZMAAYWDYEIMVVOGKPJBVBM9TDPULSFUNMTVXRKFIDOHUXXVYDLFSZYZTWQYTE9SPYYWYTXJYQ9IFGYOLZXWZBKWZN9QOOTBQMWMUBLEWUEEASRHRTNIQWJQNDWRYLCA");
+        byte[] initialValue = Converter.allocatingTritsFromTrytes(
+                "G9JYBOMPUXHYHKSNRNMMSSZCSHOFYOYNZRSZMAAYWDYEIMVVOGKPJBVBM9TDPULSFUNMTVXRKFIDOHUXXVYDLFSZYZTWQYTE9SPYYWYTXJYQ9IFGYOLZXWZBKWZN9QOOTBQMWMUBLEWUEEASRHRTNIQWJQNDWRYLCA");
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-        k.absorb(initial_value, 0, initial_value.length);
-        byte[] hash_value = new byte[Curl.HASH_LENGTH * 2];
-        k.squeeze(hash_value, 0, hash_value.length);
-        String hash = Converter.trytes(hash_value);
+        k.absorb(initialValue, 0, initialValue.length);
+        byte[] hashValue = new byte[Curl.HASH_LENGTH * 2];
+        k.squeeze(hashValue, 0, hashValue.length);
+        String hash = Converter.trytes(hashValue);
         Assert.assertEquals("LUCKQVACOGBFYSPPVSSOXJEKNSQQRQKPZC9NXFSMQNRQCGGUL9OHVVKBDSKEQEBKXRNUJSRXYVHJTXBPDWQGNSCDCBAIRHAQCOWZEBSNHIJIGPZQITIBJQ9LNTDIBTCQ9EUWKHFLGFUVGGUWJONK9GBCDUIMAYMMQX", hash);
     }
 
@@ -219,12 +219,12 @@ public class KerlTest {
         System.out.println("trytes,Kerl_hash");
         for (int i = 0; i < 10000; i++) {
             Hash trytes = getRandomTransactionHash();
-            byte[] initial_value = trytes.trits();
+            byte[] initialValue = trytes.trits();
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-            k.absorb(initial_value, 0, initial_value.length);
-            byte[] hash_value = new byte[Curl.HASH_LENGTH];
-            k.squeeze(hash_value, 0, hash_value.length);
-            String hash = Converter.trytes(hash_value);
+            k.absorb(initialValue, 0, initialValue.length);
+            byte[] hashValue = new byte[Curl.HASH_LENGTH];
+            k.squeeze(hashValue, 0, hashValue.length);
+            String hash = Converter.trytes(hashValue);
             System.out.println(String.format("%s,%s", trytes, hash));
         }
     }
@@ -234,16 +234,16 @@ public class KerlTest {
         System.out.println("trytes,Kerl_squeeze1,Kerl_squeeze2,Kerl_squeeze3");
         for (int i = 0; i < 10000; i++) {
             Hash trytes = getRandomTransactionHash();
-            byte[] initial_value = trytes.trits();
+            byte[] initialValue = trytes.trits();
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-            k.absorb(initial_value, 0, initial_value.length);
-            byte[] hash_value = new byte[Curl.HASH_LENGTH];
-            k.squeeze(hash_value, 0, hash_value.length);
-            String hash1 = Converter.trytes(hash_value);
-            k.squeeze(hash_value, 0, hash_value.length);
-            String hash2 = Converter.trytes(hash_value);
-            k.squeeze(hash_value, 0, hash_value.length);
-            String hash3 = Converter.trytes(hash_value);
+            k.absorb(initialValue, 0, initialValue.length);
+            byte[] hashValue = new byte[Curl.HASH_LENGTH];
+            k.squeeze(hashValue, 0, hashValue.length);
+            String hash1 = Converter.trytes(hashValue);
+            k.squeeze(hashValue, 0, hashValue.length);
+            String hash2 = Converter.trytes(hashValue);
+            k.squeeze(hashValue, 0, hashValue.length);
+            String hash3 = Converter.trytes(hashValue);
             System.out.println(String.format("%s,%s,%s,%s", trytes, hash1, hash2, hash3));
         }
     }
@@ -253,12 +253,12 @@ public class KerlTest {
         System.out.println("multiTrytes,Kerl_hash");
         for (int i = 0; i < 10000; i++) {
             String multi = String.format("%s%s%s", getRandomTransactionHash(), getRandomTransactionHash(), getRandomTransactionHash());
-            byte[] initial_value = Converter.allocatingTritsFromTrytes(multi);
+            byte[] initialValue = Converter.allocatingTritsFromTrytes(multi);
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-            k.absorb(initial_value, 0, initial_value.length);
-            byte[] hash_value = new byte[Curl.HASH_LENGTH];
-            k.squeeze(hash_value, 0, hash_value.length);
-            String hash = Converter.trytes(hash_value);
+            k.absorb(initialValue, 0, initialValue.length);
+            byte[] hashValue = new byte[Curl.HASH_LENGTH];
+            k.squeeze(hashValue, 0, hashValue.length);
+            String hash = Converter.trytes(hashValue);
             System.out.println(String.format("%s,%s", multi, hash));
         }
     }
@@ -269,12 +269,12 @@ public class KerlTest {
         //System.out.println("trytes,Kerl_hash");
         for (int i = 0; i < 1_000_000; i++) {
             Hash trytes = getRandomTransactionHash();
-            byte[] initial_value = trytes.trits();
+            byte[] initialValue = trytes.trits();
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-            k.absorb(initial_value, 0, initial_value.length);
-            byte[] hash_value = new byte[Curl.HASH_LENGTH];
-            k.squeeze(hash_value, 0, hash_value.length);
-            String hash = Converter.trytes(hash_value);
+            k.absorb(initialValue, 0, initialValue.length);
+            byte[] hashValue = new byte[Curl.HASH_LENGTH];
+            k.squeeze(hashValue, 0, hashValue.length);
+            String hash = Converter.trytes(hashValue);
             //System.out.println(String.format("%s,%s",trytes,hash));
             System.out.println(String.format("%s", hash));
         }

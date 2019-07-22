@@ -149,23 +149,6 @@ def issue_multiple_transactions(step, num_transactions, node):
     world.responses['evaluate_and_send'][node] = transactions_to_store
     logger.info("Transactions generated and stored")
 
-
-@step(r'milestone (\d+) is issued')
-def issue_a_milestone(step, index):
-    """
-    This method issues a milestone with a given index.
-
-    :param index: The index of the milestone you are issuing
-    """
-    node = world.config['nodeId']
-    address = static.TEST_BLOWBALL_COO
-    api = api_utils.prepare_api_call(node)
-
-    logger.info('Issuing milestone {}'.format(index))
-    milestone = milestones.issue_milestone(address, api, index)
-    milestones.update_latest_milestone(world.config, node, milestone)
-
-
 @step(r'a milestone is issued with index (\d+) and references')
 def issue_a_milestone_with_reference(step, index):
     """
@@ -200,4 +183,29 @@ def issue_several_milestones(step, num_milestones):
     for index in range(start_index, end_index):
         issue_a_milestone(step, index)
 
+    milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
+    milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
+    world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
 
+
+@step(r'milestone (\d+) is issued on "([^"]+)"')
+def issue_a_milestone(step, index, node):
+    """
+    This method issues a milestone with a given index.
+
+    :param index: The index of the milestone you are issuing
+    :param node: The node that the milestone will be attached to
+    """
+    world.config['nodeId'] = node
+    address = static.TEST_BLOWBALL_COO
+    api = api_utils.prepare_api_call(node)
+
+    logger.info('Issuing milestone {}'.format(index))
+    milestone = milestones.issue_milestone(address, api, index)
+
+    if 'latestMilestone' not in world.config:
+        world.config['latestMilestone'] = {}
+
+    milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
+    milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
+    world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]

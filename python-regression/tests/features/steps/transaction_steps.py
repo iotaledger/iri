@@ -183,10 +183,6 @@ def issue_several_milestones(step, num_milestones):
     for index in range(start_index, end_index):
         issue_a_milestone(step, index, node)
 
-    milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
-    milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
-    world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
-
 
 @step(r'milestone (\d+) is issued on "([^"]+)"')
 def issue_a_milestone(step, index, node):

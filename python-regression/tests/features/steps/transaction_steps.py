@@ -181,7 +181,7 @@ def issue_several_milestones(step, num_milestones):
     end_index = start_index + int(num_milestones)
 
     for index in range(start_index, end_index):
-        issue_a_milestone(step, index)
+        issue_a_milestone(step, index, node)
 
     milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
     milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash

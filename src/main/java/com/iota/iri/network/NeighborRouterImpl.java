@@ -23,8 +23,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.openhft.hashing.LongHashFunction;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +53,6 @@ public class NeighborRouterImpl implements NeighborRouter {
     // internal
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
-    private static final LongHashFunction TX_CACHE_DIGEST_HASH_FUNC = LongHashFunction.xx();
 
     /**
      * a mapping of host address + port (identity) to fully handshaked/connected neighbor
@@ -134,7 +131,7 @@ public class NeighborRouterImpl implements NeighborRouter {
         // parse URIs
         networkConfig.getNeighbors().stream()
                 .distinct()
-                .map(this::parseURI)
+                .map(NeighborRouterImpl::parseURI)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .forEach(uri -> reconnectPool.add(uri));
@@ -809,7 +806,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * @param uri The URI string to parse
      * @return the parsed URI, if parsed correctly
      */
-    private Optional<URI> parseURI(final String uri) {
+    private static Optional<URI> parseURI(final String uri) {
         if (uri.isEmpty()) {
             return Optional.empty();
         }
@@ -833,7 +830,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * @param uri The URI to check
      * @return true if the URI is valid, false if not
      */
-    private boolean isURIValid(final URI uri) {
+    private static boolean isURIValid(final URI uri) {
         if (!uri.getScheme().equals("tcp")) {
             log.error("'{}' is not a valid URI schema, only TCP ({}) is supported", uri, PROTOCOL_PREFIX);
             return false;

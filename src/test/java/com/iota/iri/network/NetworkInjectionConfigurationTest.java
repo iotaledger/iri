@@ -23,11 +23,6 @@ public class NetworkInjectionConfigurationTest {
     }
 
     @Test
-    public void provideTransactionRequesterWorker() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(TransactionRequesterWorker.class));
-    }
-
-    @Test
     public void provideNeighborRouter() {
         assertNotNull("instance creation did not work", testInjector().getInstance(NeighborRouter.class));
     }
@@ -44,7 +39,7 @@ public class NetworkInjectionConfigurationTest {
 
     private Injector testInjector() {
         IotaConfig config = mock(IotaConfig.class);
-        when(config.getCoordinator()).thenReturn(BaseIotaConfig.Defaults.COORDINATOR_ADDRESS);
+        when(config.getCoordinator()).thenReturn(BaseIotaConfig.Defaults.COORDINATOR);
         return Guice.createInjector(new NetworkInjectionConfiguration(config), new MockedDependencies());
     }
 

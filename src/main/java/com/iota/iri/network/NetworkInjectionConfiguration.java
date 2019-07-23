@@ -7,7 +7,6 @@ import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.impl.TipsRequesterImpl;
-import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -33,13 +32,7 @@ public class NetworkInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     TransactionRequester provideTransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider) {
-        return new TransactionRequester(tangle, snapshotProvider, configuration.getpRemoveRequest());
-    }
-
-    @Singleton
-    @Provides
-    TransactionRequesterWorker provideTransactionRequesterWorker(Tangle tangle, TransactionRequester transactionRequester, TipsViewModel tipsViewModel, NeighborRouter neighborRouter) {
-        return new TransactionRequesterWorkerImpl(tangle, transactionRequester, tipsViewModel, neighborRouter);
+        return new TransactionRequester(tangle, snapshotProvider);
     }
 
     @Singleton

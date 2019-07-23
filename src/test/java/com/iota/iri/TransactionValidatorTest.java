@@ -1,6 +1,5 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -43,7 +42,7 @@ public class TransactionValidatorTest {
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
-    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider, BaseIotaConfig.Defaults.P_REMOVE_REQUEST);
+    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
     txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, false, MAINNET_MWM);
   }
 
@@ -86,15 +85,15 @@ public class TransactionValidatorTest {
   @Test
   public void verifyTxIsSolid() throws Exception {
     TransactionViewModel tx = getTxWithBranchAndTrunk();
-    assertTrue(txValidator.checkSolidity(tx.getHash(), false));
-    assertTrue(txValidator.checkSolidity(tx.getHash(), true));
+    assertTrue(txValidator.checkSolidity(tx.getHash()));
+    assertTrue(txValidator.checkSolidity(tx.getHash()));
   }
 
   @Test
   public void verifyTxIsNotSolid() throws Exception {
     TransactionViewModel tx = getTxWithoutBranchAndTrunk();
-    assertFalse(txValidator.checkSolidity(tx.getHash(), false));
-    assertFalse(txValidator.checkSolidity(tx.getHash(), true));
+    assertFalse(txValidator.checkSolidity(tx.getHash()));
+    assertFalse(txValidator.checkSolidity(tx.getHash()));
   }
 
   @Test

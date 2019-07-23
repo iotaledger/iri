@@ -9,7 +9,6 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.TransactionRequesterWorker;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.TipsSolidifier;
@@ -154,7 +153,7 @@ public class MainInjectionConfigurationTest {
 
     private Injector testInjector() {
         IotaConfig config = mock(IotaConfig.class);
-        when(config.getCoordinator()).thenReturn(BaseIotaConfig.Defaults.COORDINATOR_ADDRESS);
+        when(config.getCoordinator()).thenReturn(BaseIotaConfig.Defaults.COORDINATOR);
         return testInjector(config);
     }
 
@@ -167,7 +166,6 @@ public class MainInjectionConfigurationTest {
         @Override
         protected void configure() {
             bind(TransactionRequester.class).toInstance(mock(TransactionRequester.class));
-            bind(TransactionRequesterWorker.class).toInstance(mock(TransactionRequesterWorker.class));
             bind(TipsRequester.class).toInstance(mock(TipsRequester.class));
             bind(TransactionProcessingPipeline.class).toInstance(mock(TransactionProcessingPipeline.class));
             bind(NeighborRouter.class).toInstance(mock(NeighborRouter.class));

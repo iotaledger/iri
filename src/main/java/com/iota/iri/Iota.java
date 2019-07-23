@@ -6,7 +6,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.TransactionRequesterWorker;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.LedgerService;
@@ -97,9 +96,7 @@ public class Iota {
 
     private final MilestoneSolidifier milestoneSolidifier;
 
-    private final TransactionRequesterWorker transactionRequesterWorker;
-
-    private final BundleValidator bundleValidator;
+    public final BundleValidator bundleValidator;
 
     private final Tangle tangle;
     private final TransactionValidator transactionValidator;
@@ -118,7 +115,7 @@ public class Iota {
      * @param configuration Information about how this node will be configured.
      *
      */
-    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, TransactionRequesterWorker transactionRequesterWorker, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TipsSolidifier tipsSolidifier, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TipsSolidifier tipsSolidifier, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -133,7 +130,6 @@ public class Iota {
         this.seenMilestonesRetriever = seenMilestonesRetriever;
         this.milestoneSolidifier = milestoneSolidifier;
         this.transactionPruner = transactionPruner;
-        this.transactionRequesterWorker = transactionRequesterWorker;
         this.neighborRouter = neighborRouter;
         this.txPipeline = transactionProcessingPipeline;
         this.tipsRequester = tipsRequester;
@@ -189,7 +185,6 @@ public class Iota {
 
         transactionValidator.init();
         tipsSolidifier.init();
-        transactionRequester.init();
 
         txPipeline.start();
         neighborRouter.start();
@@ -199,7 +194,6 @@ public class Iota {
         latestSolidMilestoneTracker.start();
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
-        transactionRequesterWorker.start();
 
         if (localSnapshotManager != null) {
             localSnapshotManager.start(latestMilestoneTracker);
@@ -240,7 +234,6 @@ public class Iota {
      */
     public void shutdown() throws Exception {
         // shutdown in reverse starting order (to not break any dependencies)
-        transactionRequesterWorker.shutdown();
         milestoneSolidifier.shutdown();
         seenMilestonesRetriever.shutdown();
         latestSolidMilestoneTracker.shutdown();

@@ -338,7 +338,7 @@ public class TransactionViewModelTest {
         transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = transactionViewModel.getHash();
         Assert.assertArrayEquals(TransactionViewModel.find(tangle,
-                Arrays.copyOf(hash.bytes(), MainnetConfig.Defaults.REQ_HASH_SIZE)).getBytes(),
+                Arrays.copyOf(hash.bytes(), MainnetConfig.Defaults.REQUEST_HASH_SIZE)).getBytes(),
                 transactionViewModel.getBytes());
     }
 

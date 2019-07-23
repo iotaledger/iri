@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -59,17 +60,17 @@ public class TransactionValidator {
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param tipsViewModel container that gets updated with the latest tips (transactions with no children)
      * @param transactionRequester used to request missing transactions from neighbors
-     * @param testnet <tt>true</tt> if we are in testnet mode, this caps {@code mwm} to {@value #TESTNET_MWM_CAP}
-     *                regardless of parameter input.
-     * @param mwm minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the transaction
-     *            hash
+     * @param protocolConfig used for checking if we are in testnet and mwm. testnet <tt>true</tt> if we are in testnet
+     *                       mode, this caps {@code mwm} to {@value #TESTNET_MWM_CAP} regardless of parameter input.
+     *                       minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the
+     *                       transaction hash
      */
-    TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, boolean testnet, int mwm) {
+    TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
-        setMwm(testnet, mwm);
+        setMwm(protocolConfig.isTestnet(), protocolConfig.getMwm());
     }
 
     /**

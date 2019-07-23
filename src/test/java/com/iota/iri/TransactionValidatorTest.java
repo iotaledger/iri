@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
@@ -20,6 +21,8 @@ import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TransactionValidatorTest {
 
@@ -43,7 +46,9 @@ public class TransactionValidatorTest {
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
     TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, false, MAINNET_MWM);
+    ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
+    when(protocolConfig.getMwm()).thenReturn(MAINNET_MWM);
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, protocolConfig);
   }
 
   @AfterClass
@@ -56,7 +61,9 @@ public class TransactionValidatorTest {
 
   @Test
   public void testMinMwm() {
-    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, false, 5);
+    ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
+    when(protocolConfig.getMwm()).thenReturn(5);
+    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig);
     assertEquals("Expected testnet minimum minWeightMagnitude", 13, transactionValidator.getMinWeightMagnitude());
   }
 

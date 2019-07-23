@@ -156,7 +156,7 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     TransactionValidator provideTransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
-        return new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester, configuration.isTestnet(), configuration.getMwm());
+        return new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester, configuration);
     }
 
     @Singleton

@@ -27,12 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A NeighborRouter takes care of managing connections to {@link Neighbor} instances, executing reads and writes from/to
- * neighbors and ensuring that wanted neighbors are connected. <br/>
- * A neighbor is identified by its identity which is made up of the IP address and the neighbor's own server socket port
- * for new incoming connections; for example: 153.59.34.101:15600. <br/>
- * The NeighborRouter and foreign neighbor will first exchange their server socket port via a handshaking packet, in
- * order to fully build up the identity between each other. If handshaking fails, the connection is dropped.
+ * Implementation of the neighbor router interface.
  */
 public class NeighborRouterImpl implements NeighborRouter {
 

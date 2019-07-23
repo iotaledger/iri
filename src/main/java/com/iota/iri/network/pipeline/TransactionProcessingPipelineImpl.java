@@ -184,7 +184,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     public void process(byte[] txTrits) {
         byte[] txBytes = new byte[Transaction.SIZE];
         Converter.bytes(txTrits, txBytes);
-        long txDigest = TransactionCacheDigester.getTxCacheDigest(txBytes);
+        long txDigest = TransactionCacheDigester.getDigest(txBytes);
         HashingPayload payload = new HashingPayload(null, txTrits, txDigest, null);
         hashAndValidate(new ProcessingContext(payload));
     }

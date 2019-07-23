@@ -54,7 +54,7 @@ public class PreProcessStage implements Stage {
         payload.getOriginNeighbor().getMetrics().incrAllTransactionsCount();
 
         // compute digest of tx bytes data
-        long txDigest = TransactionCacheDigester.getTxCacheDigest(txDataBytes);
+        long txDigest = TransactionCacheDigester.getDigest(txDataBytes);
 
         Hash receivedTxHash = recentlySeenBytesCache.get(txDigest);
         Hash requestedHash = HashFactory.TRANSACTION.create(reqHashBytes, 0,

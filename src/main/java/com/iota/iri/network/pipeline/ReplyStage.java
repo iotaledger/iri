@@ -137,7 +137,7 @@ public class ReplyStage implements Stage {
                 // send the requested tx data to the requester
                 neighborRouter.gossipTransactionTo(neighbor, tvm);
                 // cache the replied with tx
-                long txDigest = TransactionCacheDigester.getTxCacheDigest(tvm.getBytes());
+                long txDigest = TransactionCacheDigester.getDigest(tvm.getBytes());
                 recentlySeenBytesCache.put(txDigest, tvm.getHash());
             } catch (Exception e) {
                 log.error("error adding reply tx to neighbor's send queue", e);

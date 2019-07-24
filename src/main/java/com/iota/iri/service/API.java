@@ -423,7 +423,7 @@ public class API {
      *
      * @return true if the node is synced, false if not
      */
-    public boolean isNodeSynchronized() {
+    private boolean isNodeSynchronized() {
         return (snapshotProvider.getLatestSnapshot().getIndex() != snapshotProvider.getInitialSnapshot().getIndex()) && snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex() -1;
     }
 

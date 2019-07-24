@@ -21,7 +21,7 @@
         <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>2.0.22.Final</undertow.version>
-        <jackson-databind.version>2.9.9</jackson-databind.version>
+        <jackson-databind.version>2.9.9.1</jackson-databind.version>
         <zero-allocation-hashing.version>0.8</zero-allocation-hashing.version>
         <jacoco.version>0.7.9</jacoco.version>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
@@ -436,7 +436,7 @@
                                             org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
                                         </urn>
                                         <urn>
-                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:d6eb9817d9c7289a91f043ac5ee02a6b3cc86238
+                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:211dfab27bdd15a569247fee4690a07a177044f8
                                         </urn>
                                         <urn>
                                             com.beust:jcommander:1.72:jar:null:compile:6375e521c1e11d6563d4f25a07ce124ccf8cd171

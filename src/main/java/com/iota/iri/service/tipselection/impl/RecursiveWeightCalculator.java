@@ -29,8 +29,6 @@ public class RecursiveWeightCalculator implements RatingCalculator {
 
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
-    
-    private Map<Hash, ArrayDeque<Hash>> txToDirectApprovers = new HashMap<>();
 
     /**
      * Constructor for Recursive Weight Calculator
@@ -65,7 +63,7 @@ public class RecursiveWeightCalculator implements RatingCalculator {
         while (CollectionUtils.isNotEmpty(stack)) {
             Hash txHash = stack.peek();
             if (!hashWeight.containsKey(txHash)) {
-                Collection<Hash> appHashes = getTxDirectApproversHashes(txHash, txToDirectApprovers, txToDirectApprovers);
+                Collection<Hash> appHashes = getTxDirectApproversHashes(txHash, txToDirectApprovers);
                 if (CollectionUtils.isNotEmpty(appHashes)) {
                     Hash txApp = getAndRemoveApprover(appHashes);
                     stack.push(txApp);
@@ -88,7 +86,7 @@ public class RecursiveWeightCalculator implements RatingCalculator {
     private int getRating(Hash hash, Set<HashId> seenHashes) throws Exception {
         int weight = 1;
 
-        ArrayDeque<Hash> approvers = getTxDirectApproversHashes(hash, txToDirectApprovers, null);
+        ArrayDeque<Hash> approvers = getTxDirectApproversHashes(hash, null);
         for (Hash approver : approvers) {
             if (!seenHashes.contains(approver)) {
                 seenHashes.add(approver);
@@ -116,27 +114,21 @@ public class RecursiveWeightCalculator implements RatingCalculator {
      * @throws Exception
      */
     private ArrayDeque<Hash> getTxDirectApproversHashes(Hash txHash,  
-            Map<Hash, ArrayDeque<Hash>> txToDirectApprovers, 
-            Map<Hash, ArrayDeque<Hash>> fallback) 
+            Map<Hash, ArrayDeque<Hash>> txToDirectApprovers)
             throws Exception {
         
         ArrayDeque<Hash> txApprovers = txToDirectApprovers.get(txHash);
         if (txApprovers == null) {
-            if (fallback != null && fallback.containsKey(txHash)) {
-                txApprovers = fallback.get(txHash);
-                txToDirectApprovers.put(txHash, txApprovers);
-            } else {
-                ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
-                Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
-                txApprovers = new ArrayDeque<>(appHashes.size());
-                for (Hash appHash : appHashes) {
-                    //if not genesis (the tx that confirms itself)
-                    if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(appHash)) {
-                        txApprovers.add(appHash);
-                    }
+            ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
+            Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
+            txApprovers = new ArrayDeque<>(appHashes.size());
+            for (Hash appHash : appHashes) {
+                // if not genesis (the tx that confirms itself)
+                if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(appHash)) {
+                    txApprovers.add(appHash);
                 }
-                txToDirectApprovers.put(txHash, txApprovers);
             }
+            txToDirectApprovers.put(txHash, txApprovers);
         }
         return txApprovers;
     }

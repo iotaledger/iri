@@ -94,11 +94,12 @@ public class BundleValidator {
         if(validate(tangle, tailHash, MODE_VALIDATE_ALL, bundleTxs)){
             if (bundleTxs.get(0).getValidity() != 1) {
                 // the bundle and its signatures is valid, therefore mark it in the database
+                System.out.println("poop");
                 bundleTxs.get(0).setValidity(tangle, initialSnapshot, 1);
             }
             return bundleTxs;
         }
-        if (!bundleTxs.isEmpty() && bundleTxs.get(0).getValidity() != -1) {
+        if (!bundleTxs.isEmpty() &&  bundleTxs.get(0).getCurrentIndex() == 0 && bundleTxs.get(0).getValidity() != -1) {
             bundleTxs.get(0).setValidity(tangle, initialSnapshot, -1);
         }
         return Collections.EMPTY_LIST;
@@ -125,7 +126,6 @@ public class BundleValidator {
      * @throws Exception if an error occurred in the persistence layer
      */
     public boolean validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs) throws Exception {
-
         TransactionViewModel startTx = TransactionViewModel.fromHash(tangle, startTxHash);
         if (startTx == null || (!hasMode(validationMode, MODE_SKIP_TAIL_TX_EXISTENCE) && (startTx.getCurrentIndex() != 0 || startTx.getValidity() == -1))) {
             return false;

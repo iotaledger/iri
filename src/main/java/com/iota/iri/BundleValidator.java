@@ -162,10 +162,7 @@ public class BundleValidator {
 
         // verify the signatures of input transactions
         if(hasMode(validationMode, MODE_VALIDATE_SIGNATURES)){
-            boolean signaturesValidity = validateSignatures(bundleTxs, normalizedBundle);
-            if (!signaturesValidity) {
-                return false;
-            }
+            return validateSignatures(bundleTxs, normalizedBundle);
         }
 
         return true;

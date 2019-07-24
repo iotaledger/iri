@@ -10,48 +10,65 @@ public interface APIConfig extends Config {
 
 
     /**
-     * @return {@value Descriptions#PORT}
+     * Default Value: {@value BaseIotaConfig.Defaults#PORT}
+     *
+     * @return {@value APIConfig.Descriptions#PORT}
      */
     int getPort();
 
     /**
-     * @return {@value Descriptions#API_HOST}
+     * Default Value: {@value BaseIotaConfig.Defaults#API_HOST}
+     *
+     * @return {@value APIConfig.Descriptions#API_HOST}
      */
     String getApiHost();
 
 
     /**
-     * @return {@value Descriptions#REMOTE_LIMIT_API}
+     * Default Value: {@link BaseIotaConfig.Defaults#REMOTE_LIMIT_API}
+     *
+     * @return {@value APIConfig.Descriptions#REMOTE_LIMIT_API}
      */
     List<String> getRemoteLimitApi();
 
     /**
+     * Default Value: {@link BaseIotaConfig.Defaults#REMOTE_TRUSTED_API_HOSTS}
      * @return {@value Descriptions#REMOTE_TRUSTED_API_HOSTS}
      */
     List<InetAddress> getRemoteTrustedApiHosts();
 
     /**
-     * @return {@value Descriptions#MAX_FIND_TRANSACTIONS}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_FIND_TRANSACTIONS}
+     *
+     * @return {@value APIConfig.Descriptions#MAX_FIND_TRANSACTIONS}
      */
     int getMaxFindTransactions();
 
     /**
-     * @return {@value Descriptions#MAX_REQUESTS_LIST}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_REQUESTS_LIST}
+     *
+     * @return {@value APIConfig.Descriptions#MAX_REQUESTS_LIST}
      */
     int getMaxRequestsList();
 
     /**
-     * @return {@value Descriptions#MAX_GET_TRYTES}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_GET_TRYTES}
+     *
+     * @return {@value APIConfig.Descriptions#MAX_GET_TRYTES}
      */
     int getMaxGetTrytes();
 
     /**
-     * @return {@value Descriptions#MAX_BODY_LENGTH}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_BODY_LENGTH}
+     *
+     * @return {@value APIConfig.Descriptions#MAX_BODY_LENGTH}
      */
     int getMaxBodyLength();
 
     /**
-     * @return {@value Descriptions#REMOTE_AUTH}
+     * Default Value: {@value BaseIotaConfig.Defaults#REMOTE_AUTH}
+     *
+     * @return {@value APIConfig.Descriptions#REMOTE_AUTH}
      */
     String getRemoteAuth();
 

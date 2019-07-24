@@ -218,7 +218,7 @@ public class ConfigTest {
         List<InetAddress> expectedTrustedApiHosts = Arrays.asList(
                 InetAddress.getByName("192.168.0.55"),
                 InetAddress.getByName("10.0.0.10"),
-                BaseIotaConfig.Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+                BaseIotaConfig.Defaults.REMOTE_TRUSTED_API_HOSTS);
         Assert.assertEquals("REMOTE_TRUSTED_API_HOSTS", expectedTrustedApiHosts, iotaConfig.getRemoteTrustedApiHosts());
 
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());

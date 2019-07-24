@@ -1,23 +1,23 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iota.iri.IRI;
-import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -32,7 +32,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     private boolean testnet = false;
     
     //API
-    protected int port = Defaults.API_PORT;
+    protected int port = Defaults.PORT;
     protected String apiHost = Defaults.API_HOST;
     protected List<String> remoteLimitApi = Defaults.REMOTE_LIMIT_API;
     protected List<InetAddress> remoteTrustedApiHosts = Defaults.REMOTE_LIMIT_API_HOSTS;
@@ -56,7 +56,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxNeighbors = Defaults.MAX_NEIGHBORS;
     protected boolean dnsRefresherEnabled = Defaults.DNS_REFRESHER_ENABLED;
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
-    protected List<String> neighbors = new ArrayList<>();
+    protected List<String> neighbors = Collections.EMPTY_LIST;
 
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
@@ -65,7 +65,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String dbPath = Defaults.DB_PATH;
     protected String dbLogPath = Defaults.DB_LOG_PATH;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
-    protected String mainDb = Defaults.ROCKS_DB;
+    protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
@@ -95,7 +95,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
     protected int tipSelectionTimeoutSec = Defaults.TIP_SELECTION_TIMEOUT_SEC;
-    private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
+    private int maxAnalyzedTransactions = Defaults.BELOW_MAX_DEPTH_TRANSACTION_LIMIT;
 
     //Tip Solidification
     protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
@@ -218,8 +218,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         }).collect(Collectors.toList());
 
         // always make sure that localhost exists as trusted host
-        if(!inetAddresses.contains(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST)) {
-            inetAddresses.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+        if(!inetAddresses.contains(Defaults.REMOTE_TRUSTED_API_HOSTS)) {
+            inetAddresses.add(Defaults.REMOTE_TRUSTED_API_HOSTS);
         }
         this.remoteTrustedApiHosts = Collections.unmodifiableList(inetAddresses);
     }
@@ -478,7 +478,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public int getRequestHashSize() {
-        return Defaults.REQ_HASH_SIZE;
+        return Defaults.REQUEST_HASH_SIZE;
     }
 
     @Override
@@ -509,7 +509,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--p-select-milestone"}, description = ProtocolConfig.Descriptions.P_SELECT_MILESTONE)
+    @Parameter(names = {"--p-select-milestone"}, description = ProtocolConfig.Descriptions.P_SELECT_MILESTONE_CHILD)
     protected void setpSelectMilestoneChild(double pSelectMilestoneChild) {
         this.pSelectMilestoneChild = pSelectMilestoneChild;
     }
@@ -643,7 +643,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public long getSnapshotTime() {
-        return Defaults.GLOBAL_SNAPSHOT_TIME;
+        return Defaults.SNAPSHOT_TIME;
     }
 
     @Override
@@ -653,12 +653,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public String getSnapshotSignatureFile() {
-        return Defaults.SNAPSHOT_SIG_FILE;
+        return Defaults.SNAPSHOT_SIGNATURE_FILE;
     }
 
     @Override
     public String getPreviousEpochSpentAddressesFiles() {
-        return Defaults.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT;
+        return Defaults.PREVIOUS_EPOCHS_SPENT_ADDRESSES_FILE;
     }
 
     @Override
@@ -673,7 +673,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public int getNumberOfKeysInMilestone() {
-        return Defaults.NUM_KEYS_IN_MILESTONE;
+        return Defaults.NUMBER_OF_KEYS_IN_A_MILESTONE;
     }
 
     @Override
@@ -812,7 +812,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public Hash getCoordinator() {
-        return Defaults.COORDINATOR_ADDRESS;
+        return Defaults.COORDINATOR;
     }
 
     @Override
@@ -903,11 +903,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
      */
     public interface Defaults {
         //API
-        int API_PORT = 14265;
+        int PORT = 14265;
         String API_HOST = "localhost";
         List<String> REMOTE_LIMIT_API = IotaUtils.createImmutableList("addNeighbors", "getNeighbors", "removeNeighbors", "attachToTangle", "interruptAttachingToTangle");
-        InetAddress REMOTE_LIMIT_API_DEFAULT_HOST = InetAddress.getLoopbackAddress();
-        List<InetAddress> REMOTE_LIMIT_API_HOSTS = IotaUtils.createImmutableList(REMOTE_LIMIT_API_DEFAULT_HOST);
+        InetAddress REMOTE_TRUSTED_API_HOSTS = InetAddress.getLoopbackAddress();
+        List<InetAddress> REMOTE_LIMIT_API_HOSTS = IotaUtils.createImmutableList(REMOTE_TRUSTED_API_HOSTS);
         int MAX_FIND_TRANSACTIONS = 100_000;
         int MAX_REQUESTS_LIST = 1_000;
         int MAX_GET_TRYTES = 10_000;
@@ -932,7 +932,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String DB_PATH = "mainnetdb";
         String DB_LOG_PATH = "mainnet.log";
         int DB_CACHE_SIZE = 100_000;
-        String ROCKS_DB = "rocksdb";
+        String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
 
@@ -944,7 +944,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         double P_PROPAGATE_REQUEST = 0.01d;
         int MWM = 14;
         int PACKET_SIZE = 1650;
-        int REQ_HASH_SIZE = 46;
+        int REQUEST_HASH_SIZE = 46;
         int QUEUE_SIZE = 1_000;
         double P_DROP_CACHE_ENTRY = 0.02d;
         int CACHE_SIZE_BYTES = 150_000;
@@ -969,12 +969,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int POW_THREADS = 0;
 
         //Coo
-        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+        Hash COORDINATOR = HashFactory.ADDRESS.create(
                         "EQSAUZXULTTYZCLNJNTXQTQHOMOFZERHTCGTXOLTVAHKSA9OGAZDEKECURBRIXIJWNPFCQIOVFVVXJVD9");
         int COORDINATOR_SECURITY_LEVEL = 2;
         SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.KERL;
-        int NUM_KEYS_IN_MILESTONE = 23;
-        int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
+        int NUMBER_OF_KEYS_IN_A_MILESTONE = 23;
+        int MAX_MILESTONE_INDEX = 1 << NUMBER_OF_KEYS_IN_A_MILESTONE;
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
@@ -991,13 +991,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
-        String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
-        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
+        String SNAPSHOT_SIGNATURE_FILE = "/snapshotMainnet.sig";
+        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_FILE =
                 "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
                         "/previousEpochsSpentAddresses3.txt";
-        long GLOBAL_SNAPSHOT_TIME = 1554904800;
+        long SNAPSHOT_TIME = 1554904800;
         int MILESTONE_START_INDEX = 1050000;
-        int MAX_ANALYZED_TXS = 20_000;
+        int BELOW_MAX_DEPTH_TRANSACTION_LIMIT = 20_000;
 
     }
 }

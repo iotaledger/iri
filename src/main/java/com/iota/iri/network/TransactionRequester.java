@@ -1,9 +1,7 @@
 package com.iota.iri.network;
 
 import java.security.SecureRandom;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -20,6 +18,7 @@ public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
+    private final Set<Hash> recentlyRequestedTransactions = Collections.synchronizedSet(new HashSet<>());
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
 
     private final Object syncObj = new Object();
@@ -91,6 +90,26 @@ public class TransactionRequester {
         return transactionsToRequest.contains(transactionHash);
     }
 
+    /**
+     * Checks whether the given transaction was recently requested on a neighbor.
+     *
+     * @param transactionHash hash of the transaction to check
+     * @return true if the transaction was recently requested on a neighbor
+     */
+    public boolean wasTransactionRecentlyRequested(Hash transactionHash) {
+        return recentlyRequestedTransactions.contains(transactionHash);
+    }
+
+    /**
+     * Removes the given transaction hash from the recently requested transactions set.
+     *
+     * @param transactionHash hash of the transaction to remove
+     * @return true if the transaction was recently requested and removed from the set
+     */
+    public boolean removeRecentlyRequestedTransaction(Hash transactionHash) {
+        return recentlyRequestedTransactions.remove(transactionHash);
+    }
+
     private boolean transactionsToRequestIsFull() {
         return transactionsToRequest.size() >= TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
     }
@@ -106,6 +125,7 @@ public class TransactionRequester {
                 Iterator<Hash> iterator = transactionsToRequest.iterator();
                 hash = iterator.next();
                 iterator.remove();
+                recentlyRequestedTransactions.add(hash);
             }
         }
 

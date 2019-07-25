@@ -5,9 +5,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -55,53 +53,49 @@ public class RecursiveWeightCalculator implements RatingCalculator {
 
         // Estimated capacity per depth, assumes 5 minute gap in between milestones, at 3tps
         UnIterableMap<HashId, Integer> hashWeight = createTxHashToCumulativeWeightMap( 5 * 60 * 3 * depth);
-        
-        Deque<Hash> stack = new ArrayDeque<>();
-        Map<Hash, ArrayDeque<Hash>> txToDirectApprovers = new HashMap<>();
 
+        Map<Hash, HashSet<Hash>> txToDirectApprovers = new HashMap<>();
+
+        Deque<Hash> stack = new ArrayDeque<>();
         stack.push(entryPoint);
+
         while (CollectionUtils.isNotEmpty(stack)) {
-            Hash txHash = stack.peek();
-            if (!hashWeight.containsKey(txHash)) {
-                Collection<Hash> appHashes = getTxDirectApproversHashes(txHash, txToDirectApprovers);
-                if (CollectionUtils.isNotEmpty(appHashes)) {
-                    Hash txApp = getAndRemoveApprover(appHashes);
-                    stack.push(txApp);
-                    continue;
-                }
+            Hash txHash = stack.peekLast();
+
+            HashSet<Hash> approvers = getTxDirectApproversHashes(txHash, txToDirectApprovers);
+            if (null != approvers && (approvers.size() == 0 || hasAll(hashWeight, approvers, stack))) {
+                approvers.add(txHash);
+                hashWeight.put(txHash, getRating(approvers, txToDirectApprovers));
+                stack.removeLast();
             } else {
-                stack.pop();
-                continue;
+                stack.addAll(approvers);
             }
-            
-            HashSet<HashId> set = new HashSet<>();
-            set.add(txHash);
-            
-            int rating = txHash.equals(entryPoint) ? hashWeight.size() + 1 : getRating(txHash, set);
-            hashWeight.put(txHash, rating);
         }
+
         return hashWeight;
     }
 
-    private int getRating(Hash hash, Set<HashId> seenHashes) throws Exception {
-        int weight = 1;
-
-        ArrayDeque<Hash> approvers = getTxDirectApproversHashes(hash, null);
-        for (Hash approver : approvers) {
-            if (!seenHashes.contains(approver)) {
-                seenHashes.add(approver);
-                weight += getRating(approver, seenHashes);
+    private int getRating(HashSet<Hash> nonDupes, Map<Hash, HashSet<Hash>> txToDirectApprovers) throws Exception {
+        Deque<Hash> stack = new ArrayDeque<>(nonDupes);
+        while (CollectionUtils.isNotEmpty(stack)) {
+            HashSet<Hash> approvers = getTxDirectApproversHashes(stack.pollLast(), txToDirectApprovers);
+            for (Hash hash : approvers) {
+                if (nonDupes.add(hash)) {
+                    stack.add(hash);
+                }
             }
         }
-        
-        return weight;
+
+        return nonDupes.size();
     }
-    
-    private Hash getAndRemoveApprover(Collection<Hash> appHashes) {
-        Iterator<Hash> hashIterator = appHashes.iterator();
-        Hash txApp = hashIterator.next();
-        hashIterator.remove();
-        return txApp;
+
+    private boolean hasAll(UnIterableMap<HashId, Integer> source, HashSet<Hash> requester, Deque<Hash> stack) {
+        for (Hash h : requester) {
+            if (!source.containsKey(h) && !stack.contains(h)) {
+                return false;
+            }
+        }
+        return true;
     }
     
     /**
@@ -113,15 +107,14 @@ public class RecursiveWeightCalculator implements RatingCalculator {
      * @return
      * @throws Exception
      */
-    private ArrayDeque<Hash> getTxDirectApproversHashes(Hash txHash,  
-            Map<Hash, ArrayDeque<Hash>> txToDirectApprovers)
+    private HashSet<Hash> getTxDirectApproversHashes(Hash txHash, Map<Hash, HashSet<Hash>> txToDirectApprovers)
             throws Exception {
         
-        ArrayDeque<Hash> txApprovers = txToDirectApprovers.get(txHash);
+        HashSet<Hash> txApprovers = txToDirectApprovers.get(txHash);
         if (txApprovers == null) {
             ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
             Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
-            txApprovers = new ArrayDeque<>(appHashes.size());
+            txApprovers = new HashSet<>(appHashes.size());
             for (Hash appHash : appHashes) {
                 // if not genesis (the tx that confirms itself)
                 if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(appHash)) {
@@ -130,7 +123,8 @@ public class RecursiveWeightCalculator implements RatingCalculator {
             }
             txToDirectApprovers.put(txHash, txApprovers);
         }
-        return txApprovers;
+        
+        return new HashSet<Hash>(txApprovers);
     }
     
     private static UnIterableMap<HashId, Integer> createTxHashToCumulativeWeightMap(int size) {

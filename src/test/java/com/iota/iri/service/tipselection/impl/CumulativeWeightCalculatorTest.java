@@ -1,6 +1,29 @@
 package com.iota.iri.service.tipselection.impl;
 
 
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -13,18 +36,6 @@ import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
-
-import static com.iota.iri.TransactionTestUtils.*;
 
 
 public class CumulativeWeightCalculatorTest {

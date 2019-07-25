@@ -133,6 +133,10 @@ public class TransactionValidator {
         // ignore invalid timestamps for transactions that were requested by our node while solidifying a milestone
         if(transactionRequester.wasTransactionRecentlyRequested(transactionViewModel.getHash())) {
             transactionRequester.removeRecentlyRequestedTransaction(transactionViewModel.getHash());
+            // as the transaction came from the request queue, we can add its branch and trunk to the request
+            // queue already, as we only have transactions in the request queue which are needed for solidifying
+            // milestones. this speeds up solidification significantly
+            transactionRequester.requestTrunkAndBranch(transactionViewModel);
             return false;
         }
 

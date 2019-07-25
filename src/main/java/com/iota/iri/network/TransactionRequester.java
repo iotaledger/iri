@@ -52,14 +52,31 @@ public class TransactionRequester {
         }
     }
 
-    public void requestTransaction(Hash hash) throws Exception {
-        if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash) && !TransactionViewModel.exists(tangle, hash)) {
+    public void requestTransaction(Hash hash){
+        if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash)) {
             synchronized (syncObj) {
                 if (transactionsToRequestIsFull()) {
                     popEldestTransactionToRequest();
                 }
                 transactionsToRequest.add(hash);
             }
+        }
+    }
+
+    /**
+     * Puts the given transaction's trunk and branch transactions into the request queue
+     * in case they don't act as a solid entry point.
+     *
+     * @param tvm the approver transaction
+     */
+    public void requestTrunkAndBranch(TransactionViewModel tvm) {
+        Hash trunkHash = tvm.getTrunkTransactionHash();
+        Hash branchHash = tvm.getBranchTransactionHash();
+        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(trunkHash)){
+            requestTransaction(trunkHash);
+        }
+        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(branchHash)){
+            requestTransaction(branchHash);
         }
     }
 

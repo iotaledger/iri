@@ -244,7 +244,7 @@ public class Iota {
         }
         neighborRouter.init(configuration, configuration, transactionRequester, txPipeline);
         txPipeline.init(neighborRouter, configuration, transactionValidator, tangle, snapshotProvider, tipsViewModel,
-                latestMilestoneTracker);
+                latestMilestoneTracker, transactionRequester);
         tipRequester.init(neighborRouter, tangle, latestMilestoneTracker, transactionRequester);
     }
 

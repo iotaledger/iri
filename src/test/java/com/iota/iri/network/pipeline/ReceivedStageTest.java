@@ -2,6 +2,7 @@ package com.iota.iri.network.pipeline;
 
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.impl.NeighborMetricsImpl;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -31,6 +32,9 @@ public class ReceivedStageTest {
     private SnapshotProvider snapshotProvider;
 
     @Mock
+    private TransactionRequester transactionRequester;
+
+    @Mock
     private TransactionViewModel tvm;
 
     @Mock
@@ -44,7 +48,7 @@ public class ReceivedStageTest {
         Mockito.when(tvm.store(tangle, snapshotProvider.getInitialSnapshot())).thenReturn(true);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
 
-        ReceivedStage stage = new ReceivedStage(tangle, transactionValidator, snapshotProvider);
+        ReceivedStage stage = new ReceivedStage(tangle, transactionValidator, snapshotProvider, transactionRequester);
         ReceivedPayload receivedPayload = new ReceivedPayload(neighbor, tvm);
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);
@@ -63,7 +67,7 @@ public class ReceivedStageTest {
         Mockito.when(tvm.store(tangle, snapshotProvider.getInitialSnapshot())).thenReturn(false);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
 
-        ReceivedStage stage = new ReceivedStage(tangle, transactionValidator, snapshotProvider);
+        ReceivedStage stage = new ReceivedStage(tangle, transactionValidator, snapshotProvider, transactionRequester);
         ReceivedPayload receivedPayload = new ReceivedPayload(neighbor, tvm);
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);

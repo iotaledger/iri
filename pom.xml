@@ -466,7 +466,7 @@
                                             uk.co.froot.maven.enforcer:digest-enforcer-rules:0.0.1:jar:null:runtime:16a9e04f3fe4bb143c42782d07d5faf65b32106f
                                         </urn>
                                         <urn>
-                                            com.github.stefanbirkner:system-rules:${system-rules.version}:jar:null:test:16a9e04f3fe4bb143c42782d07d5faf65b32106f
+                                            com.github.stefanbirkner:system-rules:${system-rules.version}:jar:null:test:d541c9a1cff0dda32e2436c74562e2e4aa6c88cd
                                         </urn>
                                     </urns>
 

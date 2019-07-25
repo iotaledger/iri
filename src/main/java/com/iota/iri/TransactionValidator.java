@@ -137,6 +137,7 @@ public class TransactionValidator {
             // queue already, as we only have transactions in the request queue which are needed for solidifying
             // milestones. this speeds up solidification significantly
             transactionRequester.requestTrunkAndBranch(transactionViewModel);
+
             return false;
         }
 

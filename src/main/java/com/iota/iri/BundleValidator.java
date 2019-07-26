@@ -124,7 +124,7 @@ public class BundleValidator {
      * @return whether the validation criteria were passed or not
      * @throws Exception if an error occurred in the persistence layer
      */
-    public boolean validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs) throws Exception {
+    public static boolean validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs) throws Exception {
         TransactionViewModel startTx = TransactionViewModel.fromHash(tangle, startTxHash);
         if (startTx == null || (!hasMode(validationMode, MODE_SKIP_TAIL_TX_EXISTENCE) && (startTx.getCurrentIndex() != 0 || startTx.getValidity() == -1))) {
             return false;

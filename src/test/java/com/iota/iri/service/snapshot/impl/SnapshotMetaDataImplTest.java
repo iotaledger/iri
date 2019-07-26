@@ -40,7 +40,7 @@ public class SnapshotMetaDataImplTest {
     public void setUp() {
         meta = new SnapshotMetaDataImpl(A, 
                 BaseIotaConfig.Defaults.MILESTONE_START_INDEX, 
-                BaseIotaConfig.Defaults.GLOBAL_SNAPSHOT_TIME, 
+                BaseIotaConfig.Defaults.SNAPSHOT_TIME,
                 solidEntryPoints, 
                 seenMilestones);
     }
@@ -60,11 +60,11 @@ public class SnapshotMetaDataImplTest {
     @Test
     public void initialTimestampTest(){
         assertEquals("Initial timestamp should be equal to the one provided", 
-                meta.getInitialTimestamp(), BaseIotaConfig.Defaults.GLOBAL_SNAPSHOT_TIME);
+                meta.getInitialTimestamp(), BaseIotaConfig.Defaults.SNAPSHOT_TIME);
         assertEquals("Current timestamp should be equal to the initial timestamp", 
-                meta.getTimestamp(), BaseIotaConfig.Defaults.GLOBAL_SNAPSHOT_TIME);
+                meta.getTimestamp(), BaseIotaConfig.Defaults.SNAPSHOT_TIME);
         
-        meta.setTimestamp(BaseIotaConfig.Defaults.GLOBAL_SNAPSHOT_TIME + 1);
+        meta.setTimestamp(BaseIotaConfig.Defaults.SNAPSHOT_TIME + 1);
         assertNotEquals("Initial timestamp should not be the same as current timestamp after setting", 
                 meta.getInitialTimestamp(), meta.getTimestamp());
     }

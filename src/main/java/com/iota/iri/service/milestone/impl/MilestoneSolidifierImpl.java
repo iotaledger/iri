@@ -30,12 +30,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     /**
      * Defines the amount of milestones that we "simultaneously" try to solidify in one pass.
      */
-    private static final int SOLIDIFICATION_QUEUE_SIZE = 10;
+    private static final int SOLIDIFICATION_QUEUE_SIZE = 20;
 
     /**
      * Defines the interval in which solidity checks are issued (in milliseconds).
      */
-    private static final int SOLIDIFICATION_INTERVAL = 100;
+    private static final int SOLIDIFICATION_INTERVAL = 50;
 
     /**
      * <p>
@@ -44,7 +44,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * </p>
      * <p>
      * Note: We want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
-     *       long running {@link TransactionValidator#checkSolidity(Hash, boolean)} call.
+     *       long running {@link TransactionValidator#checkSolidity(Hash)} call.
      * </p>
      */
     private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;
@@ -338,7 +338,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * </p>
      * <p>
      * It first dumps a log message to keep the node operator informed about the progress of solidification, and then
-     * issues the {@link TransactionValidator#checkSolidity(Hash, boolean, int)} call that starts the solidification
+     * issues the {@link TransactionValidator#checkSolidity(Hash, int)} call that starts the solidification
      * process.
      * </p>
      * <p>
@@ -358,8 +358,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         try {
-            return transactionValidator.checkSolidity(currentEntry.getKey(), true,
-                    SOLIDIFICATION_TRANSACTIONS_LIMIT);
+            return transactionValidator.checkSolidity(currentEntry.getKey(), SOLIDIFICATION_TRANSACTIONS_LIMIT);
         } catch (Exception e) {
             log.error("Error while solidifying milestone #" + currentEntry.getValue(), e);
 

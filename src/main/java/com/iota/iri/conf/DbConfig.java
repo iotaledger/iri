@@ -6,32 +6,44 @@ package com.iota.iri.conf;
 public interface DbConfig extends Config {
 
     /**
-     * @return Descriptions#DB_PATH
+     * Default Value: {@value BaseIotaConfig.Defaults#DB_PATH}
+     *
+     * @return {@value DbConfig.Descriptions#DB_PATH}
      */
     String getDbPath();
 
     /**
-     * @return {@value Descriptions#DB_LOG_PATH}
+     * Default Value: {@value BaseIotaConfig.Defaults#DB_LOG_PATH}
+     *
+     * @return {@value DbConfig.Descriptions#DB_LOG_PATH}
      */
     String getDbLogPath();
 
     /**
-     * @return {@value Descriptions#DB_CACHE_SIZE}
+     * Default Value: {@value BaseIotaConfig.Defaults#DB_CACHE_SIZE}
+     *
+     * @return {@value DbConfig.Descriptions#DB_CACHE_SIZE}
      */
     int getDbCacheSize();
 
     /**
-     * @return {@value Descriptions#MAIN_DB}
+     * Default Value: {@value BaseIotaConfig.Defaults#MAIN_DB}
+     *
+     * @return {@value DbConfig.Descriptions#MAIN_DB}
      */
     String getMainDb();
 
     /**
-     * @return {@value Descriptions#REVALIDATE}
+     * Default Value: {@value BaseIotaConfig.Defaults#REVALIDATE}
+     *
+     * @return {@value DbConfig.Descriptions#REVALIDATE}
      */
     boolean isRevalidate();
 
     /**
-     * @return {@value Descriptions#RESCAN_DB}
+     * Default Value: {@value BaseIotaConfig.Defaults#RESCAN_DB}
+     *
+     * @return {@value DbConfig.Descriptions#RESCAN_DB}
      */
     boolean isRescanDb();
 

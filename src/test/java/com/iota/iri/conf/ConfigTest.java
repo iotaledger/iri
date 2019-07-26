@@ -110,7 +110,6 @@ public class ConfigTest {
         Assert.assertEquals("max neighbors", 10, iotaConfig.getMaxNeighbors());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
         Assert.assertEquals("dns resolution", false, iotaConfig.isDnsResolutionEnabled());
-        Assert.assertEquals("tip solidification", false, iotaConfig.isTipSolidifierEnabled());
         Assert.assertEquals("ixi-dir", "/ixi", iotaConfig.getIxiDir());
         Assert.assertEquals("db path", "/db", iotaConfig.getDbPath());
         Assert.assertEquals("zmq enabled", true, iotaConfig.isZmqEnabled());
@@ -147,7 +146,6 @@ public class ConfigTest {
                 "--max-neighbors", "10",
                 "--dns-refresher", "false",
                 "--dns-resolution", "false",
-                "--tip-solidifier", "false",
                 "--ixi-dir", "/ixi",
                 "--db-path", "/db",
                 "--db-log-path", "/dblog",
@@ -179,7 +177,6 @@ public class ConfigTest {
         Assert.assertEquals("max neighbors", 10, iotaConfig.getMaxNeighbors());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
         Assert.assertEquals("dns resolution", false, iotaConfig.isDnsResolutionEnabled());
-        Assert.assertEquals("tip solidification", false, iotaConfig.isTipSolidifierEnabled());
         Assert.assertEquals("ixi-dir", "/ixi", iotaConfig.getIxiDir());
         Assert.assertEquals("db path", "/db", iotaConfig.getDbPath());
         Assert.assertEquals("zmq enabled", true, iotaConfig.isZmqEnabled());
@@ -318,7 +315,8 @@ public class ConfigTest {
                 .filter(config -> !ArrayUtils.contains(new String[]{"CONFIG", "TESTNET", "DEBUG",
                         "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS", "UDP_RECEIVER_PORT", "TCP_RECEIVER_PORT",
                         "P_REMOVE_REQUEST", "P_SELECT_MILESTONE", "P_PROPAGATE_REQUEST", "P_DROP_TRANSACTION",
-                        "P_SELECT_MILESTONE_CHILD", "TRANSACTION_PACKET_SIZE", "P_REPLY_RANDOM_TIP"}, config))
+                        "P_SELECT_MILESTONE_CHILD", "TRANSACTION_PACKET_SIZE", "P_REPLY_RANDOM_TIP",
+                        "TIP_SOLIDIFIER_ENABLED"}, config))
                 .forEach(config ->
                         Assert.assertThat(configNames, IsCollectionContaining.hasItem(config)));
     }

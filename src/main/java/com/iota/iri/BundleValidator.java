@@ -243,11 +243,7 @@ public class BundleValidator {
         }
 
         // total bundle value sum must be 0
-        if (bundleValue != 0) {
-            return false;
-        }
-
-        return true;
+        return bundleValue == 0;
     }
 
     /**

@@ -106,7 +106,6 @@ public class ConfigTest {
         Assert.assertEquals("max get trytes", 4000, iotaConfig.getMaxGetTrytes());
         Assert.assertEquals("max body length", 220, iotaConfig.getMaxBodyLength());
         Assert.assertEquals("remote-auth", "2.2.2.2", iotaConfig.getRemoteAuth());
-        Assert.assertEquals("p remove request", 0.23d, iotaConfig.getpRemoveRequest(), 0d);
         Assert.assertEquals("send limit", 1000, iotaConfig.getSendLimit());
         Assert.assertEquals("max neighbors", 10, iotaConfig.getMaxNeighbors());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
@@ -176,7 +175,6 @@ public class ConfigTest {
         Assert.assertEquals("max get trytes", 4000, iotaConfig.getMaxGetTrytes());
         Assert.assertEquals("max body length", 220, iotaConfig.getMaxBodyLength());
         Assert.assertEquals("remote-auth", "2.2.2.2", iotaConfig.getRemoteAuth());
-        Assert.assertEquals("p remove request", 0.23d, iotaConfig.getpRemoveRequest(), 0d);
         Assert.assertEquals("send limit", 1000, iotaConfig.getSendLimit());
         Assert.assertEquals("max neighbors", 10, iotaConfig.getMaxNeighbors());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
@@ -222,7 +220,6 @@ public class ConfigTest {
         Assert.assertEquals("REMOTE_TRUSTED_API_HOSTS", expectedTrustedApiHosts, iotaConfig.getRemoteTrustedApiHosts());
 
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
-        Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getpRemoveRequest(), 0);
         Assert.assertNotEquals("MWM", 4, iotaConfig.getMwm());
     }
 
@@ -262,7 +259,6 @@ public class ConfigTest {
         Assert.assertEquals("RESCAN", false, iotaConfig.isRescanDb());
         //false by default
         Assert.assertEquals("REVALIDATE", false, iotaConfig.isRevalidate());
-        Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getpRemoveRequest(), 0);
         Assert.assertEquals("MWM", 4, iotaConfig.getMwm());
         Assert.assertEquals("NUMBER_OF_KEYS_IN_A_MILESTONE", 3, iotaConfig.getNumberOfKeysInMilestone());
         Assert.assertEquals("TIPSELECTION_ALPHA", 1.1d, iotaConfig.getAlpha(), 0);
@@ -320,7 +316,9 @@ public class ConfigTest {
                 .map(Enum::name)
                 // make it explicit that we have removed some configs
                 .filter(config -> !ArrayUtils.contains(new String[]{"CONFIG", "TESTNET", "DEBUG",
-                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS", "UDP_RECEIVER_PORT", "TCP_RECEIVER_PORT"}, config))
+                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS", "UDP_RECEIVER_PORT", "TCP_RECEIVER_PORT",
+                        "P_REMOVE_REQUEST", "P_SELECT_MILESTONE", "P_PROPAGATE_REQUEST", "P_DROP_TRANSACTION",
+                        "P_SELECT_MILESTONE_CHILD", "TRANSACTION_PACKET_SIZE", "P_REPLY_RANDOM_TIP"}, config))
                 .forEach(config ->
                         Assert.assertThat(configNames, IsCollectionContaining.hasItem(config)));
     }

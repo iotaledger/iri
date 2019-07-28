@@ -130,9 +130,9 @@ public class SeenMilestonesRetrieverImpl implements SeenMilestonesRetriever {
                 } else if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() + RETRIEVE_RANGE) {
                     TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle, milestoneHash);
                     if (milestoneTransaction.getType() == TransactionViewModel.PREFILLED_SLOT &&
-                            !transactionRequester.isTransactionRequested(milestoneHash, true)) {
+                            !transactionRequester.isTransactionRequested(milestoneHash)) {
 
-                        transactionRequester.requestTransaction(milestoneHash, true);
+                        transactionRequester.requestTransaction(milestoneHash);
                     }
 
                     // the transactionRequester will never drop milestone requests - we can therefore remove it from the

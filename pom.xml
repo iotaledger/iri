@@ -23,6 +23,7 @@
         <undertow.version>2.0.22.Final</undertow.version>
         <jackson-databind.version>2.9.9.1</jackson-databind.version>
         <zero-allocation-hashing.version>0.8</zero-allocation-hashing.version>
+        <system-rules.version>1.19.0</system-rules.version>
         <jacoco.version>0.7.9</jacoco.version>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
@@ -250,6 +251,13 @@
             <version>0.8</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>${system-rules.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -456,6 +464,9 @@
                                         <!-- A check for the rules themselves -->
                                         <urn>
                                             uk.co.froot.maven.enforcer:digest-enforcer-rules:0.0.1:jar:null:runtime:16a9e04f3fe4bb143c42782d07d5faf65b32106f
+                                        </urn>
+                                        <urn>
+                                            com.github.stefanbirkner:system-rules:${system-rules.version}:jar:null:test:d541c9a1cff0dda32e2436c74562e2e4aa6c88cd
                                         </urn>
                                     </urns>
 

@@ -226,8 +226,6 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             if (localSnapshotFile.exists() && localSnapshotFile.isFile() && localSnapshotMetadDataFile.exists() &&
                     localSnapshotMetadDataFile.isFile()) {
 
-                assertSpentAddressesDbExist();
-
                 SnapshotState snapshotState = readSnapshotStatefromFile(localSnapshotFile.getAbsolutePath());
                 if (!snapshotState.hasCorrectSupply()) {
                     throw new SnapshotException("the snapshot state file has an invalid supply");
@@ -245,22 +243,6 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         }
 
         return null;
-    }
-
-    private void assertSpentAddressesDbExist() throws SpentAddressesException {
-        String spentAddressesDbPath = config.getSpentAddressesDbPath();
-        try {
-            File spentAddressFolder = new File(spentAddressesDbPath);
-            //If there is at least one file in the db the check should pass
-            if (Files.newDirectoryStream(spentAddressFolder.toPath(), "*.sst").iterator().hasNext()) {
-                return;
-            }
-        }
-        catch (IOException e){
-            throw new SpentAddressesException("Can't load " + spentAddressesDbPath + " folder", e);
-        }
-
-        throw new SpentAddressesException(spentAddressesDbPath + " folder has no sst files");
     }
 
     /**

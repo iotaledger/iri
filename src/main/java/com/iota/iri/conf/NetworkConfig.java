@@ -37,13 +37,6 @@ public interface NetworkConfig extends Config {
     boolean isAutoTetheringEnabled();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#P_REMOVE_REQUEST}
-     *
-     * @return {@value NetworkConfig.Descriptions#P_REMOVE_REQUEST}
-     */
-    double getpRemoveRequest();
-
-    /**
      * Default Value: {@value BaseIotaConfig.Defaults#SEND_LIMIT}
      *
      * @return {@value NetworkConfig.Descriptions#SEND_LIMIT}
@@ -102,8 +95,6 @@ public interface NetworkConfig extends Config {
         String RECONNECT_ATTEMPT_INTERVAL_SECONDS = "The interval at which to reconnect to wanted neighbors.";
         String AUTO_TETHERING_ENABLED = "Whether to accept new connections from unknown neighbors. "
                 + "Unknown meaning neighbors which are not defined in the config and were not added via addNeighbors.";
-        String P_REMOVE_REQUEST = DescriptionHelper.PROB_OF + " stopping to request a transaction. This number should be " +
-                "closer to 0 so non-existing transaction hashes will eventually be removed.";
         String SEND_LIMIT = "The maximum number of packets that may be sent by this node in a 1 second interval. If this number is below 0 then there is no limit.";
         String MAX_NEIGHBORS = "The maximum number of neighbors allowed to be connected.";
         String DNS_REFRESHER_ENABLED = "Reconnect to neighbors that have dynamic IPs.";

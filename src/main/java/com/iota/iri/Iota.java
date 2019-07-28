@@ -17,7 +17,6 @@ import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.impl.TipsRequesterImpl;
-import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.service.TipsSolidifier;
@@ -113,8 +112,6 @@ public class Iota {
 
     public final MilestoneSolidifierImpl milestoneSolidifier;
 
-    public final TransactionRequesterWorkerImpl transactionRequesterWorker;
-
     public final BundleValidator bundleValidator;
 
     public final Tangle tangle;
@@ -154,7 +151,6 @@ public class Iota {
         transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
                 ? new AsyncTransactionPruner()
                 : null;
-        transactionRequesterWorker = new TransactionRequesterWorkerImpl();
         neighborRouter = new NeighborRouter();
         txPipeline = new TransactionProcessingPipelineImpl();
         tipRequester = new TipsRequesterImpl();
@@ -198,7 +194,6 @@ public class Iota {
 
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
         tipsSolidifier.init();
-        transactionRequester.init(configuration.getpRemoveRequest());
 
         txPipeline.start();
         neighborRouter.start();
@@ -208,7 +203,6 @@ public class Iota {
         latestSolidMilestoneTracker.start();
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
-        transactionRequesterWorker.start();
 
         if (localSnapshotManager != null) {
             localSnapshotManager.start(latestMilestoneTracker);
@@ -222,14 +216,8 @@ public class Iota {
         // snapshot provider must be initialized first
         // because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
-        spentAddressesProvider.init(configuration, createRocksDbProvider(
-                configuration.getSpentAddressesDbPath(),
-                configuration.getSpentAddressesDbLogPath(),
-                1000,
-                new HashMap<String, Class<? extends Persistable>>(1)
-                {{put("spent-addresses", SpentAddress.class);}}, null)
-            );
-        
+        initSpentAddressesProvider();
+
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
@@ -248,11 +236,23 @@ public class Iota {
         if (transactionPruner != null) {
             transactionPruner.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, tipsViewModel, configuration);
         }
-        transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, neighborRouter);
         neighborRouter.init(configuration, configuration, transactionRequester, txPipeline);
         txPipeline.init(neighborRouter, configuration, transactionValidator, tangle, snapshotProvider, tipsViewModel,
                 latestMilestoneTracker);
         tipRequester.init(neighborRouter, tangle, latestMilestoneTracker, transactionRequester);
+    }
+
+    private void initSpentAddressesProvider() throws SpentAddressesException {
+        PersistenceProvider spentAddressesDbProvider = createRocksDbProvider(
+                configuration.getSpentAddressesDbPath(),
+                configuration.getSpentAddressesDbLogPath(),
+                1000,
+                new HashMap<String, Class<? extends Persistable>>(1) {{
+                    put("spent-addresses", SpentAddress.class);
+                }}, null);
+        boolean assertSpentAddressesExistence = !configuration.isTestnet()
+                && snapshotProvider.getInitialSnapshot().getIndex() != configuration.getMilestoneStartIndex();
+        spentAddressesProvider.init(configuration, spentAddressesDbProvider, assertSpentAddressesExistence);
     }
 
     private void rescanDb() throws Exception {
@@ -286,7 +286,6 @@ public class Iota {
      */
     public void shutdown() throws Exception {
         // shutdown in reverse starting order (to not break any dependencies)
-        transactionRequesterWorker.shutdown();
         milestoneSolidifier.shutdown();
         seenMilestonesRetriever.shutdown();
         latestSolidMilestoneTracker.shutdown();

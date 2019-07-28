@@ -146,16 +146,16 @@ public class APIIntegrationTests {
      * Tests can choose to use this method instead of the no-args given() static method
      * if they want to manually specify custom timeouts.
      *
-     * @param socket_timeout     The Remote host response time.
-     * @param connection_timeout Remote host connection time & HttpConnectionManager connection return time.
+     * @param socketTimeout     The Remote host response time.
+     * @param connectionTimeout Remote host connection time & HttpConnectionManager connection return time.
      * @return The RequestSpecification to use for the test.
      */
-    private static RequestSpecification given(int socket_timeout, int connection_timeout) {
+    private static RequestSpecification given(int socketTimeout, int connectionTimeout) {
         return RestAssured.given().config(RestAssured.config()
             .httpClient(HttpClientConfig.httpClientConfig()
-                .setParam("http.conn-manager.timeout", (long) connection_timeout)
-                .setParam("http.connection.timeout", connection_timeout)
-                .setParam("http.socket.timeout", socket_timeout)))
+                .setParam("http.conn-manager.timeout", (long) connectionTimeout)
+                .setParam("http.connection.timeout", connectionTimeout)
+                .setParam("http.socket.timeout", socketTimeout)))
                 .contentType("application/json").header("X-IOTA-API-Version", 1);
     }
 

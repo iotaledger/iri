@@ -98,7 +98,7 @@ command line arguments.
 
 For a full list of command line options that is up to par with the latest release see https://docs.iota.org/docs/node-software/0.1/iri/references/iri-configuration-options/.
 
-You can also run IRI with the `-h` or `--help` flag to print a description of all the configurations that are up to par with the latest commit.
+You can also run IRI with the `-h` or `--help` flag to print a description of all the configurations that are available in your version of IRI.
 
 ```
 java -jar iri.jar -h

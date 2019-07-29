@@ -5,7 +5,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;

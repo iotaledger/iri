@@ -50,7 +50,12 @@ public class TransactionRequester {
         }
     }
 
-    public void requestTransaction(Hash hash){
+    /**
+     * Adds the given transaction hash to the request queue.
+     *
+     * @param hash the hash of the transaction to add to the request queue
+     */
+    public void requestTransaction(Hash hash) {
         if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash)) {
             synchronized (syncObj) {
                 if (transactionsToRequestIsFull()) {

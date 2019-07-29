@@ -234,7 +234,7 @@ public class Iota {
         latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
                 configuration);
         latestSolidMilestoneTracker.init(tangle, snapshotProvider, milestoneService, ledgerService,
-                latestMilestoneTracker);
+                latestMilestoneTracker, transactionRequester);
         seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,

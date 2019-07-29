@@ -21,16 +21,14 @@ public class PreProcessStage implements Stage {
 
     private static final Logger log = LoggerFactory.getLogger(PreProcessStage.class);
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
-    private TransactionRequester transactionRequester;
 
     /**
      * Creates a new {@link PreProcessStage}.
      *
      * @param recentlySeenBytesCache The cache to use for checking whether a transaction is known
      */
-    public PreProcessStage(FIFOCache<Long, Hash> recentlySeenBytesCache, TransactionRequester transactionRequester) {
+    public PreProcessStage(FIFOCache<Long, Hash> recentlySeenBytesCache) {
         this.recentlySeenBytesCache = recentlySeenBytesCache;
-        this.transactionRequester = transactionRequester;
     }
 
     /**
@@ -75,7 +73,6 @@ public class PreProcessStage implements Stage {
 
         // received tx is known, therefore we can submit to the reply stage directly.
         if (receivedTxHash != null) {
-            transactionRequester.removeRecentlyRequestedTransaction(receivedTxHash);
             // reply with a random tip by setting the request hash to the null hash
             requestedHash = requestedHash.equals(receivedTxHash) ? Hash.NULL_HASH : requestedHash;
             ctx.setNextStage(TransactionProcessingPipeline.Stage.REPLY);

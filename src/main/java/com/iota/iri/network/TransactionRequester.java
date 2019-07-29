@@ -1,7 +1,6 @@
 package com.iota.iri.network;
 
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +16,8 @@ public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
+    private final Set<Hash> recentlyRequestedTransactions = Collections.synchronizedSet(new HashSet<>());
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
-    public static final int MAX_TX_RECENTLY_REQ_QUEUE_SIZE = 10000;
-    private final Queue<Hash> recentlyRequestedTransactions = new LinkedBlockingQueue<>(MAX_TX_RECENTLY_REQ_QUEUE_SIZE);
 
     private final Object syncObj = new Object();
     private final Tangle tangle;
@@ -133,6 +131,13 @@ public class TransactionRequester {
      */
     public int numberOfRecentlyRequestedTransactions() {
         return recentlyRequestedTransactions.size();
+    }
+
+    /**
+     * Clears the recently requested transactions set.
+     */
+    public void clearRecentlyRequestedTransactions(){
+        recentlyRequestedTransactions.clear();
     }
 
     /**

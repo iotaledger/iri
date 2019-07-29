@@ -96,30 +96,28 @@ command line arguments.
 
 ### Command Line Options 
 
-Option | Shortened version | Description | Example Input
---- | --- | --- | --- 
-`--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14265`
-`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
-`--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
-`--udp-receiver-port` | `-u` | UDP receiver port | `-u 14600`
-`--tcp-receiver-port` | `-t` | TCP receiver port | `-t 15600`
-`--testnet` | | Makes it possible to run IRI with the IOTA testnet | `--testnet`
-`--remote` | | Remotely access your node and send API commands | `--remote`
-`--remote-auth` | | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `--remote-auth iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO`
-`--remote-limit-api` | | Exclude certain API calls from being able to be accessed remotely | `--remote-limit-api "attachToTangle, addNeighbors"`
-`--send-limit`| | Limit the outbound bandwidth consumption. Limit is set to mbit/s | `--send-limit 1.0`
-`--max-peers` | | Limit the number of max accepted peers. Default is set to 0 (mutual tethering) | `--max-peers 8`
-`--dns-resolution-false` | | Ignores DNS resolution refreshing  | `--dns-resolution-false`	
+For a full list of command line options that is up to par with the latest release see https://docs.iota.org/docs/node-software/0.1/iri/references/iri-configuration-options/.
+
+You can also run IRI with the `-h` or `--help` flag to print a description of all the configurations that are up to par with the latest commit.
+
+```
+java -jar iri.jar -h
+```
+
+
 ### INI File
 
-You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` flag. Here is an example INI file:
+You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. It is by default the `iota.ini` file in your current working directory. You can change its name and location via the `--config`\`-c` flag.
+
+`java -jar iri.jar -c "iri.ini"`
+
+ Here is an example INI file:
 ```
 [IRI]
 PORT = 14265
 UDP_RECEIVER_PORT = 14600
 NEIGHBORS = udp://my.favorite.com:14600
 IXI_DIR = ixi
-DEBUG = false
 DB_PATH = db
 ```
 

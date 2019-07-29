@@ -1,9 +1,8 @@
 package com.iota.iri.network;
 
-import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +17,9 @@ public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
-    private final Set<Hash> recentlyRequestedTransactions = Collections.synchronizedSet(new HashSet<>());
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
+    public static final int MAX_TX_RECENTLY_REQ_QUEUE_SIZE = 10000;
+    private final Queue<Hash> recentlyRequestedTransactions = new LinkedBlockingQueue<>(MAX_TX_RECENTLY_REQ_QUEUE_SIZE);
 
     private final Object syncObj = new Object();
     private final Tangle tangle;
@@ -64,18 +64,28 @@ public class TransactionRequester {
     }
 
     /**
-     * Puts the given transaction's trunk and branch transactions into the request queue
-     * in case they don't act as a solid entry point.
+     * Puts the given transaction's trunk and branch transactions into the request queue if:
+     * <ul>
+     *     <li>the approver transaction is not solid</li>
+     *     <li>trunk/branch is not a solid entry point</li>
+     *     <li>trunk/branch is not persisted in the database</li>
+     * </ul>
      *
-     * @param tvm the approver transaction
+     * @param approver the approver transaction
      */
-    public void requestTrunkAndBranch(TransactionViewModel tvm) {
-        Hash trunkHash = tvm.getTrunkTransactionHash();
-        Hash branchHash = tvm.getBranchTransactionHash();
-        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(trunkHash)){
+    public void requestTrunkAndBranch(TransactionViewModel approver) throws Exception {
+        // don't request anything if the approver is already solid
+        if(approver.isSolid()){
+            return;
+        }
+        Hash trunkHash = approver.getTrunkTransactionHash();
+        Hash branchHash = approver.getBranchTransactionHash();
+        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(trunkHash)
+                && !TransactionViewModel.exists(tangle, trunkHash)){
             requestTransaction(trunkHash);
         }
-        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(branchHash)){
+        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(branchHash)
+                && !TransactionViewModel.exists(tangle, branchHash)){
             requestTransaction(branchHash);
         }
     }
@@ -115,6 +125,14 @@ public class TransactionRequester {
      */
     public boolean wasTransactionRecentlyRequested(Hash transactionHash) {
         return recentlyRequestedTransactions.contains(transactionHash);
+    }
+
+    /**
+     * Gets the amount of recently requested transactions.
+     * @return the amount of recently requested transactions
+     */
+    public int numberOfRecentlyRequestedTransactions() {
+        return recentlyRequestedTransactions.size();
     }
 
     /**

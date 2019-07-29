@@ -50,15 +50,6 @@ public class ReceivedStage implements Stage {
         Neighbor originNeighbor = payload.getOriginNeighbor();
         TransactionViewModel tvm = payload.getTransactionViewModel();
 
-        // free up the recently requested transaction set
-        if(transactionRequester.wasTransactionRecentlyRequested(tvm.getHash())){
-            transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash());
-            // as the transaction came from the request queue, we can add its branch and trunk to the request
-            // queue already, as we only have transactions in the request queue which are needed for solidifying
-            // milestones. this speeds up solidification significantly
-            transactionRequester.requestTrunkAndBranch(tvm);
-        }
-
         boolean stored;
         try {
             stored = tvm.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -75,6 +66,15 @@ public class ReceivedStage implements Stage {
             tvm.setArrivalTime(System.currentTimeMillis());
             try {
                 txValidator.updateStatus(tvm);
+
+                // free up the recently requested transaction set
+                if(transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash())){
+                    // as the transaction came from the request queue, we can add its branch and trunk to the request
+                    // queue already, as we only have transactions in the request queue which are needed for solidifying
+                    // milestones. this speeds up solidification significantly
+                    transactionRequester.requestTrunkAndBranch(tvm);
+                }
+
                 // neighbor might be null because tx came from a broadcastTransaction command
                 if (originNeighbor != null) {
                     tvm.updateSender(originNeighbor.getHostAddressAndPort());
@@ -86,6 +86,8 @@ public class ReceivedStage implements Stage {
             if (originNeighbor != null) {
                 originNeighbor.getMetrics().incrNewTransactionsCount();
             }
+        }else{
+            transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash());
         }
 
         // broadcast the newly saved tx to the other neighbors

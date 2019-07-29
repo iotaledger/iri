@@ -47,6 +47,7 @@ public class ReceivedStageTest {
     public void newlyStoredTransactionUpdatesAlsoArrivalTimeAndSender() throws Exception {
         Mockito.when(tvm.store(tangle, snapshotProvider.getInitialSnapshot())).thenReturn(true);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
+        Mockito.when(transactionRequester.removeRecentlyRequestedTransaction(Mockito.any())).thenReturn(true);
 
         ReceivedStage stage = new ReceivedStage(tangle, transactionValidator, snapshotProvider, transactionRequester);
         ReceivedPayload receivedPayload = new ReceivedPayload(neighbor, tvm);
@@ -55,6 +56,8 @@ public class ReceivedStageTest {
 
         Mockito.verify(tvm).setArrivalTime(Mockito.anyLong());
         Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
+        Mockito.verify(transactionRequester).requestTrunkAndBranch(Mockito.any());
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
                 ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
@@ -74,6 +77,8 @@ public class ReceivedStageTest {
 
         Mockito.verify(tvm, Mockito.never()).setArrivalTime(Mockito.anyLong());
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
+        Mockito.verify(transactionRequester, Mockito.never()).requestTrunkAndBranch(Mockito.any());
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
                 ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();

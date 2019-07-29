@@ -74,7 +74,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                      SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
                      LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
-        this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
+        this.preProcessStage = new PreProcessStage(recentlySeenBytesCache, transactionRequester);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
                 snapshotProvider, recentlySeenBytesCache);
         this.broadcastStage = new BroadcastStage(neighborRouter);

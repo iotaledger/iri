@@ -3,6 +3,7 @@ package com.iota.iri.network.pipeline;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.SampleTransaction;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import com.iota.iri.network.neighbor.impl.NeighborMetricsImpl;
 import com.iota.iri.network.protocol.Protocol;
@@ -28,11 +29,14 @@ public class PreProcessStageTest {
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
 
     @Mock
+    private TransactionRequester transactionRequester;
+
+    @Mock
     private NeighborImpl neighbor;
 
     @Test
     public void processingAnUnknownTxDirectsToHashingStage() {
-        PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache);
+        PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache, transactionRequester);
         Mockito.when(neighbor.getMetrics()).thenReturn(new NeighborMetricsImpl());
         ByteBuffer rawTxGossipData = SampleTransaction.createSampleTxBuffer();
         PreProcessPayload payload = new PreProcessPayload(neighbor, rawTxGossipData);
@@ -56,7 +60,7 @@ public class PreProcessStageTest {
 
     @Test
     public void processingAKnownTxDirectsToReplyStage() {
-        PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache);
+        PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache, transactionRequester);
         Mockito.when(neighbor.getMetrics()).thenReturn(new NeighborMetricsImpl());
         ByteBuffer rawTxGossipData = SampleTransaction.createSampleTxBuffer();
         PreProcessPayload payload = new PreProcessPayload(neighbor, rawTxGossipData);
@@ -67,6 +71,7 @@ public class PreProcessStageTest {
                 .thenReturn(Hash.NULL_HASH);
 
         stage.process(ctx);
+        Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Hash.NULL_HASH);
         assertEquals("should submit to reply stage next", TransactionProcessingPipeline.Stage.REPLY,
                 ctx.getNextStage());
         ReplyPayload replyPayload = (ReplyPayload) ctx.getPayload();
@@ -76,7 +81,7 @@ public class PreProcessStageTest {
 
     @Test
     public void theTransactionsPayloadGetsExpanded() {
-        PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache);
+        PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache, transactionRequester);
         ByteBuffer truncatedTxGossipData = ByteBuffer.allocate(
                 SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES.length + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
         truncatedTxGossipData.put(SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES);

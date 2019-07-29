@@ -224,7 +224,7 @@ public class Iota {
         latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
                 configuration);
         latestSolidMilestoneTracker.init(tangle, snapshotProvider, milestoneService, ledgerService,
-                latestMilestoneTracker);
+                latestMilestoneTracker, transactionRequester);
         seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
@@ -234,7 +234,7 @@ public class Iota {
         }
         neighborRouter.init(configuration, configuration, transactionRequester, txPipeline);
         txPipeline.init(neighborRouter, configuration, transactionValidator, tangle, snapshotProvider, tipsViewModel,
-                latestMilestoneTracker);
+                latestMilestoneTracker, transactionRequester);
         tipRequester.init(neighborRouter, tangle, latestMilestoneTracker, transactionRequester);
     }
 

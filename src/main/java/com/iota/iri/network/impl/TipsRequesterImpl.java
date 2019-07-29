@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The {@link TipsRequesterImpl} requests tips from all neighbors in a given interval.
@@ -87,7 +86,9 @@ public class TipsRequesterImpl implements TipsRequester {
                 log.info(
                         "toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}",
                         txPipeline.getReceivedStageQueue().size(), txPipeline.getBroadcastStageQueue().size(),
-                        txRequester.numberOfTransactionsToRequest(), txPipeline.getReplyStageQueue().size(),
+                        txRequester.numberOfTransactionsToRequest() +
+                                txRequester.numberOfRecentlyRequestedTransactions(),
+                        txPipeline.getReplyStageQueue().size(),
                         TransactionViewModel.getNumberOfStoredTransactions(tangle));
             }
         } catch (final Exception e) {

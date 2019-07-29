@@ -50,7 +50,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int neighboringSocketPort = Defaults.NEIGHBORING_SOCKET_PORT;
     protected int reconnectAttemptIntervalSeconds = Defaults.RECONNECT_ATTEMPT_INTERVAL_SECONDS;
     protected boolean autoTetheringEnabled = Defaults.AUTO_TETHERING_ENABLED;
-    protected double pRemoveRequest = Defaults.P_REMOVE_REQUEST;
     protected double pDropCacheEntry = Defaults.P_DROP_CACHE_ENTRY;
     protected int sendLimit = Defaults.SEND_LIMIT;
     protected int maxNeighbors = Defaults.MAX_NEIGHBORS;
@@ -70,11 +69,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
     //Protocol
-    protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
-    protected double pDropTransaction = Defaults.P_DROP_TRANSACTION;
-    protected double pSelectMilestoneChild = Defaults.P_SELECT_MILESTONE_CHILD;
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
-    protected double pPropagateRequest = Defaults.P_PROPAGATE_REQUEST;
 
     //ZMQ
     protected boolean zmqEnableTcp = Defaults.ZMQ_ENABLE_TCP;
@@ -96,9 +91,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double alpha = Defaults.ALPHA;
     protected int tipSelectionTimeoutSec = Defaults.TIP_SELECTION_TIMEOUT_SEC;
     private int maxAnalyzedTransactions = Defaults.BELOW_MAX_DEPTH_TRANSACTION_LIMIT;
-
-    //Tip Solidification
-    protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
 
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
@@ -324,17 +316,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public double getpRemoveRequest() {
-        return pRemoveRequest;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-remove-request"}, description = NetworkConfig.Descriptions.P_REMOVE_REQUEST)
-    protected void setpRemoveRequest(double pRemoveRequest) {
-        this.pRemoveRequest = pRemoveRequest;
-    }
-
-    @Override
     public int getSendLimit() {
         return sendLimit;
     }
@@ -472,46 +453,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public int getTransactionPacketSize() {
-        return Defaults.PACKET_SIZE;
-    }
-
-    @Override
     public int getRequestHashSize() {
         return Defaults.REQUEST_HASH_SIZE;
-    }
-
-    @Override
-    public double getpReplyRandomTip() {
-        return pReplyRandomTip;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-reply-random"}, description = ProtocolConfig.Descriptions.P_REPLY_RANDOM_TIP)
-    protected void setpReplyRandomTip(double pReplyRandomTip) {
-        this.pReplyRandomTip = pReplyRandomTip;
-    }
-
-    @Override
-    public double getpDropTransaction() {
-        return pDropTransaction;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-drop-transaction"}, description = ProtocolConfig.Descriptions.P_DROP_TRANSACTION)
-    protected void setpDropTransaction(double pDropTransaction) {
-        this.pDropTransaction = pDropTransaction;
-    }
-
-    @Override
-    public double getpSelectMilestoneChild() {
-        return pSelectMilestoneChild;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-select-milestone"}, description = ProtocolConfig.Descriptions.P_SELECT_MILESTONE_CHILD)
-    protected void setpSelectMilestoneChild(double pSelectMilestoneChild) {
-        this.pSelectMilestoneChild = pSelectMilestoneChild;
     }
 
     @Override
@@ -523,17 +466,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--p-send-milestone"}, description = ProtocolConfig.Descriptions.P_SEND_MILESTONE)
     protected void setpSendMilestone(double pSendMilestone) {
         this.pSendMilestone = pSendMilestone;
-    }
-
-    @Override
-    public double getpPropagateRequest() {
-        return pPropagateRequest;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--p-propagate-request"}, description = ProtocolConfig.Descriptions.P_PROPAGATE_REQUEST)
-    protected void setpPropagateRequest(double pPropagateRequest) {
-        this.pPropagateRequest = pPropagateRequest;
     }
 
     @Override
@@ -864,18 +796,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public boolean isTipSolidifierEnabled() {
-        return tipSolidifierEnabled;
-    }
-
-    @JsonProperty
-    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER,
-        arity = 1)
-    protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
-        this.tipSolidifierEnabled = tipSolidifierEnabled;
-    }
-
-    @Override
     public int getBelowMaxDepthTransactionLimit() {
         return maxAnalyzedTransactions;
     }
@@ -919,7 +839,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int NEIGHBORING_SOCKET_PORT = 15600;
         int RECONNECT_ATTEMPT_INTERVAL_SECONDS = 60;
         boolean AUTO_TETHERING_ENABLED = false;
-        double P_REMOVE_REQUEST = 0.01d;
         int SEND_LIMIT = -1;
         int MAX_NEIGHBORS = 5;
         boolean DNS_REFRESHER_ENABLED = true;
@@ -937,13 +856,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean RESCAN_DB = false;
 
         //Protocol
-        double P_REPLY_RANDOM_TIP = 0.66d;
-        double P_DROP_TRANSACTION = 0d;
-        double P_SELECT_MILESTONE_CHILD = 0.7d;
         double P_SEND_MILESTONE = 0.02d;
-        double P_PROPAGATE_REQUEST = 0.01d;
         int MWM = 14;
-        int PACKET_SIZE = 1650;
         int REQUEST_HASH_SIZE = 46;
         int QUEUE_SIZE = 1_000;
         double P_DROP_CACHE_ENTRY = 0.02d;
@@ -961,9 +875,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
         int TIP_SELECTION_TIMEOUT_SEC = 60;
-
-        //Tip solidification
-        boolean TIP_SOLIDIFIER_ENABLED = false;
 
         //PearlDiver
         int POW_THREADS = 0;

@@ -2,6 +2,7 @@ package com.iota.iri.network.pipeline;
 
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
@@ -17,6 +18,7 @@ public class ReceivedStage implements Stage {
     private static final Logger log = LoggerFactory.getLogger(ReceivedStage.class);
 
     private Tangle tangle;
+    private TransactionRequester transactionRequester;
     private TransactionValidator txValidator;
     private SnapshotProvider snapshotProvider;
 
@@ -27,10 +29,12 @@ public class ReceivedStage implements Stage {
      * @param txValidator      The {@link TransactionValidator} used to store/update the transaction
      * @param snapshotProvider The {@link SnapshotProvider} used to store/update the transaction
      */
-    public ReceivedStage(Tangle tangle, TransactionValidator txValidator, SnapshotProvider snapshotProvider) {
+    public ReceivedStage(Tangle tangle, TransactionValidator txValidator, SnapshotProvider snapshotProvider,
+                         TransactionRequester transactionRequester) {
         this.txValidator = txValidator;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
+        this.transactionRequester = transactionRequester;
     }
 
     /**
@@ -62,6 +66,15 @@ public class ReceivedStage implements Stage {
             tvm.setArrivalTime(System.currentTimeMillis());
             try {
                 txValidator.updateStatus(tvm);
+
+                // free up the recently requested transaction set
+                if(transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash())){
+                    // as the transaction came from the request queue, we can add its branch and trunk to the request
+                    // queue already, as we only have transactions in the request queue which are needed for solidifying
+                    // milestones. this speeds up solidification significantly
+                    transactionRequester.requestTrunkAndBranch(tvm);
+                }
+
                 // neighbor might be null because tx came from a broadcastTransaction command
                 if (originNeighbor != null) {
                     tvm.updateSender(originNeighbor.getHostAddressAndPort());
@@ -73,6 +86,8 @@ public class ReceivedStage implements Stage {
             if (originNeighbor != null) {
                 originNeighbor.getMetrics().incrNewTransactionsCount();
             }
+        }else{
+            transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash());
         }
 
         // broadcast the newly saved tx to the other neighbors

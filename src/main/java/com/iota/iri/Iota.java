@@ -19,7 +19,6 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.impl.TipsRequesterImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
-import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
 import com.iota.iri.service.milestone.impl.LatestMilestoneTrackerImpl;
 import com.iota.iri.service.milestone.impl.LatestSolidMilestoneTrackerImpl;
@@ -116,7 +115,6 @@ public class Iota {
 
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
-    public final TipsSolidifier tipsSolidifier;
     public final TransactionRequester transactionRequester;
     public final TipsRequesterImpl tipRequester;
     public final TransactionProcessingPipeline txPipeline;
@@ -162,7 +160,6 @@ public class Iota {
         transactionRequester = new TransactionRequester(tangle, snapshotProvider);
         transactionValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester);
 
-        tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel, configuration);
         tipsSelector = createTipSelector(configuration);
 
         injectDependencies();
@@ -193,7 +190,6 @@ public class Iota {
         }
 
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
-        tipsSolidifier.init();
 
         txPipeline.start();
         neighborRouter.start();
@@ -298,7 +294,6 @@ public class Iota {
             localSnapshotManager.shutdown();
         }
 
-        tipsSolidifier.shutdown();
         tipRequester.shutdown();
         txPipeline.shutdown();
         neighborRouter.shutdown();

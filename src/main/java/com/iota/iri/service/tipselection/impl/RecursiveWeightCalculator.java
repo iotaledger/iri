@@ -2,12 +2,12 @@ package com.iota.iri.service.tipselection.impl;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-
-import org.apache.commons.collections4.CollectionUtils;
+import java.util.Set;
 
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -21,7 +21,10 @@ import com.iota.iri.utils.collections.impl.TransformingMap;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
- * Calculates the weight recursively/on the fly instead of building the tree and calculating after
+ * Calculates the weight recursively/on the fly
+ * Used to create a weighted random walks.
+ *
+ * @see <a href="cumulative.md">https://github.com/alongalky/iota-docs/blob/master/cumulative.md</a>
  */
 public class RecursiveWeightCalculator implements RatingCalculator {
 
@@ -40,9 +43,9 @@ public class RecursiveWeightCalculator implements RatingCalculator {
 
     @Override
     public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
-        UnIterableMap<HashId, Integer> hashWeight = calculateRatingDfs(entryPoint);
+        UnIterableMap<HashId, Integer> hashWeightMap = calculateRatingDfs(entryPoint);
         
-        return hashWeight;
+        return hashWeightMap;
     }
     
     private UnIterableMap<HashId, Integer> calculateRatingDfs(Hash entryPoint) throws Exception {
@@ -54,15 +57,15 @@ public class RecursiveWeightCalculator implements RatingCalculator {
         // Estimated capacity per depth, assumes 5 minute gap in between milestones, at 3tps
         UnIterableMap<HashId, Integer> hashWeight = createTxHashToCumulativeWeightMap( 5 * 60 * 3 * depth);
 
-        Map<Hash, HashSet<Hash>> txToDirectApprovers = new HashMap<>();
+        Map<Hash, Set<Hash>> txToDirectApprovers = new HashMap<>();
 
         Deque<Hash> stack = new ArrayDeque<>();
         stack.push(entryPoint);
 
-        while (CollectionUtils.isNotEmpty(stack)) {
+        while (!stack.isEmpty()) {
             Hash txHash = stack.peekLast();
 
-            HashSet<Hash> approvers = getTxDirectApproversHashes(txHash, txToDirectApprovers);
+            Set<Hash> approvers = getTxDirectApproversHashes(txHash, txToDirectApprovers);
             if (null != approvers && (approvers.size() == 0 || hasAll(hashWeight, approvers, stack))) {
                 approvers.add(txHash);
                 hashWeight.put(txHash, getRating(approvers, txToDirectApprovers));
@@ -75,21 +78,36 @@ public class RecursiveWeightCalculator implements RatingCalculator {
         return hashWeight;
     }
 
-    private int getRating(HashSet<Hash> nonDupes, Map<Hash, HashSet<Hash>> txToDirectApprovers) throws Exception {
-        Deque<Hash> stack = new ArrayDeque<>(nonDupes);
-        while (CollectionUtils.isNotEmpty(stack)) {
-            HashSet<Hash> approvers = getTxDirectApproversHashes(stack.pollLast(), txToDirectApprovers);
+    /**
+     * Gets the rating of a set, calculated by checking its approvers
+     * 
+     * @param startingSet
+     * @param txToDirectApproversCache 
+     * @return
+     * @throws Exception
+     */
+    private int getRating(Set<Hash> startingSet, Map<Hash, Set<Hash>> txToDirectApproversCache) throws Exception {
+        Deque<Hash> stack = new ArrayDeque<>(startingSet);
+        while (stack.isEmpty()) {
+            Set<Hash> approvers = getTxDirectApproversHashes(stack.pollLast(), txToDirectApproversCache);
             for (Hash hash : approvers) {
-                if (nonDupes.add(hash)) {
+                if (startingSet.add(hash)) {
                     stack.add(hash);
                 }
             }
         }
 
-        return nonDupes.size();
+        return startingSet.size();
     }
 
-    private boolean hasAll(UnIterableMap<HashId, Integer> source, HashSet<Hash> requester, Deque<Hash> stack) {
+    /**
+     * 
+     * @param source
+     * @param requester
+     * @param stack
+     * @return
+     */
+    private boolean hasAll(UnIterableMap<HashId, Integer> source, Set<Hash> requester, Deque<Hash> stack) {
         for (Hash h : requester) {
             if (!source.containsKey(h) && !stack.contains(h)) {
                 return false;
@@ -99,21 +117,27 @@ public class RecursiveWeightCalculator implements RatingCalculator {
     }
     
     /**
-     * Finds the approvers of a transaction, and adds it to the txToDirectApprovers map if they werent there yet.
+     * Finds the approvers of a transaction, and adds it to the txToDirectApprovers map if they weren't there yet.
      * 
      * @param txHash The tx we find the approvers of
      * @param txToDirectApprovers The map we look in, and add to
      * @param fallback The map we check in before going in the database, can be <code>null</code>
-     * @return
+     * @return A set with the direct approvers of the given hash
      * @throws Exception
      */
-    private HashSet<Hash> getTxDirectApproversHashes(Hash txHash, Map<Hash, HashSet<Hash>> txToDirectApprovers)
+    private Set<Hash> getTxDirectApproversHashes(Hash txHash, Map<Hash, Set<Hash>> txToDirectApprovers)
             throws Exception {
         
-        HashSet<Hash> txApprovers = txToDirectApprovers.get(txHash);
+        Set<Hash> txApprovers = txToDirectApprovers.get(txHash);
         if (txApprovers == null) {
             ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
-            Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
+            Collection<Hash> appHashes;
+            if (approvers == null || approvers.getHashes() == null) {
+                appHashes = Collections.emptySet();
+            } else {
+                appHashes = approvers.getHashes();
+            }
+            
             txApprovers = new HashSet<>(appHashes.size());
             for (Hash appHash : appHashes) {
                 // if not genesis (the tx that confirms itself)

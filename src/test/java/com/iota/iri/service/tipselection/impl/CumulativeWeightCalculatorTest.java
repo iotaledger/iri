@@ -283,7 +283,6 @@ public class CumulativeWeightCalculatorTest {
     }
 
     @Test
-    @Ignore
     public void testCollsionsInDiamondTangle() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3;
         transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());

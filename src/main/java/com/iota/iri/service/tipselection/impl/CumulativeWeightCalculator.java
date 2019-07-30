@@ -81,7 +81,7 @@ public class CumulativeWeightCalculator implements RatingCalculator {
                     }
                 }
                 
-                // Add the tx to the approvers list to count itself as +1 weight, preventing circular
+                // Add the tx to the approvers list to count itself as +1 weight, preventing self-referencing
                 approvers.add(txHash);
                 
                 // calculate and add rating. Naturally the first time all approvers need to be looked up. Then its cached.

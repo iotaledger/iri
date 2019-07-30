@@ -21,8 +21,10 @@ import com.iota.iri.utils.collections.impl.TransformingMap;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
- * Calculates the weight recursively/on the fly
- * Used to create a weighted random walks.
+ * Implementation of {@link RatingCalculator} that calculates the cumulative weight 
+ * Calculates the weight recursively/on the fly for each transaction referencing {@code entryPoint}. <br>
+ * Works using DFS search for new hashes and a BFS calculation. 
+ * Uses cached values to prevent double database lookup for approvers
  *
  * @see <a href="cumulative.md">https://github.com/alongalky/iota-docs/blob/master/cumulative.md</a>
  */

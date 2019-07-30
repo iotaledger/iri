@@ -210,8 +210,9 @@ public class BundleValidator {
         long bundleValue = 0;
 
         if (!hasMode(validationMode, MODE_VALIDATE_SEMANTICS)) {
-            for (int i = 0; tvm != null; tvm = bundleTxsMapping.get(tvm.getTrunkTransactionHash()), i++) {
+            while (tvm != null) {
                 bundleTxs.add(tvm);
+                tvm = bundleTxsMapping.get(tvm.getTrunkTransactionHash());
             }
             return true;
         }
@@ -357,7 +358,7 @@ public class BundleValidator {
      */
     public static boolean isInconsistent(Collection<TransactionViewModel> transactionViewModels) {
         long sum = transactionViewModels.stream().map(TransactionViewModel::value).reduce(0L, Long::sum);
-        return (sum != 0 || transactionViewModels.size() == 0);
+        return (sum != 0 || transactionViewModels.isEmpty());
     }
 
     /**

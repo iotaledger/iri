@@ -25,8 +25,6 @@ import com.iota.iri.utils.collections.interfaces.UnIterableMap;
  * Calculates the weight recursively/on the fly for each transaction referencing {@code entryPoint}. <br>
  * Works using DFS search for new hashes and a BFS calculation. 
  * Uses cached values to prevent double database lookup for approvers
- *
- * @see <a href="cumulative.md">https://github.com/alongalky/iota-docs/blob/master/cumulative.md</a>
  */
 public class CumulativeWeightCalculator implements RatingCalculator {
 
@@ -91,7 +89,7 @@ public class CumulativeWeightCalculator implements RatingCalculator {
             } 
         }
 
-        // If we have a circular reference, its already added, otherwise we save a big calculation
+        // If we have a self-reference, its already added, otherwise we save a big calculation
         if (!hashWeightMap.containsKey(entryPoint)) {
             hashWeightMap.put(entryPoint, hashWeightMap.size() + 1);
         }

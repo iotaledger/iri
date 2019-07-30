@@ -64,18 +64,29 @@ public class CumulativeWeightCalculator implements RatingCalculator {
         stack.addAll(getTxDirectApproversHashes(entryPoint, txToDirectApprovers));
 
         while (!stack.isEmpty()) {
-            Hash txHash = stack.peekLast();
+            Hash txHash = stack.removeLast();
 
             Set<Hash> approvers = getTxDirectApproversHashes(txHash, txToDirectApprovers);
-            if (null != approvers && (approvers.isEmpty() || hasAll(hashWeightMap, approvers, stack))) {
-                // Add the tx to the approvers list to count itself as +1 weight
+            
+            // If its empty, its a tip!
+            if (approvers.isEmpty()) {
+                hashWeightMap.put(txHash, 1);
+
+            // Else we go deeper
+            } else {
+                // Add all approvers, given we didnt go there and its not circular
+                for (Hash h : approvers) {
+                    if (!hashWeightMap.containsKey(h) && !stack.contains(h) && !h.equals(txHash)) {
+                        stack.add(h);
+                    }
+                }
+                
+                // Add the tx to the approvers list to count itself as +1 weight, preventing circular
                 approvers.add(txHash);
                 
+                // calculate and add rating. Naturally the first time all approvers need to be looked up. Then its cached.
                 hashWeightMap.put(txHash, getRating(approvers, txToDirectApprovers));
-                stack.removeLast();
-            } else {
-                stack.addAll(approvers);
-            }
+            } 
         }
 
         // If we have a circular reference, its already added, otherwise we save a big calculation
@@ -106,22 +117,6 @@ public class CumulativeWeightCalculator implements RatingCalculator {
         }
 
         return startingSet.size();
-    }
-
-    /**
-     * 
-     * @param source
-     * @param requester
-     * @param stack
-     * @return
-     */
-    private boolean hasAll(UnIterableMap<HashId, Integer> source, Set<Hash> requester, Deque<Hash> stack) {
-        for (Hash h : requester) {
-            if (!source.containsKey(h) && !stack.contains(h)) {
-                return false;
-            }
-        }
-        return true;
     }
     
     /**

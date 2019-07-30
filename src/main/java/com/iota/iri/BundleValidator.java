@@ -25,14 +25,14 @@ public class BundleValidator {
     public static final int MODE_VALIDATE_SIGNATURES = 1;
 
     /**
-     * Instructs the validation code to compare the computed bundle hash from the essence data against
-     * the tail transaction's bundle hash.
+     * Instructs the validation code to compare the computed bundle hash from the essence data against the tail
+     * transaction's bundle hash.
      */
     public static final int MODE_VALIDATE_BUNDLE_HASH = 1 << 1;
 
     /**
      * Instructs the validation code to check the integrity of the bundle by checking current/last index positions,
-     * making sure that every transaction of the the bundle is present, value transaction's address ends with a 0 trit,
+     * making sure that every transaction of the the bundle is present, value transaction addresses end with a 0 trit,
      * the bundle's aggregation of value doesn't exceed the max supply of tokens and the sum of the bundle equals 0.
      */
     public static final int MODE_VALIDATE_SEMANTICS = 1 << 2;
@@ -49,8 +49,8 @@ public class BundleValidator {
     public static final int MODE_SKIP_CACHED_VALIDITY = 1 << 3;
 
     /**
-     * Instructs the validation code to skip checking whether the tail transaction is present or a tail transaction
-     * was given as the start transaction.
+     * Instructs the validation code to skip checking whether the tail transaction is present or a tail transaction was
+     * given as the start transaction.
      */
     public static final int MODE_SKIP_TAIL_TX_EXISTENCE = 1 << 4;
 
@@ -91,14 +91,14 @@ public class BundleValidator {
      */
     public List<TransactionViewModel> validate(Tangle tangle, Snapshot initialSnapshot, Hash tailHash) throws Exception {
         List<TransactionViewModel> bundleTxs = new LinkedList<>();
-        if(validate(tangle, tailHash, MODE_VALIDATE_ALL, bundleTxs)){
+        if (validate(tangle, tailHash, MODE_VALIDATE_ALL, bundleTxs)) {
             if (bundleTxs.get(0).getValidity() != 1) {
                 // the bundle and its signatures is valid, therefore mark it in the database
                 bundleTxs.get(0).setValidity(tangle, initialSnapshot, 1);
             }
             return bundleTxs;
         }
-        if (!bundleTxs.isEmpty() &&  bundleTxs.get(0).getCurrentIndex() == 0 && bundleTxs.get(0).getValidity() != -1) {
+        if (!bundleTxs.isEmpty() && bundleTxs.get(0).getCurrentIndex() == 0 && bundleTxs.get(0).getValidity() != -1) {
             bundleTxs.get(0).setValidity(tangle, initialSnapshot, -1);
         }
         return Collections.EMPTY_LIST;
@@ -110,17 +110,18 @@ public class BundleValidator {
 
     /**
      * <p>
-     *  Loads the rest of the bundle of the given start transaction and then validates the bundle
-     *  given the mode of validation.
+     * Loads the rest of the bundle of the given start transaction and then validates the bundle given the mode of
+     * validation.
      * </p>
      * <p>
- *      Note that this method does not update the validity flag of the given transaction in the database.
+     * Note that this method does not update the validity flag of the given transaction in the database.
      * </p>
      *
-     * @param tangle used to fetch the bundle's transactions from the persistence layer
-     * @param startTxHash the hash of the entrypoint transaction, must be the tail transaction if {@link BundleValidator#MODE_SKIP_TAIL_TX_EXISTENCE} is not used
+     * @param tangle         used to fetch the bundle's transactions from the persistence layer
+     * @param startTxHash    the hash of the entrypoint transaction, must be the tail transaction if {@link
+     *                       BundleValidator#MODE_SKIP_TAIL_TX_EXISTENCE} is not used
      * @param validationMode the validation mode defining the level of validation done with the loaded up bundle
-     * @param bundleTxs a list which gets filled with the transactions of the bundle
+     * @param bundleTxs      a list which gets filled with the transactions of the bundle
      * @return whether the validation criteria were passed or not
      * @throws Exception if an error occurred in the persistence layer
      */
@@ -132,7 +133,8 @@ public class BundleValidator {
 
         // load up the bundle by going through the trunks (note that we might not load up the entire bundle in case we
         // were instructed to not check whether we actually got the tail transaction)
-        final Map<Hash, TransactionViewModel> bundleTxsMapping = loadTransactionsFromTangle(tangle, startTx);
+        final Map<Hash, TransactionViewModel> bundleTxsMapping = loadTransactionsFromTangle(tangle, startTx,
+                !hasMode(validationMode, MODE_VALIDATE_SEMANTICS));
 
         // check the semantics of the bundle: total sum, semantics per tx (current/last index), missing txs, supply
         boolean bundleSemanticsValidity = validateBundleSemantics(startTx, bundleTxsMapping, bundleTxs, validationMode);
@@ -142,7 +144,7 @@ public class BundleValidator {
 
         // return if the bundle's validity was computed before
         if (!hasMode(validationMode, MODE_SKIP_CACHED_VALIDITY)) {
-            switch(startTx.getValidity()){
+            switch (startTx.getValidity()) {
                 case 1:
                     return true;
                 case -1:
@@ -160,7 +162,7 @@ public class BundleValidator {
         }
 
         // verify the signatures of input transactions
-        if(hasMode(validationMode, MODE_VALIDATE_SIGNATURES)){
+        if (hasMode(validationMode, MODE_VALIDATE_SIGNATURES)) {
             return validateSignatures(bundleTxs, normalizedBundle);
         }
 
@@ -169,14 +171,14 @@ public class BundleValidator {
 
     /**
      * <p>
-     * Checks the bundle's semantic validity by checking current/last index positions,
-     * making sure that every transaction of the the bundle is present, value transaction addresses end with a 0 trit,
-     * the bundle's aggregation value doesn't exceed the max supply of tokens and the sum of the bundle equals 0.
+     * Checks the bundle's semantic validity by checking current/last index positions, making sure that every
+     * transaction of the the bundle is present, value transaction addresses end with a 0 trit, the bundle's aggregation
+     * value doesn't exceed the max supply of tokens and the sum of the bundle equals 0.
      * </p>
      *
-     * @param startTx the start transaction from which to built the bundle up from
+     * @param startTx          the start transaction from which to built the bundle up from
      * @param bundleTxsMapping a mapping of the transaction hashes to the actual transactions
-     * @param bundleTxs an empty list which gets filled with the transactions in order of trunk ordering
+     * @param bundleTxs        an empty list which gets filled with the transactions in order of trunk ordering
      * @return whether the bundle is semantically valid
      */
     public static boolean validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs) {
@@ -185,20 +187,21 @@ public class BundleValidator {
 
     /**
      * <p>
-     * Checks the bundle's semantic validity by checking current/last index positions,
-     * making sure that every transaction of the the bundle is present, value transaction addresses end with a 0 trit,
-     * the bundle's aggregation of value doesn't exceed the max supply of tokens and the sum of the bundle equals 0.
+     * Checks the bundle's semantic validity by checking current/last index positions, making sure that every
+     * transaction of the the bundle is present, value transaction addresses end with a 0 trit, the bundle's aggregation
+     * of value doesn't exceed the max supply of tokens and the sum of the bundle equals 0.
      * </p>
      *
      * <p>
      * Note that if the validation mode does not include {@link BundleValidator#MODE_VALIDATE_SEMANTICS}, this method
-     * will basically just compute an ordered list of the transactions and will not do any actual validation of any kind.
+     * will basically just compute an ordered list of the transactions and will not do any actual validation of any
+     * kind.
      * </p>
      *
-     * @param startTx the start transaction from which to built the bundle up from
+     * @param startTx          the start transaction from which to built the bundle up from
      * @param bundleTxsMapping a mapping of the transaction hashes to the actual transactions
-     * @param bundleTxs an empty list which gets filled with the transactions in order of trunk ordering
-     * @param validationMode the used validation mode
+     * @param bundleTxs        an empty list which gets filled with the transactions in order of trunk ordering
+     * @param validationMode   the used validation mode
      * @return whether the bundle is semantically valid
      */
     private static boolean validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs, int validationMode) {
@@ -206,14 +209,11 @@ public class BundleValidator {
         final long lastIndex = tvm.lastIndex();
         long bundleValue = 0;
 
-        if(!hasMode(validationMode, MODE_VALIDATE_SEMANTICS)){
-            for (int i = 0; i <= lastIndex; tvm = bundleTxsMapping.get(tvm.getTrunkTransactionHash()), i++) {
-                // this will always be hit and terminate the for loop by returning
-                if (tvm == null) {
-                    return true;
-                }
+        if (!hasMode(validationMode, MODE_VALIDATE_SEMANTICS)) {
+            for (int i = 0; tvm != null; tvm = bundleTxsMapping.get(tvm.getTrunkTransactionHash()), i++) {
                 bundleTxs.add(tvm);
             }
+            return true;
         }
 
         // iterate over all transactions of the bundle and do some basic semantic checks
@@ -233,7 +233,7 @@ public class BundleValidator {
                             || ((bundleValue = Math.addExact(bundleValue, tvm.value())) < -TransactionViewModel.SUPPLY
                             || bundleValue > TransactionViewModel.SUPPLY)
             ) {
-                    return false;
+                return false;
             }
 
             // we lose the last trit by converting from bytes
@@ -252,7 +252,7 @@ public class BundleValidator {
      * the given normalizedBundleHash byte array.
      * </p>
      *
-     * @param bundleTxs a list of ordered (by index) bundle transactions
+     * @param bundleTxs                a list of ordered (by index) bundle transactions
      * @param destNormalizedBundleHash an array in which the normalized bundle hash is written into
      * @return whether the bundle hash of every transaction in the bundle corresponds to the computed bundle hash
      */
@@ -270,9 +270,9 @@ public class BundleValidator {
      * will compute the bundle hash and write it into the normalizedBundleHash parameter, even if it is not valid.
      * </p>
      *
-     * @param bundleTxs a list of ordered (by index) bundle transactions
+     * @param bundleTxs                a list of ordered (by index) bundle transactions
      * @param destNormalizedBundleHash an array in which the normalized bundle hash is written into
-     * @param validationMode the used validation mode
+     * @param validationMode           the used validation mode
      * @return whether the bundle hash of every transaction in the bundle corresponds to the computed bundle hash
      */
     private static boolean validateBundleHash(List<TransactionViewModel> bundleTxs, byte[] destNormalizedBundleHash, int validationMode) {
@@ -287,8 +287,8 @@ public class BundleValidator {
 
         // compare the computed bundle hash against each transaction's bundle hash
         if (hasMode(validationMode, MODE_VALIDATE_BUNDLE_HASH)) {
-            for(TransactionViewModel tvm : bundleTxs){
-                if(!Arrays.equals(tvm.getBundleHash().trits(), bundleHashTrits)){
+            for (TransactionViewModel tvm : bundleTxs) {
+                if (!Arrays.equals(tvm.getBundleHash().trits(), bundleHashTrits)) {
                     return false;
                 }
             }
@@ -302,7 +302,7 @@ public class BundleValidator {
     /**
      * Validates the signatures of the given bundle transactions. The transactions must be ordered by index.
      *
-     * @param bundleTxs a list of ordered (by index) bundle transactions
+     * @param bundleTxs        a list of ordered (by index) bundle transactions
      * @param normalizedBundle the normalized bundle hash
      * @return whether all signatures were valid given the bundle hash and addresses
      */
@@ -364,11 +364,12 @@ public class BundleValidator {
      * Traverses down the given {@code tail} trunk until all transactions that belong to the same bundle (identified by
      * the bundle hash) are found and loaded.
      *
-     * @param tangle connection to the persistence layer
-     * @param tail   should be the last transaction of the bundle
+     * @param tangle            connection to the persistence layer
+     * @param tail              should be the last transaction of the bundle
+     * @param skipIndexChecking whether to skip checking the indices while loading the transactions
      * @return map of all transactions in the bundle, mapped by their transaction hash
      */
-    private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, TransactionViewModel tail) {
+    private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, TransactionViewModel tail, boolean skipIndexChecking) {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
         final Hash bundleHash = tail.getBundleHash();
         try {
@@ -377,7 +378,14 @@ public class BundleValidator {
             do {
                 bundleTransactions.put(tx.getHash(), tx);
                 tx = tx.getTrunkTransaction(tangle);
-            } while (i++ < end && tx.getCurrentIndex() != 0 && tx.getBundleHash().equals(bundleHash));
+            } while (
+                    // if we are skipping the index checking, we must make sure that we are not
+                    // having an empty bundle hash, as it would lead to an OOM where the genesis
+                    // transaction is loaded over and over again
+                    ((skipIndexChecking && !tx.getHash().equals(Hash.NULL_HASH)) ||
+                        (i++ < end && tx.getCurrentIndex() != 0))
+                    && tx.getBundleHash().equals(bundleHash)
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }

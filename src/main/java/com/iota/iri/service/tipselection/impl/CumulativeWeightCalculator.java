@@ -26,17 +26,18 @@ import com.iota.iri.utils.collections.interfaces.UnIterableMap;
  *
  * @see <a href="cumulative.md">https://github.com/alongalky/iota-docs/blob/master/cumulative.md</a>
  */
-public class RecursiveWeightCalculator implements RatingCalculator {
+public class CumulativeWeightCalculator implements RatingCalculator {
 
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
 
     /**
-     * Constructor for Recursive Weight Calculator
+     * Constructor for Cumulative Weight Calculator
+     * 
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider accesses ledger's snapshots
      */
-    public RecursiveWeightCalculator(Tangle tangle, SnapshotProvider snapshotProvider) {
+    public CumulativeWeightCalculator(Tangle tangle, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
     }
@@ -55,40 +56,47 @@ public class RecursiveWeightCalculator implements RatingCalculator {
                 : 1;
 
         // Estimated capacity per depth, assumes 5 minute gap in between milestones, at 3tps
-        UnIterableMap<HashId, Integer> hashWeight = createTxHashToCumulativeWeightMap( 5 * 60 * 3 * depth);
+        UnIterableMap<HashId, Integer> hashWeightMap = createTxHashToCumulativeWeightMap( 5 * 60 * 3 * depth);
 
         Map<Hash, Set<Hash>> txToDirectApprovers = new HashMap<>();
 
         Deque<Hash> stack = new ArrayDeque<>();
-        stack.push(entryPoint);
+        stack.addAll(getTxDirectApproversHashes(entryPoint, txToDirectApprovers));
 
         while (!stack.isEmpty()) {
             Hash txHash = stack.peekLast();
 
             Set<Hash> approvers = getTxDirectApproversHashes(txHash, txToDirectApprovers);
-            if (null != approvers && (approvers.size() == 0 || hasAll(hashWeight, approvers, stack))) {
+            if (null != approvers && (approvers.isEmpty() || hasAll(hashWeightMap, approvers, stack))) {
+                // Add the tx to the approvers list to count itself as +1 weight
                 approvers.add(txHash);
-                hashWeight.put(txHash, getRating(approvers, txToDirectApprovers));
+                
+                hashWeightMap.put(txHash, getRating(approvers, txToDirectApprovers));
                 stack.removeLast();
             } else {
                 stack.addAll(approvers);
             }
         }
 
-        return hashWeight;
+        // If we have a circular reference, its already added, otherwise we save a big calculation
+        if (!hashWeightMap.containsKey(entryPoint)) {
+            hashWeightMap.put(entryPoint, hashWeightMap.size() + 1);
+        }
+        return hashWeightMap;
     }
 
     /**
      * Gets the rating of a set, calculated by checking its approvers
      * 
-     * @param startingSet
-     * @param txToDirectApproversCache 
-     * @return
-     * @throws Exception
+     * @param startingSet All approvers of a certain hash, including the hash itself. 
+     *                    Should always start with at least 1 hash.
+     * @param txToDirectApproversCache The cache of approvers, used to prevent double db lookups
+     * @return The weight, or rating, of the starting hash
+     * @throws Exception If we can't get the approvers
      */
     private int getRating(Set<Hash> startingSet, Map<Hash, Set<Hash>> txToDirectApproversCache) throws Exception {
         Deque<Hash> stack = new ArrayDeque<>(startingSet);
-        while (stack.isEmpty()) {
+        while (!stack.isEmpty()) {
             Set<Hash> approvers = getTxDirectApproversHashes(stack.pollLast(), txToDirectApproversCache);
             for (Hash hash : approvers) {
                 if (startingSet.add(hash)) {

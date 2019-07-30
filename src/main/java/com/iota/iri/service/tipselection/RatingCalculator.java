@@ -18,7 +18,7 @@ public interface RatingCalculator {
      * </p>
      *
      * @param entryPoint  Transaction hash of a selected entry point.
-     * @return  Map of ratings for each transaction that references entryPoint.
+     * @return Map of ratings for each transaction that references entryPoint.
      * @throws Exception If DB fails to retrieve transactions
      */
 

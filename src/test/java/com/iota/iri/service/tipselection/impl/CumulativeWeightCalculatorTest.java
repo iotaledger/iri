@@ -18,7 +18,6 @@ import java.util.Set;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -65,7 +64,7 @@ public class CumulativeWeightCalculatorTest {
         tangle.addPersistenceProvider( new RocksDBPersistenceProvider(
                 dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
-        cumulativeWeightCalculator = new RecursiveWeightCalculator(tangle, snapshotProvider);
+        cumulativeWeightCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
     }
 
     @Test

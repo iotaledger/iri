@@ -37,8 +37,8 @@ import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
-import com.iota.iri.service.tipselection.impl.RecursiveWeightCalculator;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.service.tipselection.impl.WalkerAlpha;
@@ -345,7 +345,7 @@ public class Iota {
     private TipSelector createTipSelector(TipSelConfig config) {
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
                 latestMilestoneTracker);
-        RatingCalculator ratingCalculator = new RecursiveWeightCalculator(tangle, snapshotProvider);
+        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, new SecureRandom(), config);
         return new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,

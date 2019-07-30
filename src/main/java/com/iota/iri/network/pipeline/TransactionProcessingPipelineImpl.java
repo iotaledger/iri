@@ -10,6 +10,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -70,15 +71,15 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
 
     @Override
     public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
-            SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
-            LatestMilestoneTracker latestMilestoneTracker) {
+                     SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
+                     LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
                 snapshotProvider, recentlySeenBytesCache);
         this.broadcastStage = new BroadcastStage(neighborRouter);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
-        this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider);
+        this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider, transactionRequester);
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
     }

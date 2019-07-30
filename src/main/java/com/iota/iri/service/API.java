@@ -417,13 +417,15 @@ public class API {
     }
 
     /**
-     * Compares the last received confirmed milestone with the last global snapshot milestone.
-     * If these are equal, it means the tangle is empty and therefore invalid.
+     * Checks whether the node is synchronized by comparing the latest known milestone index against the current
+     * latest solid milestone index. We allow for max. one milestone delta as a headroom, as a milestone is
+     * only applied in a set interval to the current ledger state.
      *
-     * @return <tt>false</tt> if we received at least a solid milestone, otherwise <tt>true</tt>
+     * @return true if the node is synced, false if not
      */
-    public boolean invalidSubtangleStatus() {
-        return (snapshotProvider.getLatestSnapshot().getIndex() == snapshotProvider.getInitialSnapshot().getIndex());
+    private boolean isNodeSynchronized() {
+        return (snapshotProvider.getLatestSnapshot().getIndex() != snapshotProvider.getInitialSnapshot().getIndex()) &&
+                snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex() -1;
     }
 
     /**
@@ -607,7 +609,7 @@ public class API {
      * @see TipSelector
      */
     List<Hash> getTransactionToApproveTips(int depth, Optional<Hash> reference) throws Exception {
-        if (invalidSubtangleStatus()) {
+        if (!isNodeSynchronized()) {
             throw new IllegalStateException(INVALID_SUBTANGLE);
         }
 
@@ -1591,7 +1593,7 @@ public class API {
 
     private Function<Map<String, Object>, AbstractResponse> getInclusionStates() {
         return request -> {
-            if (invalidSubtangleStatus()) {
+            if (!isNodeSynchronized()) {
                 return ErrorResponse.create(INVALID_SUBTANGLE);
             }
             final List<String> transactions = getParameterAsList(request, "transactions", HASH_SIZE);
@@ -1693,7 +1695,7 @@ public class API {
     
     private Function<Map<String, Object>, AbstractResponse> checkConsistency() {
         return request -> {
-            if (invalidSubtangleStatus()) {
+            if (!isNodeSynchronized()) {
                 return ErrorResponse.create(INVALID_SUBTANGLE);
             }
             final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);

@@ -1,11 +1,7 @@
 package com.iota.iri.network;
 
-import java.security.SecureRandom;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +16,7 @@ public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
+    private final Set<Hash> recentlyRequestedTransactions = Collections.synchronizedSet(new HashSet<>());
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
 
     private final Object syncObj = new Object();
@@ -53,14 +50,46 @@ public class TransactionRequester {
         }
     }
 
-    public void requestTransaction(Hash hash) throws Exception {
-        if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash) && !TransactionViewModel.exists(tangle, hash)) {
+    /**
+     * Adds the given transaction hash to the request queue.
+     *
+     * @param hash the hash of the transaction to add to the request queue
+     */
+    public void requestTransaction(Hash hash) {
+        if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash)) {
             synchronized (syncObj) {
                 if (transactionsToRequestIsFull()) {
                     popEldestTransactionToRequest();
                 }
                 transactionsToRequest.add(hash);
             }
+        }
+    }
+
+    /**
+     * Puts the given transaction's trunk and branch transactions into the request queue if:
+     * <ul>
+     *     <li>the approver transaction is not solid</li>
+     *     <li>trunk/branch is not a solid entry point</li>
+     *     <li>trunk/branch is not persisted in the database</li>
+     * </ul>
+     *
+     * @param approver the approver transaction
+     */
+    public void requestTrunkAndBranch(TransactionViewModel approver) throws Exception {
+        // don't request anything if the approver is already solid
+        if(approver.isSolid()){
+            return;
+        }
+        Hash trunkHash = approver.getTrunkTransactionHash();
+        Hash branchHash = approver.getBranchTransactionHash();
+        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(trunkHash)
+                && !TransactionViewModel.exists(tangle, trunkHash)){
+            requestTransaction(trunkHash);
+        }
+        if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(branchHash)
+                && !TransactionViewModel.exists(tangle, branchHash)){
+            requestTransaction(branchHash);
         }
     }
 
@@ -91,6 +120,41 @@ public class TransactionRequester {
         return transactionsToRequest.contains(transactionHash);
     }
 
+    /**
+     * Checks whether the given transaction was recently requested on a neighbor.
+     *
+     * @param transactionHash hash of the transaction to check
+     * @return true if the transaction was recently requested on a neighbor
+     */
+    public boolean wasTransactionRecentlyRequested(Hash transactionHash) {
+        return recentlyRequestedTransactions.contains(transactionHash);
+    }
+
+    /**
+     * Gets the amount of recently requested transactions.
+     * @return the amount of recently requested transactions
+     */
+    public int numberOfRecentlyRequestedTransactions() {
+        return recentlyRequestedTransactions.size();
+    }
+
+    /**
+     * Clears the recently requested transactions set.
+     */
+    public void clearRecentlyRequestedTransactions(){
+        recentlyRequestedTransactions.clear();
+    }
+
+    /**
+     * Removes the given transaction hash from the recently requested transactions set.
+     *
+     * @param transactionHash hash of the transaction to remove
+     * @return true if the transaction was recently requested and removed from the set
+     */
+    public boolean removeRecentlyRequestedTransaction(Hash transactionHash) {
+        return recentlyRequestedTransactions.remove(transactionHash);
+    }
+
     private boolean transactionsToRequestIsFull() {
         return transactionsToRequest.size() >= TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
     }
@@ -106,6 +170,7 @@ public class TransactionRequester {
                 Iterator<Hash> iterator = transactionsToRequest.iterator();
                 hash = iterator.next();
                 iterator.remove();
+                recentlyRequestedTransactions.add(hash);
             }
         }
 

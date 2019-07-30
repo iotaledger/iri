@@ -64,7 +64,7 @@ public class CumulativeWeightCalculator implements RatingCalculator {
         stack.addAll(getTxDirectApproversHashes(entryPoint, txToDirectApprovers));
 
         while (!stack.isEmpty()) {
-            Hash txHash = stack.removeLast();
+            Hash txHash = stack.pollLast();
 
             Set<Hash> approvers = getTxDirectApproversHashes(txHash, txToDirectApprovers);
             
@@ -74,9 +74,9 @@ public class CumulativeWeightCalculator implements RatingCalculator {
 
             // Else we go deeper
             } else {
-                // Add all approvers, given we didnt go there and its not circular
+                // Add all approvers, given we didnt go there
                 for (Hash h : approvers) {
-                    if (!hashWeightMap.containsKey(h) && !stack.contains(h) && !h.equals(txHash)) {
+                    if (!hashWeightMap.containsKey(h)) {
                         stack.add(h);
                     }
                 }

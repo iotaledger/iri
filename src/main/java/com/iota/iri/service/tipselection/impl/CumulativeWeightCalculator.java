@@ -12,13 +12,9 @@ import java.util.Set;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
-import com.iota.iri.model.HashPrefix;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.impl.TransformingMap;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
  * Implementation of {@link RatingCalculator} that calculates the cumulative weight 
@@ -43,20 +39,20 @@ public class CumulativeWeightCalculator implements RatingCalculator {
     }
 
     @Override
-    public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
-        UnIterableMap<HashId, Integer> hashWeightMap = calculateRatingDfs(entryPoint);
+    public Map<Hash, Integer> calculate(Hash entryPoint) throws Exception {
+        Map<Hash, Integer> hashWeightMap = calculateRatingDfs(entryPoint);
         
         return hashWeightMap;
     }
     
-    private UnIterableMap<HashId, Integer> calculateRatingDfs(Hash entryPoint) throws Exception {
+    private Map<Hash, Integer> calculateRatingDfs(Hash entryPoint) throws Exception {
         TransactionViewModel tvm = TransactionViewModel.fromHash(tangle, entryPoint);
         int depth = tvm.snapshotIndex() > 0 
                 ? snapshotProvider.getLatestSnapshot().getIndex() - tvm.snapshotIndex() + 1 
                 : 1;
 
         // Estimated capacity per depth, assumes 5 minute gap in between milestones, at 3tps
-        UnIterableMap<HashId, Integer> hashWeightMap = createTxHashToCumulativeWeightMap( 5 * 60 * 3 * depth);
+        Map<Hash, Integer> hashWeightMap = createTxHashToCumulativeWeightMap( 5 * 60 * 3 * depth);
 
         Map<Hash, Set<Hash>> txToDirectApprovers = new HashMap<>();
 
@@ -154,7 +150,7 @@ public class CumulativeWeightCalculator implements RatingCalculator {
         return new HashSet<Hash>(txApprovers);
     }
     
-    private static UnIterableMap<HashId, Integer> createTxHashToCumulativeWeightMap(int size) {
-        return new TransformingMap<>(size, HashPrefix::createPrefix, null);
+    private static Map<Hash, Integer> createTxHashToCumulativeWeightMap(int size) {
+        return new HashMap<Hash, Integer>(size); //new TransformingMap<>(size, HashPrefix::createPrefix, null);
     }
 }

@@ -1,8 +1,8 @@
 package com.iota.iri.service.tipselection;
 
+import java.util.Map;
+
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
  * Calculates the rating for a sub graph
@@ -18,9 +18,9 @@ public interface RatingCalculator {
      * </p>
      *
      * @param entryPoint  Transaction hash of a selected entry point.
-     * @return  Map of ratings for each transaction that references entryPoint.
+     * @return Map of ratings for each transaction that references entryPoint.
      * @throws Exception If DB fails to retrieve transactions
      */
 
-    UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception;
+    Map<Hash, Integer> calculate(Hash entryPoint) throws Exception;
 }

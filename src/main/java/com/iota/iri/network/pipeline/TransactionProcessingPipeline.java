@@ -4,6 +4,7 @@ import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.NeighborRouter;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -35,10 +36,12 @@ public interface TransactionProcessingPipeline {
      * @param tipsViewModel          The {@link TipsViewModel} to load tips from in the reply stage
      * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
      *                               reply stage
+     * @param transactionRequester   The {@link TransactionRequester} to remove and add needed txs from the request
+     *                               queue
      */
     void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
-            SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
-            LatestMilestoneTracker latestMilestoneTracker);
+              SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
+              LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester);
 
     /**
      * Kicks of the pipeline by assembling the pipeline and starting all threads.

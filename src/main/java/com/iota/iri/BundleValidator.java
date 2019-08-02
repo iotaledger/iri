@@ -20,6 +20,24 @@ import java.util.*;
 public class BundleValidator {
 
     /**
+     * Used to signal the validity of the input transaction.
+     */
+    public enum Validity {
+        /**
+         * Says that a validation could not have been executed because parts of the bundle or other data is missing.
+         */
+        UNKNOWN,
+        /**
+         * Says that the transaction and its bundle is valid.
+         */
+        VALID,
+        /**
+         * Says that the transaction and its bundle is invalid.
+         */
+        INVALID;
+    }
+
+    /**
      * Instructs the validation code to validate the signatures of the bundle.
      */
     public static final int MODE_VALIDATE_SIGNATURES = 1;
@@ -91,17 +109,20 @@ public class BundleValidator {
      */
     public List<TransactionViewModel> validate(Tangle tangle, Snapshot initialSnapshot, Hash tailHash) throws Exception {
         List<TransactionViewModel> bundleTxs = new LinkedList<>();
-        if (validate(tangle, tailHash, MODE_VALIDATE_ALL, bundleTxs)) {
-            if (bundleTxs.get(0).getValidity() != 1) {
-                // the bundle and its signatures is valid, therefore mark it in the database
-                bundleTxs.get(0).setValidity(tangle, initialSnapshot, 1);
-            }
-            return bundleTxs;
+        switch (validate(tangle, tailHash, MODE_VALIDATE_ALL, bundleTxs)) {
+            case VALID:
+                if (bundleTxs.get(0).getValidity() != 1) {
+                    bundleTxs.get(0).setValidity(tangle, initialSnapshot, 1);
+                }
+                return bundleTxs;
+            case INVALID:
+                if (!bundleTxs.isEmpty() && bundleTxs.get(0).getValidity() != -1) {
+                    bundleTxs.get(0).setValidity(tangle, initialSnapshot, -1);
+                }
+            case UNKNOWN:
+            default:
+                return Collections.EMPTY_LIST;
         }
-        if (!bundleTxs.isEmpty() && bundleTxs.get(0).getCurrentIndex() == 0 && bundleTxs.get(0).getValidity() != -1) {
-            bundleTxs.get(0).setValidity(tangle, initialSnapshot, -1);
-        }
-        return Collections.EMPTY_LIST;
     }
 
     private static boolean hasMode(int mode, int has) {
@@ -125,10 +146,10 @@ public class BundleValidator {
      * @return whether the validation criteria were passed or not
      * @throws Exception if an error occurred in the persistence layer
      */
-    public static boolean validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs) throws Exception {
+    public static Validity validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs) throws Exception {
         TransactionViewModel startTx = TransactionViewModel.fromHash(tangle, startTxHash);
         if (startTx == null || (!hasMode(validationMode, MODE_SKIP_TAIL_TX_EXISTENCE) && (startTx.getCurrentIndex() != 0 || startTx.getValidity() == -1))) {
-            return false;
+            return Validity.INVALID;
         }
 
         // load up the bundle by going through the trunks (note that we might not load up the entire bundle in case we
@@ -137,36 +158,30 @@ public class BundleValidator {
                 !hasMode(validationMode, MODE_VALIDATE_SEMANTICS));
 
         // check the semantics of the bundle: total sum, semantics per tx (current/last index), missing txs, supply
-        boolean bundleSemanticsValidity = validateBundleSemantics(startTx, bundleTxsMapping, bundleTxs, validationMode);
-        if (hasMode(validationMode, MODE_VALIDATE_SEMANTICS) && !bundleSemanticsValidity) {
-            return false;
+        Validity bundleSemanticsValidity = validateBundleSemantics(startTx, bundleTxsMapping, bundleTxs, validationMode);
+        if (hasMode(validationMode, MODE_VALIDATE_SEMANTICS) && bundleSemanticsValidity != Validity.VALID) {
+            return bundleSemanticsValidity;
         }
 
         // return if the bundle's validity was computed before
-        if (!hasMode(validationMode, MODE_SKIP_CACHED_VALIDITY)) {
-            switch (startTx.getValidity()) {
-                case 1:
-                    return true;
-                case -1:
-                    return false;
-                default:
-                    // validate further
-            }
+        if (!hasMode(validationMode, MODE_SKIP_CACHED_VALIDITY) && startTx.getValidity() == 1) {
+            return Validity.VALID;
         }
 
         // compute the normalized bundle hash used to verify the signatures
         final byte[] normalizedBundle = new byte[Curl.HASH_LENGTH / ISS.TRYTE_WIDTH];
-        boolean bundleHashValidity = validateBundleHash(bundleTxs, normalizedBundle, validationMode);
-        if (hasMode(validationMode, MODE_VALIDATE_BUNDLE_HASH) && !bundleHashValidity) {
-            return false;
+        Validity bundleHashValidity = validateBundleHash(bundleTxs, normalizedBundle, validationMode);
+        if (hasMode(validationMode, MODE_VALIDATE_BUNDLE_HASH) && bundleHashValidity != Validity.VALID) {
+            return bundleHashValidity;
         }
+
 
         // verify the signatures of input transactions
         if (hasMode(validationMode, MODE_VALIDATE_SIGNATURES)) {
             return validateSignatures(bundleTxs, normalizedBundle);
         }
 
-        return true;
+        return Validity.VALID;
     }
 
     /**
@@ -181,7 +196,7 @@ public class BundleValidator {
      * @param bundleTxs        an empty list which gets filled with the transactions in order of trunk ordering
      * @return whether the bundle is semantically valid
      */
-    public static boolean validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs) {
+    public static Validity validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs) {
         return validateBundleSemantics(startTx, bundleTxsMapping, bundleTxs, MODE_VALIDATE_SEMANTICS);
     }
 
@@ -204,7 +219,7 @@ public class BundleValidator {
      * @param validationMode   the used validation mode
      * @return whether the bundle is semantically valid
      */
-    private static boolean validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs, int validationMode) {
+    private static Validity validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs, int validationMode) {
         TransactionViewModel tvm = startTx;
         final long lastIndex = tvm.lastIndex();
         long bundleValue = 0;
@@ -214,15 +229,15 @@ public class BundleValidator {
                 bundleTxs.add(tvm);
                 tvm = bundleTxsMapping.get(tvm.getTrunkTransactionHash());
             }
-            return true;
+            return Validity.VALID;
         }
+
 
         // iterate over all transactions of the bundle and do some basic semantic checks
         for (int i = 0; i <= lastIndex; tvm = bundleTxsMapping.get(tvm.getTrunkTransactionHash()), i++) {
-
             if (tvm == null) {
                 // we miss a transaction, abort
-                return false;
+                return Validity.UNKNOWN;
             }
 
             bundleTxs.add(tvm);
@@ -234,17 +249,18 @@ public class BundleValidator {
                             || ((bundleValue = Math.addExact(bundleValue, tvm.value())) < -TransactionViewModel.SUPPLY
                             || bundleValue > TransactionViewModel.SUPPLY)
             ) {
-                return false;
+                return Validity.INVALID;
             }
 
             // we lose the last trit by converting from bytes
             if (tvm.value() != 0 && tvm.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
-                return false;
+                return Validity.INVALID;
             }
         }
 
+
         // total bundle value sum must be 0
-        return bundleValue == 0;
+        return bundleValue == 0 ? Validity.VALID : Validity.INVALID;
     }
 
     /**
@@ -257,7 +273,7 @@ public class BundleValidator {
      * @param destNormalizedBundleHash an array in which the normalized bundle hash is written into
      * @return whether the bundle hash of every transaction in the bundle corresponds to the computed bundle hash
      */
-    public static boolean validateBundleHash(List<TransactionViewModel> bundleTxs, byte[] destNormalizedBundleHash) {
+    public static Validity validateBundleHash(List<TransactionViewModel> bundleTxs, byte[] destNormalizedBundleHash) {
         return validateBundleHash(bundleTxs, destNormalizedBundleHash, MODE_VALIDATE_BUNDLE_HASH);
     }
 
@@ -276,7 +292,7 @@ public class BundleValidator {
      * @param validationMode           the used validation mode
      * @return whether the bundle hash of every transaction in the bundle corresponds to the computed bundle hash
      */
-    private static boolean validateBundleHash(List<TransactionViewModel> bundleTxs, byte[] destNormalizedBundleHash, int validationMode) {
+    private static Validity validateBundleHash(List<TransactionViewModel> bundleTxs, byte[] destNormalizedBundleHash, int validationMode) {
         final Sponge curlInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
         final byte[] bundleHashTrits = new byte[TransactionViewModel.BUNDLE_TRINARY_SIZE];
 
@@ -290,14 +306,14 @@ public class BundleValidator {
         if (hasMode(validationMode, MODE_VALIDATE_BUNDLE_HASH)) {
             for (TransactionViewModel tvm : bundleTxs) {
                 if (!Arrays.equals(tvm.getBundleHash().trits(), bundleHashTrits)) {
-                    return false;
+                    return Validity.INVALID;
                 }
             }
         }
 
         // normalizing the bundle in preparation for signature verification
         ISSInPlace.normalizedBundle(bundleHashTrits, destNormalizedBundleHash);
-        return true;
+        return Validity.VALID;
     }
 
     /**
@@ -307,7 +323,7 @@ public class BundleValidator {
      * @param normalizedBundle the normalized bundle hash
      * @return whether all signatures were valid given the bundle hash and addresses
      */
-    public static boolean validateSignatures(List<TransactionViewModel> bundleTxs, byte[] normalizedBundle) {
+    public static Validity validateSignatures(List<TransactionViewModel> bundleTxs, byte[] normalizedBundle) {
         final Sponge addressInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
         final byte[] addressTrits = new byte[TransactionViewModel.ADDRESS_TRINARY_SIZE];
         final byte[] digestTrits = new byte[Curl.HASH_LENGTH];
@@ -344,10 +360,10 @@ public class BundleValidator {
             // verify the signature: compare the address against the computed address
             // derived from the signature/bundle hash
             if (!Arrays.equals(tvm.getAddressHash().trits(), addressTrits)) {
-                return false;
+                return Validity.INVALID;
             }
         }
-        return true;
+        return Validity.VALID;
     }
 
     /**
@@ -380,12 +396,12 @@ public class BundleValidator {
                 bundleTransactions.put(tx.getHash(), tx);
                 tx = tx.getTrunkTransaction(tangle);
             } while (
-                    // if we are skipping the index checking, we must make sure that we are not
-                    // having an empty bundle hash, as it would lead to an OOM where the genesis
-                    // transaction is loaded over and over again
+                // if we are skipping the index checking, we must make sure that we are not
+                // having an empty bundle hash, as it would lead to an OOM where the genesis
+                // transaction is loaded over and over again
                     ((skipIndexChecking && !tx.getHash().equals(Hash.NULL_HASH)) ||
-                        (i++ < end && tx.getCurrentIndex() != 0))
-                    && tx.getBundleHash().equals(bundleHash)
+                            (i++ < end && tx.getCurrentIndex() != 0))
+                            && tx.getBundleHash().equals(bundleHash)
             );
         } catch (Exception e) {
             e.printStackTrace();

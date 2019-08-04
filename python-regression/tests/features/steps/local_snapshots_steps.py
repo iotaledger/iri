@@ -112,7 +112,7 @@ def merge_spent_addresses_file(step, node):
 
     :param node: The node that the spent addresses will be merged into
     """
-    spent_addresses_file = '/iri/data/IXI/spentAddresses.txt'
+    spent_addresses_file = '/iri/data/ixi/spentAddresses.txt'
     command = {"command": "merge-spent.mergeSpentAddresses", "fileNames": [spent_addresses_file]}
     request_return = api_utils.send_ixi_request(node, command)
     assert 'ixi' in request_return, "Error: {}".format(request_return['error'])

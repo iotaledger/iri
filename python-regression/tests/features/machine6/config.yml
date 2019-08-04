@@ -18,7 +18,7 @@ default_args: &args
   ]
 
 default_ixi: &ixi
-  ['IXI/LocalSnapshots.ixi']
+  ['IXI/LocalSnapshots.ixi', 'IXI/merge-spent', 'IXI/export-spent']
 
 java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
 
@@ -45,6 +45,8 @@ db_for_pruning: &db_for_pruning
   db_checksum: 15122ba80c0a03dc5b6b4186e5d880d0a1a15b5a6de48bafe4002c4c9b682221
   iri_args: *args
 
+db_empty: &db_empty
+  iri_args: *args
 
 nodes:
   nodeA: #name
@@ -58,3 +60,6 @@ nodes:
 
   nodeD:
     <<: *db_for_pruning
+
+  nodeF:
+    <<: *db_empty

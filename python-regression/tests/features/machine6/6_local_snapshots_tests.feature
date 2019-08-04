@@ -85,3 +85,25 @@ Feature: Test Bootstrapping With LS
       |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue      |
 
     Then the response for "checkConsistency" should return null
+
+  @now
+  Scenario: Spent Addresses are exported correctly
+    Using the export-spent tool in the iri-extensions library, the spent addresses of the db will be exported to a file.
+    This file will then be checked to make sure the correct values have been exported to it. It will then merge these
+    spent addresses into an empty node
+
+    Given the spent addresses are exported from "nodeA"
+    When reading the exported spent addresses file on "nodeA" returns with:
+      |keys                       |values                   |type             |
+      |addresses                  |SPENT_ADDRESSES          |staticValue      |
+
+    # This part uses a default provided spentAddresses.txt file to import
+    And the spent addresses are imported on "nodeF"
+    When "wereAddressesSpentFrom" is called on "nodeF" with:
+      |keys                       |values                   |type             |
+      |addresses                  |SPENT_ADDRESSES          |staticValue      |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type             |
+      |states                     |True                     |bool             |
+

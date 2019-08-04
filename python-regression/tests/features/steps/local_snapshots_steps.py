@@ -112,7 +112,7 @@ def merge_spent_addresses_file(step, node):
 
     :param node: The node that the spent addresses will be merged into
     """
-    spent_addresses_file = '/home/d/Desktop/Iota/iotaledger/iri2/target/node2/iri/target/spentAddresses.txt'
+    spent_addresses_file = '/iri/data/IXI/spentAddresses.txt'
     command = {"command": "merge-spent.mergeSpentAddresses", "fileNames": [spent_addresses_file]}
     request_return = api_utils.send_ixi_request(node, command)
     assert 'ixi' in request_return, "Error: {}".format(request_return['error'])
@@ -134,7 +134,7 @@ def read_spent_addresses_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    file_name = '/home/d/Desktop/Iota/iotaledger/iri2/target/node2/iri/target/spentAddresses.txt'
+    file_name = '/iri/data/spentAddresses.txt'
     lines = [line.rstrip() for line in open(file_name)]
 
     for x in options['addresses']:

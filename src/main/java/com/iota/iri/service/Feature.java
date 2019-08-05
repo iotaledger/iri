@@ -39,14 +39,7 @@ public enum Feature {
     /**
      * This node has the zero message queue enabled for fetching/reading "activities" on the node
      */
-    ZMQ("zeroMessageQueue"),
-    
-    /**
-     * This node will solidify its tips. 
-     * A solid tip is a transaction which is not approved by another transaction
-     * and the transactions it approves are known and solid as well.
-     */
-    SOLID_TIPS("tipSolidification");
+    ZMQ("zeroMessageQueue");
     
     private String name;
 
@@ -78,9 +71,6 @@ public enum Feature {
         }
         if (configuration.isZmqEnabled()) {
             features.add(ZMQ);
-        }
-        if (configuration.isTipSolidifierEnabled()) {
-            features.add(SOLID_TIPS);
         }
         
         List<Feature> apiFeatures = new ArrayList<Feature>(Arrays.asList(new Feature[] {

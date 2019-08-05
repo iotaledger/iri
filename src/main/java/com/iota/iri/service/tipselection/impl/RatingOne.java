@@ -1,14 +1,15 @@
 package com.iota.iri.service.tipselection.impl;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.impl.TransformingMap;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-
-import java.util.*;
 
 /**
  * Implementation of <tt>RatingCalculator</tt> that gives a uniform rating of 1 to each transaction.
@@ -23,8 +24,8 @@ public class RatingOne implements RatingCalculator {
     }
 
     @Override
-    public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
-        UnIterableMap<HashId, Integer> rating = new TransformingMap<>(null, null);
+    public Map<Hash, Integer> calculate(Hash entryPoint) throws Exception {
+        Map<Hash, Integer> rating = new HashMap<>();
 
         Queue<Hash> queue = new LinkedList<>();
         queue.add(entryPoint);

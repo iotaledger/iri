@@ -1,16 +1,8 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
-import com.iota.iri.service.tipselection.RatingCalculator;
-import com.iota.iri.service.tipselection.TailFinder;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,9 +18,15 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
-import static com.iota.iri.TransactionTestUtils.getTransactionHash;
-import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.TailFinder;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 
 public class WalkerAlphaTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -83,7 +81,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //add 4 after the rating was calculated
         transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
@@ -120,7 +118,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
         //set a higher rate for transaction2
         rating.put(transaction2.getHash(), 10);
 
@@ -163,7 +161,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
         //set a higher rate for transaction2
         rating.put(transaction2.getHash(), 10);
 
@@ -212,7 +210,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -239,7 +237,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -269,7 +267,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));

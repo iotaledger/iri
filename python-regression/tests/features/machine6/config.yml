@@ -17,6 +17,23 @@ default_args: &args
    '10000'
   ]
 
+args_empty: &args_empty
+  ['--testnet-coordinator',
+   'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
+   '--mwm',
+   '1',
+   '--milestone-start',
+   '0',
+   '--testnet-no-coo-validation',
+   'true',
+   '--testnet',
+   'true',
+   '--local-snapshots-pruning-enabled',
+   'true',
+   '--local-snapshots-pruning-delay',
+   '10000'
+  ]
+
 default_ixi: &ixi
   ['IXI/LocalSnapshots.ixi', 'IXI/merge-spent', 'IXI/export-spent']
 
@@ -46,7 +63,7 @@ db_for_pruning: &db_for_pruning
   iri_args: *args
 
 db_empty: &db_empty
-  iri_args: *args
+  iri_args: *args_empty
 
 nodes:
   nodeA: #name

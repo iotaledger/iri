@@ -68,6 +68,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
+    //PERMADB
+    protected boolean permaDbEnabled = Defaults.PERMADB_ENABLED;
+    protected String permaDbPath = Defaults.PERMADB_PATH;
+    protected String permaDbLogPath = Defaults.PERMADB_LOG_PATH;
+    protected int permaDbCacheSize = Defaults.PERMADB_CACHE_SIZE; //KB
+    protected String permaMainDb = Defaults.PERMAMAIN_DB;
+    protected boolean permaRevalidate = Defaults.PERMAREVALIDATE;
+    protected boolean permaRescanDb = Defaults.PERMARESCAN_DB;
+
     //Protocol
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
 
@@ -381,6 +390,89 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.ixiDir = ixiDir;
     }
 
+
+
+
+    //------- PERMADB -------------
+
+
+    @Override
+    public boolean isSelectivePermaEnabled() { return this.permaDbEnabled;}
+
+    @JsonProperty
+    @Parameter(names = {"--perma-enabled"}, description = PermaDBConfig.Descriptions.PERMADB_ENABLED, arity = 1)
+    protected void setPermaDbEnabled(boolean permaDbEnabled) {
+        this.permaDbEnabled = permaDbEnabled;
+    }
+
+    @Override
+    public String getPermaDbPath() {
+        return permaDbPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--perma-db-path"}, description = PermaDBConfig.Descriptions.PERMADB_PATH)
+    protected void setPermaDbPath(String permaDbPath) {
+        this.permaDbPath = permaDbPath;
+    }
+
+    @Override
+    public String getPermaDbLogPath() {
+        return dbLogPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--perma-db-log-path"}, description = PermaDBConfig.Descriptions.PERMADB_LOG_PATH)
+    protected void setPermaDbLogPath(String permaDbLogPath) {
+        this.permaDbLogPath = permaDbLogPath;
+    }
+
+    @Override
+    public int getPermaDbCacheSize() {
+        return permaDbCacheSize;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--perma-db-cache-size"}, description = PermaDBConfig.Descriptions.PERMADB_CACHE_SIZE)
+    protected void setPermaDbCacheSize(int permaDbCacheSize) {
+        this.permaDbCacheSize = permaDbCacheSize;
+    }
+
+    @Override
+    public String getPermaMainDb() {
+        return permaMainDb;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--perma-db"}, description = PermaDBConfig.Descriptions.PERMAMAIN_DB)
+    protected void setPermaMainDb(String permaMainDb) {
+        this.permaMainDb = permaMainDb;
+    }
+
+    @Override
+    public boolean permaIsRevalidate() {
+        return permaRevalidate;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--perma-revalidate"}, description = PermaDBConfig.Descriptions.PERMAREVALIDATE, arity = 1)
+    protected void setPermaRevalidate(boolean permaRevalidate) {
+        this.permaRevalidate = permaRevalidate;
+    }
+
+    @Override
+    public boolean permaIsRescanDb() {
+        return this.permaRescanDb;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--perma-rescan"}, description = PermaDBConfig.Descriptions.PERMARESCAN_DB, arity = 1)
+    protected void setPermaRescanDb(boolean permaRescanDb) {
+        this.permaRescanDb = permaRescanDb;
+    }
+
+
+    //-----------------------------
     @Override
     public String getDbPath() {
         return dbPath;
@@ -854,6 +946,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
+
+        //PERMADB
+        boolean PERMADB_ENABLED = false;
+        String PERMADB_PATH = "mainnetpermadb";
+        String PERMADB_LOG_PATH = "mainnetpermadb.log";
+        int PERMADB_CACHE_SIZE = 100_000;
+        String PERMAMAIN_DB = "rocksdb";
+        boolean PERMAREVALIDATE = false;
+        boolean PERMARESCAN_DB = false;
 
         //Protocol
         double P_SEND_MILESTONE = 0.02d;

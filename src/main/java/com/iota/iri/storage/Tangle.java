@@ -2,13 +2,7 @@ package com.iota.iri.storage;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.utils.Pair;
 
 import java.util.*;
@@ -28,6 +22,7 @@ public class Tangle {
     public static final Map<String, Class<? extends Persistable>> COLUMN_FAMILIES =
             new LinkedHashMap<String, Class<? extends Persistable>>() {{
                 put("transaction", Transaction.class);
+                put("counted-transaction", CountedTransaction.class);
                 put("milestone", Milestone.class);
                 put("stateDiff", StateDiff.class);
                 put("address", Address.class);
@@ -39,6 +34,22 @@ public class Tangle {
 
     public static final Map.Entry<String, Class<? extends Persistable>> METADATA_COLUMN_FAMILY =
             new AbstractMap.SimpleImmutableEntry<>("transaction-metadata", Transaction.class);
+
+    public static final Map.Entry<String, Class<? extends Persistable>> COUNTED_METADATA_COLUMN_FAMILY =
+            new AbstractMap.SimpleImmutableEntry<>("counted-transaction-metadata", CountedTransaction.class);
+
+//    =
+//            new LinkedHashMap<String, Class<? extends Persistable>>() {{
+//        put("transaction", Transaction.class);
+//        put("counted-transaction-metadata", CountedTransaction.class);
+//        put("milestone", Milestone.class);
+//        put("stateDiff", StateDiff.class);
+//        put("address", Address.class);
+//        put("approvee", Approvee.class);
+//        put("bundle", Bundle.class);
+//        put("obsoleteTag", ObsoleteTag.class);
+//        put("tag", Tag.class);
+//    }};
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();

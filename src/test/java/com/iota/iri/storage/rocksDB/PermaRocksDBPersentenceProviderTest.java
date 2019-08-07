@@ -1,7 +1,6 @@
 package com.iota.iri.storage.rocksDB;
 
 import com.iota.iri.model.IntegerIndex;
-import com.iota.iri.model.persistables.CountedTransaction;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -9,7 +8,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
-import org.junit.runners.MethodSorters;
 
 import java.io.File;
 import java.util.Arrays;
@@ -17,16 +15,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class RocksDBPersistenceProviderTest {
-
+public class PermaRocksDBPersentenceProviderTest {
     private static RocksDBPersistenceProvider rocksDBPersistenceProvider;
     private static String dbPath = "tmpdb", dbLogPath = "tmplogs";
 
     @BeforeClass
     public static void setUpDb() throws Exception {
         rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
-               dbPath, dbLogPath,1000, Tangle.COLUMN_FAMILIES, Tangle.COUNTED_METADATA_COLUMN_FAMILY);
+                dbPath, dbLogPath,1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         rocksDBPersistenceProvider.init();
     }
 
@@ -45,15 +41,13 @@ public class RocksDBPersistenceProviderTest {
 
     @Test
     public void testDeleteBatch() throws Exception {
-        Transaction tx = new Transaction();
+        Persistable tx = new Transaction();
         byte[] bytes = new byte[Transaction.SIZE];
         Arrays.fill(bytes, (byte) 1);
         tx.read(bytes);
         tx.readMetadata(bytes);
-
-
         List<Pair<Indexable, Persistable>> models = IntStream.range(1, 1000)
-                .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), (Persistable)CountedTransaction.fromTransaction(tx,i)))
+                .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), tx))
                 .collect(Collectors.toList());
 
         rocksDBPersistenceProvider.saveBatch(models);
@@ -76,7 +70,7 @@ public class RocksDBPersistenceProviderTest {
 
         for (IntegerIndex index : indexes) {
             Assert.assertArrayEquals("saved bytes are not as expected in index " + index.getValue(), tx.bytes(),
-                    rocksDBPersistenceProvider.get(CountedTransaction.class, index).bytes());
+                    rocksDBPersistenceProvider.get(Transaction.class, index).bytes());
         }
     }
 }

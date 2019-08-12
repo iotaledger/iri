@@ -21,7 +21,9 @@ bin/
 *.jar
 src/main/ixi/
 dependency-reduced-pom.xml
-
+.checkstyle
+db-bench/
+db-log-bench/
 
 # Created by https://www.gitignore.io/api/osx,linux,windows
 

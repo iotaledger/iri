@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.8.0-RELEASE</version>
+    <version>1.8.1</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -20,8 +20,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
-        <undertow.version>1.4.26.Final</undertow.version>
+        <undertow.version>2.0.22.Final</undertow.version>
+        <jackson-databind.version>2.9.9.1</jackson-databind.version>
         <zero-allocation-hashing.version>0.8</zero-allocation-hashing.version>
+        <system-rules.version>1.19.0</system-rules.version>
         <jacoco.version>0.7.9</jacoco.version>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
@@ -112,7 +114,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.8</version>
+            <version>${jackson-databind.version}</version>
         </dependency>
 
         <!-- undertow server -->
@@ -247,6 +249,13 @@
             <groupId>net.openhft</groupId>
             <artifactId>zero-allocation-hashing</artifactId>
             <version>0.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>${system-rules.version}</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
@@ -405,13 +414,13 @@
                                             com.google.code.gson:gson:2.8.1:jar:null:compile:02a8e0aa38a2e21cb39e2f5a7d6704cbdc941da0
                                         </urn>
                                         <urn>
-                                            io.undertow:undertow-core:${undertow.version}:jar:null:compile:c9c6225c9a9535c43706ad9667bd84159f5ec7f6
+                                            io.undertow:undertow-core:${undertow.version}:jar:null:compile:61b403d76eb06b4ec40b2dacf26aa0daddb9ce5f
                                         </urn>
                                         <urn>
-                                            io.undertow:undertow-servlet:${undertow.version}:jar:null:compile:837a57dc5f0617899c7abe3b66642875267d7149
+                                            io.undertow:undertow-servlet:${undertow.version}:jar:null:compile:172363ff298d388a2c9b3e7a3cd84d3bbda19d94
                                         </urn>
                                         <urn>
-                                            io.undertow:undertow-websockets-jsr:${undertow.version}:jar:null:compile:2821318aae1db1b5b446f908aa87a36b91db8c75
+                                            io.undertow:undertow-websockets-jsr:${undertow.version}:jar:null:compile:4b9c985ef0003cd696b49f45eed89d93f30cb57a
                                         </urn>
                                         <!--
                                         not used anymore
@@ -435,7 +444,7 @@
                                             org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
                                         </urn>
                                         <urn>
-                                            com.fasterxml.jackson.core:jackson-databind:2.9.6:jar:null:compile:cfa4f316351a91bfd95cb0644c6a2c95f52db1fc
+                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:211dfab27bdd15a569247fee4690a07a177044f8
                                         </urn>
                                         <urn>
                                             com.beust:jcommander:1.72:jar:null:compile:6375e521c1e11d6563d4f25a07ce124ccf8cd171
@@ -455,6 +464,9 @@
                                         <!-- A check for the rules themselves -->
                                         <urn>
                                             uk.co.froot.maven.enforcer:digest-enforcer-rules:0.0.1:jar:null:runtime:16a9e04f3fe4bb143c42782d07d5faf65b32106f
+                                        </urn>
+                                        <urn>
+                                            com.github.stefanbirkner:system-rules:${system-rules.version}:jar:null:test:d541c9a1cff0dda32e2436c74562e2e4aa6c88cd
                                         </urn>
                                     </urns>
 

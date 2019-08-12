@@ -3,6 +3,7 @@ package com.iota.iri.service.milestone.impl;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneException;
@@ -89,6 +90,11 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private int repairBackoffCounter = 0;
 
     /**
+     * Uses to clear the request queue once we are fully synced.
+     */
+    private TransactionRequester transactionRequester;
+
+    /**
      * <p>
      * This method initializes the instance and registers its dependencies.
      * </p>
@@ -108,17 +114,19 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * @param milestoneService contains the important business logic when dealing with milestones
      * @param ledgerService the manager for
      * @param latestMilestoneTracker the manager that keeps track of the latest milestone
+     * @param transactionRequester the manager which keeps and tracks transactions which are requested
      * @return the initialized instance itself to allow chaining
      */
     public LatestSolidMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
             MilestoneService milestoneService, LedgerService ledgerService,
-            LatestMilestoneTracker latestMilestoneTracker) {
+            LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.milestoneService = milestoneService;
         this.ledgerService = ledgerService;
         this.latestMilestoneTracker = latestMilestoneTracker;
+        this.transactionRequester = transactionRequester;
 
         return this;
     }
@@ -157,6 +165,9 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
                     logChange(currentSolidMilestoneIndex);
 
                     currentSolidMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
+                    if(currentSolidMilestoneIndex == latestMilestoneTracker.getLatestMilestoneIndex()){
+                        transactionRequester.clearRecentlyRequestedTransactions();
+                    }
                 }
             } else {
                 syncLatestMilestoneTracker(snapshotProvider.getLatestSnapshot().getHash(),

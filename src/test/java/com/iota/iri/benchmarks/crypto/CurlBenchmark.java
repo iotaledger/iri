@@ -21,14 +21,14 @@ public class CurlBenchmark {
   @Benchmark
   public void curl() {
     int size = 8019;
-    byte[] in_trits = new byte[size];
-    byte[] hash_trits = new byte[Curl.HASH_LENGTH];
-    Converter.trits(TRYTES, in_trits, 0);
+    byte[] inTrits = new byte[size];
+    byte[] hashTrits = new byte[Curl.HASH_LENGTH];
+    Converter.trits(TRYTES, inTrits, 0);
     Curl curl = (Curl) SpongeFactory.create(SpongeFactory.Mode.CURLP81);
-    curl.absorb(in_trits, 0, in_trits.length);
-    curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
-    String out_trytes = Converter.trytes(hash_trits);
-    Assert.assertEquals(HASH, out_trytes);
+    curl.absorb(inTrits, 0, inTrits.length);
+    curl.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
+    String outTrytes = Converter.trytes(hashTrits);
+    Assert.assertEquals(HASH, outTrytes);
   }
 
   /**
@@ -37,9 +37,9 @@ public class CurlBenchmark {
   @Benchmark
   public void pairCurl() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
     int size = 8019;
-    byte[] in_trits = new byte[size];
+    byte[] inTrits = new byte[size];
     Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
-    Converter.trits(TRYTES, in_trits, 0);
+    Converter.trits(TRYTES, inTrits, 0);
     // Using reflection to benchmark private, non-production code.
     // Reflection doesn't have impact on benchmark result (this has been tested)
     // Please remove this code when method are public
@@ -52,11 +52,11 @@ public class CurlBenchmark {
     pairAbsorb.setAccessible(true);
     pairSqueeze.setAccessible(true);
 
-    pairAbsorb.invoke(curl, Converter.longPair(in_trits), 0, in_trits.length);
+    pairAbsorb.invoke(curl, Converter.longPair(inTrits), 0, inTrits.length);
     pairSqueeze.invoke(curl, hashPair, 0, Curl.HASH_LENGTH);
-    byte[] hash_trits = Converter.trits(hashPair.low, hashPair.hi);
-    String out_trytes = Converter.trytes(hash_trits);
-    Assert.assertEquals(HASH, out_trytes);
+    byte[] hashTrits = Converter.trits(hashPair.low, hashPair.hi);
+    String outTrytes = Converter.trytes(hashTrits);
+    Assert.assertEquals(HASH, outTrytes);
   }
 
 }

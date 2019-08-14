@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.6.1-RELEASE</version>
+    <version>1.8.1</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -18,17 +18,28 @@
     <properties>
         <java-version>1.8</java-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javadoc-version>3.0.1</javadoc-version>
+        <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
-        <undertow.version>1.4.26.Final</undertow.version>
+        <undertow.version>2.0.23.Final</undertow.version>
+        <jackson-databind.version>2.9.9.2</jackson-databind.version>
+        <zero-allocation-hashing.version>0.8</zero-allocation-hashing.version>
+        <system-rules.version>1.19.0</system-rules.version>
         <jacoco.version>0.7.9</jacoco.version>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
              configLocation attribute on every maven goal. -->
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+        
+        <md-doclet-group>com.github.iotaledger</md-doclet-group>
+        <md-doclet-artifact>java-md-doclet</md-doclet-artifact>
+        <md-doclet-version>master-SNAPSHOT</md-doclet-version>
     </properties>
 
     <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
         <repository>
             <id>sonatype-oss-public</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
@@ -103,7 +114,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.8</version>
+            <version>${jackson-databind.version}</version>
         </dependency>
 
         <!-- undertow server -->
@@ -124,6 +135,19 @@
             <artifactId>undertow-websockets-jsr</artifactId>
             <version>${undertow.version}</version>
         </dependency>
+        
+        <!-- RESTEasy Undertow Integration -->
+        <dependency>
+		    <groupId>org.jboss.resteasy</groupId>
+		    <artifactId>resteasy-undertow</artifactId>
+		    <version>3.6.3.Final</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.jboss.resteasy</groupId>
+		    <artifactId>resteasy-jackson-provider</artifactId>
+		    <version>3.6.3.Final</version>
+		</dependency>
 
         <!-- test dependencies -->
 
@@ -153,8 +177,8 @@
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
+            <artifactId>mockito-core</artifactId>
+            <version>2.27.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -163,6 +187,12 @@
             <artifactId>digest-enforcer-rules</artifactId>
             <version>0.0.1</version>
             <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>zero-allocation-hashing</artifactId>
+            <version>${zero-allocation-hashing.version}</version>
         </dependency>
 
         <dependency>
@@ -195,11 +225,37 @@
             <version>1.21</version>
             <scope>test</scope>
         </dependency>
+        
+        <dependency>
+            <groupId>${md-doclet-group}</groupId>
+            <artifactId>${md-doclet-artifact}</artifactId>
+            <version>${md-doclet-version}</version>
+        </dependency>
 
         <dependency>
             <groupId>pl.touk</groupId>
             <artifactId>throwing-function</artifactId>
             <version>1.3</version>
+        </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/com.google.guava/guava-testlib -->
+		<dependency>
+		    <groupId>com.google.guava</groupId>
+		    <artifactId>guava</artifactId>
+		    <version>23.0</version>
+		</dependency>
+
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>zero-allocation-hashing</artifactId>
+            <version>0.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>${system-rules.version}</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
@@ -216,6 +272,19 @@
                     <testSource>${java-version}</testSource>
                     <testTarget>${java-version}</testTarget>
                     <useIncrementalCompilation>false</useIncrementalCompilation>
+                </configuration>
+            </plugin>
+            <!-- Controls how jar is being created -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
             <!-- The javadoc plugin can be called by running "mvn javadoc:javadoc" and will generate the classic javadoc
@@ -345,18 +414,21 @@
                                             com.google.code.gson:gson:2.8.1:jar:null:compile:02a8e0aa38a2e21cb39e2f5a7d6704cbdc941da0
                                         </urn>
                                         <urn>
-                                            io.undertow:undertow-core:${undertow.version}:jar:null:compile:c9c6225c9a9535c43706ad9667bd84159f5ec7f6
+                                            io.undertow:undertow-core:${undertow.version}:jar:null:compile:0ffc9206dd984c29741cab34742c2939f73f735d
                                         </urn>
                                         <urn>
-                                            io.undertow:undertow-servlet:${undertow.version}:jar:null:compile:837a57dc5f0617899c7abe3b66642875267d7149
+                                            io.undertow:undertow-servlet:${undertow.version}:jar:null:compile:038479670a2493219939182d47b49061a3251015
                                         </urn>
                                         <urn>
-                                            io.undertow:undertow-websockets-jsr:${undertow.version}:jar:null:compile:2821318aae1db1b5b446f908aa87a36b91db8c75
+                                            io.undertow:undertow-websockets-jsr:${undertow.version}:jar:null:compile:ca55c266f11a3569be1d93a81427a7b541fd1a65
                                         </urn>
                                         <!--
                                         not used anymore
                                         <urn>org.reflections:reflections:0.9.10:jar:null:compile:3812159b1b4b7c296fa80f53eed6362961eb85da</urn>
                                         -->
+                                        <urn>
+                                            net.openhft:zero-allocation-hashing:${zero-allocation-hashing.version}:jar:null:compile:9e32cfe154dca19e6024d2faa6027d6cad8cea3c
+                                        </urn>
                                         <urn>
                                             com.jayway.restassured:rest-assured:2.9.0:jar:null:test:d0d5b6720a58472ab99287c931a8205373d6e7b2
                                         </urn>
@@ -372,7 +444,7 @@
                                             org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
                                         </urn>
                                         <urn>
-                                            com.fasterxml.jackson.core:jackson-databind:2.9.6:jar:null:compile:cfa4f316351a91bfd95cb0644c6a2c95f52db1fc
+                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:d18b4dec691df396916ecd5bd5aab99d0abdcb15
                                         </urn>
                                         <urn>
                                             com.beust:jcommander:1.72:jar:null:compile:6375e521c1e11d6563d4f25a07ce124ccf8cd171
@@ -380,10 +452,21 @@
                                         <urn>
                                             pl.touk:throwing-function:1.3:jar:null:compile:32947866b8754295efde73ee7d39ea29a247a2b5
                                         </urn>
+                                        
+                                        <urn>
+                                            org.jboss.resteasy:resteasy-undertow:3.6.3.Final:jar:null:compile:b5d9d0e709de777b87d72927b405a2e88d39d1fa
+                                        </urn>
+                                        
+                                        <urn>
+                                            org.jboss.resteasy:resteasy-jackson-provider:3.6.3.Final:jar:null:compile:5e999c6a9d18b6f0492ea44765403de164fb4abf
+                                        </urn>
 
                                         <!-- A check for the rules themselves -->
                                         <urn>
                                             uk.co.froot.maven.enforcer:digest-enforcer-rules:0.0.1:jar:null:runtime:16a9e04f3fe4bb143c42782d07d5faf65b32106f
+                                        </urn>
+                                        <urn>
+                                            com.github.stefanbirkner:system-rules:${system-rules.version}:jar:null:test:d541c9a1cff0dda32e2436c74562e2e4aa6c88cd
                                         </urn>
                                     </urns>
 
@@ -497,7 +580,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.4</version>
+                        <version>${javadoc-version}</version>
                         <configuration>
                             <show>private</show>
                             <nohelp>true</nohelp>
@@ -636,10 +719,7 @@
             </plugin>
 
             <!-- The javadoc for the report can be called by running "mvn site" and will generate the the iota
-                 documentation in Markdown format. To compile this report you need the iri-mdx-doclet files from:
-                 https://github.com/iotaledger/iri-mdx-doclet. Follow the documentation on the github site to compile
-                 and install the iri-mdx-doclet locally in your maven repository.
-
+                 documentation in Markdown format.
                  Note: If you need the classic api documentation run "mvn javadoc:javadoc" instead.
                  -->
             <plugin>
@@ -650,21 +730,25 @@
                     <reportSet>
                         <id>javadoc</id>
                         <configuration>
-                            <!-- This dependency can be found at: https://github.com/iotaledger/iri-mdx-doclet -->
-                            <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
-                            <sourcepath>src/main/java</sourcepath>
-                            <useStandardDocletOptions>false</useStandardDocletOptions>
-                            <destDir>mdx</destDir>
-                            <additionalOptions>
-                                <additionalOption>-version "${project.version}"</additionalOption>
-                            </additionalOptions>
-                            <quiet>true</quiet>
-                            <docletArtifact>
-                                <groupId>com.iota</groupId>
-                                <artifactId>mdxdoclet</artifactId>
-                                <version>0.1</version>
-                            </docletArtifact>
-                        </configuration>
+                            <!-- This dependency can be found at: https://github.com/iotaledger/java-md-doclet -->
+		                    <doclet>org.iota.mddoclet.MDDoclet</doclet>
+		                    <sourcepath>src/main/java</sourcepath>
+		                    <useStandardDocletOptions>false</useStandardDocletOptions>
+		                    <additionalOptions>
+		                        <additionalOption>-version "${project.version}"</additionalOption>
+		                        <additionalOption>-classeslist "API"</additionalOption>
+		                        <additionalOption>-template "iri"</additionalOption>
+		                        <additionalOption>
+                                    -repolink "${project.scm.url}blob/master/src/main/java/"
+                                </additionalOption>
+		                    </additionalOptions>
+		                    <quiet>true</quiet>
+		                    <docletArtifact>
+		                        <groupId>${md-doclet-group}</groupId>
+                                <artifactId>${md-doclet-artifact}</artifactId>
+                                <version>${md-doclet-version}</version>
+		                    </docletArtifact>
+		                </configuration>
                         <reports>
                             <report>javadoc</report>
                         </reports>

@@ -6,7 +6,6 @@ package com.iota.iri.conf;
 public interface Config  {
 
     String TESTNET_FLAG = "--testnet";
-
     /**
      * @return {@value Descriptions#TESTNET}
      */

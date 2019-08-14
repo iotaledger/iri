@@ -1,18 +1,21 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.conf.TipSelConfig;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
-import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.tipselection.*;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import com.iota.iri.conf.TipSelConfig;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.ledger.LedgerService;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.tipselection.EntryPointSelector;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.WalkValidator;
+import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.storage.Tangle;
 
 /**
  * Implementation of <tt>TipSelector</tt> that selects 2 tips,
@@ -89,7 +92,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
-            UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(entryPoint);
+            Map<Hash, Integer> rating = ratingCalculator.calculate(entryPoint);
 
             //random walk
             List<Hash> tips = new LinkedList<>();
@@ -117,7 +120,7 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(HashId reference, UnIterableMap<HashId, Integer> rating)
+    private void checkReference(Hash reference, Map<Hash, Integer> rating)
             throws InvalidAlgorithmParameterException {
         if (!rating.containsKey(reference)) {
             throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_TOO_OLD);

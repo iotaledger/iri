@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -88,7 +89,7 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
@@ -130,7 +131,7 @@ public class TransactionValidator {
      */
     private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         // ignore invalid timestamps for transactions that were requested by our node while solidifying a milestone
-        if(transactionRequester.isTransactionRequested(transactionViewModel.getHash(), true)) {
+        if(transactionRequester.wasTransactionRecentlyRequested(transactionViewModel.getHash())) {
             return false;
         }
 
@@ -210,16 +211,15 @@ public class TransactionValidator {
     }
 
     /**
-     * This method does the same as {@link #checkSolidity(Hash, boolean, int)} but defaults to an unlimited amount
+     * This method does the same as {@link #checkSolidity(Hash, int)} but defaults to an unlimited amount
      * of transactions that are allowed to be traversed.
      *
      * @param hash hash of the transactions that shall get checked
-     * @param milestone true if the solidity check was issued while trying to solidify a milestone and false otherwise
      * @return true if the transaction is solid and false otherwise
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
-    public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
-        return checkSolidity(hash, milestone, Integer.MAX_VALUE);
+    public boolean checkSolidity(Hash hash) throws Exception {
+        return checkSolidity(hash, Integer.MAX_VALUE);
     }
 
     /**
@@ -237,16 +237,15 @@ public class TransactionValidator {
      * solidification threads).
      *
      * @param hash hash of the transactions that shall get checked
-     * @param milestone true if the solidity check was issued while trying to solidify a milestone and false otherwise
      * @param maxProcessedTransactions the maximum amount of transactions that are allowed to be traversed
      * @return true if the transaction is solid and false otherwise
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
-    public boolean checkSolidity(Hash hash, boolean milestone, int maxProcessedTransactions) throws Exception {
+    public boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception {
         if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
-        Set<Hash> analyzedHashes = new HashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
+        LinkedHashSet<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
         if(maxProcessedTransactions != Integer.MAX_VALUE) {
             maxProcessedTransactions += analyzedHashes.size();
         }
@@ -254,24 +253,26 @@ public class TransactionValidator {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (analyzedHashes.add(hashPointer)) {
-                if(analyzedHashes.size() >= maxProcessedTransactions) {
-                    return false;
-                }
+            if (!analyzedHashes.add(hashPointer)) {
+                continue;
+            }
 
-                final TransactionViewModel transaction = fromHash(tangle, hashPointer);
-                if(!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
-                    if (transaction.getType() == PREFILLED_SLOT) {
-                        solid = false;
+            if (analyzedHashes.size() >= maxProcessedTransactions) {
+                return false;
+            }
 
-                        if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
-                            transactionRequester.requestTransaction(hashPointer, milestone);
-                            break;
-                        }
-                    } else {
-                        nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                        nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+            TransactionViewModel transaction = fromHash(tangle, hashPointer);
+            if (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
+                if (transaction.getType() == PREFILLED_SLOT) {
+                    solid = false;
+
+                    if (!transactionRequester.isTransactionRequested(hashPointer)) {
+                        transactionRequester.requestTransaction(hashPointer);
+                        continue;
                     }
+                } else {
+                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                 }
             }
         }
@@ -315,7 +316,7 @@ public class TransactionValidator {
      * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
      * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
      */
-    //Package private for testing
+    @VisibleForTesting
     void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
@@ -448,7 +449,7 @@ public class TransactionValidator {
         return approovee.isSolid();
     }
 
-    //Package Private For Testing
+    @VisibleForTesting
     boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }

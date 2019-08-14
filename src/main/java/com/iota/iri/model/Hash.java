@@ -3,8 +3,15 @@ package com.iota.iri.model;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.storage.Indexable;
 
+/**
+ * Represents an indexable hash object
+ */
 public interface Hash extends Indexable, HashId {
-    
+
+    /**
+     * Creates a null transaction hash with from a byte array of length {@value Curl#HASH_LENGTH}.
+     * This is used as a reference hash for the genesis transaction.
+     */
     Hash NULL_HASH = HashFactory.TRANSACTION.create(new byte[Curl.HASH_LENGTH]);
     
     /**

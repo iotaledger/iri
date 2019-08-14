@@ -1,6 +1,29 @@
 package com.iota.iri.service.tipselection.impl;
 
 
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -9,20 +32,10 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.HashId;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
-import static com.iota.iri.TransactionTestUtils.*;
 
 public class CumulativeWeightCalculatorTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -31,7 +44,7 @@ public class CumulativeWeightCalculatorTest {
             "tx%d cumulative weight is not as expected";
     private static Tangle tangle;
     private static SnapshotProvider snapshotProvider;
-    private static CumulativeWeightCalculator cumulativeWeightCalculator;
+    private static RatingCalculator cumulativeWeightCalculator;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @AfterClass
@@ -57,21 +70,21 @@ public class CumulativeWeightCalculatorTest {
     @Test
     public void testCalculateCumulativeWeight() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction1.getHash(),
-                transaction1.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction2.getHash(),
-                transaction1.getHash()), getRandomTransactionHash());
-        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction2.getHash(),
-                transaction3.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction1.getHash(),
+                transaction1.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction2.getHash(),
+                transaction1.getHash()), getTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction2.getHash(),
+                transaction3.getHash()), getTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction3.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction4.store(tangle, snapshotProvider.getInitialSnapshot());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
                 1, txToCw.get(transaction4.getHash()).intValue());
@@ -88,13 +101,13 @@ public class CumulativeWeightCalculatorTest {
     @Test
     public void testCalculateCumulativeWeightDiamond() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction1.getHash(),
-                transaction2.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction1.getHash(),
+                transaction2.getHash()), getTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -102,7 +115,7 @@ public class CumulativeWeightCalculatorTest {
 
         log.debug("printing transaction in diamond shape \n                      {} \n{}  {}\n                      {}",
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
                 1, txToCw.get(transaction3.getHash())
@@ -120,15 +133,15 @@ public class CumulativeWeightCalculatorTest {
     @Test
     public void testCalculateCumulativeWeightLinear() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction1.getHash(), transaction1.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction2.getHash(), transaction2.getHash()), getRandomTransactionHash());
-        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction3.getHash(), transaction3.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction1.getHash(), transaction1.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction2.getHash(), transaction2.getHash()), getTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction3.getHash(), transaction3.getHash()), getTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -138,7 +151,7 @@ public class CumulativeWeightCalculatorTest {
         log.info(String.format("Linear ordered hashes from tip %.4s, %.4s, %.4s, %.4s, %.4s", transaction4.getHash(),
                 transaction3.getHash(), transaction2.getHash(), transaction1.getHash(), transaction.getHash()));
 
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
@@ -157,19 +170,19 @@ public class CumulativeWeightCalculatorTest {
     public void testCalculateCumulativeWeight2() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4, transaction5,
                 transaction6;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
-        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
-        transaction5 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction3.getHash(), transaction2.getHash()), getRandomTransactionHash());
-        transaction6 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction4.getHash(), transaction5.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
+        transaction5 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction3.getHash(), transaction2.getHash()), getTransactionHash());
+        transaction6 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction4.getHash(), transaction5.getHash()), getTransactionHash());
 
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -183,7 +196,7 @@ public class CumulativeWeightCalculatorTest {
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash(),
                 transaction4, transaction5, transaction6);
 
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 6),
                 1, txToCw.get(transaction6.getHash()).intValue());
@@ -204,15 +217,15 @@ public class CumulativeWeightCalculatorTest {
     @Test
     public void cwCalculationSameAsLegacy() throws Exception {
         Hash[] hashes = new Hash[100];
-        hashes[0] = getRandomTransactionHash();
-        TransactionViewModel transactionViewModel1 = new TransactionViewModel(getRandomTransactionTrits(), hashes[0]);
+        hashes[0] = getTransactionHash();
+        TransactionViewModel transactionViewModel1 = new TransactionViewModel(getTransactionTrits(), hashes[0]);
         transactionViewModel1.store(tangle, snapshotProvider.getInitialSnapshot());
         //constant seed for consistent results
         Random random = new Random(181783497276652981L);
         for (int i = 1; i < hashes.length; i++) {
-            hashes[i] = getRandomTransactionHash();
+            hashes[i] = getTransactionHash();
             TransactionViewModel transactionViewModel = new TransactionViewModel(
-                    getTransactionWithTrunkAndBranch(hashes[i - random.nextInt(i) - 1],
+                    getTransactionTritsWithTrunkAndBranch(hashes[i - random.nextInt(i) - 1],
                             hashes[i - random.nextInt(i) - 1]), hashes[i]);
             transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
             log.debug(String.format("current transaction %.4s \n with trunk %.4s \n and branch %.4s", hashes[i],
@@ -221,7 +234,7 @@ public class CumulativeWeightCalculatorTest {
         }
         Map<HashId, Set<HashId>> ratings = new HashMap<>();
         updateApproversRecursively(hashes[0], ratings, new HashSet<>());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
 
         Assert.assertEquals("missing txs from new calculation", ratings.size(), txToCw.size());
         ratings.forEach((hash, weight) -> {
@@ -236,12 +249,12 @@ public class CumulativeWeightCalculatorTest {
     @Test
     public void testTangleWithCircle() throws Exception {
         TransactionViewModel transaction;
-        Hash randomTransactionHash = getRandomTransactionHash();
-        transaction = new TransactionViewModel(getTransactionWithTrunkAndBranch(randomTransactionHash, randomTransactionHash), randomTransactionHash);
+        Hash randomTransactionHash = getTransactionHash();
+        transaction = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(randomTransactionHash, randomTransactionHash), randomTransactionHash);
 
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
         Assert.assertEquals("There should be only one tx in the map", 1, txToCw.size());
         Assert.assertEquals("The circle raised the weight", 1, txToCw.get(randomTransactionHash).intValue());
     }
@@ -249,15 +262,15 @@ public class CumulativeWeightCalculatorTest {
     @Test
     public void testTangleWithCircle2() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        Hash randomTransactionHash2 = getRandomTransactionHash();
-        transaction = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                randomTransactionHash2, randomTransactionHash2), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
+        Hash randomTransactionHash2 = getTransactionHash();
+        transaction = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                randomTransactionHash2, randomTransactionHash2), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
                 transaction1.getHash(), transaction1.getHash()), randomTransactionHash2);
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(
-                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getTransactionHash());
 
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -268,17 +281,19 @@ public class CumulativeWeightCalculatorTest {
         //No infinite loop (which will probably result in an overflow exception) means test has passed
     }
 
+    // Ignored as we do not use HashId in CW, which leads to no more collisions from that.
     @Test
+    @Ignore
     public void testCollsionsInDiamondTangle() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
         Hash transactionHash2 = getHashWithSimilarPrefix(transaction1);
-        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
                 transaction.getHash()), transactionHash2);
-        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction1.getHash(),
-                transaction2.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction1.getHash(),
+                transaction2.getHash()), getTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -286,7 +301,7 @@ public class CumulativeWeightCalculatorTest {
 
         log.debug("printing transaction in diamond shape \n                      {} \n{}  {}\n                      {}",
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
                 1, txToCw.get(transaction3.getHash()).intValue());
@@ -323,12 +338,12 @@ public class CumulativeWeightCalculatorTest {
 
     private long ratingTime(int size) throws Exception {
         Hash[] hashes = new Hash[size];
-        hashes[0] = getRandomTransactionHash();
-        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store(tangle, snapshotProvider.getInitialSnapshot());
+        hashes[0] = getTransactionHash();
+        new TransactionViewModel(getTransactionTrits(), hashes[0]).store(tangle, snapshotProvider.getInitialSnapshot());
         Random random = new Random();
         for (int i = 1; i < hashes.length; i++) {
-            hashes[i] = getRandomTransactionHash();
-            new TransactionViewModel(getTransactionWithTrunkAndBranch(hashes[i - random.nextInt(i) - 1],
+            hashes[i] = getTransactionHash();
+            new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(hashes[i - random.nextInt(i) - 1],
                     hashes[i - random.nextInt(i) - 1]), hashes[i]).store(tangle, snapshotProvider.getInitialSnapshot());
         }
         long start = System.currentTimeMillis();

@@ -16,7 +16,7 @@ public class TestnetConfig extends BaseIotaConfig {
     protected int maxMilestoneIndex = Defaults.MAX_MILESTONE_INDEX;
     protected int coordinatorSecurityLevel = Defaults.COORDINATOR_SECURITY_LEVEL;
 
-    protected boolean dontValidateTestnetMilestoneSig = Defaults.DONT_VALIDATE_MILESTONE_SIG;
+    protected boolean dontValidateTestnetMilestoneSig = Defaults.DONT_VALIDATE_TESTNET_MILESTONE_SIG;
     protected String snapshotFile = Defaults.SNAPSHOT_FILE;
     protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG;
     protected long snapshotTime = Defaults.SNAPSHOT_TIME;
@@ -55,7 +55,8 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--testnet-no-coo-validation", description = MilestoneConfig.Descriptions.DONT_VALIDATE_TESTNET_MILESTONE_SIG)
+    @Parameter(names = "--testnet-no-coo-validation", 
+        description = MilestoneConfig.Descriptions.DONT_VALIDATE_TESTNET_MILESTONE_SIG, arity = 1)
     protected void setDontValidateTestnetMilestoneSig(boolean dontValidateTestnetMilestoneSig) {
         this.dontValidateTestnetMilestoneSig = dontValidateTestnetMilestoneSig;
     }
@@ -155,17 +156,6 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    public int getTransactionPacketSize() {
-        return transactionPacketSize;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--packet-size"}, description = ProtocolConfig.Descriptions.TRANSACTION_PACKET_SIZE)
-    protected void setTransactionPacketSize(int transactionPacketSize) {
-        this.transactionPacketSize = transactionPacketSize;
-    }
-
-    @Override
     public int getRequestHashSize() {
         return requestHashSize;
     }
@@ -197,7 +187,7 @@ public class TestnetConfig extends BaseIotaConfig {
     public interface Defaults {
         Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
                 "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM");
-        boolean DONT_VALIDATE_MILESTONE_SIG = false;
+        boolean DONT_VALIDATE_TESTNET_MILESTONE_SIG = false;
         int COORDINATOR_SECURITY_LEVEL = 1;
         SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
         int KEYS_IN_MILESTONE = 22;

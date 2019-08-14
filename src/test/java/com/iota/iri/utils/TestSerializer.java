@@ -12,11 +12,13 @@ public class TestSerializer {
 		final long[] ltestvec = {0L, 1L, Long.MAX_VALUE, 123456789L};
 		final int[] itestvec = {0, 1, Integer.MAX_VALUE, 123456789};
 		
-		for(long l : ltestvec)
+        for (long l : ltestvec) {
 			Assert.assertArrayEquals(Serializer.serialize(l), bbSerialize(l));
+        }
 		
-		for(int i : itestvec)
+        for (int i : itestvec) {
 			Assert.assertArrayEquals(Serializer.serialize(i), bbSerialize(i));
+        }
 		
 	}
 	

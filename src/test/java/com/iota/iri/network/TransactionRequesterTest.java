@@ -9,7 +9,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,41 +81,41 @@ public class TransactionRequesterTest {
     public void popEldestTransactionToRequest() throws Exception {
         TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         // Add some Txs to the pool and see if the method pops the eldest one
-        Hash eldest = getRandomTransactionHash();
-        txReq.requestTransaction(eldest, false);
-        txReq.requestTransaction(getRandomTransactionHash(), false);
-        txReq.requestTransaction(getRandomTransactionHash(), false);
-        txReq.requestTransaction(getRandomTransactionHash(), false);
+        Hash eldest = getTransactionHash();
+        txReq.requestTransaction(eldest);
+        txReq.requestTransaction(getTransactionHash());
+        txReq.requestTransaction(getTransactionHash());
+        txReq.requestTransaction(getTransactionHash());
 
         txReq.popEldestTransactionToRequest();
         // Check that the transaction is there no more
-        assertFalse(txReq.isTransactionRequested(eldest, false));
+        assertFalse(txReq.isTransactionRequested(eldest));
     }
 
     @Test
     public void transactionRequestedFreshness() throws Exception {
         // Add some Txs to the pool and see if the method pops the eldest one
         List<Hash> eldest = new ArrayList<Hash>(Arrays.asList(
-                getRandomTransactionHash(),
-                getRandomTransactionHash(),
-                getRandomTransactionHash()
+                getTransactionHash(),
+                getTransactionHash(),
+                getTransactionHash()
         ));
         TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < 3; i++) {
-            txReq.requestTransaction(eldest.get(i), false);
+            txReq.requestTransaction(eldest.get(i));
         }
         for (int i = 0; i < capacity; i++) {
-            Hash hash = getRandomTransactionHash();
-            txReq.requestTransaction(hash,false);
+            Hash hash = getTransactionHash();
+            txReq.requestTransaction(hash);
         }
 
         //check that limit wasn't breached
         assertEquals("Queue capacity breached!!", capacity, txReq.numberOfTransactionsToRequest());
         // None of the eldest transactions should be in the pool
         for (int i = 0; i < 3; i++) {
-            assertFalse("Old transaction has been requested", txReq.isTransactionRequested(eldest.get(i), false));
+            assertFalse("Old transaction has been requested", txReq.isTransactionRequested(eldest.get(i)));
         }
     }
 
@@ -125,38 +125,11 @@ public class TransactionRequesterTest {
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = getRandomTransactionHash();
-            txReq.requestTransaction(hash,false);
+            Hash hash = getTransactionHash();
+            txReq.requestTransaction(hash);
         }
         //check that limit wasn't breached
         assertEquals(capacity, txReq.numberOfTransactionsToRequest());
-    }
-
-    @Test
-    public void milestoneCapacityNotLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
-        int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
-        //fill tips list
-        for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = getRandomTransactionHash();
-            txReq.requestTransaction(hash,true);
-        }
-        //check that limit was surpassed
-        assertEquals(capacity * 2, txReq.numberOfTransactionsToRequest());
-    }
-
-    @Test
-    public void mixedCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
-        int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
-        //fill tips list
-        for (int i = 0; i < capacity * 4 ; i++) {
-            Hash hash = getRandomTransactionHash();
-            txReq.requestTransaction(hash, (i % 2 == 1));
-
-        }
-        //check that limit wasn't breached
-        assertEquals(capacity + capacity * 2, txReq.numberOfTransactionsToRequest());
     }
 
 }

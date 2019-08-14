@@ -8,7 +8,9 @@ public interface IXIConfig extends Config {
     String IXI_DIR = "ixi";
 
     /**
-     * @return Descriptions#IXI_DIR
+     * Default Value: {@value BaseIotaConfig.Defaults#IXI_DIR}
+     *
+     * @return {@value IXIConfig.Descriptions#IXI_DIR}
      */
     String getIxiDir();
 

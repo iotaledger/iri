@@ -274,19 +274,6 @@
                     <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
             </plugin>
-            <!-- Controls how jar is being created -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.1</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
             <!-- The javadoc plugin can be called by running "mvn javadoc:javadoc" and will generate the classic javadoc
                  files in folder "target/site/apidocs" -->
             <plugin>
@@ -322,6 +309,7 @@
                     <archive>
                         <manifest>
                             <mainClass>com.iota.iri.IRI</mainClass>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                     </archive>
                     <descriptorRefs>

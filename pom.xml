@@ -306,6 +306,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
+                    <finalName>iri-${project.version}</finalName>
+                    <outputDirectory>${project.basedir}/target</outputDirectory>
                     <archive>
                         <manifest>
                             <mainClass>com.iota.iri.IRI</mainClass>

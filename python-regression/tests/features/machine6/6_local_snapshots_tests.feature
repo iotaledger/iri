@@ -86,7 +86,7 @@ Feature: Test Bootstrapping With LS
 
     Then the response for "checkConsistency" should return null
 
-  @now
+
   Scenario: Spent Addresses are exported and imported correctly
     Using the export-spent tool in the iri-extensions library, the spent addresses of the db will be exported to a file.
     This file will then be checked to make sure the correct values have been exported to it. It will then merge these

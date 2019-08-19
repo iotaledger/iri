@@ -104,16 +104,27 @@ def export_spent_addresses(step, node):
     logger.info("Spent addresses file exported as: {}".format(request_return['ixi']['fileName']))
 
 
-@step(r'the spent addresses are imported on "([^"]+)"')
+@step(r'the spent addresses are imported on "([^"]+)" from:')
 def merge_spent_addresses_file(step, node):
     """
-    Reads the spentAddresses.txt file that should be present in the python regression IXI directory, and merges it into
+    Reads the spentAddresses.txt file using the specified path and file name in the Gherkin options, and merges it into
     the provided node. Then the return values for the IXI call are checked to make sure no failures occurred.
 
     :param node: The node that the spent addresses will be merged into
     """
-    spent_addresses_file = '/iri/data/ixi/merge-spent/spentAddresses.txt'
-    command = {"command": "merge-spent.mergeSpentAddresses", "fileNames": [spent_addresses_file]}
+    args = step.hashes
+    for x in range(len(args)):
+        key = args[x]['keys']
+        value = args[x]['values']
+
+        if key == 'basePath':
+            base_path = value
+        elif key == 'file':
+            file_name = value
+
+    spent_addresses_file = base_path + file_name
+    logger.info(spent_addresses_file)
+    command = {"command": "merge-spent.mergeSpentAddresses", "files": [spent_addresses_file]}
     request_return = api_utils.send_ixi_request(node, command)
     assert 'ixi' in request_return, "Error: {}".format(request_return['error'])
 

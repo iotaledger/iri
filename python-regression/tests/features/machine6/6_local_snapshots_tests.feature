@@ -98,7 +98,11 @@ Feature: Test Bootstrapping With LS
       |addresses                  |SPENT_ADDRESSES          |staticValue      |
 
     # This part uses a default provided spentAddresses.txt file to import
-    And the spent addresses are imported on "nodeF"
+    And the spent addresses are imported on "nodeF" from:
+      |keys                       |values                   |
+      |basePath                   |/iri/data/               |
+      |file                       |spentAddresses.txt       |
+
     When "wereAddressesSpentFrom" is called on "nodeF" with:
       |keys                       |values                   |type             |
       |addresses                  |SPENT_ADDRESSES          |staticValue      |
@@ -106,4 +110,33 @@ Feature: Test Bootstrapping With LS
     Then the response for "wereAddressesSpentFrom" should return with:
       |keys                       |values                   |type             |
       |states                     |True                     |bool             |
+
+
+
+    Scenario: Spent addresses merged from several inputs
+      Using the merge-spent tool in the iri-extensions library, several spent address text files will be merged into
+      an empty node
+
+      Given the spent addresses are imported on "nodeG" from:
+        |keys                       |values                   |
+        |basePath                   |/iri/data/               |
+        |file                       |MultiSpentAddresses.txt  |
+
+      And the spent addresses are imported on "nodeG" from:
+        |keys                       |values                   |
+        |basePath                   |/iri/data/               |
+        |file                       |MultiSpentAddresses2.txt |
+
+      And the spent addresses are imported on "nodeG" from:
+        |keys                       |values                   |
+        |basePath                   |/iri/data/               |
+        |file                       |MultiSpentAddresses3.txt |
+
+      When "wereAddressesSpentFrom" is called on "nodeG" with:
+        |keys                       |values                   |type             |
+        |addresses                  |LATER_SPENT_ADDRESSES    |staticValue      |
+
+      Then the response for "wereAddressesSpentFrom" should return with:
+        |keys                       |values                   |type             |
+        |states                     |True                     |bool             |
 

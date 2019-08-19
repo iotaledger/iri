@@ -224,5 +224,5 @@ def send_ixi_request(node, command):
     logger.info("Sending command")
     http = urllib3.PoolManager()
     request = http.request("POST", address, body=command_string, headers=headers)
-    logger.info("request sent")
+    logger.info("IXI request sent")
     return json.loads(request.data.decode('utf-8'))

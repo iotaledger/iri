@@ -1,16 +1,22 @@
 ## Python Regression Testing
-A testing suite for performance and dynamic testing of IRI
+A testing suite for performance and dynamic testing of IRI. These tests currently only work in the `python2.7` 
+environment.
 
 ### Aloe testing
 This suite uses aloe for performing tests. Once this repository is cloned, make sure you are in the PythonRegression 
-directory, and install the necessary packages using:
+directory. Here you can create a VM to run the tests on and install the necessary packages using:
+
+_Optional:_
+```
+python -m venv venv
+source venv/bin/activate
+```
+_**Note:** Don't forget to `deactivate` once you've finished your tests_
+
+
 ```
 pip install -e .
 ```
-
-The tests can be run in two ways: Using the `TIAB` (Tangle In A Box) using a specified docker image, or using a set of 
-predefined nodes. The `TIAB` method requires the user to have an active `Kubernetes` configuration, as the nodes will be 
-spun up in a `kubernetes cluster` before the testing begins. 
 
 ### Available Tests
 Machine 1 - API Tests: This machine uses 2 nodes and tests each of the api calls, and ensures that the responses are 
@@ -40,33 +46,54 @@ files, the `spent-addresses-db` and `testnetdb` of a synced node. The second onl
 only contains the snapshot files. All three of these nodes are tested to ensure that they solidify to the same point, 
 and that the proper information is contained in the snapshot files and databases. The fourth node has a larger database 
 that contains more milestones than the `local-snapshots-pruning-depth`. This node is checked to make sure that after 
-starting, transactions that should be pruned form the database have been pruned correctly.   
+starting, transactions that should be pruned from the database have been pruned correctly. This machine also includes 
+tests for spent addresses including a test for exporting and merging spent addresses using IXI 
+modules.   
 
-### Running Tests on TIAB (Requires present kubernetes configuration)
-These tests have been written to interact with a set of nodes with provided configurations, running on a `kubernetes` 
-cluster. The `ciglue.sh` script will run all the available machines in the `./tests/features/` directory. The nodes will
-be configured based off of the `./tests/features/machine[x]/config.yml` file, and will update the 
-`./tests/features/machine[x]/output.yml` file with the newly created cluster host and port information. This script then
-proceeds to run each of the feature files in the respective machine directories, and these tests are run on the nodes 
-specified in the `output.yml` file. Once the tests have completed, the cluster is torn down. The default logging 
-of these tests is verbose, for debugging purposes. To use this automated script, simply use the following command: 
-```
-bash ciglue.sh [insert iri docker image here]
-```
-
-To run on the latest IOTA build, run:
-```
-bash ciglue.sh iotacafe/iri-dev:latest
-```
 
 ### Running Tests Locally
 
 To run the tests using a local/custom node, the first step will be to define the nodes that you would like to run the 
 tests on. Each `aloe` test will run off of a given feature file, stored in the `./tests/features/machine[x]` directory.
 The tests rely on an `output.yml` configuration file, which contains the host and port information of the nodes that 
-the test will be run on. This file is generated automatically by the `TIAB` approach, but needs to be generated/filled 
-out manually for local tests. The `output.yml` files are found in the machine directory for the test, and should have a 
-structure as follows: 
+the test will be run on. The nodes you intend to test will need to be configured manually using the arguments present in
+the `config.yml` file. This file needs to be generated/filled out manually for local tests. The `config.yml` and 
+`output.yml` files are found in the machine directory for the test. 
+
+Setting up the node you intend to test will require you to enter the arguments given for that node in the 
+`config.yml` file. For example, for `machine1` the `config.yml` file contains the following arguments: 
+```
+default_args: &args
+  ['--testnet-coordinator',
+   'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
+   '--mwm',
+   '1',
+   '--milestone-start',
+   '0',
+   '--testnet-no-coo-validation',
+   'true',
+   '--testnet',
+   'true',
+   '--snapshot',
+   './snapshot.txt',
+   '--local-snapshots-pruning-enabled',
+   'true',
+   '--local-snapshots-pruning-delay',
+   '10000'
+  ]
+```
+
+So for example, when starting a node for these `machine1` tests, you would download and unpackage the db referenced 
+in the provided db url in the `config.yml`. Once ready, your iri start command would look like: 
+```
+java -jar iri-CURRENT-VERSION.jar -p 14265 -t 15600 
+--testnet-coordinator EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH --testnet true 
+--mwm 1 --milestone-start 0 --testnet-no-coo-validation true --snapshot ./snapshot.txt --local-snapshots-pruning-enabled 
+true --local-snapshots-pruning-delay 10000
+```
+
+Once the node is running, it's time to run the tests. The `output.yml` should contain the host and port details for your 
+nodes in a structure as follows: 
 
 ```
 nodes:
@@ -75,12 +102,10 @@ nodes:
     podip: localhost
     ports:
       api: 14265
-      gossip-udp: 14600
       gossip-tcp: 15600
       zmq-feed: 5556
     clusterip_ports:
       api: 14265
-      gossip-udp: 14600
       gossip-tcp: 15600
       zmq-feed: 5556
 
@@ -89,12 +114,10 @@ nodes:
     podip: localhost
     ports:
       api: 15265
-      gossip-udp: 14605
       gossip-tcp: 15605
       zmq-feed: 6556
     clusterip_ports:
       api: 15265
-      gossip-udp: 14605
       gossip-tcp: 15605
       zmq-feed: 6556
 

@@ -1,3 +1,19 @@
+1.8.1
+
+- Feature: Improved CW Calculation (#1451)
+- Feature: Automatically request trunk and branch transactions when receiving a tx needed to solidify a milestone (#1545)
+- Change: removes tip solidifier code (#1547)
+- Fix: Read from the db in order to find the existence of spent-addresses (#1540)
+- Fix: adds recently requested txs set to TransactionRequester (#1543)
+- Fix: prevents certain HTTP API calls getting executed while the not is not synced (#1533)
+- Fix: Rewrites request queue logic  (#1530)
+- Fix: Up jackson-databind version to 2.9.9.1 (#1534)
+- Change: Fixed pmd test errors (#1526)
+- Change: Docker network option (#1496)
+- Fix: Changed TX requester removal log to Debug (#1515)
+- Change: Update undertow and jackson (#1511)
+- Fix: fixes self init. conn. being removed from reconnect pool too early (#1506)
+
 1.8.0
 
 - Feature: new networking infrastructure, new network rules, and batched BCT curl (#1393)

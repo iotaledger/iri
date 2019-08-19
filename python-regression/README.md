@@ -125,18 +125,17 @@ nodes:
 
 Once the `output.yml` configuration is set, the tests can be run.
 
-From the `python-regression` directory, a test can be run using the following command structure: 
+From the `python-regression` directory, a test can be run using the following command structure:
+ 
+`aloe ` _`Feature file name`_  `-w` _`Location of feature file`_  `[-v]` `[--nologcapture]` 
 ```
-aloe [Feature file name]  -w [Location of feature file]  -v [Optional: verbose test name logging] --nologcapture 
-[Optional: release logging for individual tests for increased verbosity]
+-v: Verbose test name logging 
+--nologcapture: Release logging for individual tests for increased verbosity
 ```
-
 i.e. For the api tests:
 ```
 aloe 1_api_tests.feature -w ./tests/features/machine1/ -v --nologcapture 
 ```
-
-
 
 
 

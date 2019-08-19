@@ -140,7 +140,7 @@ aloe 1_api_tests.feature -w ./tests/features/machine1/ -v --nologcapture
 
 
 ### Extra Features
-If you would like to only run part of a machine test, flags can be input into the feature file above the `Scenario: ` 
+If you would like to only run part of a feature test, flags can be input into the feature file above the `Scenario: ` 
 lines. This flag can be whatever you would like, so long as it is preceded by an `@` symbol. For example: 
 ```
 @getNodeInfo

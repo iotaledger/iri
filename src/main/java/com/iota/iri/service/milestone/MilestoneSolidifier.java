@@ -5,11 +5,11 @@ import com.iota.iri.model.Hash;
 /**
  * This interface defines the contract for a manager that tries to solidify unsolid milestones by incorporating a
  * background worker that periodically checks the solidity of the milestones and issues transaction requests for the
- * missing transactions until the milestones become solid.<br />
+ * missing transactions until the milestones become solid.
  */
 public interface MilestoneSolidifier {
     /**
-     * This method allows us to add new milestones to the solidifier that will consequently be solidified.<br />
+     * This method allows us to add new milestones to the solidifier that will consequently be solidified.
      *
      * @param milestoneHash Hash of the milestone that shall be solidified
      * @param milestoneIndex index of the milestone that shall be solidified
@@ -17,12 +17,12 @@ public interface MilestoneSolidifier {
     void add(Hash milestoneHash, int milestoneIndex);
 
     /**
-     * This method starts the background worker that asynchronously solidifies the milestones.<br />
+     * This method starts the background worker that asynchronously solidifies the milestones.
      */
     void start();
 
     /**
-     * This method shuts down the background worker that asynchronously solidifies the milestones.<br />
+     * This method shuts down the background worker that asynchronously solidifies the milestones.
      */
     void shutdown();
 }

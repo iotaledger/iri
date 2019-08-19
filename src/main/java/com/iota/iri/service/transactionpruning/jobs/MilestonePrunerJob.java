@@ -269,7 +269,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                         approvedTransaction -> approvedTransaction.snapshotIndex() >= milestoneViewModel.index(),
                         approvedTransaction -> {
                             if (approvedTransaction.value() < 0 &&
-                                    !spentAddressesService.wasAddressSpentFrom(approvedTransaction.getAddressHash())) {
+                                    !spentAddressesProvider.containsAddress(approvedTransaction.getAddressHash())) {
                                 log.warn("Pruned spend transaction " + approvedTransaction.getHash() +
                                                 " did not have its spent address recorded. Persisting it now");
                                 spentAddressesService

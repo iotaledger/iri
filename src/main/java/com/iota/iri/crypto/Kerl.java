@@ -1,5 +1,6 @@
 package com.iota.iri.crypto;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.utils.Converter;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
 
@@ -17,10 +18,14 @@ import java.util.stream.IntStream;
 public final class Kerl implements Sponge {
 
     private static final int BIT_HASH_LENGTH = 384;
-    static final int BYTE_HASH_LENGTH = BIT_HASH_LENGTH / 8; //Package Private For Testing
+    
+    @VisibleForTesting
+    static final int BYTE_HASH_LENGTH = BIT_HASH_LENGTH / 8;
 
     private static final BigInteger RADIX = BigInteger.valueOf(Converter.RADIX);
-    static final int MAX_POWERS_LONG = 40; //Package Private For Testing
+    
+    @VisibleForTesting
+    static final int MAX_POWERS_LONG = 40;
     private static final BigInteger[] RADIX_POWERS = IntStream.range(0, MAX_POWERS_LONG + 1).mapToObj(RADIX::pow).toArray(BigInteger[]::new);
 
     //delegate

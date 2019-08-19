@@ -1,15 +1,15 @@
 from aloe import world
-from iota import Iota,Address,Tag,TryteString
-from copy import deepcopy
+from iota import Iota, Address, Tag, TryteString
+import json
+import urllib3
 from . import value_fetch_logic as value_fetch
-
 
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def prepare_api_call(node_name, **seed):
+def prepare_api_call(node_name, **kwargs):
     """
     Prepares an api target as an entry point for API calls on a specified node.
 
@@ -18,10 +18,8 @@ def prepare_api_call(node_name, **seed):
     """
 
     logger.info('Preparing api call')
-    host = world.machine['nodes'][node_name]['host']
-    port = world.machine['nodes'][node_name]['ports']['api']
-    address = "http://" + host + ":" + str(port)
-    api = Iota(address, **seed)
+    address = fetch_node_api_address(node_name)
+    api = Iota(address, seed=kwargs.get('seed'))
     logger.info('API call prepared for %s', address)
     return api
 
@@ -133,7 +131,10 @@ def fetch_call(api_call, api, options):
         'interruptAttachingToTangle': api.interrupt_attaching_to_tangle,
     }
 
-    response = call_list[api_call](**options)
+    try:
+        response = call_list[api_call](**options)
+    except ValueError:
+        response = None
 
     return response
 
@@ -191,19 +192,36 @@ def prepare_transaction_arguments(arg_list):
             arg_list[key] = TryteString.from_unicode(arg_list[key])
 
 
-
-def duplicate_arguments(arg_list):
+def fetch_node_api_address(node):
     """
-    Duplicates the step arguments, providing a copy for storage and comparison.
-
-    :param arg_list: The original step arguments you would like to copy.
-    :return: Copy of the original argument list.
+    Fetches an api address from the machine configurations for the provided node.
+    :param node: The node that the address will be fetched for
+    :return: The api endpoint for the node
     """
+    host = world.machine['nodes'][node]['host']
+    port = world.machine['nodes'][node]['ports']['api']
+    address = "http://" + str(host) + ":" + str(port)
+    return address
 
-    stored_values = deepcopy(arg_list)
-    stored_value_list = {}
-    for index, value in enumerate(stored_values):
-        stored_value_list[index] = value
 
-    return stored_value_list
+def send_ixi_request(node, command):
+    """
+    Sends an IXI command to the provided node.
 
+    :param node: The node that the IXI request will be made on
+    :param command: The IXI command that will be placed in the request
+    :return: The response value from the node
+    """
+    address = fetch_node_api_address(node)
+    headers = {
+        'content-type': 'application/json',
+        'X-IOTA-API-Version': '1'
+    }
+
+    command_string = json.dumps(command)
+
+    logger.info("Sending command")
+    http = urllib3.PoolManager()
+    request = http.request("POST", address, body=command_string, headers=headers)
+    logger.info("request sent")
+    return json.loads(request.data.decode('utf-8'))

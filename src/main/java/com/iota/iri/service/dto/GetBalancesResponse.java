@@ -13,12 +13,14 @@ import com.iota.iri.service.API;
 public class GetBalancesResponse extends AbstractResponse {
 	
     /**
-     * The balances as a list in the same order as the addresses were provided as input
+     * Array of balances in the same order as the `addresses` parameters were passed to the endpoint
      */
 	private List<String> balances;
 	
 	/**
-	 * The tips used to view the balances. If none were supplied this will be the latest confirmed milestone.
+	 * The referencing tips. 
+	 * If no `tips` parameter was passed to the endpoint, 
+	 * this field contains the hash of the latest milestone that confirmed the balance
 	 */
 	private List<String> references;
 	

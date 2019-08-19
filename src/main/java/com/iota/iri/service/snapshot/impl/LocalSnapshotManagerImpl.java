@@ -1,5 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
@@ -14,11 +15,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * <p>
  * Creates a manager for the local snapshots, that takes care of automatically creating local snapshots when the defined
- * intervals have passed.<br />
- * <br />
+ * intervals have passed.
+ * </p>
+ * <p>
  * It incorporates a background worker that periodically checks if a new snapshot is due (see {@link
- * #start(LatestMilestoneTracker)} and {@link #shutdown()}).<br />
+ * #start(LatestMilestoneTracker)} and {@link #shutdown()}).
+ * </p>
  */
 public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     /**
@@ -31,7 +35,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * To prevent jumping back and forth in and out of sync, there is a buffer in between.
      * Only when the latest milestone and latest snapshot differ more than this number, we fall out of sync
      */
-    private static final int LOCAL_SNAPSHOT_SYNC_BUFFER = 5;
+    @VisibleForTesting
+    static final int LOCAL_SNAPSHOT_SYNC_BUFFER = 5;
 
     /**
      * Logger for this class allowing us to dump debug and status messages.
@@ -72,15 +77,18 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
     /**
-     * This method initializes the instance and registers its dependencies.<br />
-     * <br />
-     * It simply stores the passed in values in their corresponding private properties.<br />
-     * <br />
+     * <p>
+     * This method initializes the instance and registers its dependencies.
+     * </p>
+     * <p>
+     * It simply stores the passed in values in their corresponding private properties.
+     * </p>
+     * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
      *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
      *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
-     *       <br />
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * </p>
      *       {@code localSnapshotManager = new LocalSnapshotManagerImpl().init(...);}
      *
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
@@ -128,7 +136,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      *
      * @param latestMilestoneTracker tracker for the milestones to determine when a new local snapshot is due
      */
-    private void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
+    @VisibleForTesting
+    void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
         while (!Thread.currentThread().isInterrupted()) {
             int localSnapshotInterval = getSnapshotInterval(isInSync(latestMilestoneTracker));
 
@@ -154,38 +163,42 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param inSync if this node is in sync
      * @return the current interval in which we take local snapshots
      */
-    private int getSnapshotInterval(boolean inSync) {
+    @VisibleForTesting
+    int getSnapshotInterval(boolean inSync) {
         return inSync
                 ? config.getLocalSnapshotsIntervalSynced()
                 : config.getLocalSnapshotsIntervalUnsynced();
     }
-    
+
     /**
-     * A node is defined in sync when the latest snapshot milestone index and the latest milestone index are equal.
-     * In order to prevent a bounce between in and out of sync, a buffer is added when a node became in sync.
+     * A node is defined in sync when the latest snapshot milestone index and the
+     * latest milestone index are equal. In order to prevent a bounce between in and
+     * out of sync, a buffer is added when a node became in sync.
      * 
-     * This will always return false if we are not done scanning milestone candidates during initialization.
+     * This will always return false if we are not done scanning milestone
+     * candidates during initialization.
      * 
      * @param latestMilestoneTracker tracker we use to determine milestones
      * @return <code>true</code> if we are in sync, otherwise <code>false</code>
      */
-    private boolean isInSync(LatestMilestoneTracker latestMilestoneTracker) {
+    @VisibleForTesting
+    boolean isInSync(LatestMilestoneTracker latestMilestoneTracker) {
         if (!latestMilestoneTracker.isInitialScanComplete()) {
             return false;
         }
-        
+
         int latestIndex = latestMilestoneTracker.getLatestMilestoneIndex();
         int latestSnapshot = snapshotProvider.getLatestSnapshot().getIndex();
-        
+
         // If we are out of sync, only a full sync will get us in
         if (!isInSync && latestIndex == latestSnapshot) {
             isInSync = true;
-        
-        // When we are in sync, only dropping below the buffer gets us out of sync 
+
+        // When we are in sync, only dropping below the buffer gets us out of sync
         } else if (latestSnapshot < latestIndex - LOCAL_SNAPSHOT_SYNC_BUFFER) {
             isInSync = false;
         }
-        
+
         return isInSync;
     }
 }

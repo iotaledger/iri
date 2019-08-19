@@ -1,19 +1,24 @@
 package com.iota.iri.service.tipselection.impl;
 
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of <tt>Walker</tt> that performs a weighted random walk
@@ -23,7 +28,7 @@ import java.util.stream.Collectors;
 public class WalkerAlpha implements Walker {
 
     /**
-    * {@code alpha}: a positive number that controls the randomness of the walk. 
+    * {@code alpha}: a positive number that controls the randomness of the walk.
     * The closer it is to 0, the less bias the random walk will be.
     */
     private double alpha;
@@ -64,28 +69,31 @@ public class WalkerAlpha implements Walker {
     }
 
     @Override
-    public Hash walk(Hash entryPoint, UnIterableMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception {
+    public Hash walk(Hash entryPoint, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception {
         if (!walkValidator.isValid(entryPoint)) {
             throw new IllegalStateException("entry point failed consistency check: " + entryPoint.toString());
         }
-        
+
         Optional<Hash> nextStep;
         Deque<Hash> traversedTails = new LinkedList<>();
         traversedTails.add(entryPoint);
 
         //Walk
         do {
+            if(Thread.interrupted()){
+                throw new InterruptedException();
+            }
             nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
             nextStep.ifPresent(traversedTails::add);
          } while (nextStep.isPresent());
-        
+
         log.debug("{} tails traversed to find tip", traversedTails.size());
         tangle.publish("mctn %d", traversedTails.size());
 
         return traversedTails.getLast();
     }
 
-    private Optional<Hash> selectApprover(Hash tailHash, UnIterableMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception {
+    private Optional<Hash> selectApprover(Hash tailHash, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception {
         Set<Hash> approvers = getApprovers(tailHash);
         return findNextValidTail(ratings, approvers, walkValidator);
     }
@@ -95,7 +103,7 @@ public class WalkerAlpha implements Walker {
         return approveeViewModel.getHashes();
     }
 
-    private Optional<Hash> findNextValidTail(UnIterableMap<HashId, Integer> ratings, Set<Hash> approvers, WalkValidator walkValidator) throws Exception {
+    private Optional<Hash> findNextValidTail(Map<Hash, Integer> ratings, Set<Hash> approvers, WalkValidator walkValidator) throws Exception {
         Optional<Hash> nextTailHash = Optional.empty();
 
         //select next tail to step to
@@ -114,7 +122,7 @@ public class WalkerAlpha implements Walker {
         return nextTailHash;
     }
 
-    private Optional<Hash> select(UnIterableMap<HashId, Integer> ratings, Set<Hash> approversSet) {
+    private Optional<Hash> select(Map<Hash, Integer> ratings, Set<Hash> approversSet) {
 
         //filter based on tangle state when starting the walk
         List<Hash> approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());

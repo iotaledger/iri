@@ -9,12 +9,26 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Created by paul on 3/8/17 for iri.
+ * Represents a persistable set of {@link Hash} to act as a container for hash identifiers. These are
+ * used in our persistence layer to store the link of one key to a set of keys in the database.
+ *
+ * <p>
+ *     A <tt>Hash</tt> set contains the byte array representations of Hash objects.
+ *     These hashes serve as reference points for specific parts of a transaction set,
+ *     including the <tt>Address</tt>, <tt>Tag</tt>, <tt>Branch</tt> and <tt>Trunk</tt>
+ *     transaction components.
+ * </p>
  */
 public class Hashes implements Persistable {
+
+    /**A set for storing hashes*/
     public Set<Hash> set = new LinkedHashSet<>();
+
+    /**A delimeter for separating hashes within a byte stream*/
     private static final byte delimiter = ",".getBytes()[0];
 
+    /**Returns the bytes of the contained hash set*/
+    @Override
     public byte[] bytes() {
         return set.parallelStream()
                 .map(Hash::bytes)
@@ -22,6 +36,13 @@ public class Hashes implements Persistable {
                 .orElse(new byte[0]);
     }
 
+    /**
+     * Reads the given byte array. If the array is not null, the {@link Hash} objects will be added to
+     * the collection.
+     *
+     * @param bytes the byte array that will be read
+     */
+    @Override
     public void read(byte[] bytes) {
         if(bytes != null) {
             set = new LinkedHashSet<>(bytes.length / (1 + Hash.SIZE_IN_BYTES) + 1);

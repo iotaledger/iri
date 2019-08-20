@@ -64,7 +64,7 @@ public class ISSTest {
         SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
         Hash[] hashes = {HashFactory.ADDRESS.create("D9XCNSCCAJGLWSQOQAQNFWANPYKYMCQ9VCOMROLDVLONPPLDFVPIZNAPVZLQMPFYJPAHUKIAEKNCQIYJZ"),
                 HashFactory.ADDRESS.create("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
-        for (int i=0;i<modes.length;i++) {
+        for (int i=0; i < modes.length; i++) {
             SpongeFactory.Mode mode = modes[i];
             byte[] seedTrits = Converter.allocateTritsForTrytes(seed.length());
             Converter.trits(seed, seedTrits, 0);
@@ -74,7 +74,30 @@ public class ISSTest {
             byte[] digest = ISS.digests(mode, key);
             byte[] address = ISS.address(mode, digest);
             Hash addressTrytes = HashFactory.ADDRESS.create(address);
-            assertEquals(hashes[i].toString(), addressTrytes.toString());
+            assertEquals("Address is not as expected", hashes[i], addressTrytes);
+        }
+    }
+
+    @Test
+    public void sigDigestISSInPlace() throws Exception {
+        int index = 0;
+        int nof = 1;
+        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.KERL};
+        Hash[] hashes = {
+            HashFactory.ADDRESS.create("DQMAVYJTIIQUCDHRIZAPYKFCFBTHNDAMHLYEEIEBSR9REQBBVUQOSDWFSGPTZFNQQTVMQPVUDHDTEZVSW")};
+        for (int i=0; i < modes.length; i++) {
+            SpongeFactory.Mode mode = modes[i];
+            byte[] seedTrits = Converter.allocateTritsForTrytes(seed.length());
+            Converter.trits(seed, seedTrits, 0);
+
+            byte[] subseed = ISS.subseed(mode, seedTrits, index);
+            byte[] key = ISS.key(mode, subseed, nof);
+            byte[] digest = new byte[Curl.HASH_LENGTH];
+            byte[] sig = Arrays.copyOfRange(key, 0, key.length);
+            ISSInPlace.digest(mode, sig, 0, key, 0, digest);
+            byte[] address = ISS.address(mode, digest);
+            Hash addressTrytes = HashFactory.ADDRESS.create(address);
+            assertEquals("Address is not as expected", hashes[i], addressTrytes);
         }
     }
 

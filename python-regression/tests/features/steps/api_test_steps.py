@@ -198,7 +198,7 @@ def make_neighbors(step, node1, node2):
 
     for node in neighbor_candidates:
         host = world.machine['nodes'][node]['podip']
-        port = world.machine['nodes'][node]['clusterip_ports']['gossip-udp']
+        port = world.machine['nodes'][node]['clusterip_ports']['gossip-tcp']
         api = api_utils.prepare_api_call(node)
         response = api.get_neighbors()
         neighbor_info[node] = {

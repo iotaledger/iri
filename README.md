@@ -10,7 +10,7 @@ The IRI repository is the main IOTA Reference Implementation and the embodiment 
 
 This is a full-featured [[IOTA]](https://iota.org/) node with a convenient JSON-REST HTTP interface.
 It allows users to become part of the [[IOTA]](https://iota.org) network as both a transaction relay
-and network information provider through the easy-to-use [[API]](https://docs.iota.org/docs/iri/0.1/references/api-reference).
+and network information provider through the easy-to-use [[API]](https://docs.iota.org/docs/node-software/0.1/iri/references/api-reference).
 
 It is specially designed for users seeking a fast, efficient and fully-compatible network setup.
 
@@ -27,7 +27,7 @@ The IOTA network is an independent peer-to-peer network with a first-user, frien
 - As a 'friend-to-friend' network, you have the privilege of joining new users into the network through your node
 by adding them to your approved neighbors list — ensuring that you both broadcast to them and also receive their broadcasts.
 
-You can **find neighbors** on the #nodesharing channel of our [[Discord server]](https://discord.gg/7Gu2mG5).
+You can **find neighbors** on the #nodesharing channel of our [[Discord server]](https://discord.iota.org/).
 
 Everyone will be welcoming and very happy to help you get connected.
 If you want to get tokens for your testcase, please just ask in one of the communication channels.
@@ -40,8 +40,8 @@ please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 # Documentation
 
 This page contains basic instructions for setting up an IRI node. You can find the full documentation on:
-- Our [documentation website](https://docs.iota.org/docs/iri/0.1/introduction/overview)
-- [IRI API refernece](https://docs.iota.org/docs/iri/0.1/references/api-reference)
+- Our [documentation website](https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview)
+- [IRI API refernece](https://docs.iota.org/docs/node-software/0.1/iri/references/api-reference)
 
 You can also use one of these great community guides:
 - [IOTA Partners guide](https://iota.partners/)

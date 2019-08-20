@@ -57,7 +57,7 @@ public class APIIntegrationTests {
     private static ResponseSpecification specSuccessResponse;
     private static ResponseSpecification specErrorResponse;
     // Constants used in tests
-    private static final String[] URIS = {"udp://8.8.8.8:14266", "udp://8.8.8.5:14266"};
+    private static final String[] URIS = {"tcp://8.8.8.8:14266", "tcp://8.8.8.5:14266"};
     private static final String[] ADDRESSES = {"RVORZ9SIIP9RCYMREUIXXVPQIPHVCNPQ9HZWYKFWYWZRE9JQKG9REPKIASHUUECPSQO9JT9XNMVKWYGVA"};
     private static final String[] HASHES = {"OAATQS9VQLSXCLDJVJJVYUGONXAXOFMJOZNSYWRZSWECMXAQQURHQBJNLD9IOFEPGZEPEMPXCIVRX9999"};
     //Trytes of "VHBRBB9EWCPDKYIBEZW9XVX9AOBQKSCKSTMJLGBANQ99PR9HGYNH9AJWTMHJQBDJHZVWHZMXPILS99999"
@@ -84,7 +84,7 @@ public class APIIntegrationTests {
             logFolder.create();
 
             configuration = ConfigFactory.createIotaConfig(true);
-            String[] args = {"-p", portStr, "--testnet", "true", "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
+            String[] args = {"-p", portStr, "--testnet", String.valueOf(true), "--max-neighbors", String.valueOf(5), "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
             configuration.parseConfigFromArgs(args);
 
@@ -93,9 +93,9 @@ public class APIIntegrationTests {
             ixi = new IXI(iota);
             api = new API(configuration, ixi, iota.transactionRequester,
                     iota.spentAddressesService, iota.tangle, iota.bundleValidator,
-                    iota.snapshotProvider, iota.ledgerService, iota.node, iota.tipsSelector,
+                    iota.snapshotProvider, iota.ledgerService, iota.neighborRouter, iota.tipsSelector,
                     iota.tipsViewModel, iota.transactionValidator,
-                    iota.latestMilestoneTracker);
+                    iota.latestMilestoneTracker, iota.txPipeline);
 
             //init
             try {
@@ -146,16 +146,16 @@ public class APIIntegrationTests {
      * Tests can choose to use this method instead of the no-args given() static method
      * if they want to manually specify custom timeouts.
      *
-     * @param socket_timeout     The Remote host response time.
-     * @param connection_timeout Remote host connection time & HttpConnectionManager connection return time.
+     * @param socketTimeout     The Remote host response time.
+     * @param connectionTimeout Remote host connection time & HttpConnectionManager connection return time.
      * @return The RequestSpecification to use for the test.
      */
-    private static RequestSpecification given(int socket_timeout, int connection_timeout) {
+    private static RequestSpecification given(int socketTimeout, int connectionTimeout) {
         return RestAssured.given().config(RestAssured.config()
             .httpClient(HttpClientConfig.httpClientConfig()
-                .setParam("http.conn-manager.timeout", (long) connection_timeout)
-                .setParam("http.connection.timeout", connection_timeout)
-                .setParam("http.socket.timeout", socket_timeout)))
+                .setParam("http.conn-manager.timeout", (long) connectionTimeout)
+                .setParam("http.connection.timeout", connectionTimeout)
+                .setParam("http.socket.timeout", socketTimeout)))
                 .contentType("application/json").header("X-IOTA-API-Version", 1);
     }
 

@@ -1,23 +1,25 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.HashId;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
-import com.iota.iri.service.tipselection.RatingCalculator;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
+
+import java.util.Map;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
-import static com.iota.iri.TransactionTestUtils.getTransactionHash;
-import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 
 public class RatingOneTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -65,7 +67,7 @@ public class RatingOneTest {
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction3.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction4.store(tangle, snapshotProvider.getInitialSnapshot());
-        UnIterableMap<HashId, Integer> rate = rating.calculate(transaction.getHash());
+        Map<Hash, Integer> rate = rating.calculate(transaction.getHash());
 
         Assert.assertEquals(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT,
                 1, rate.get(transaction4.getHash()).intValue());

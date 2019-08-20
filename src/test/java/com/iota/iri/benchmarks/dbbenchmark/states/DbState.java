@@ -45,7 +45,8 @@ public abstract class DbState {
                 dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(),  BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         dbProvider.init();
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider.init();
         tangle.addPersistenceProvider(dbProvider);
         String trytes = "";
         System.out.println("numTxsToTest = [" + numTxsToTest + "]");

@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
@@ -17,8 +18,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import static com.iota.iri.TransactionTestUtils.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TransactionValidatorTest {
 
@@ -34,15 +38,17 @@ public class TransactionValidatorTest {
     dbFolder.create();
     logFolder.create();
     tangle = new Tangle();
-    snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+    snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+    snapshotProvider.init();
     tangle.addPersistenceProvider(
         new RocksDBPersistenceProvider(
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
     TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
-    txValidator.setMwm(false, MAINNET_MWM);
+    ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
+    when(protocolConfig.getMwm()).thenReturn(MAINNET_MWM);
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, protocolConfig);
   }
 
   @AfterClass
@@ -54,11 +60,11 @@ public class TransactionValidatorTest {
   }
 
   @Test
-  public void testMinMwm() throws InterruptedException {
-    txValidator.init(false, 5);
-    assertTrue(txValidator.getMinWeightMagnitude() == 13);
-    txValidator.shutdown();
-    txValidator.init(false, MAINNET_MWM);
+  public void testMinMwm() {
+    ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
+    when(protocolConfig.getMwm()).thenReturn(5);
+    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig);
+    assertEquals("Expected testnet minimum minWeightMagnitude", 13, transactionValidator.getMinWeightMagnitude());
   }
 
   @Test
@@ -75,7 +81,7 @@ public class TransactionValidatorTest {
   }
 
   @Test
-  public void validateBytesWithNewCurl() throws Exception {
+  public void validateBytesWithNewCurl() {
     byte[] trits = getTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);

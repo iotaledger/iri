@@ -49,57 +49,39 @@ public class MilestoneServiceImpl implements MilestoneService {
     /**
      * Holds the tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the service instance of the snapshot package that allows us to roll back ledger states.
      */
-    private SnapshotService snapshotService;
+    private final SnapshotService snapshotService;
 
     /**
      * Configurations for milestone
      */
-    private MilestoneConfig config;
+    private final MilestoneConfig config;
 
-    private BundleValidator bundleValidator;
+    private final BundleValidator bundleValidator;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code milestoneService = new MilestoneServiceImpl().init(...);}
-     *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param snapshotService service for modifying and generating snapshots
      * @param bundleValidator Validator to use when checking milestones
      * @param config config with important milestone specific settings
-     * @return the initialized instance itself to allow chaining
      */
-    public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+    public MilestoneServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
             BundleValidator bundleValidator, MilestoneConfig config) {
-
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.bundleValidator = bundleValidator;
         this.config = config;
-
-        return this;
     }
 
     //region {PUBLIC METHODS] //////////////////////////////////////////////////////////////////////////////////////////

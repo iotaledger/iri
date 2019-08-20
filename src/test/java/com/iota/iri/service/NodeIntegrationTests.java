@@ -1,6 +1,9 @@
 package com.iota.iri.service;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.iota.iri.IXI;
+import com.iota.iri.MainInjectionConfiguration;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.IXIConfig;
 import com.iota.iri.conf.TestnetConfig;
@@ -8,6 +11,7 @@ import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.NetworkInjectionConfiguration;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
@@ -38,7 +42,6 @@ public class NodeIntegrationTests {
     public void tearDown() throws Exception {
     }
 
-
     //@Test
     public void testGetsSolid() throws Exception {
         int count = 1;
@@ -52,17 +55,17 @@ public class NodeIntegrationTests {
         for(int i = 0; i < count; i++) {
             folders[i*2] = new TemporaryFolder();
             folders[i*2 + 1] = new TemporaryFolder();
-            TestnetConfig conf = new TestnetConfig();
-            iotaNodes[i] = newNode(i, conf, folders[i*2], folders[i*2+1]);
-            ixi[i] = new IXI(iotaNodes[i]);
+            TestnetConfig conf = newNodeConfig(i, folders[i*2], folders[i*2+1]);
+            Injector injector = Guice.createInjector(new MainInjectionConfiguration(conf),
+                    new NetworkInjectionConfiguration(conf));
+
+            iotaNodes[i] = injector.getInstance(Iota.class);
+            iotaNodes[i].init();
+
+            ixi[i] = injector.getInstance(IXI.class);
             ixi[i].init(IXIConfig.IXI_DIR);
-            
-            api[i] = new API(conf, ixi[i], iotaNodes[i].transactionRequester,
-                    iotaNodes[i].spentAddressesService, iotaNodes[i].tangle, iotaNodes[i].bundleValidator,
-                    iotaNodes[i].snapshotProvider, iotaNodes[i].ledgerService, iotaNodes[i].neighborRouter,
-                    iotaNodes[i].tipsSelector, iotaNodes[i].tipsViewModel, iotaNodes[i].transactionValidator,
-                    iotaNodes[i].latestMilestoneTracker, iotaNodes[i].txPipeline);
-            
+
+            api[i] = injector.getInstance(API.class);
             api[i].init(new RestEasy(conf));
         }
         iotaNodes[0].neighborRouter.addNeighbor("tcp://localhost:14701");
@@ -88,17 +91,15 @@ public class NodeIntegrationTests {
         }
     }
 
-    private Iota newNode(int index, TestnetConfig conf, TemporaryFolder db, TemporaryFolder log) throws Exception {
+    private TestnetConfig newNodeConfig(int index, TemporaryFolder db, TemporaryFolder log) throws Exception {
+        TestnetConfig conf = new TestnetConfig();
         db.create();
         log.create();
-        Iota iota;
         conf.setPort(14800 + index);
         conf.setNeighboringSocketPort(14700 + index);
         conf.setDbPath(db.getRoot().getAbsolutePath());
         conf.setDbLogPath(log.getRoot().getAbsolutePath());
-        iota = new Iota(conf);
-        iota.init();
-        return iota;
+        return conf;
     }
 
     private Runnable spawnMaster() {

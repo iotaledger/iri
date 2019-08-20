@@ -33,7 +33,8 @@ public class BundleValidatorTest {
                         logFolder.getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES,
                         Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider.init();
     }
 
     @AfterClass

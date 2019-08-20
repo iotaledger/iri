@@ -38,7 +38,8 @@ public class EntryPointSelectorImplTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider.init();
         MilestoneViewModel.clear();
     }
 

@@ -56,32 +56,32 @@ public class AsyncTransactionPruner implements TransactionPruner {
     /**
      * Tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * Data provider for the snapshots that are relevant for the node.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Used to check whether an address was spent from before it is pruned.
      */
-    private SpentAddressesService spentAddressesService;
+    private final SpentAddressesService spentAddressesService;
 
     /**
      * Used to check whether an address is already persisted in the persistence layer.
      */
-    private SpentAddressesProvider spentAddressesProvider;
+    private final SpentAddressesProvider spentAddressesProvider;
 
     /**
      * Manager for the tips (required for removing pruned transactions from this manager).
      */
-    private TipsViewModel tipsViewModel;
+    private final TipsViewModel tipsViewModel;
 
     /**
      * Configuration with important snapshot related parameters.
      */
-    private SnapshotConfig config;
+    private final SnapshotConfig config;
 
     /**
      * Holds a reference to the {@link ThreadIdentifier} for the cleanup thread.
@@ -113,46 +113,30 @@ public class AsyncTransactionPruner implements TransactionPruner {
     private final Map<Class<? extends TransactionPrunerJob>, JobQueue> jobQueues = new HashMap<>();
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It simply stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code asyncTransactionPruner = new AsyncTransactionPruner().init(...);}
-     *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param tipsViewModel manager for the tips (required for removing pruned transactions from this manager)
      * @param config Configuration with important snapshot related configuration parameters
-     * @return the initialized instance itself to allow chaining
      */
-    public AsyncTransactionPruner init(Tangle tangle, SnapshotProvider snapshotProvider,
+    public AsyncTransactionPruner(Tangle tangle, SnapshotProvider snapshotProvider,
                                        SpentAddressesService spentAddressesService,
                                        SpentAddressesProvider spentAddressesProvider,
                                        TipsViewModel tipsViewModel,
                                        SnapshotConfig config) {
-
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.spentAddressesService = spentAddressesService;
         this.spentAddressesProvider = spentAddressesProvider;
         this.tipsViewModel = tipsViewModel;
         this.config = config;
+    }
 
+    @Override
+    public void init() {
         addJobQueue(UnconfirmedSubtanglePrunerJob.class, new SimpleJobQueue(this));
         addJobQueue(MilestonePrunerJob.class, new MilestonePrunerJobQueue(this, config));
-
         registerParser(MilestonePrunerJob.class, MilestonePrunerJob::parse);
         registerParser(UnconfirmedSubtanglePrunerJob.class, UnconfirmedSubtanglePrunerJob::parse);
-
-        return this;
     }
 
     /**

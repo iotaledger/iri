@@ -11,7 +11,6 @@ import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
-import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
@@ -121,11 +120,6 @@ public class MainInjectionConfigurationTest {
     @Test
     public void provideTransactionValidator() {
         assertNotNull("instance creation did not work", testInjector().getInstance(TransactionValidator.class));
-    }
-
-    @Test
-    public void provideTipsSolidifier() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(TipsSolidifier.class));
     }
 
     @Test

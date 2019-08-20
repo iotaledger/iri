@@ -66,4 +66,21 @@ public class Hashes implements Persistable {
     public boolean merge() {
         return true;
     }
+
+    @Override
+    public Persistable mergeTwo(Persistable nrTwo){
+        if(nrTwo instanceof Hashes){
+            Set<Hash> setTwo = ((Hashes) nrTwo).set;
+            set.addAll(setTwo);
+            return this;
+        }
+
+        return null;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return set.isEmpty();
+    }
+
 }

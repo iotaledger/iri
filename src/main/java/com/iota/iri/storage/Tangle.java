@@ -22,7 +22,6 @@ public class Tangle {
     public static final Map<String, Class<? extends Persistable>> COLUMN_FAMILIES =
             new LinkedHashMap<String, Class<? extends Persistable>>() {{
                 put("transaction", Transaction.class);
-                put("counted-transaction", CountedTransaction.class);
                 put("milestone", Milestone.class);
                 put("stateDiff", StateDiff.class);
                 put("address", Address.class);
@@ -35,21 +34,6 @@ public class Tangle {
     public static final Map.Entry<String, Class<? extends Persistable>> METADATA_COLUMN_FAMILY =
             new AbstractMap.SimpleImmutableEntry<>("transaction-metadata", Transaction.class);
 
-    public static final Map.Entry<String, Class<? extends Persistable>> COUNTED_METADATA_COLUMN_FAMILY =
-            new AbstractMap.SimpleImmutableEntry<>("counted-transaction-metadata", CountedTransaction.class);
-
-//    =
-//            new LinkedHashMap<String, Class<? extends Persistable>>() {{
-//        put("transaction", Transaction.class);
-//        put("counted-transaction-metadata", CountedTransaction.class);
-//        put("milestone", Milestone.class);
-//        put("stateDiff", StateDiff.class);
-//        put("address", Address.class);
-//        put("approvee", Approvee.class);
-//        put("bundle", Bundle.class);
-//        put("obsoleteTag", ObsoleteTag.class);
-//        put("tag", Tag.class);
-//    }};
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
@@ -82,13 +66,33 @@ public class Tangle {
     }
 
     public Persistable load(Class<?> model, Indexable index) throws Exception {
-            Persistable out = null;
+            LinkedList<Persistable> outlist = new LinkedList<>();
             for(PersistenceProvider provider: this.persistenceProviders) {
-                if((out = provider.get(model, index)) != null) {
-                    break;
+                Persistable result =  provider.get(model, index);
+
+                if (result != null && !result.isEmpty()) {
+                    if(result.merge()){
+
+                        outlist.add(result);
+                    }else{
+                        //If it is a non-mergeable result then there is no need to ask another provider again.
+                        // Return immediately
+                        return result;
+                    }
                 }
             }
-            return out;
+            Persistable p = outlist.stream().reduce(null, (a,b) -> {
+                if(a == null){
+                    return b;
+                }
+                return a.mergeTwo(b);
+            });
+            if(p==null){
+                p =  (Persistable) model.newInstance();
+            }
+
+            return p;
+
     }
 
     public Boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.iota.iri.storage.rocksDB.RocksDBPPPImpl;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -322,6 +323,22 @@ public class Iota {
         }
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
+        }
+
+        if(configuration.isSelectivePermaEnabled()){
+            switch (configuration.getPermaMainDb()) {
+                case "rocksdb": {
+                    tangle.addPersistenceProvider(new RocksDBPPPImpl(
+                            configuration.getPermaDbPath(),
+                            configuration.getPermaDbLogPath(),
+                            configuration.getPermaDbCacheSize())
+                    );
+                    break;
+                }
+                default: {
+                    throw new NotImplementedException("No such database type.");
+                }
+            }
         }
     }
     

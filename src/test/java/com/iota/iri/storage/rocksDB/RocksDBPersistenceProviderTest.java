@@ -1,7 +1,6 @@
 package com.iota.iri.storage.rocksDB;
 
 import com.iota.iri.model.IntegerIndex;
-import com.iota.iri.model.persistables.CountedTransaction;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -26,7 +25,7 @@ public class RocksDBPersistenceProviderTest {
     @BeforeClass
     public static void setUpDb() throws Exception {
         rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
-               dbPath, dbLogPath,1000, Tangle.COLUMN_FAMILIES, Tangle.COUNTED_METADATA_COLUMN_FAMILY);
+               dbPath, dbLogPath,1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         rocksDBPersistenceProvider.init();
     }
 
@@ -53,7 +52,7 @@ public class RocksDBPersistenceProviderTest {
 
 
         List<Pair<Indexable, Persistable>> models = IntStream.range(1, 1000)
-                .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), (Persistable)CountedTransaction.fromTransaction(tx,i)))
+                .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), (Persistable)tx))
                 .collect(Collectors.toList());
 
         rocksDBPersistenceProvider.saveBatch(models);
@@ -76,7 +75,7 @@ public class RocksDBPersistenceProviderTest {
 
         for (IntegerIndex index : indexes) {
             Assert.assertArrayEquals("saved bytes are not as expected in index " + index.getValue(), tx.bytes(),
-                    rocksDBPersistenceProvider.get(CountedTransaction.class, index).bytes());
+                    rocksDBPersistenceProvider.get(Transaction.class, index).bytes());
         }
     }
 }

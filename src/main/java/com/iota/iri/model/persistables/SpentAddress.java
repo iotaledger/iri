@@ -32,4 +32,15 @@ public class SpentAddress implements Persistable {
     public boolean exists() {
         return exists;
     }
+
+    @Override
+    public Persistable mergeTwo(Persistable nrTwo){
+        return null;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return exists;
+    }
+
 }

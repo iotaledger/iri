@@ -219,4 +219,14 @@ public class Transaction implements Persistable {
     public boolean merge() {
         return false;
     }
+
+    @Override
+    public Persistable mergeTwo(Persistable nrTwo){
+        return null;
+    }
+    @Override
+    public boolean isEmpty() {
+        return bytes == null || bytes.length == 0;
+    }
+
 }

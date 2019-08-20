@@ -1,76 +1,93 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.model.IntegerIndex;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
+
 import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Pair;
-import org.apache.commons.io.FileUtils;
 import org.junit.*;
 
-import java.io.File;
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
 
 public class PermaRocksDBPersentenceProviderTest {
-    private static RocksDBPersistenceProvider rocksDBPersistenceProvider;
-    private static String dbPath = "tmpdb", dbLogPath = "tmplogs";
+    private static RocksDBPPPImpl rocksDBPersistenceProvider;
+    //private static String dbPath = "tmpdb", dbLogPath = "tmplogs";
+    private static String dbPath = "mainnetpermadb", dbLogPath = "mainnetpermadb.log";
 
     @BeforeClass
     public static void setUpDb() throws Exception {
-        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
-                dbPath, dbLogPath,1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
+        rocksDBPersistenceProvider =  new RocksDBPPPImpl(
+                dbPath, dbLogPath,1000);
         rocksDBPersistenceProvider.init();
     }
 
     @AfterClass
     public static void destroyDb() {
         rocksDBPersistenceProvider.shutdown();
-        FileUtils.deleteQuietly(new File(dbPath));
-        FileUtils.deleteQuietly(new File(dbLogPath));
-        rocksDBPersistenceProvider = null;
+        //FileUtils.deleteQuietly(new File(dbPath));
+        //FileUtils.deleteQuietly(new File(dbLogPath));
+        //rocksDBPersistenceProvider = null;
     }
 
     @Before
     public void setUp() throws Exception {
-        rocksDBPersistenceProvider.clear(Transaction.class);
+
     }
 
     @Test
-    public void testDeleteBatch() throws Exception {
-        Persistable tx = new Transaction();
-        byte[] bytes = new byte[Transaction.SIZE];
-        Arrays.fill(bytes, (byte) 1);
-        tx.read(bytes);
-        tx.readMetadata(bytes);
-        List<Pair<Indexable, Persistable>> models = IntStream.range(1, 1000)
-                .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), tx))
-                .collect(Collectors.toList());
+    public void readData() throws Exception {
+        rocksDBPersistenceProvider.loopAddressIndex();
 
-        rocksDBPersistenceProvider.saveBatch(models);
 
-        List<Pair<Indexable, ? extends Class<? extends Persistable>>> modelsToDelete = models.stream()
-                .filter(entry -> ((IntegerIndex) entry.low).getValue() < 900)
-                .map(entry -> new Pair<>(entry.low, entry.hi.getClass()))
-                .collect(Collectors.toList());
+    }
 
-        rocksDBPersistenceProvider.deleteBatch(modelsToDelete);
 
-        for (Pair<Indexable, ? extends Class<? extends Persistable>> model : modelsToDelete) {
-            Assert.assertNull("value at index " + ((IntegerIndex) model.low).getValue() + " should be deleted",
-                    rocksDBPersistenceProvider.get(model.hi, model.low).bytes());
+    @Test
+    public void testSelectiveTransactionModel() throws Exception {
+
+        TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
+        transaction = new TransactionViewModel(getTransactionTrits(), Hash.NULL_HASH);
+        transaction1 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getTransactionHash());
+        transaction2 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction1.getHash(),
+                transaction1.getHash()), getTransactionHash());
+        transaction3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction2.getHash(),
+                transaction1.getHash()), getTransactionHash());
+        transaction4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(transaction2.getHash(),
+                transaction3.getHash()), getTransactionHash());
+
+        List<TransactionViewModel> mm = new LinkedList<>();
+        mm.add(transaction);
+        mm.add(transaction1);
+        mm.add(transaction2);
+        mm.add(transaction3);
+        mm.add(transaction4);
+
+        for(TransactionViewModel v: mm){
+            System.out.println(v.getHash() + " \t " + v.getAddressHash());
+            rocksDBPersistenceProvider.saveTransaction(v, v.getHash());
         }
 
-        List<IntegerIndex> indexes = IntStream.range(900, 1000)
-                .mapToObj(i -> new IntegerIndex(i))
-                .collect(Collectors.toList());
 
-        for (IntegerIndex index : indexes) {
-            Assert.assertArrayEquals("saved bytes are not as expected in index " + index.getValue(), tx.bytes(),
-                    rocksDBPersistenceProvider.get(Transaction.class, index).bytes());
-        }
+
+        rocksDBPersistenceProvider.incrementTransactions(new Indexable[]{transaction.getHash()});
+        long count = rocksDBPersistenceProvider.getCounter(transaction.getHash());
+        Assert.assertEquals(count, 2);
+
+        //See if all indexes are updated.
+        Assert.assertTrue(rocksDBPersistenceProvider.findAddress(transaction2.getAddressHash()).set.contains(transaction2.getHash()));
+        Assert.assertTrue(rocksDBPersistenceProvider.findTag(transaction2.getTagValue()).set.contains(transaction2.getHash()));
+        Assert.assertTrue(rocksDBPersistenceProvider.findBundle(transaction2.getBundleHash()).set.contains(transaction2.getHash()));
+        Assert.assertTrue(rocksDBPersistenceProvider.findApprovee(transaction2.getTrunkTransactionHash()).set.contains(transaction2.getHash()));
+        Assert.assertTrue(rocksDBPersistenceProvider.findApprovee(transaction2.getBranchTransactionHash()).set.contains(transaction2.getHash()));
+
+        //Test decremeant delete;
+        rocksDBPersistenceProvider.decrementTransactions(new Indexable[]{transaction3.getHash()});
+        Assert.assertNull(rocksDBPersistenceProvider.getTransaction(transaction3.getHash()));
+
     }
 }

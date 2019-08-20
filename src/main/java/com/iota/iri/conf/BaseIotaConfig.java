@@ -400,9 +400,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     public boolean isSelectivePermaEnabled() { return this.permaDbEnabled;}
 
     @JsonProperty
-    @Parameter(names = {"--perma-enabled"}, description = PermaDBConfig.Descriptions.PERMADB_ENABLED, arity = 1)
-    protected void setPermaDbEnabled(boolean permaDbEnabled) {
-        this.permaDbEnabled = permaDbEnabled;
+    @Parameter(names = {"--permadb-enabled"}, description = PermaDBConfig.Descriptions.PERMADB_ENABLED)
+    protected void setPermaDbEnabled(boolean enabled) {
+        this.permaDbEnabled = enabled;
     }
 
     @Override
@@ -455,7 +455,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--perma-revalidate"}, description = PermaDBConfig.Descriptions.PERMAREVALIDATE, arity = 1)
+    @Parameter(names = {"--perma-revalidate"}, description = PermaDBConfig.Descriptions.PERMAREVALIDATE)
     protected void setPermaRevalidate(boolean permaRevalidate) {
         this.permaRevalidate = permaRevalidate;
     }
@@ -466,7 +466,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--perma-rescan"}, description = PermaDBConfig.Descriptions.PERMARESCAN_DB, arity = 1)
+    @Parameter(names = {"--perma-rescan"}, description = PermaDBConfig.Descriptions.PERMARESCAN_DB)
     protected void setPermaRescanDb(boolean permaRescanDb) {
         this.permaRescanDb = permaRescanDb;
     }

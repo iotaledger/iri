@@ -78,21 +78,22 @@ public class BundleValidator {
      * <p>
      * The fetched transactions have the same bundle hash as the transaction identified by {@code tailHash} The
      * validation does the following semantic checks:
+     * </p>
      * <ol>
-     * <li>The absolute bundle value never exceeds the total, global supply of iotas</li>
-     * <li>The last trit when we convert from binary</li>
-     * <li>Total bundle value is 0 (inputs and outputs are balanced)</li>
-     * <li>Recalculate the bundle hash by absorbing and squeezing the transactions' essence</li>
-     * <li>Validate the signature on input transactions</li>
+     *  <li>The absolute bundle value never exceeds the total, global supply of iotas</li>
+     *  <li>The last trit when we convert from binary is 0</li>
+     *  <li>Total bundle value is 0 (inputs and outputs are balanced)</li>
+     *  <li>Recalculate the bundle hash by absorbing and squeezing the transactions' essence</li>
+     *  <li>Validate the signature on input transactions</li>
      * </ol>
      * <p>
      * As well as the following syntactic checks:
      * <ol>
-     * <li>{@code tailHash} has an index of 0</li>
-     * <li>The transactions' reference order is consistent with the indexes</li>
-     * <li>The last index of each transaction in the bundle matches the last index of the tail transaction</li>
-     * <li>Check that last trit in a valid address hash is 0. We generate addresses using binary Kerl and
-     * we lose the last trit in the process</li>
+     *  <li>{@code tailHash} has an index of 0</li>
+     *  <li>The transactions' reference order is consistent with the indexes</li>
+     *  <li>The last index of each transaction in the bundle matches the last index of the tail transaction</li>
+     *  <li>Check that last trit in a valid address hash is 0. We generate addresses using binary Kerl and
+     *  we lose the last trit in the process</li>
      * </ol>
      *
      * @param tangle          used to fetch the bundle's transactions from the persistence layer
@@ -148,13 +149,14 @@ public class BundleValidator {
      */
     public static Validity validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs) throws Exception {
         TransactionViewModel startTx = TransactionViewModel.fromHash(tangle, startTxHash);
-        if (startTx == null || (!hasMode(validationMode, MODE_SKIP_TAIL_TX_EXISTENCE) && (startTx.getCurrentIndex() != 0 || startTx.getValidity() == -1))) {
+        if (startTx == null || (!hasMode(validationMode, MODE_SKIP_TAIL_TX_EXISTENCE) &&
+                (startTx.getCurrentIndex() != 0 || startTx.getValidity() == -1))) {
             return Validity.INVALID;
         }
 
         // load up the bundle by going through the trunks (note that we might not load up the entire bundle in case we
         // were instructed to not check whether we actually got the tail transaction)
-        final Map<Hash, TransactionViewModel> bundleTxsMapping = loadTransactionsFromTangle(tangle, startTx,
+        Map<Hash, TransactionViewModel> bundleTxsMapping = loadTransactionsFromTangle(tangle, startTx,
                 !hasMode(validationMode, MODE_VALIDATE_SEMANTICS));
 
         // check the semantics of the bundle: total sum, semantics per tx (current/last index), missing txs, supply

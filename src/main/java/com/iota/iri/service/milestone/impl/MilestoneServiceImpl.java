@@ -162,65 +162,63 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return existingMilestone.getHash().equals(transactionViewModel.getHash()) ? VALID : INVALID;
             }
 
-            final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(tangle,
+            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
             if (bundleTransactions.isEmpty()) {
                 return INCOMPLETE;
             } else {
-                for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
-                    final TransactionViewModel tail = bundleTransactionViewModels.get(0);
-                    if (tail.getHash().equals(transactionViewModel.getHash())) {
-                        //the signed transaction - which references the confirmed transactions and contains
-                        // the Merkle tree siblings.
-                        int coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
+                final TransactionViewModel tail = bundleTransactions.get(0);
+                if (tail.getHash().equals(transactionViewModel.getHash())) {
+                    //the signed transaction - which references the confirmed transactions and contains
+                    // the Merkle tree siblings.
+                    int coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
 
-                        if (isMilestoneBundleStructureValid(bundleTransactionViewModels, coordinatorSecurityLevel)) {
-                            final TransactionViewModel siblingsTx = bundleTransactionViewModels
-                                    .get(coordinatorSecurityLevel);
+                    if (isMilestoneBundleStructureValid(bundleTransactions, coordinatorSecurityLevel)) {
+                        final TransactionViewModel siblingsTx = bundleTransactions
+                                .get(coordinatorSecurityLevel);
 
-                            //milestones sign the normalized hash of the sibling transaction.
-                            byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
+                        //milestones sign the normalized hash of the sibling transaction.
+                        byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
 
-                            //validate leaf signature
-                            ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * coordinatorSecurityLevel);
-                            byte[] digest = new byte[Curl.HASH_LENGTH];
+                        //validate leaf signature
+                        ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * coordinatorSecurityLevel);
+                        byte[] digest = new byte[Curl.HASH_LENGTH];
 
-                            SpongeFactory.Mode coordinatorSignatureMode = config.getCoordinatorSignatureMode();
-                            for (int i = 0; i < coordinatorSecurityLevel; i++) {
-                                ISSInPlace.digest(coordinatorSignatureMode, signedHash,
-                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
-                                        bundleTransactionViewModels.get(i).getSignature(), 0, digest);
-                                bb.put(digest);
+                        SpongeFactory.Mode coordinatorSignatureMode = config.getCoordinatorSignatureMode();
+                        for (int i = 0; i < coordinatorSecurityLevel; i++) {
+                            ISSInPlace.digest(coordinatorSignatureMode, signedHash,
+                                    ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
+                                    bundleTransactions.get(i).getSignature(), 0, digest);
+                            bb.put(digest);
+                        }
+
+                        byte[] digests = bb.array();
+                        byte[] address = ISS.address(coordinatorSignatureMode, digests);
+
+                        //validate Merkle path
+                        byte[] merkleRoot = ISS.getMerkleRoot(coordinatorSignatureMode, address,
+                                siblingsTx.trits(), 0, milestoneIndex, config.getNumberOfKeysInMilestone());
+                        boolean skipValidation = config.isTestnet() && config.isDontValidateTestnetMilestoneSig();
+                        if (skipValidation || config.getCoordinator().equals(HashFactory.ADDRESS.create(merkleRoot))) {
+                            MilestoneViewModel newMilestoneViewModel = new MilestoneViewModel(milestoneIndex,
+                                    transactionViewModel.getHash());
+                            newMilestoneViewModel.store(tangle);
+
+                            // if we find a NEW milestone that should have been processed before our latest solid
+                            // milestone -> reset the ledger state and check the milestones again
+                            //
+                            // NOTE: this can happen if a new subtangle becomes solid before a previous one while
+                            //       syncing
+                            if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() &&
+                                    milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
+
+                                 resetCorruptedMilestone(milestoneIndex);
                             }
 
-                            byte[] digests = bb.array();
-                            byte[] address = ISS.address(coordinatorSignatureMode, digests);
-
-                            //validate Merkle path
-                            byte[] merkleRoot = ISS.getMerkleRoot(coordinatorSignatureMode, address,
-                                    siblingsTx.trits(), 0, milestoneIndex, config.getNumberOfKeysInMilestone());
-                            boolean skipValidation = config.isTestnet() && config.isDontValidateTestnetMilestoneSig();
-                            if (skipValidation || config.getCoordinator().equals(HashFactory.ADDRESS.create(merkleRoot))) {
-                                MilestoneViewModel newMilestoneViewModel = new MilestoneViewModel(milestoneIndex,
-                                        transactionViewModel.getHash());
-                                newMilestoneViewModel.store(tangle);
-
-                                // if we find a NEW milestone that should have been processed before our latest solid
-                                // milestone -> reset the ledger state and check the milestones again
-                                //
-                                // NOTE: this can happen if a new subtangle becomes solid before a previous one while
-                                //       syncing
-                                if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() &&
-                                        milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
-
-                                     resetCorruptedMilestone(milestoneIndex);
-                                }
-
-                                return VALID;
-                            } else {
-                                return INVALID;
-                            }
+                            return VALID;
+                        } else {
+                            return INVALID;
                         }
                     }
                 }

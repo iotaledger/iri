@@ -121,9 +121,9 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
     }
 
     private boolean isBundleValid(Hash tailHash) throws Exception {
-        List<List<TransactionViewModel>> validation =
+        List<TransactionViewModel> validation =
                 bundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), tailHash);
-        return (CollectionUtils.isNotEmpty(validation) && validation.get(0).get(0).getValidity() == 1);
+        return (CollectionUtils.isNotEmpty(validation) && validation.get(0).getValidity() == 1);
     }
 
     /**

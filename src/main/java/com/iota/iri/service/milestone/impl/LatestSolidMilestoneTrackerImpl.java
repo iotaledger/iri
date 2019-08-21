@@ -12,10 +12,14 @@ import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.ASCIIProgressBar;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
 
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,8 +36,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTracker {
     /**
-     * Holds the interval (in milliseconds) in which the {@link #trackLatestSolidMilestone()} method gets
-     * called by the background worker.
+     * Holds the interval (in milliseconds) in which the {@link #trackLatestSolidMilestone()} method gets called by the
+     * background worker.
      */
     private static final int RESCAN_INTERVAL = 5000;
 
@@ -48,8 +52,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private Tangle tangle;
 
     /**
-     * The snapshot provider which gives us access to the relevant snapshots that the node uses (for the ledger
-     * state).
+     * The snapshot provider which gives us access to the relevant snapshots that the node uses (for the ledger state).
      */
     private SnapshotProvider snapshotProvider;
 
@@ -84,7 +87,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      */
     private int errorCausingMilestoneIndex = Integer.MAX_VALUE;
 
-     /**
+    /**
      * Counter for the backoff repair strategy (see {@link #repairCorruptedMilestone(MilestoneViewModel)}.
      */
     private int repairBackoffCounter = 0;
@@ -95,6 +98,17 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private TransactionRequester transactionRequester;
 
     /**
+     * The actual start milestone index from which the node started from
+     */
+    private int milestoneStartIndex;
+
+    /**
+     * Used to keep track of the times when the last N milestones got applied:
+     * used to calculate the average time needed to apply a milestone.
+     */
+    private ArrayBlockingQueue<Long> lastMilestoneApplyTimes = new ArrayBlockingQueue<>(20);
+
+    /**
      * <p>
      * This method initializes the instance and registers its dependencies.
      * </p>
@@ -103,23 +117,24 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * </p>
      * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
+     * circular dependencies because the instantiation is separated from the dependency injection. To reduce the amount
+     * of code that is necessary to correctly instantiate this class, we return the instance itself which allows us to
+     * still instantiate, initialize and assign in one line - see Example:
      * </p>
-     *       {@code latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl().init(...);}
+     * {@code latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl().init(...);}
      *
-     * @param tangle Tangle object which acts as a database interface
-     * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
-     * @param milestoneService contains the important business logic when dealing with milestones
-     * @param ledgerService the manager for
+     * @param tangle                 Tangle object which acts as a database interface
+     * @param snapshotProvider       manager for the snapshots that allows us to retrieve the relevant snapshots of this
+     *                               node
+     * @param milestoneService       contains the important business logic when dealing with milestones
+     * @param ledgerService          the manager for
      * @param latestMilestoneTracker the manager that keeps track of the latest milestone
-     * @param transactionRequester the manager which keeps and tracks transactions which are requested
+     * @param transactionRequester   the manager which keeps and tracks transactions which are requested
      * @return the initialized instance itself to allow chaining
      */
     public LatestSolidMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneService milestoneService, LedgerService ledgerService,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
+                                                MilestoneService milestoneService, LedgerService ledgerService,
+                                                LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
@@ -144,10 +159,10 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * <p>
-     * In addition to applying the found milestones to the ledger state it also issues log messages and keeps the
-     * {@link LatestMilestoneTracker} in sync (if we happen to process a new latest milestone faster).
+     * In addition to applying the found milestones to the ledger state it also issues log messages and keeps the {@link
+     * LatestMilestoneTracker} in sync (if we happen to process a new latest milestone faster).
      * </p>
      */
     @Override
@@ -165,7 +180,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
                     logChange(currentSolidMilestoneIndex);
 
                     currentSolidMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
-                    if(currentSolidMilestoneIndex == latestMilestoneTracker.getLatestMilestoneIndex()){
+                    if (currentSolidMilestoneIndex == latestMilestoneTracker.getLatestMilestoneIndex()) {
                         transactionRequester.clearRecentlyRequestedTransactions();
                     }
                 }
@@ -193,7 +208,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
                 firstRun = false;
 
                 ledgerService.restoreLedgerState();
-                logChange(snapshotProvider.getInitialSnapshot().getIndex());
+                milestoneStartIndex = snapshotProvider.getInitialSnapshot().getIndex();
+                logChange(milestoneStartIndex);
             }
 
             trackLatestSolidMilestone();
@@ -220,6 +236,10 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
             if (isRepairRunning() && isRepairSuccessful(milestone)) {
                 stopRepair();
             }
+            if(lastMilestoneApplyTimes.remainingCapacity() == 0){
+                lastMilestoneApplyTimes.remove();
+            }
+            lastMilestoneApplyTimes.add(System.currentTimeMillis());
         } else {
             repairCorruptedMilestone(milestone);
         }
@@ -278,13 +298,13 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * finish) it can happen that we see a newer latest milestone faster than this manager.
      * </p>
      * Note: This method ensures that the latest milestone index is always bigger or equals the latest solid milestone
-     *       index.
+     * index.
      *
-     * @param milestoneHash transaction hash of the milestone
+     * @param milestoneHash  transaction hash of the milestone
      * @param milestoneIndex milestone index
      */
     private void syncLatestMilestoneTracker(Hash milestoneHash, int milestoneIndex) {
-        if(milestoneIndex > latestMilestoneTracker.getLatestMilestoneIndex()) {
+        if (milestoneIndex > latestMilestoneTracker.getLatestMilestoneIndex()) {
             latestMilestoneTracker.setLatestMilestone(milestoneHash, milestoneIndex);
         }
     }
@@ -302,15 +322,65 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      */
     private void logChange(int prevSolidMilestoneIndex) {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
-        int latestMilestoneIndex = latestSnapshot.getIndex();
-        Hash latestMilestoneHash = latestSnapshot.getHash();
+        int latestSolidMilestoneIndex = latestSnapshot.getIndex();
 
-        if (prevSolidMilestoneIndex != latestMilestoneIndex) {
-            log.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + latestMilestoneIndex);
-
-            tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, latestMilestoneIndex);
-            tangle.publish("lmhs %s", latestMilestoneHash);
+        if (prevSolidMilestoneIndex == latestSolidMilestoneIndex) {
+            return;
         }
+
+        Hash latestMilestoneHash = latestSnapshot.getHash();
+        log.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + latestSolidMilestoneIndex);
+
+        tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, latestSolidMilestoneIndex);
+        tangle.publish("lmhs %s", latestMilestoneHash);
+
+        int latestMilestoneIndex = latestMilestoneTracker.getLatestMilestoneIndex();
+
+        // only print more sophisticated progress if we are coming from a more unsynced state
+        if(latestMilestoneIndex - latestSolidMilestoneIndex < 1) {
+            return;
+        }
+
+        int estSecondsToBeSynced = computeEstimatedTimeToSyncUpSeconds(latestMilestoneIndex, latestSolidMilestoneIndex);
+        StringBuilder progressSB = new StringBuilder();
+
+        // add progress bar
+        progressSB.append(ASCIIProgressBar.getProgressBarString(milestoneStartIndex, latestMilestoneIndex,
+                latestSolidMilestoneIndex));
+        // add lsm to lm
+        progressSB.append(String.format("[lsm %d/lm %d - to apply %d]", latestSolidMilestoneIndex, latestMilestoneIndex,
+                latestMilestoneIndex - latestSolidMilestoneIndex));
+        // add estimated time to get fully synced
+        if (estSecondsToBeSynced != -1) {
+            progressSB.append(String.format(" - est. seconds to get synced: %d", estSecondsToBeSynced));
+        }
+        log.info(progressSB.toString());
+    }
+
+    /**
+     * Computes the estimated time (seconds) needed to get synced up by looking at the last N milestone applications
+     * times and the current solid and last milestone indices.
+     *
+     * @param latestMilestoneIndex      the current latest known milestone index
+     * @param latestSolidMilestoneIndex the current to the ledger applied milestone index
+     * @return the number of seconds needed to get synced up or -1 if not enough data is available
+     */
+    private int computeEstimatedTimeToSyncUpSeconds(int latestMilestoneIndex, int latestSolidMilestoneIndex) {
+        // compute average time needed to apply a milestone
+        Long[] times = (Long[]) lastMilestoneApplyTimes.toArray();
+        long sumDelta = 0;
+        double avgMilestoneApplyMillisec;
+        if (times.length > 1) {
+            // compute delta sum
+            for (int i = times.length - 1; i > 1; i--) {
+                sumDelta += times[i] - times[i - 1];
+            }
+            avgMilestoneApplyMillisec = (double) sumDelta / (double) (times.length - 1);
+        } else {
+            return -1;
+        }
+
+        return (int) ((avgMilestoneApplyMillisec / 1000) * (latestMilestoneIndex - latestSolidMilestoneIndex));
     }
 
     /**
@@ -320,8 +390,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * <p>
      * It gets called when a milestone could not be applied to the ledger state because of problems like "inconsistent
      * balances". While this should theoretically never happen (because milestones are by definition "consistent"), it
-     * can still happen because IRI crashed or got stopped in the middle of applying a milestone or if a milestone
-     * was processed in the wrong order.
+     * can still happen because IRI crashed or got stopped in the middle of applying a milestone or if a milestone was
+     * processed in the wrong order.
      * </p>
      * <p>
      * Every time we call this method the internal {@link #repairBackoffCounter} is incremented which causes the next
@@ -338,7 +408,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * @throws MilestoneException if we failed to reset the corrupted milestone
      */
     private void repairCorruptedMilestone(MilestoneViewModel errorCausingMilestone) throws MilestoneException {
-        if(repairBackoffCounter++ == 0) {
+        if (repairBackoffCounter++ == 0) {
             errorCausingMilestoneIndex = errorCausingMilestone.index();
         }
         for (int i = errorCausingMilestone.index(); i > errorCausingMilestone.index() - repairBackoffCounter; i--) {

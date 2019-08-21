@@ -1,6 +1,13 @@
 package com.iota.iri.service.tipselection.impl;
 
-import java.util.*;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -117,20 +124,18 @@ public class WalkerAlpha implements Walker {
     }
 
     private Optional<Hash> select(Map<Hash, Integer> ratings, Set<Hash> approversSet) {
-        //filter based on tangle state when starting the walk
-        List<Hash> approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
-        log.info("{} approvers",approvers.size());
-        log.info("{} set approvers",approversSet.size());
-
-        //After filtering, if no approvers are available, it's a tip.
-        if (approvers.size() == 0) {
-            return Optional.empty();
-        }
-
+        List<Hash> approvers;         
         int approverIndex;
 
         //Check if ratings map is empty. If so, alpha was set to 0 and a random approver will be selected.
-        if(Collections.EMPTY_MAP.equals(ratings)) {
+        if(!Collections.EMPTY_MAP.equals(ratings)) {
+            //filter based on tangle state when starting the walk            
+            approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
+            //After filtering, if no approvers are available, it's a tip.
+            if (approvers.size() == 0) {
+                return Optional.empty();
+            }
+
             //calculate the probabilities
             List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());
 
@@ -152,6 +157,10 @@ public class WalkerAlpha implements Walker {
                 }
             }
         } else {
+            approvers = approversSet.stream().collect(Collectors.toList());
+            if (approvers.size() == 0) {
+                return Optional.empty();
+            }
             approverIndex = random.nextInt(approversSet.size());
         }
         return Optional.of(approvers.get(approverIndex));

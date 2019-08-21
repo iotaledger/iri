@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTracker {
     /**
-     * Holds the interval (in milliseconds) in which the {@link #trackLatestSolidMilestone()} method gets called by the
-     * background worker.
+     * Holds the interval (in milliseconds) in which the {@link #trackLatestSolidMilestone()} method gets
+     * called by the background worker.
      */
     private static final int RESCAN_INTERVAL = 5000;
 
@@ -50,7 +50,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private Tangle tangle;
 
     /**
-     * The snapshot provider which gives us access to the relevant snapshots that the node uses (for the ledger state).
+     * The snapshot provider which gives us access to the relevant snapshots that the node uses (for the ledger
+     * state).
      */
     private SnapshotProvider snapshotProvider;
 
@@ -115,24 +116,24 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * </p>
      * <p>
      * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     * circular dependencies because the instantiation is separated from the dependency injection. To reduce the amount
-     * of code that is necessary to correctly instantiate this class, we return the instance itself which allows us to
-     * still instantiate, initialize and assign in one line - see Example:
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:
      * </p>
-     * {@code latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl().init(...);}
+     *       {@code latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl().init(...);}
      *
-     * @param tangle                 Tangle object which acts as a database interface
-     * @param snapshotProvider       manager for the snapshots that allows us to retrieve the relevant snapshots of this
-     *                               node
-     * @param milestoneService       contains the important business logic when dealing with milestones
-     * @param ledgerService          the manager for
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
+     * @param milestoneService contains the important business logic when dealing with milestones
+     * @param ledgerService the manager for
      * @param latestMilestoneTracker the manager that keeps track of the latest milestone
-     * @param transactionRequester   the manager which keeps and tracks transactions which are requested
+     * @param transactionRequester the manager which keeps and tracks transactions which are requested
      * @return the initialized instance itself to allow chaining
      */
     public LatestSolidMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
                                                 MilestoneService milestoneService, LedgerService ledgerService,
-                                                LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
+                                                LatestMilestoneTracker latestMilestoneTracker,
+                                                TransactionRequester transactionRequester) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
@@ -159,8 +160,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * {@inheritDoc}
      *
      * <p>
-     * In addition to applying the found milestones to the ledger state it also issues log messages and keeps the {@link
-     * LatestMilestoneTracker} in sync (if we happen to process a new latest milestone faster).
+     * In addition to applying the found milestones to the ledger state it also issues log messages and keeps the
+     * {@link LatestMilestoneTracker} in sync (if we happen to process a new latest milestone faster).
      * </p>
      */
     @Override
@@ -296,9 +297,9 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * finish) it can happen that we see a newer latest milestone faster than this manager.
      * </p>
      * Note: This method ensures that the latest milestone index is always bigger or equals the latest solid milestone
-     * index.
+     *       index.
      *
-     * @param milestoneHash  transaction hash of the milestone
+     * @param milestoneHash transaction hash of the milestone
      * @param milestoneIndex milestone index
      */
     private void syncLatestMilestoneTracker(Hash milestoneHash, int milestoneIndex) {
@@ -388,8 +389,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * <p>
      * It gets called when a milestone could not be applied to the ledger state because of problems like "inconsistent
      * balances". While this should theoretically never happen (because milestones are by definition "consistent"), it
-     * can still happen because IRI crashed or got stopped in the middle of applying a milestone or if a milestone was
-     * processed in the wrong order.
+     * can still happen because IRI crashed or got stopped in the middle of applying a milestone or if a milestone
+     * was processed in the wrong order.
      * </p>
      * <p>
      * Every time we call this method the internal {@link #repairBackoffCounter} is incremented which causes the next

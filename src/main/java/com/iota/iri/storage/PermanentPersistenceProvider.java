@@ -3,7 +3,7 @@ package com.iota.iri.storage;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.persistables.Hashes;
 
-public interface CountedPermanentPersitenceProvider {
+public interface PermanentPersistenceProvider {
 
 
     void init() throws Exception;
@@ -11,9 +11,11 @@ public interface CountedPermanentPersitenceProvider {
     void shutdown();
     boolean saveTransaction(TransactionViewModel model, Indexable index) throws Exception;
 
-    boolean incrementTransactions(Indexable[] indexes) throws Exception;
+    void incrementTransactions(Indexable[] indexes) throws Exception;
 
-    boolean decrementTransactions(Indexable[] indexes) throws Exception;
+    void decrementTransactions(Indexable[] indexes) throws Exception;
+
+    long getCounter(Indexable index) throws Exception;
 
     boolean setCounter(Indexable index, long counter) throws Exception;
 

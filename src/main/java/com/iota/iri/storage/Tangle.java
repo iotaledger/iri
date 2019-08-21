@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.*;
@@ -36,10 +37,14 @@ public class Tangle {
 
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
+    private final List<PermanentPersistenceProvider> permanentPersistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
+    }
+    public void addPermanentPersistenceProvider(PermanentPersistenceProvider provider) {
+        this.permanentPersistenceProviders.add(provider);
     }
 
     /**
@@ -297,4 +302,48 @@ public class Tangle {
             provider.clearMetadata(column);
         }
     }
+
+    // ---------- Permanent storage capabilities --------
+
+
+    public void pinTransaction(TransactionViewModel tvm)  throws Exception {
+        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
+            provider.saveTransaction(tvm, tvm.getHash());
+        }
+    }
+
+    public void pinTransaction(Hash hash)  throws Exception {
+        Transaction tx = (Transaction)load(Transaction.class, hash);
+        if(!tx.isEmpty()) {
+            TransactionViewModel tvm = new TransactionViewModel(tx, hash);
+            pinTransaction(tvm);
+        }
+    }
+
+    public void incrementTransactions(Indexable[] indexes) throws Exception {
+        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
+            provider.incrementTransactions(indexes);
+        }
+    }
+
+    public void decrementTransactions(Indexable[] indexes) throws Exception {
+        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
+            provider.decrementTransactions(indexes);
+        }
+    }
+
+    public long getTransactionStorageCounter(Hash index) throws Exception {
+        long toReturn  = 0;
+        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
+            toReturn = Math.max(0, provider.getCounter(index));
+        }
+        return toReturn;
+    }
+
+
+
+
+    // -------------------------------------------------
+
+
 }

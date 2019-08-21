@@ -948,7 +948,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean RESCAN_DB = false;
 
         //PERMADB
-        boolean PERMADB_ENABLED = false;
+        boolean PERMADB_ENABLED = true;
         String PERMADB_PATH = "mainnetpermadb";
         String PERMADB_LOG_PATH = "mainnetpermadb.log";
         int PERMADB_CACHE_SIZE = 100_000;

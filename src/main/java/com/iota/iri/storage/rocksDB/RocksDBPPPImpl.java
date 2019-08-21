@@ -6,13 +6,12 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.storage.CountedPermanentPersitenceProvider;
+import com.iota.iri.storage.PermanentPersistenceProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.Pair;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
@@ -23,10 +22,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
-import java.security.SecureRandom;
 import java.util.*;
 
-public class RocksDBPPPImpl implements CountedPermanentPersitenceProvider, PersistenceProvider {
+public class RocksDBPPPImpl implements PermanentPersistenceProvider, PersistenceProvider {
     private static final Logger log = LoggerFactory.getLogger(RocksDBPPPImpl.class);
     private static final int BLOOM_FILTER_BITS_PER_KEY = 10;
     /**A delimeter for separating hashes within a byte stream*/
@@ -281,19 +279,18 @@ public class RocksDBPPPImpl implements CountedPermanentPersitenceProvider, Persi
      */
 
     @Override
-    public boolean incrementTransactions(Indexable[] indexes) throws Exception {
+    public void incrementTransactions(Indexable[] indexes) throws Exception {
         try (WriteBatch writeBatch = new WriteBatch();
              WriteOptions writeOptions = new WriteOptions()) {
             for (Indexable i: indexes) {
                 //sorry no merge for long, the C++ lib has a merge function for Uin64 but that is not (natively)supported by Java.
-                long increamentedCounter = getCounter(i) + 1;
-                writeBatch.put(columnMap.get(COUNTER_INDEX), i.bytes(), ByteBuffer.allocate(Long.BYTES).putLong(increamentedCounter).array() );
+                long incrementedCounter = getCounter(i) + 1;
+                writeBatch.put(columnMap.get(COUNTER_INDEX), i.bytes(), ByteBuffer.allocate(Long.BYTES).putLong(incrementedCounter).array() );
             }
 
             db.write(writeOptions, writeBatch);
 
         }
-        return false;
     }
 
     @VisibleForTesting
@@ -382,7 +379,7 @@ public class RocksDBPPPImpl implements CountedPermanentPersitenceProvider, Persi
 
 
     @Override
-    public boolean decrementTransactions(Indexable[] indexes) throws Exception {
+    public void decrementTransactions(Indexable[] indexes) throws Exception {
         try (WriteBatch writeBatch = new WriteBatch();
                 WriteOptions writeOptions = new WriteOptions()) {
             for (Indexable i: indexes) {
@@ -397,7 +394,6 @@ public class RocksDBPPPImpl implements CountedPermanentPersitenceProvider, Persi
 
             db.write(writeOptions, writeBatch);
         }
-        return false;
     }
 
     @Override
@@ -414,7 +410,7 @@ public class RocksDBPPPImpl implements CountedPermanentPersitenceProvider, Persi
         return false;
     }
 
-
+    @Override
     public long getCounter(Indexable index) throws Exception {
         if(index == null){return -1;}
         byte[] dbResult = db.get(columnMap.get(COUNTER_INDEX), index.bytes());

@@ -15,8 +15,8 @@ import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndB
 
 public class PermaRocksDBPersentenceProviderTest {
     private static RocksDBPPPImpl rocksDBPersistenceProvider;
-    //private static String dbPath = "tmpdb", dbLogPath = "tmplogs";
-    private static String dbPath = "mainnetpermadb", dbLogPath = "mainnetpermadb.log";
+    private static String dbPath = "tmpdb", dbLogPath = "tmplogs";
+    //private static String dbPath = "mainnetpermadb", dbLogPath = "mainnetpermadb.log";
 
     @BeforeClass
     public static void setUpDb() throws Exception {

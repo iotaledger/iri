@@ -328,11 +328,13 @@ public class Iota {
         if(configuration.isSelectivePermaEnabled()){
             switch (configuration.getPermaMainDb()) {
                 case "rocksdb": {
-                    tangle.addPersistenceProvider(new RocksDBPPPImpl(
+                    RocksDBPPPImpl ppp = new RocksDBPPPImpl(
                             configuration.getPermaDbPath(),
                             configuration.getPermaDbLogPath(),
-                            configuration.getPermaDbCacheSize())
-                    );
+                            configuration.getPermaDbCacheSize());
+
+                    tangle.addPersistenceProvider(ppp);
+                    tangle.addPermanentPersistenceProvider(ppp);
                     break;
                 }
                 default: {

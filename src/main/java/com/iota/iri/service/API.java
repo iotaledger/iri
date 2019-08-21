@@ -196,6 +196,14 @@ public class API {
         commandRoute.put(ApiCommand.GET_MISSING_TRANSACTIONS, getMissingTransactions());
         commandRoute.put(ApiCommand.CHECK_CONSISTENCY, checkConsistency());
         commandRoute.put(ApiCommand.WERE_ADDRESSES_SPENT_FROM, wereAddressesSpentFrom());
+
+        //----- permanent storage------
+        commandRoute.put(ApiCommand.PIN_TRANSACTION_HASHES, pinTransactionHashes());
+        commandRoute.put(ApiCommand.PINNED_TRANSACTIONS_COUNT, pinnedTransactionsCount());
+        commandRoute.put(ApiCommand.INCREASE_TRANSACTIONS_COUNT, increaseTransactionsCount());
+        commandRoute.put(ApiCommand.DECREASE_TRANSACTIONS_COUNT, decreaseTransactionsCount());
+        commandRoute.put(ApiCommand.PIN_TRANSACTIONS_TRYTES, pinTransactionTrytes());
+
     }
 
     /**
@@ -314,6 +322,62 @@ public class API {
         }
         return WereAddressesSpentFrom.create(states);
     }
+
+    // ----------- permanent storage --------
+
+    @Document(name="pinTransactionTrytes")
+    public AbstractResponse pinTransactionTrytesStatement(List<String> trytes) throws Exception {
+        final List<TransactionViewModel> elements = convertTrytes(trytes);
+        for (final TransactionViewModel transactionViewModel : elements) {
+            //store transactions
+            tangle.pinTransaction(transactionViewModel);
+        }
+        return AbstractResponse.createEmptyResponse();
+    }
+
+    @Document(name="pinTransactionHashes")
+    private AbstractResponse pinTransactionHashStatement(List<String> transactionsList) throws Exception {
+        final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
+
+        for (Hash transaction : transactions) {
+            tangle.pinTransaction(transaction);
+        }
+
+        return AbstractResponse.createEmptyResponse();
+    }
+
+    @Document(name="pinnedTransactionsCount")
+    private AbstractResponse pinnedTransactionsCountStatement(List<String> transactionsList) throws Exception {
+        long[] toReturn = new long[transactionsList.size()];
+        for (int i=0; i< toReturn.length;i++) {
+            toReturn[i] = tangle.getTransactionStorageCounter(HashFactory.TRANSACTION.create(transactionsList.get(i)));
+        }
+        return LongValuesResponse.create(toReturn);
+    }
+
+    @Document(name="increaseTransactionsCount")
+    private AbstractResponse increaseTransactionsCountStatement(List<String> transactionsList) throws Exception {
+        Hash[] toReturn = new Hash[transactionsList.size()];
+        for (int i=0; i< toReturn.length;i++) {
+            toReturn[i] = HashFactory.TRANSACTION.create(transactionsList.get(i));
+        }
+        tangle.incrementTransactions(toReturn);
+        return AbstractResponse.createEmptyResponse();
+    }
+
+    @Document(name="decreaseTransactionsCount")
+    private AbstractResponse decreaseTransactionsCountStatement(List<String> transactionsList) throws Exception {
+        Hash[] toReturn = new Hash[transactionsList.size()];
+        for (int i=0; i< toReturn.length;i++) {
+            toReturn[i] = HashFactory.TRANSACTION.create(transactionsList.get(i));
+        }
+        tangle.decrementTransactions(toReturn);
+        return AbstractResponse.createEmptyResponse();
+    }
+
+    // --------------------------------------
+
+
 
     /**
      * Walks back from the hash until a tail transaction has been found or transaction aprovee is not found.
@@ -1729,5 +1793,64 @@ public class API {
         }
         return elements;
     }
+
+    // ------ permanode ----------
+
+    private Function<Map<String, Object>, AbstractResponse> pinTransactionTrytes() {
+        return request -> {
+            final List<String> transactionTrytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+            try {
+                return pinTransactionTrytesStatement(transactionTrytes);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> pinTransactionHashes() {
+        return request -> {
+            final List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            try {
+                return pinTransactionHashStatement(txids);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> pinnedTransactionsCount() {
+        return request -> {
+            final List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            try {
+                return pinnedTransactionsCountStatement(txids);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> increaseTransactionsCount() {
+        return request -> {
+            final List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            try {
+                return increaseTransactionsCountStatement(txids);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> decreaseTransactionsCount() {
+        return request -> {
+            final List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            try {
+                return decreaseTransactionsCountStatement(txids);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    // ---------------------------
 
 }

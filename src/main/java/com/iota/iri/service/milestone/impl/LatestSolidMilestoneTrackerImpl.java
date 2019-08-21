@@ -348,7 +348,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
         progressSB.append(ASCIIProgressBar.getProgressBarString(milestoneStartIndex, latestMilestoneIndex,
                 latestSolidMilestoneIndex));
         // add lsm to lm
-        progressSB.append(String.format("[lsm %d/lm %d - to apply %d]", latestSolidMilestoneIndex, latestMilestoneIndex,
+        progressSB.append(String.format(" [LSM %d / LM %d - to apply %d]", latestSolidMilestoneIndex, latestMilestoneIndex,
                 latestMilestoneIndex - latestSolidMilestoneIndex));
         // add estimated time to get fully synced
         if (estSecondsToBeSynced != -1) {
@@ -367,13 +367,13 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      */
     private int computeEstimatedTimeToSyncUpSeconds(int latestMilestoneIndex, int latestSolidMilestoneIndex) {
         // compute average time needed to apply a milestone
-        Long[] times = (Long[]) lastMilestoneApplyTimes.toArray();
+        Object[] times = lastMilestoneApplyTimes.toArray();
         long sumDelta = 0;
         double avgMilestoneApplyMillisec;
         if (times.length > 1) {
             // compute delta sum
             for (int i = times.length - 1; i > 1; i--) {
-                sumDelta += times[i] - times[i - 1];
+                sumDelta += ((Long)times[i]) - ((Long)times[i - 1]);
             }
             avgMilestoneApplyMillisec = (double) sumDelta / (double) (times.length - 1);
         } else {

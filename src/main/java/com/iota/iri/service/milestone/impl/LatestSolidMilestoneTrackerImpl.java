@@ -16,7 +16,6 @@ import com.iota.iri.utils.ASCIIProgressBar;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
-import com.sun.corba.se.impl.orbutil.concurrent.Sync;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;

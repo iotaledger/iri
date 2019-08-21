@@ -5,8 +5,8 @@ package com.iota.iri.utils;
  */
 public class ASCIIProgressBar {
 
-    private final static String filledBlock = "▓▓▓";
-    private final static String emptyBlock = "░░░";
+    private final static String filledBlock = "▓";
+    private final static String emptyBlock = "░";
 
     /**
      * Computes an ASCII progress bar given the start, end and current value.

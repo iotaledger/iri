@@ -418,7 +418,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
         progressSB.append(ASCIIProgressBar.getProgressBarString(syncProgressInfo.getSyncMilestoneStartIndex(),
                 latestMilestoneIndex, latestSolidMilestoneIndex));
         // add lsm to lm
-        progressSB.append(String.format(" [LSM %d / LM %d - to apply %d]", latestSolidMilestoneIndex,
+        progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", latestSolidMilestoneIndex,
                 latestMilestoneIndex, latestMilestoneIndex - latestSolidMilestoneIndex));
         // add estimated time to get fully synced
         if (estSecondsToBeSynced != -1) {

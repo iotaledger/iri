@@ -188,41 +188,37 @@ public class LedgerServiceImpl implements LedgerService {
                             return null;
                         } else {
                             if (transactionViewModel.getCurrentIndex() == 0) {
-                                boolean validBundle = false;
 
-                                final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(
+                                final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(
                                         tangle, snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
-                                for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
-
-                                    //ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
-                                    // concerns
-                                    spentAddressesService
-                                            .persistValidatedSpentAddressesAsync(bundleTransactionViewModels);
-
-                                    if (BundleValidator.isInconsistent(bundleTransactionViewModels)) {
-                                        break;
-                                    }
-
-                                    if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
-                                        validBundle = true;
-
-                                        for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
-
-                                            if (bundleTransactionViewModel.value() != 0 && countedTx.add(bundleTransactionViewModel.getHash())) {
-
-                                                final Hash address = bundleTransactionViewModel.getAddressHash();
-                                                final Long value = state.get(address);
-                                                state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                        : Math.addExact(value, bundleTransactionViewModel.value()));
-                                            }
-                                        }
-
-                                        break;
-                                    }
-                                }
-                                if (!validBundle) {
+                                if(bundleTransactions.isEmpty()){
                                     return null;
+                                }
+
+                                //ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
+                                // concerns
+                                spentAddressesService
+                                        .persistValidatedSpentAddressesAsync(bundleTransactions);
+
+                                if (BundleValidator.isInconsistent(bundleTransactions)) {
+                                    break;
+                                }
+
+                                if (bundleTransactions.get(0).getHash().equals(transactionViewModel.getHash())) {
+
+                                    for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
+
+                                        if (bundleTransactionViewModel.value() != 0 && countedTx.add(bundleTransactionViewModel.getHash())) {
+
+                                            final Hash address = bundleTransactionViewModel.getAddressHash();
+                                            final Long value = state.get(address);
+                                            state.put(address, value == null ? bundleTransactionViewModel.value()
+                                                    : Math.addExact(value, bundleTransactionViewModel.value()));
+                                        }
+                                    }
+
+                                    break;
                                 }
                             }
 

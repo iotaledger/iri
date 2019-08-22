@@ -71,13 +71,32 @@ public class Tangle {
     }
 
     public Persistable load(Class<?> model, Indexable index) throws Exception {
-            Persistable out = null;
-            for(PersistenceProvider provider: this.persistenceProviders) {
-                if((out = provider.get(model, index)) != null) {
-                    break;
+        LinkedList<Persistable> outlist = new LinkedList<>();
+        for (PersistenceProvider provider : this.persistenceProviders) {
+            Persistable result = provider.get(model, index);
+
+            if (result != null && !result.isEmpty()) {
+                if (result.merge()) {
+
+                    outlist.add(result);
+                } else {
+                    // If it is a non-mergeable result then there is no need to ask another provider again.
+                    // return immediately
+                    return result;
                 }
             }
-            return out;
+        }
+        Persistable p = outlist.stream().reduce(null, (a, b) -> {
+            if (a == null) {
+                return b;
+            }
+            return a.mergeTwo(b);
+        });
+
+        if (p == null) {
+            p = (Persistable) model.newInstance();
+        }
+        return p;
     }
 
     public Boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {

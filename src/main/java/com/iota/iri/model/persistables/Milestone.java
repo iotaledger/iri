@@ -54,8 +54,18 @@ public class Milestone implements Persistable {
 
     }
 
+
     @Override
     public boolean merge() {
         return false;
+    }
+    @Override
+    public Persistable mergeTwo(Persistable nrTwo){
+        return null;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return hash == null || index == null;
     }
 }

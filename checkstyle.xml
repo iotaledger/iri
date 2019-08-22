@@ -27,5 +27,10 @@ IOTA checkstyle draft
         <module name="PackageName"/>
         <module name="ParameterName"/>
         <module name="TypeName"/>
+        <module name="ConstantName">
+            <property name="format"
+                      value="^log(ger)?$|^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+        <module name="InnerTypeLast"/>
     </module>
 </module>

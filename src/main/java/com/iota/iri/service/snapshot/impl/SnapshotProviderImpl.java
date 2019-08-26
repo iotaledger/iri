@@ -201,6 +201,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     public void shutdown() {
         initialSnapshot = null;
         latestSnapshot = null;
+        localSnapshotsDb.shutdown();
     }
 
     //region SNAPSHOT RELATED UTILITY METHODS //////////////////////////////////////////////////////////////////////////

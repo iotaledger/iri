@@ -7,6 +7,7 @@ import com.iota.iri.controllers.LocalSnapshotViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.LocalSnapshot;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 
@@ -174,7 +175,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         boolean oldDeleted = false;
         try {
             // delete old local snapshot data
-            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, Hash.class);
+            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, TransactionHash.class);
             if(pair.hi != null){
                 new LocalSnapshotViewModel((Hash) pair.low).delete(localSnapshotsDb);
             }
@@ -239,12 +240,12 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return local snapshot of the node
      * @throws SnapshotException if local snapshot files exist but are malformed
      */
-    private Snapshot loadLocalSnapshot() throws SnapshotException, SpentAddressesException {
+    private Snapshot loadLocalSnapshot() throws SnapshotException {
         if (!config.getLocalSnapshotsEnabled()) {
             return null;
         }
         try {
-            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, Hash.class);
+            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, TransactionHash.class);
             if (pair.hi == null) {
                 return null;
             }

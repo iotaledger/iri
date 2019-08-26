@@ -18,6 +18,7 @@ import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -100,82 +101,6 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * Holds information about the current synchronisation progress.
      */
     private SyncProgressInfo syncProgressInfo = new SyncProgressInfo();
-
-    /**
-     * Holds variables containing information needed for sync progress calculation.
-     */
-    private static class SyncProgressInfo {
-        /**
-         * The actual start milestone index from which the node started from when syncing up.
-         */
-        private int syncMilestoneStartIndex;
-
-        /**
-         * Used to calculate the average time needed to apply a milestone.
-         */
-        private ArrayBlockingQueue<Long> lastMilestoneApplyTimes = new ArrayBlockingQueue<>(100);
-
-        /**
-         * Gets the milestone sync start index.
-         *
-         * @return the milestone sync start index
-         */
-        int getSyncMilestoneStartIndex() {
-            return syncMilestoneStartIndex;
-        }
-
-        /**
-         * Sets the milestone sync start index.
-         *
-         * @param syncMilestoneStartIndex the value to set
-         */
-        void setSyncMilestoneStartIndex(int syncMilestoneStartIndex) {
-            this.syncMilestoneStartIndex = syncMilestoneStartIndex;
-        }
-
-        /**
-         * Adds the current time as a time where a milestone got applied to the ledger state.
-         */
-        void addMilestoneApplicationTime(){
-            if(lastMilestoneApplyTimes.remainingCapacity() == 0){
-                lastMilestoneApplyTimes.remove();
-            }
-            lastMilestoneApplyTimes.add(System.currentTimeMillis());
-        }
-
-        /**
-         * Clears the records of times when milestones got applied.
-         */
-        void resetMilestoneApplicationTimes(){
-            lastMilestoneApplyTimes.clear();
-        }
-
-        /**
-         * Computes the estimated time (seconds) needed to get synced up by looking at the last N milestone applications
-         * times and the current solid and last milestone indices.
-         *
-         * @param latestMilestoneIndex      the current latest known milestone index
-         * @param latestSolidMilestoneIndex the current to the ledger applied milestone index
-         * @return the number of seconds needed to get synced up or -1 if not enough data is available
-         */
-        int computeEstimatedTimeToSyncUpSeconds(int latestMilestoneIndex, int latestSolidMilestoneIndex) {
-            // compute average time needed to apply a milestone
-            Object[] times = lastMilestoneApplyTimes.toArray();
-            long sumDelta = 0;
-            double avgMilestoneApplyMillisec;
-            if (times.length > 1) {
-                // compute delta sum
-                for (int i = times.length - 1; i > 1; i--) {
-                    sumDelta += ((Long)times[i]) - ((Long)times[i - 1]);
-                }
-                avgMilestoneApplyMillisec = (double) sumDelta / (double) (times.length - 1);
-            } else {
-                return -1;
-            }
-
-            return (int) ((avgMilestoneApplyMillisec / 1000) * (latestMilestoneIndex - latestSolidMilestoneIndex));
-        }
-    }
 
     /**
      * <p>
@@ -460,4 +385,81 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
             milestoneService.resetCorruptedMilestone(i);
         }
     }
+
+    /**
+     * Holds variables containing information needed for sync progress calculation.
+     */
+    private static class SyncProgressInfo {
+        /**
+         * The actual start milestone index from which the node started from when syncing up.
+         */
+        private int syncMilestoneStartIndex;
+
+        /**
+         * Used to calculate the average time needed to apply a milestone.
+         */
+        private BlockingQueue<Long> lastMilestoneApplyTimes = new ArrayBlockingQueue<>(100);
+
+        /**
+         * Gets the milestone sync start index.
+         *
+         * @return the milestone sync start index
+         */
+        int getSyncMilestoneStartIndex() {
+            return syncMilestoneStartIndex;
+        }
+
+        /**
+         * Sets the milestone sync start index.
+         *
+         * @param syncMilestoneStartIndex the value to set
+         */
+        void setSyncMilestoneStartIndex(int syncMilestoneStartIndex) {
+            this.syncMilestoneStartIndex = syncMilestoneStartIndex;
+        }
+
+        /**
+         * Adds the current time as a time where a milestone got applied to the ledger state.
+         */
+        void addMilestoneApplicationTime(){
+            if(lastMilestoneApplyTimes.remainingCapacity() == 0){
+                lastMilestoneApplyTimes.remove();
+            }
+            lastMilestoneApplyTimes.add(System.currentTimeMillis());
+        }
+
+        /**
+         * Clears the records of times when milestones got applied.
+         */
+        void resetMilestoneApplicationTimes(){
+            lastMilestoneApplyTimes.clear();
+        }
+
+        /**
+         * Computes the estimated time (seconds) needed to get synced up by looking at the last N milestone applications
+         * times and the current solid and last milestone indices.
+         *
+         * @param latestMilestoneIndex      the current latest known milestone index
+         * @param latestSolidMilestoneIndex the current to the ledger applied milestone index
+         * @return the number of seconds needed to get synced up or -1 if not enough data is available
+         */
+        int computeEstimatedTimeToSyncUpSeconds(int latestMilestoneIndex, int latestSolidMilestoneIndex) {
+            // compute average time needed to apply a milestone
+            Object[] times = lastMilestoneApplyTimes.toArray();
+            long sumDelta = 0;
+            double avgMilestoneApplyMillisec;
+            if (times.length > 1) {
+                // compute delta sum
+                for (int i = times.length - 1; i > 1; i--) {
+                    sumDelta += ((Long)times[i]) - ((Long)times[i - 1]);
+                }
+                avgMilestoneApplyMillisec = (double) sumDelta / (double) (times.length - 1);
+            } else {
+                return -1;
+            }
+
+            return (int) ((avgMilestoneApplyMillisec / 1000) * (latestMilestoneIndex - latestSolidMilestoneIndex));
+        }
+    }
+
 }

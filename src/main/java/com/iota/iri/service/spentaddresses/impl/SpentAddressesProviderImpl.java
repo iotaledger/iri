@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  *
  * Implementation of <tt>SpentAddressesProvider</tt>.
  * Addresses are saved/found on the {@link Tangle}.
- * The folder location is provided by {@link IotaConfig#getLocalSnapshotsBasePath()}
+ * The folder location is provided by {@link IotaConfig#getLocalSnapshotsDbPath()} ()}
  *
  */
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {
@@ -55,7 +55,6 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
      */
     public void init(boolean assertSpentAddressesExistence) throws SpentAddressesException {
         try {
-            this.provider.init();
             if (assertSpentAddressesExistence && !doSpentAddressesExist(provider)) {
                 log.error("Expecting to start with a populated spent-addresses-db when initializing from a " +
                         "local snapshot. Shutting down now");

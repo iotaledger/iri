@@ -5,6 +5,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
@@ -60,6 +61,7 @@ import java.util.HashMap;
 public class MainInjectionConfiguration extends AbstractModule {
 
     private final IotaConfig configuration;
+    private PersistenceProvider localSnapshotDb;
 
     /**
      * Creates the guice injection module.
@@ -68,24 +70,26 @@ public class MainInjectionConfiguration extends AbstractModule {
      */
     public MainInjectionConfiguration(IotaConfig configuration) {
         this.configuration = configuration;
+        localSnapshotDb = new RocksDBPersistenceProvider(
+                configuration.getLocalSnapshotsDbPath(),
+                configuration.getLocalSnapshotsDbLogPath(),
+                1000,
+                new HashMap<String, Class<? extends Persistable>>(1) {{
+                    put("spent-addresses", SpentAddress.class);
+                    put("localsnapshots", LocalSnapshot.class);
+                }}, null);
     }
 
     @Singleton
     @Provides
     SnapshotProvider provideSnapshotProvider() {
-        return new SnapshotProviderImpl(configuration);
+        return new SnapshotProviderImpl(configuration, localSnapshotDb);
     }
 
     @Singleton
     @Provides
     SpentAddressesProvider provideSpentAddressesProvider() {
-        PersistenceProvider persistenceProvider = new RocksDBPersistenceProvider(
-                configuration.getSpentAddressesDbPath(),
-                configuration.getSpentAddressesDbLogPath(),
-                1000,
-                new HashMap<String, Class<? extends Persistable>>(1)
-                {{put("spent-addresses", SpentAddress.class);}}, null);
-        return new SpentAddressesProviderImpl(configuration, persistenceProvider);
+        return new SpentAddressesProviderImpl(configuration, localSnapshotDb);
     }
 
     @Singleton

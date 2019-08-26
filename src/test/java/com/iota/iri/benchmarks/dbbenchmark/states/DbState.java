@@ -4,9 +4,12 @@ import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.LocalSnapshot;
+import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -18,12 +21,15 @@ import org.openjdk.jmh.annotations.State;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 @State(Scope.Benchmark)
 public abstract class DbState {
     private final File dbFolder = new File("db-bench");
     private final File logFolder = new File("db-log-bench");
+    private final File lsFolder = new File("localsnapshots-db-bench");
+    private final File lsLogFolder = new File("localsnapshots-db-log-bench");
 
     private Tangle tangle;
     private SnapshotProvider snapshotProvider;
@@ -45,8 +51,21 @@ public abstract class DbState {
                 dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(),  BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         dbProvider.init();
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+
+        lsFolder.mkdirs();
+        lsLogFolder.mkdirs();
+        PersistenceProvider localSnapshotDb = new RocksDBPersistenceProvider(lsFolder.getAbsolutePath(),
+                lsLogFolder.getAbsolutePath(), 1000,
+                new HashMap<String, Class<? extends Persistable>>(1) {
+                    {
+                        put("spent-addresses", SpentAddress.class);
+                        put("localsnapshots", LocalSnapshot.class);
+                    }
+                }, null);
+        localSnapshotDb.init();
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig(), localSnapshotDb);
         snapshotProvider.init();
+
         tangle.addPersistenceProvider(dbProvider);
         String trytes = "";
         System.out.println("numTxsToTest = [" + numTxsToTest + "]");

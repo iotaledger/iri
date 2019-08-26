@@ -40,6 +40,14 @@ public interface SnapshotProvider {
     void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException;
 
     /**
+     * Removes an existing old local snapshot and persists the newly given one.
+     *
+     * @param snapshot the snapshot to persist
+     * @throws SnapshotException if anything goes wrong while deleting or persisting data
+     */
+    void persistSnapshot(Snapshot snapshot) throws SnapshotException;
+
+    /**
      * Frees the resources of the {@link SnapshotProvider}.
      *
      * Snapshots require quite a bit of memory and should be cleaned up when they are not required anymore. This is

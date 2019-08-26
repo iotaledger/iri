@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  *
  * Implementation of <tt>SpentAddressesProvider</tt>.
  * Addresses are saved/found on the {@link Tangle}.
- * The folder location is provided by {@link IotaConfig#getLocalSnapshotsDbPath()} ()}
+ * The folder location is provided by {@link IotaConfig#getLocalSnapshotsDbPath()}
  *
  */
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {

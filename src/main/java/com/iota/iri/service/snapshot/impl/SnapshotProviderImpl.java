@@ -199,6 +199,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      */
     @Override
     public void shutdown() {
+        log.info("Shutting down local snapshots Persistence Providers... ");
         initialSnapshot = null;
         latestSnapshot = null;
         localSnapshotsDb.shutdown();

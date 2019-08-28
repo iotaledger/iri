@@ -24,6 +24,7 @@
             <onMismatch>DENY</onMismatch>
         </filter>
         <encoder>
+            <charset>UTF-8</charset>
             <pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{0}:%L - %msg%n
             </pattern>
         </encoder>

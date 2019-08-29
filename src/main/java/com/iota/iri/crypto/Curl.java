@@ -136,10 +136,9 @@ public class Curl implements Sponge {
             for (int curlStateIndex = 0; curlStateIndex < STATE_LENGTH; curlStateIndex++) {
                 final long alpha = curlScratchpadLow[curlScratchpadIndex];
                 final long beta = curlScratchpadHigh[curlScratchpadIndex];
-                final long gamma = curlScratchpadHigh[curlScratchpadIndex += (curlScratchpadIndex < 365 ? 364 : -365)];
-                final long delta = (alpha | (~gamma)) & (curlScratchpadLow[curlScratchpadIndex] ^ beta);
+                final long delta = alpha & (curlScratchpadLow[curlScratchpadIndex += (curlScratchpadIndex < 365 ? 364 : -365)] ^ beta);
                 stateLow[curlStateIndex] = ~delta;
-                stateHigh[curlStateIndex] = (alpha ^ gamma) | delta;
+                stateHigh[curlStateIndex] = (alpha ^ curlScratchpadHigh[curlScratchpadIndex]) | delta;
             }
         }
     }

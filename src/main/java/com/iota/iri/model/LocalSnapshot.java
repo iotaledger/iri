@@ -94,7 +94,7 @@ public class LocalSnapshot implements Persistable {
 
     @Override
     public void readMetadata(byte[] bytes) {
-
+        // has no metadata
     }
 
     @Override

@@ -180,10 +180,16 @@ public class SnapshotProviderImpl implements SnapshotProvider {
                 new LocalSnapshotViewModel((Hash) pair.low).delete(localSnapshotsDb);
             }
             oldDeleted = true;
+            log.info("persisting local snapshot; ms hash/index: {}/{}, solid entry points: {}, seen milestones: {}, " +
+                            "ledger entries: {}", snapshot.getHash().toString(), snapshot.getIndex(),
+                    snapshot.getSolidEntryPoints().size(), snapshot.getSeenMilestones().size(),
+                    snapshot.getBalances().size());
             // persist new one
             new LocalSnapshotViewModel(snapshot.getHash(), snapshot.getIndex(), snapshot.getTimestamp(),
                     snapshot.getSolidEntryPoints(), snapshot.getSeenMilestones(), snapshot.getBalances())
                             .store(localSnapshotsDb);
+            log.info("persisted local snapshot; ms hash/index: {}/{}", snapshot.getHash().toString(),
+                    snapshot.getIndex());
         } catch (Exception e) {
             if(!oldDeleted){
                 throw new SnapshotException("failed to delete previous local snapshot", e);
@@ -249,10 +255,15 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         try {
             Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, TransactionHash.class);
             if (pair.hi == null) {
+                log.info("no local snapshot persisted in the database");
                 return null;
             }
 
             LocalSnapshot ls = (LocalSnapshot) pair.hi;
+            log.info("loading local snapshot; ms hash/index: {}/{}, solid entry points: {}, seen milestones: {}, " +
+                            "ledger entries: {}", pair.low.toString(), ls.milestoneIndex,
+                    ls.solidEntryPoints.size(), ls.seenMilestones.size(), ls.ledgerState.size());
+
             SnapshotState snapshotState = new SnapshotStateImpl(ls.ledgerState);
             if (!snapshotState.hasCorrectSupply()) {
                 throw new SnapshotException("the snapshot state file has an invalid supply");

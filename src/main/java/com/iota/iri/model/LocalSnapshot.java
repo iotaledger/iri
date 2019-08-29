@@ -25,14 +25,10 @@ public class LocalSnapshot implements Persistable {
     @Override
     public byte[] bytes() {
         ByteBuffer buf = ByteBuffer.allocate(
-                // index, timestamp, num solid entry points/seen milestones
-                20 +
-                // solid entry points
-                        (solidEntryPoints.size() * (Hash.SIZE_IN_BYTES + 4)) +
-                        // seen milestones
-                        (seenMilestones.size() * (Hash.SIZE_IN_BYTES + 4)) +
-                        // ledger state
-                        (ledgerState.size() * (Hash.SIZE_IN_BYTES + 8)));
+                20 + // index (4), timestamp (8), num solid entry points (4) / seen milestones (4) = 20
+                        (solidEntryPoints.size() * (Hash.SIZE_IN_BYTES + 4)) + // solid entry points
+                        (seenMilestones.size() * (Hash.SIZE_IN_BYTES + 4)) + // seen milestones
+                        (ledgerState.size() * (Hash.SIZE_IN_BYTES + 8))); // ledger state
 
         // nums
         buf.putInt(milestoneIndex);
@@ -72,14 +68,14 @@ public class LocalSnapshot implements Persistable {
         solidEntryPoints = new HashMap<>();
         for (int i = 0; i < numSolidEntryPoints; i++) {
             buf.get(hashBuf);
-            solidEntryPoints.put(HashFactory.ADDRESS.create(hashBuf, 0, Hash.SIZE_IN_BYTES), buf.getInt());
+            solidEntryPoints.put(HashFactory.TRANSACTION.create(hashBuf, 0, Hash.SIZE_IN_BYTES), buf.getInt());
         }
 
         // seen milestones
         seenMilestones = new HashMap<>();
         for (int i = 0; i < numSeenMilestones; i++) {
             buf.get(hashBuf);
-            seenMilestones.put(HashFactory.ADDRESS.create(hashBuf, 0, Hash.SIZE_IN_BYTES), buf.getInt());
+            seenMilestones.put(HashFactory.TRANSACTION.create(hashBuf, 0, Hash.SIZE_IN_BYTES), buf.getInt());
         }
 
         // actual ledger state

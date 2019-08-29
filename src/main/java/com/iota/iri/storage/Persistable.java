@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import javax.naming.OperationNotSupportedException;
 import java.io.Serializable;
 
 public interface Persistable extends Serializable {
@@ -8,9 +9,19 @@ public interface Persistable extends Serializable {
     byte[] metadata();
     void readMetadata(byte[] bytes);
     boolean merge();
-    Persistable mergeTwo(Persistable nrTwo);
-    //A required add because the persistence providers always return non null values and bytes() fails
-    //on certain instances. So in the persistence provider there is no way to check if the persistence provider
-    //actually found the object or not. This is needed if we have multiple persistence providers.
-    boolean isEmpty();
+
+    /**
+     * Merges source object into this object.
+     * @param source
+     * @return
+     */
+    Persistable mergeInto(Persistable source) throws OperationNotSupportedException;
+
+
+    /**
+     * Determines whether the data exists. This method is needed because non {@code null} data doesn't mean that the data doesn't exist.
+     *
+     * @return true if data exists , else returns false
+     */
+    boolean exists();
 }

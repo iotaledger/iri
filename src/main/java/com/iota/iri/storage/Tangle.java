@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.zmq.MessageQueueProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.naming.OperationNotSupportedException;
 
 /**
  * Created by paul on 3/3/17 for iri.
@@ -75,7 +76,7 @@ public class Tangle {
         for (PersistenceProvider provider : this.persistenceProviders) {
             Persistable result = provider.get(model, index);
 
-            if (result != null && !result.isEmpty()) {
+            if (result != null && result.exists()) {
                 if (result.merge()) {
 
                     outlist.add(result);
@@ -90,7 +91,13 @@ public class Tangle {
             if (a == null) {
                 return b;
             }
-            return a.mergeTwo(b);
+            try {
+                return a.mergeInto(b);
+            }catch (OperationNotSupportedException e){
+                log.error("Error merging data: ", e);
+                log.error("Error merging data: ", e);
+                return null;
+            }
         });
 
         if (p == null) {

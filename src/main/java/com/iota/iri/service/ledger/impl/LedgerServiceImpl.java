@@ -217,8 +217,6 @@ public class LedgerServiceImpl implements LedgerService {
                                                     : Math.addExact(value, bundleTransactionViewModel.value()));
                                         }
                                     }
-
-                                    break;
                                 }
                             }
 

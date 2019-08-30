@@ -205,17 +205,15 @@ public class LedgerServiceImpl implements LedgerService {
                                     break;
                                 }
 
-                                if (bundleTransactions.get(0).getHash().equals(transactionViewModel.getHash())) {
 
-                                    for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
+                                for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
 
-                                        if (bundleTransactionViewModel.value() != 0 && countedTx.add(bundleTransactionViewModel.getHash())) {
+                                    if (bundleTransactionViewModel.value() != 0 && countedTx.add(bundleTransactionViewModel.getHash())) {
 
-                                            final Hash address = bundleTransactionViewModel.getAddressHash();
-                                            final Long value = state.get(address);
-                                            state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                    : Math.addExact(value, bundleTransactionViewModel.value()));
-                                        }
+                                        final Hash address = bundleTransactionViewModel.getAddressHash();
+                                        final Long value = state.get(address);
+                                        state.put(address, value == null ? bundleTransactionViewModel.value()
+                                                : Math.addExact(value, bundleTransactionViewModel.value()));
                                     }
                                 }
                             }

@@ -95,7 +95,6 @@ public class Tangle {
                 return a.mergeInto(b);
             }catch (OperationNotSupportedException e){
                 log.error("Error merging data: ", e);
-                log.error("Error merging data: ", e);
                 return null;
             }
         });

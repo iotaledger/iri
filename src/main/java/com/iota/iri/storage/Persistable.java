@@ -8,12 +8,13 @@ public interface Persistable extends Serializable {
     void read(byte[] bytes);
     byte[] metadata();
     void readMetadata(byte[] bytes);
-    boolean merge();
+    boolean canMerge();
 
     /**
      * Merges source object into this object.
-     * @param source
-     * @return
+     * @param source the persistable that will be merged into the called persistable
+     * @return the updated persistable, which contains both. Or {@code null} if the persistable cannot be merged
+     * @throws OperationNotSupportedException when the persistable called does not support merging. Call canMerge first.
      */
     Persistable mergeInto(Persistable source) throws OperationNotSupportedException;
 

@@ -219,7 +219,7 @@ public class Transaction implements Persistable {
 
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
 

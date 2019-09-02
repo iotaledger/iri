@@ -77,7 +77,7 @@ public class Tangle {
             Persistable result = provider.get(model, index);
 
             if (result != null && result.exists()) {
-                if (result.merge()) {
+                if (result.canMerge()) {
 
                     outlist.add(result);
                 } else {
@@ -94,7 +94,7 @@ public class Tangle {
             try {
                 return a.mergeInto(b);
             }catch (OperationNotSupportedException e){
-                log.error("Error merging data: ", e);
+                log.error("Error merging data, call canMerge before to see if an object is mergable: ", e);
                 return null;
             }
         });

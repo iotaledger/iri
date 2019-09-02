@@ -64,7 +64,7 @@ public class Hashes implements Persistable {
 
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return true;
     }
 

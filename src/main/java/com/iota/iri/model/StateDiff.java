@@ -56,7 +56,7 @@ public class StateDiff implements Persistable {
     }
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
 

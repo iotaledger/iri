@@ -27,7 +27,7 @@ public class SpentAddress implements Persistable {
     }
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
 

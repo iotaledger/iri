@@ -93,12 +93,12 @@ public class Tangle {
             }
             try {
                 return a.mergeInto(b);
-            }catch (OperationNotSupportedException e){
+            }catch (OperationNotSupportedException e) {
                 log.error("Error merging data, call canMerge before to see if an object is mergable: ", e);
                 return null;
             }
         });
-
+        //For backwards compatibility. Should be solve with issue #1591
         if (p == null) {
             p = (Persistable) model.newInstance();
         }

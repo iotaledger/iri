@@ -4,8 +4,11 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
 import com.iota.iri.storage.Indexable;
+import org.apache.commons.io.FileUtils;
 import org.junit.*;
 
+import java.io.File;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,9 +31,9 @@ public class PermaRocksDBPersentenceProviderTest {
     @AfterClass
     public static void destroyDb() {
         rocksDBPersistenceProvider.shutdown();
-        //FileUtils.deleteQuietly(new File(dbPath));
-        //FileUtils.deleteQuietly(new File(dbLogPath));
-        //rocksDBPersistenceProvider = null;
+        FileUtils.deleteQuietly(new File(dbPath));
+        FileUtils.deleteQuietly(new File(dbLogPath));
+        rocksDBPersistenceProvider = null;
     }
 
     @Before
@@ -69,14 +72,14 @@ public class PermaRocksDBPersentenceProviderTest {
 
         for(TransactionViewModel v: mm){
             System.out.println(v.getHash() + " \t " + v.getAddressHash());
-            rocksDBPersistenceProvider.saveTransaction(v, v.getHash());
+            rocksDBPersistenceProvider.pinTransaction(v, v.getHash());
         }
 
 
 
-        rocksDBPersistenceProvider.incrementTransactions(new Indexable[]{transaction.getHash()});
-        long count = rocksDBPersistenceProvider.getCounter(transaction.getHash());
-        Assert.assertEquals(count, 2);
+        //rocksDBPersistenceProvider.incrementTransactions(new Indexable[]{transaction.getHash()});
+        boolean isPinned = rocksDBPersistenceProvider.isPinned(Collections.singletonList(transaction.getHash()))[0];
+        Assert.assertTrue(isPinned);
 
         //See if all indexes are updated.
         Assert.assertTrue(rocksDBPersistenceProvider.findAddress(transaction2.getAddressHash()).set.contains(transaction2.getHash()));
@@ -86,7 +89,10 @@ public class PermaRocksDBPersentenceProviderTest {
         Assert.assertTrue(rocksDBPersistenceProvider.findApprovee(transaction2.getBranchTransactionHash()).set.contains(transaction2.getHash()));
 
         //Test decremeant delete;
-        rocksDBPersistenceProvider.decrementTransactions(new Indexable[]{transaction3.getHash()});
+        rocksDBPersistenceProvider.unpinTransaction(transaction3.getHash());
+
+        boolean isPinnedTwo = rocksDBPersistenceProvider.isPinned(Collections.singletonList(transaction3.getHash()))[0];
+        Assert.assertTrue(!isPinnedTwo);
         Assert.assertNull(rocksDBPersistenceProvider.getTransaction(transaction3.getHash()));
 
     }

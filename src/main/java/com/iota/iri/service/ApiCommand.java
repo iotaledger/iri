@@ -104,11 +104,9 @@ public enum ApiCommand {
      */
     PIN_TRANSACTION_HASHES("pinTransactionHashes"),
 
-    PINNED_TRANSACTIONS_COUNT("pinnedTransactionsCount"),
+    UNPIN_TRANSACTIONS("unpinTransactionHashes"),
 
-    INCREASE_TRANSACTIONS_COUNT("increaseTransactionsCount"),
-
-    DECREASE_TRANSACTIONS_COUNT("decreaseTransactionsCount"),
+    IS_PINNED_TRANSACTIONS_COUNT("isPinned"),
 
     PIN_TRANSACTIONS_TRYTES("pinTransactionsTrytes");
 

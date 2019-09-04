@@ -370,7 +370,7 @@ public class Tangle {
 
     public void pinTransaction(TransactionViewModel tvm)  throws Exception {
         for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
-            provider.saveTransaction(tvm, tvm.getHash());
+            provider.pinTransaction(tvm, tvm.getHash());
         }
     }
 
@@ -382,26 +382,23 @@ public class Tangle {
         }
     }
 
-    public void incrementTransactions(Indexable[] indexes) throws Exception {
+    public void unpinTransaction(Hash hash)  throws Exception {
         for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
-            provider.incrementTransactions(indexes);
+            provider.unpinTransaction(hash);
         }
     }
 
-    public void decrementTransactions(Indexable[] indexes) throws Exception {
+    public boolean[] isPinned(List<Hash> transactionHashes)  throws Exception {
+        boolean[] mergedResult = new boolean[transactionHashes.size()];
         for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
-            provider.decrementTransactions(indexes);
+            boolean[] providerResult = provider.isPinned(transactionHashes);
+            for(int i = 0; i < mergedResult.length; i++){
+                mergedResult[i] =  (mergedResult[i] || providerResult[i]);
+            }
         }
-    }
 
-    public long getTransactionStorageCounter(Hash index) throws Exception {
-        long toReturn  = 0;
-        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
-            toReturn = Math.max(0, provider.getCounter(index));
-        }
-        return toReturn;
+        return mergedResult;
     }
-
 
 
 

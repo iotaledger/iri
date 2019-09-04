@@ -1,7 +1,10 @@
 package com.iota.iri.storage;
 
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Hashes;
+
+import java.util.List;
 
 public interface PermanentPersistenceProvider {
 
@@ -9,20 +12,15 @@ public interface PermanentPersistenceProvider {
     void init() throws Exception;
     boolean isAvailable();
     void shutdown();
-    boolean saveTransaction(TransactionViewModel model, Indexable index) throws Exception;
+    boolean pinTransaction(TransactionViewModel model, Hash index) throws Exception;
+    boolean unpinTransaction(Hash index) throws Exception;
+    boolean[] isPinned(List<Hash> indexes) throws Exception;
 
-    void incrementTransactions(Indexable[] indexes) throws Exception;
 
-    void decrementTransactions(Indexable[] indexes) throws Exception;
+    TransactionViewModel getTransaction(Hash index) throws Exception;
 
-    long getCounter(Indexable index) throws Exception;
-
-    boolean setCounter(Indexable index, long counter) throws Exception;
-
-    TransactionViewModel getTransaction(Indexable index) throws Exception;
-
-    Hashes findAddress(Indexable indexes) throws Exception;
-    Hashes findBundle(Indexable indexes) throws Exception;
-    Hashes findTag(Indexable indexes) throws Exception;
-    Hashes findApprovee(Indexable indexes) throws Exception;
+    Hashes findAddress(Hash indexes) throws Exception;
+    Hashes findBundle(Hash indexes) throws Exception;
+    Hashes findTag(Hash indexes) throws Exception;
+    Hashes findApprovee(Hash indexes) throws Exception;
 }

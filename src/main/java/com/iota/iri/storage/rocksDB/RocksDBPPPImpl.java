@@ -35,8 +35,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     private final String logPath;
     private final int cacheSize;
 
-    public static String COUNTED_TRANSACTION = "counted-transaction";
-    public static String COUNTER_INDEX = "counter-index";
+    public static String TRANSACTION_COLUMN = "transaction";
     public static String ADDRESS_INDEX = "address-index";
     public static String BUNDLE_INDEX = "bundle-index";
 
@@ -115,9 +114,10 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     @Override
     public Persistable get(Class<?> model, Indexable index) throws Exception {
         Persistable object = (Persistable) model.newInstance();
+        Hash hashIndex = (Hash)index;
 
         if(object instanceof Transaction) {
-            TransactionViewModel tvm = getTransaction(index);
+            TransactionViewModel tvm = getTransaction(hashIndex);
             if(tvm == null){
                 return object;
             }
@@ -137,22 +137,22 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
 
         if(object instanceof Bundle){
             Bundle toReturn  = new Bundle();
-            toReturn.set =  findBundle(index).set;
+            toReturn.set =  findBundle(hashIndex).set;
             return toReturn;
         }
         if(object instanceof Address){
             Address toReturn  = new Address();
-            toReturn.set =  findAddress(index).set;
+            toReturn.set =  findAddress(hashIndex).set;
             return toReturn;
         }
         if(object instanceof Tag){
             Tag toReturn  = new Tag();
-            toReturn.set =  findTag(index).set;
+            toReturn.set =  findTag(hashIndex).set;
             return toReturn;
         }
         if(object instanceof Approvee){
             Approvee toReturn  = new Approvee();
-            toReturn.set =  findApprovee(index).set;
+            toReturn.set =  findApprovee(hashIndex).set;
             return toReturn;
         }
         return object;
@@ -160,10 +160,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
 
     public void loopAddressIndex(){
         try (RocksIterator iterator = db.newIterator(columnMap.get(ADDRESS_INDEX))) {
-
-
-
-
                 iterator.seekToFirst();
             while(iterator.isValid()) {
                 Hashes h = new Hashes();
@@ -240,22 +236,15 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
 
 
     @Override
-    public boolean saveTransaction(TransactionViewModel model, Indexable index) throws Exception {
-        long counter = getCounter(index);
-        //check if the transaction does not exists
-        if(counter <= 0){
+    public boolean pinTransaction(TransactionViewModel model, Hash index) throws Exception {
+        boolean exists = isPinned(Collections.singletonList(index))[0];
+        if(!exists){
             try (WriteBatch writeBatch = new WriteBatch();
                  WriteOptions writeOptions = new WriteOptions()) {
                 byte[] txBytes = model.getBytes();
 
-                writeBatch.put(columnMap.get(COUNTED_TRANSACTION), index.bytes(), txBytes);
+                writeBatch.put(columnMap.get(TRANSACTION_COLUMN), index.bytes(), txBytes);
 
-                //Prepare counted index
-                ByteBuffer counterBuffer =  ByteBuffer.allocate(Long.BYTES);
-                counterBuffer.putLong(1L);
-                writeBatch.put(columnMap.get(COUNTER_INDEX),index.bytes(), counterBuffer.array());
-
-                //addToIndex(writeBatch, columnMap.get(COUNTER_INDEX), counterBuffer.array() , index);
                 addToIndex(writeBatch, columnMap.get(ADDRESS_INDEX),  model.getAddressHash(), index);
                 addToIndex(writeBatch, columnMap.get(TAG_INDEX),  model.getTagValue(), index);
                 addToIndex(writeBatch, columnMap.get(BUNDLE_INDEX),  model.getBundleHash(), index);
@@ -271,34 +260,33 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
         return false;
     }
 
-    /**
-     * This is a dump method and does not take into account the mechanisms for storing
-     * @param indexes
-     * @return
-     * @throws Exception
-     */
-
     @Override
-    public void incrementTransactions(Indexable[] indexes) throws Exception {
+    public boolean unpinTransaction(Hash index) throws Exception {
         try (WriteBatch writeBatch = new WriteBatch();
-             WriteOptions writeOptions = new WriteOptions()) {
-            for (Indexable i: indexes) {
-                //sorry no merge for long, the C++ lib has a merge function for Uin64 but that is not (natively)supported by Java.
-                long incrementedCounter = getCounter(i) + 1;
-                writeBatch.put(columnMap.get(COUNTER_INDEX), i.bytes(), ByteBuffer.allocate(Long.BYTES).putLong(incrementedCounter).array() );
-            }
+                WriteOptions writeOptions = new WriteOptions()) {
 
+            safeDeleteTransaction(writeBatch, index);
             db.write(writeOptions, writeBatch);
-
         }
+        return true;
     }
 
+    @Override
+    public boolean[] isPinned(List<Hash> indexes) throws Exception {
+        boolean[] result = new boolean[indexes.size()];
+        ColumnFamilyHandle handle = columnMap.get(TRANSACTION_COLUMN);
+        for(int i = 0; i < result.length; i++){
+            result[i] = db.keyMayExist(handle, indexes.get(i).bytes(), new StringBuilder());
+        }
+        return result;
+    }
+
+
     @VisibleForTesting
-    public void safeDeleteTransaction(WriteBatch writeBatch, Indexable key) throws Exception {
+    public void safeDeleteTransaction(WriteBatch writeBatch, Hash key) throws Exception {
         byte[] keyBytes = key.bytes();
         TransactionViewModel tx = getTransaction(key);
-        writeBatch.delete(columnMap.get(COUNTER_INDEX), keyBytes);
-        writeBatch.delete(columnMap.get(COUNTED_TRANSACTION), keyBytes);
+        writeBatch.delete(columnMap.get(TRANSACTION_COLUMN), keyBytes);
 
         removeFromIndex(writeBatch, columnMap.get(ADDRESS_INDEX),  tx.getAddressHash(), key);
         removeFromIndex(writeBatch, columnMap.get(TAG_INDEX),  tx.getTagValue(), key);
@@ -377,54 +365,10 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     }
 
 
-
     @Override
-    public void decrementTransactions(Indexable[] indexes) throws Exception {
-        try (WriteBatch writeBatch = new WriteBatch();
-                WriteOptions writeOptions = new WriteOptions()) {
-            for (Indexable i: indexes) {
-                //sorry no merge for long, the C++ lib has a merge function for Uin64 but that is not (natively)supported by Java.
-                long decrementedCounter = getCounter(i) -1;
-                if(decrementedCounter <= 0){
-                    safeDeleteTransaction(writeBatch, i);
-                }else {
-                    writeBatch.put(columnMap.get(COUNTER_INDEX), i.bytes(), ByteBuffer.allocate(Long.BYTES).putLong(decrementedCounter).array());
-                }
-            }
-
-            db.write(writeOptions, writeBatch);
-        }
-    }
-
-    @Override
-    public boolean setCounter(Indexable index, long counter) throws Exception {
-        try (WriteBatch writeBatch = new WriteBatch();
-             WriteOptions writeOptions = new WriteOptions()) {
-                if(counter <= 0){
-                    safeDeleteTransaction(writeBatch, index);
-                }else {
-                    writeBatch.put(columnMap.get(COUNTER_INDEX), index.bytes(), ByteBuffer.allocate(Long.BYTES).putLong(counter).array());
-                }
-            db.write(writeOptions, writeBatch);
-        }
-        return false;
-    }
-
-    @Override
-    public long getCounter(Indexable index) throws Exception {
-        if(index == null){return -1;}
-        byte[] dbResult = db.get(columnMap.get(COUNTER_INDEX), index.bytes());
-        if(dbResult != null && dbResult.length == Long.BYTES) {
-            long counter = ByteBuffer.wrap(dbResult).getLong();
-            return counter;
-        }
-        return 0;
-    }
-
-    @Override
-    public TransactionViewModel getTransaction(Indexable index) throws Exception {
+    public TransactionViewModel getTransaction(Hash index) throws Exception {
         if(index == null){return null;}
-        byte[] dbResult = db.get(columnMap.get(COUNTED_TRANSACTION), index.bytes());
+        byte[] dbResult = db.get(columnMap.get(TRANSACTION_COLUMN), index.bytes());
         if(dbResult != null && dbResult.length > 0){
             return new TransactionViewModel(TransactionViewModel.trits(dbResult), Hash.NULL_HASH);
         }
@@ -432,19 +376,19 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     }
 
     @Override
-    public Hashes findAddress(Indexable index) throws Exception {
+    public Hashes findAddress(Hash index) throws Exception {
        return getIndex(columnMap.get(ADDRESS_INDEX), index);
     }
     @Override
-    public Hashes findBundle(Indexable index) throws Exception {
+    public Hashes findBundle(Hash index) throws Exception {
         return getIndex(columnMap.get(BUNDLE_INDEX), index);
     }
     @Override
-    public Hashes findTag(Indexable index) throws Exception {
+    public Hashes findTag(Hash index) throws Exception {
         return getIndex(columnMap.get(TAG_INDEX), index);
     }
     @Override
-    public Hashes findApprovee(Indexable index) throws Exception {
+    public Hashes findApprovee(Hash index) throws Exception {
         return getIndex(columnMap.get(APPROVEE_INDEX), index);
     }
 
@@ -522,8 +466,8 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
             //Add default column family. Main motivation is to not change legacy code
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
 
-            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(COUNTED_TRANSACTION.getBytes("UTF-8"), columnFamilyOptions));
-            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(COUNTER_INDEX.getBytes("UTF-8"), columnFamilyOptions));
+            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TRANSACTION_COLUMN.getBytes("UTF-8"), columnFamilyOptions));
+           // columnFamilyDescriptors.add(new ColumnFamilyDescriptor(COUNTER_INDEX.getBytes("UTF-8"), columnFamilyOptions));
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(BUNDLE_INDEX.getBytes("UTF-8"), columnFamilyOptions));
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TAG_INDEX.getBytes("UTF-8"), columnFamilyOptions));
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(ADDRESS_INDEX.getBytes("UTF-8"), columnFamilyOptions));

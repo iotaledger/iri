@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import javax.naming.OperationNotSupportedException;
 
 /**
- * Created by paul on 3/3/17 for iri.
+ * Delegates methods from {@link PersistenceProvider}
  */
 public class Tangle {
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
@@ -49,19 +49,27 @@ public class Tangle {
     }
 
     /**
-     * Adds {@link com.iota.iri.storage.MessageQueueProvider} that should be notified.
-     * @param provider that should be notified.
+     * 
+     * @see PersistenceProvider#init()
      */
-    public void addMessageQueueProvider(MessageQueueProvider provider) {
-        this.messageQueueProviders.add(provider);
-    }
-
     public void init() throws Exception {
         for(PersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
     }
 
+    /**
+     * Adds {@link com.iota.iri.zmq.MessageQueueProvider} that should be notified.
+     * 
+     * @param provider that should be notified.
+     */
+    public void addMessageQueueProvider(MessageQueueProvider provider) {
+        this.messageQueueProviders.add(provider);
+    }
+
+    /**
+     * @see PersistenceProvider#shutdown()
+     */
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);
@@ -71,6 +79,9 @@ public class Tangle {
         this.messageQueueProviders.clear();
     }
 
+    /**
+     * @see PersistenceProvider#get(Class, Indexable)
+     */
     public Persistable load(Class<?> model, Indexable index) throws Exception {
         LinkedList<Persistable> outlist = new LinkedList<>();
         for (PersistenceProvider provider : this.persistenceProviders) {
@@ -105,6 +116,9 @@ public class Tangle {
         return p;
     }
 
+    /**
+     * @see PersistenceProvider#saveBatch(List)
+     */
     public Boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
         boolean exists = false;
         for(PersistenceProvider provider: persistenceProviders) {
@@ -116,6 +130,10 @@ public class Tangle {
         }
         return exists;
     }
+
+    /**
+     * @see PersistenceProvider#save(Persistable, Indexable)
+     */
     public Boolean save(Persistable model, Indexable index) throws Exception {
             boolean exists = false;
             for(PersistenceProvider provider: persistenceProviders) {
@@ -128,18 +146,27 @@ public class Tangle {
             return exists;
     }
 
+    /**
+     * @see PersistenceProvider#deleteBatch(Collection)
+     */
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.deleteBatch(models);
         }
     }
 
+    /**
+     * @see PersistenceProvider#delete(Class, Indexable)
+     */
     public void delete(Class<?> model, Indexable index) throws Exception {
             for(PersistenceProvider provider: persistenceProviders) {
                 provider.delete(model, index);
             }
     }
 
+    /**
+     * @see PersistenceProvider#latest(Class, Class)
+     */
     public Pair<Indexable, Persistable> getLatest(Class<?> model, Class<?> index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
@@ -150,8 +177,10 @@ public class Tangle {
             return latest;
     }
 
+
     /**
-     * Updates all {@link PersistenceProvider} and publishes message to all {@link com.iota.iri.storage.MessageQueueProvider}.
+     * Updates all {@link PersistenceProvider} and publishes message to all
+     * {@link com.iota.iri.zmq.MessageQueueProvider}.
      *
      * @param model with transaction data
      * @param index {@link Hash} identifier of the {@link Transaction} set
@@ -176,7 +205,7 @@ public class Tangle {
     }
 
     /**
-     * Notifies all registered {@link com.iota.iri.storage.MessageQueueProvider} and publishes message to MessageQueue.
+     * Notifies all registered {@link com.iota.iri.zmq.MessageQueueProvider} and publishes message to MessageQueue.
      *
      * @param message that can be formatted by {@link String#format(String, Object...)}
      * @param objects that should replace the placeholder in message.
@@ -189,6 +218,9 @@ public class Tangle {
         }
     }
 
+    /**
+     * @see PersistenceProvider#keysWithMissingReferences(Class, Class)
+     */
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> referencedClass) throws Exception {
             Set<Indexable> output = null;
             for(PersistenceProvider provider: this.persistenceProviders) {
@@ -200,6 +232,9 @@ public class Tangle {
             return output;
     }
 
+    /**
+     * @see PersistenceProvider#keysStartingWith(Class, byte[])
+     */
     public Set<Indexable> keysStartingWith(Class<?> modelClass, byte[] value) {
             Set<Indexable> output = null;
             for(PersistenceProvider provider: this.persistenceProviders) {
@@ -228,6 +263,9 @@ public class Tangle {
         return null;
     }
 
+    /**
+     * @see PersistenceProvider#exists(Class, Indexable)
+     */
     public Boolean exists(Class<?> modelClass, Indexable hash) throws Exception {
             for(PersistenceProvider provider: this.persistenceProviders) {
                 if (provider.exists(modelClass, hash)) {
@@ -237,6 +275,9 @@ public class Tangle {
             return false;
     }
 
+    /**
+     * @see PersistenceProvider#mayExist(Class, Indexable)
+     */
     public Boolean maybeHas(Class<?> model, Indexable index) throws Exception {
             for(PersistenceProvider provider: this.persistenceProviders) {
                 if (provider.mayExist(model, index)) {
@@ -246,6 +287,9 @@ public class Tangle {
             return false;
     }
 
+    /**
+     * @see PersistenceProvider#count(Class)
+     */
     public Long getCount(Class<?> modelClass) throws Exception {
             long value = 0;
             for(PersistenceProvider provider: this.persistenceProviders) {
@@ -256,6 +300,9 @@ public class Tangle {
             return value;
     }
 
+    /**
+     * @see PersistenceProvider#seek(Class, byte[])
+     */
     public Persistable find(Class<?> model, byte[] key) throws Exception {
             Persistable out = null;
             for (PersistenceProvider provider : this.persistenceProviders) {
@@ -266,6 +313,9 @@ public class Tangle {
             return out;
     }
 
+    /**
+     * @see PersistenceProvider#next(Class, Indexable)
+     */
     public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
@@ -276,6 +326,9 @@ public class Tangle {
             return latest;
     }
 
+    /**
+     * @see PersistenceProvider#previous(Class, Indexable)
+     */
     public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
@@ -286,6 +339,9 @@ public class Tangle {
             return latest;
     }
 
+    /**
+     * @see PersistenceProvider#first(Class, Class)
+     */
     public Pair<Indexable, Persistable > getFirst(Class<?> model, Class<?> index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
@@ -296,12 +352,18 @@ public class Tangle {
             return latest;
     }
 
+    /**
+     * @see PersistenceProvider#clear(Class)
+     */
     public void clearColumn(Class<?> column) throws Exception {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.clear(column);
         }
     }
 
+    /**
+     * @see PersistenceProvider#clearMetadata(Class)
+     */
     public void clearMetadata(Class<?> column) throws Exception {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.clearMetadata(column);

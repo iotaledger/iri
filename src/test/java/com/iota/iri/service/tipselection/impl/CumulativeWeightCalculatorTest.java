@@ -14,12 +14,13 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,6 @@ import java.util.*;
 
 import static com.iota.iri.TransactionTestUtils.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class CumulativeWeightCalculatorTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
@@ -36,6 +36,9 @@ public class CumulativeWeightCalculatorTest {
     private static Tangle tangle;
     private static CumulativeWeightCalculator cumulativeWeightCalculator;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private static SnapshotProvider snapshotProvider;

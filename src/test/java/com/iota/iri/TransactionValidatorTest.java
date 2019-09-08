@@ -13,18 +13,18 @@ import com.iota.iri.utils.Converter;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
 public class TransactionValidatorTest {
 
   private static final int MAINNET_MWM = 14;
@@ -32,6 +32,9 @@ public class TransactionValidatorTest {
   private static final TemporaryFolder logFolder = new TemporaryFolder();
   private static Tangle tangle;
   private static TransactionValidator txValidator;
+
+  @Rule
+  public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock
   private static SnapshotProvider snapshotProvider;

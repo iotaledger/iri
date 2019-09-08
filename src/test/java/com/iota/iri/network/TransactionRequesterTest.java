@@ -5,11 +5,12 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import static com.iota.iri.TransactionTestUtils.getTransactionHash;
 
@@ -19,9 +20,11 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class TransactionRequesterTest {
     private static Tangle tangle = new Tangle();
+
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
     private SnapshotProvider snapshotProvider;

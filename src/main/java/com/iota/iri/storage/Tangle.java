@@ -104,7 +104,7 @@ public class Tangle {
             }
             try {
                 return a.mergeInto(b);
-            }catch (OperationNotSupportedException e) {
+            } catch (OperationNotSupportedException e) {
                 log.error("Error merging data, call canMerge before to see if an object is mergable: ", e);
                 return null;
             }

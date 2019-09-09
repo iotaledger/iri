@@ -41,11 +41,11 @@ public interface Persistable extends Serializable {
     void readMetadata(byte[] bytes);
 
     /**
-     * Specifies whether the object should be appended to an existing key/index or should replace the old
-     * indexed object.
+     * Specifies whether two objects of the same type can be merged and their merged result used as a single object.
+     * For storing in a persistence provider this means we can append items to an index and
+     * for retrieving this means we can merge the results of multiple storage providers
      *
-     * @return <tt>true</tt> if we should add the object to a list for an existing key. <tt>false</tt> if we should
-     * false if we should replace the old value
+     * @return <tt>true</tt> if we mergeable <tt>false</tt> if not mergeable
      */
     boolean canMerge();
 

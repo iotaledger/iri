@@ -70,6 +70,7 @@ public class TransactionValidator {
         this.snapshotProvider = snapshotProvider;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
+        this.newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
         setMwm(protocolConfig.isTestnet(), protocolConfig.getMwm());
     }
 
@@ -85,7 +86,6 @@ public class TransactionValidator {
      * @see #spawnSolidTransactionsPropagation()
      */
     public void init() {
-        newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
         newSolidThread.start();
     }
 

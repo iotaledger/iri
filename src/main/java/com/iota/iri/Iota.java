@@ -68,41 +68,43 @@ public class Iota {
 
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
-    private final SpentAddressesProvider spentAddressesProvider;
+    //Fields must be public in order to be used by IXI
 
-    private final SpentAddressesService spentAddressesService;
+    public final SpentAddressesProvider spentAddressesProvider;
 
-    private final SnapshotProvider snapshotProvider;
+    public final SpentAddressesService spentAddressesService;
 
-    private final SnapshotService snapshotService;
+    public final SnapshotProvider snapshotProvider;
 
-    private final LocalSnapshotManager localSnapshotManager;
+    public final SnapshotService snapshotService;
 
-    private final MilestoneService milestoneService;
+    public final LocalSnapshotManager localSnapshotManager;
 
-    private final LatestMilestoneTracker latestMilestoneTracker;
+    public final MilestoneService milestoneService;
 
-    private final LatestSolidMilestoneTracker latestSolidMilestoneTracker;
+    public final LatestMilestoneTracker latestMilestoneTracker;
 
-    private final SeenMilestonesRetriever seenMilestonesRetriever;
+    public final LatestSolidMilestoneTracker latestSolidMilestoneTracker;
 
-    private final LedgerService ledgerService;
+    public final SeenMilestonesRetriever seenMilestonesRetriever;
 
-    private final TransactionPruner transactionPruner;
+    public final LedgerService ledgerService;
 
-    private final MilestoneSolidifier milestoneSolidifier;
+    public final TransactionPruner transactionPruner;
+
+    public final MilestoneSolidifier milestoneSolidifier;
 
     public final BundleValidator bundleValidator;
 
-    private final Tangle tangle;
-    private final TransactionValidator transactionValidator;
-    private final TransactionRequester transactionRequester;
-    private final TipsRequester tipsRequester;
-    private final TransactionProcessingPipeline txPipeline;
+    public final Tangle tangle;
+    public final TransactionValidator transactionValidator;
+    public final TransactionRequester transactionRequester;
+    public final TipsRequester tipsRequester;
+    public final TransactionProcessingPipeline txPipeline;
     public final NeighborRouter neighborRouter; // used in test
-    private final IotaConfig configuration;
-    private final TipsViewModel tipsViewModel;
-    private final TipSelector tipsSelector;
+    public final IotaConfig configuration;
+    public final TipsViewModel tipsViewModel;
+    public final TipSelector tipsSelector;
 
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.

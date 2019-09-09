@@ -35,7 +35,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     /**
      * Defines the interval in which solidity checks are issued (in milliseconds).
      */
-    private static final int SOLIDIFICATION_INTERVAL = 50;
+    private static final int SOLIDIFICATION_INTERVAL = 500;
 
     /**
      * <p>

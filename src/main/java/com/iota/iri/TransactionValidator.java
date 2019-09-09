@@ -132,7 +132,6 @@ public class TransactionValidator {
     private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         // ignore invalid timestamps for transactions that were requested by our node while solidifying a milestone
         if(transactionRequester.wasTransactionRecentlyRequested(transactionViewModel.getHash())) {
-            transactionRequester.removeRecentlyRequestedTransaction(transactionViewModel.getHash());
             return false;
         }
 

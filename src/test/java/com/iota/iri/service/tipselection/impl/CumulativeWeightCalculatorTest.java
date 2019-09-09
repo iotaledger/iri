@@ -1,5 +1,29 @@
 package com.iota.iri.service.tipselection.impl;
 
+
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -9,24 +33,15 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import com.iota.iri.service.tipselection.RatingCalculator;
 
-import static com.iota.iri.TransactionTestUtils.*;
 
 public class CumulativeWeightCalculatorTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -34,7 +49,7 @@ public class CumulativeWeightCalculatorTest {
     private static final String TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT =
             "tx%d cumulative weight is not as expected";
     private static Tangle tangle;
-    private static CumulativeWeightCalculator cumulativeWeightCalculator;
+    private static RatingCalculator cumulativeWeightCalculator;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Rule
@@ -83,7 +98,7 @@ public class CumulativeWeightCalculatorTest {
         transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction3.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction4.store(tangle, snapshotProvider.getInitialSnapshot());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
                 1, txToCw.get(transaction4.getHash()).intValue());
@@ -114,7 +129,7 @@ public class CumulativeWeightCalculatorTest {
 
         log.debug("printing transaction in diamond shape \n                      {} \n{}  {}\n                      {}",
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
                 1, txToCw.get(transaction3.getHash())
@@ -150,7 +165,7 @@ public class CumulativeWeightCalculatorTest {
         log.info(String.format("Linear ordered hashes from tip %.4s, %.4s, %.4s, %.4s, %.4s", transaction4.getHash(),
                 transaction3.getHash(), transaction2.getHash(), transaction1.getHash(), transaction.getHash()));
 
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
@@ -195,7 +210,7 @@ public class CumulativeWeightCalculatorTest {
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash(),
                 transaction4, transaction5, transaction6);
 
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 6),
                 1, txToCw.get(transaction6.getHash()).intValue());
@@ -233,7 +248,7 @@ public class CumulativeWeightCalculatorTest {
         }
         Map<HashId, Set<HashId>> ratings = new HashMap<>();
         updateApproversRecursively(hashes[0], ratings, new HashSet<>());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
 
         Assert.assertEquals("missing txs from new calculation", ratings.size(), txToCw.size());
         ratings.forEach((hash, weight) -> {
@@ -253,7 +268,7 @@ public class CumulativeWeightCalculatorTest {
 
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
         Assert.assertEquals("There should be only one tx in the map", 1, txToCw.size());
         Assert.assertEquals("The circle raised the weight", 1, txToCw.get(randomTransactionHash).intValue());
     }
@@ -280,7 +295,9 @@ public class CumulativeWeightCalculatorTest {
         //No infinite loop (which will probably result in an overflow exception) means test has passed
     }
 
+    // Ignored as we do not use HashId in CW, which leads to no more collisions from that.
     @Test
+    @Ignore
     public void testCollsionsInDiamondTangle() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3;
         transaction = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
@@ -298,7 +315,7 @@ public class CumulativeWeightCalculatorTest {
 
         log.debug("printing transaction in diamond shape \n                      {} \n{}  {}\n                      {}",
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash());
-        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Map<Hash, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
                 1, txToCw.get(transaction3.getHash()).intValue());

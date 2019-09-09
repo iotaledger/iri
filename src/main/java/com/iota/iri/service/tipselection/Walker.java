@@ -1,8 +1,8 @@
 package com.iota.iri.service.tipselection;
 
+import java.util.Map;
+
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
  * Walks the tangle from an entry point towards tips
@@ -24,6 +24,6 @@ public interface Walker {
      * @return  Transaction hash of tip.
      * @throws Exception If DB fails to retrieve transactions
      */
-    Hash walk(Hash entryPoint, UnIterableMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception;
+    Hash walk(Hash entryPoint, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception;
 
 }

@@ -97,18 +97,26 @@ public enum ApiCommand {
      */
     WERE_ADDRESSES_SPENT_FROM("wereAddressesSpentFrom"),
 
-    // ---------- permanent storage
 
     /**
-     * Pins a transaction
+     * Pins a transaction from normal storage identified by their hash
      */
     PIN_TRANSACTION_HASHES("pinTransactionHashes"),
 
+    /**
+     * Pins a transaction based on sent trytes
+     */
+    PIN_TRANSACTIONS_TRYTES("pinTransactionsTrytes"),
+
+    /**
+     * Unpins a transaction
+     */
     UNPIN_TRANSACTIONS("unpinTransactionHashes"),
 
-    IS_PINNED_TRANSACTIONS_COUNT("isPinned"),
-
-    PIN_TRANSACTIONS_TRYTES("pinTransactionsTrytes");
+    /**
+     * Checks if a transaction is pinned or not
+     */
+    IS_PINNED_TRANSACTIONS_COUNT("isPinned");
 
 
     

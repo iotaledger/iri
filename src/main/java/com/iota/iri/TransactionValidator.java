@@ -89,7 +89,8 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
-    private void setMwm(boolean testnet, int mwm) {
+    @VisibleForTesting
+    void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
         //lowest allowed MWM encoded in 46 bytes.

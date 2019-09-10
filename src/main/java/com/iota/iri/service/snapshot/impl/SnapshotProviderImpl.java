@@ -4,10 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.LocalSnapshotViewModel;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.model.TransactionHash;
+import com.iota.iri.model.*;
 import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 
@@ -172,14 +169,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     @Override
     public void persistSnapshot(Snapshot snapshot) throws SnapshotException {
         snapshot.lockRead();
-        boolean oldDeleted = false;
         try {
-            // delete old local snapshot data
-            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, TransactionHash.class);
-            if(pair.hi != null){
-                new LocalSnapshotViewModel((Hash) pair.low).delete(localSnapshotsDb);
-            }
-            oldDeleted = true;
             log.info("persisting local snapshot; ms hash/index: {}/{}, solid entry points: {}, seen milestones: {}, " +
                             "ledger entries: {}", snapshot.getHash().toString(), snapshot.getIndex(),
                     snapshot.getSolidEntryPoints().size(), snapshot.getSeenMilestones().size(),
@@ -191,9 +181,6 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             log.info("persisted local snapshot; ms hash/index: {}/{}", snapshot.getHash().toString(),
                     snapshot.getIndex());
         } catch (Exception e) {
-            if(!oldDeleted){
-                throw new SnapshotException("failed to delete previous local snapshot", e);
-            }
             throw new SnapshotException("failed to persist local snapshot", e);
         } finally {
             snapshot.unlockRead();
@@ -253,7 +240,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             return null;
         }
         try {
-            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, TransactionHash.class);
+            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, IntegerIndex.class);
             if (pair.hi == null) {
                 log.info("no local snapshot persisted in the database");
                 return null;
@@ -261,7 +248,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
             LocalSnapshot ls = (LocalSnapshot) pair.hi;
             log.info("loading local snapshot; ms hash/index: {}/{}, solid entry points: {}, seen milestones: {}, " +
-                            "ledger entries: {}", pair.low.toString(), ls.milestoneIndex,
+                            "ledger entries: {}", ls.milestoneHash, ls.milestoneIndex,
                     ls.solidEntryPoints.size(), ls.seenMilestones.size(), ls.ledgerState.size());
 
             SnapshotState snapshotState = new SnapshotStateImpl(ls.ledgerState);
@@ -271,7 +258,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             if (!snapshotState.isConsistent()) {
                 throw new SnapshotException("the snapshot state file is not consistent");
             }
-            SnapshotMetaData snapshotMetaData = new SnapshotMetaDataImpl((Hash) pair.low, ls.milestoneIndex,
+            SnapshotMetaData snapshotMetaData = new SnapshotMetaDataImpl(ls.milestoneHash, ls.milestoneIndex,
                     ls.milestoneTimestamp, ls.solidEntryPoints, ls.seenMilestones);
 
             log.info("resumed from local snapshot #" + snapshotMetaData.getIndex() + " ...");

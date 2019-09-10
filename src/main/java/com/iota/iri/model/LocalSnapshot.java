@@ -12,6 +12,7 @@ import java.util.Map;
 public class LocalSnapshot implements Persistable {
 
     // meta
+    public Hash milestoneHash;
     public int milestoneIndex;
     public long milestoneTimestamp;
     public int numSolidEntryPoints;
@@ -25,10 +26,14 @@ public class LocalSnapshot implements Persistable {
     @Override
     public byte[] bytes() {
         ByteBuffer buf = ByteBuffer.allocate(
+                49 + // milestone hash bytes encoded
                 20 + // index (4), timestamp (8), num solid entry points (4) / seen milestones (4) = 20
                         (solidEntryPoints.size() * (Hash.SIZE_IN_BYTES + 4)) + // solid entry points
                         (seenMilestones.size() * (Hash.SIZE_IN_BYTES + 4)) + // seen milestones
                         (ledgerState.size() * (Hash.SIZE_IN_BYTES + 8))); // ledger state
+
+        // milestone hash
+        buf.put(milestoneHash.bytes());
 
         // nums
         buf.putInt(milestoneIndex);
@@ -57,6 +62,10 @@ public class LocalSnapshot implements Persistable {
     public void read(byte[] bytes) {
         byte[] hashBuf = new byte[Hash.SIZE_IN_BYTES];
         ByteBuffer buf = ByteBuffer.wrap(bytes);
+
+        // milestone hash
+        buf.get(hashBuf);
+        milestoneHash = HashFactory.TRANSACTION.create(hashBuf, 0, Hash.SIZE_IN_BYTES);
 
         // nums
         milestoneIndex = buf.getInt();

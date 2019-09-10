@@ -4,7 +4,7 @@ environment.
 
 ### Aloe testing
 This suite uses aloe for performing tests. Once this repository is cloned, make sure you are in the PythonRegression 
-directory. Here you can create a VM to run the tests on and install the necessary packages using:
+directory. Here you can create a virtual environment to run the tests on and install the necessary packages using:
 
 _Optional:_
 ```

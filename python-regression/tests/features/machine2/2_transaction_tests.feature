@@ -5,7 +5,7 @@ Feature: Test transaction confirmation
         A milestone will be issued that references these transactions, and this should
         confirm the transations.
 
-        Given "10" transactions are issued on "nodeA" with:
+        Given "10" transactions are issued on "nodeA-m2" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
@@ -19,7 +19,7 @@ Feature: Test transaction confirmation
         #Give the node 10 seconds to solidify the milestone
         And we wait "10" second/seconds
 
-        Then "getInclusionStates" is called on "nodeA" with:
+        Then "getInclusionStates" is called on "nodeA-m2" with:
         |keys                   |values                     |type           |
         |transactions           |evaluate_and_send          |responseValue  |
         |tips                   |latestMilestone            |configValue    |
@@ -35,7 +35,7 @@ Feature: Test transaction confirmation
         A milestone will be issued that references these transactions, and this should
         confirm the transations.
 
-        Given "10" transactions are issued on "nodeA" with:
+        Given "10" transactions are issued on "nodeA-m2" with:
         |keys                   |values                     |type           |
         |seed                   |THE_BANK                   |staticList     |
         |address                |TEST_ADDRESS               |staticValue    |
@@ -50,7 +50,7 @@ Feature: Test transaction confirmation
         #Give the node time to solidify the milestone
         And we wait "10" second/seconds
 
-        Then "getInclusionStates" is called on "nodeA" with:
+        Then "getInclusionStates" is called on "nodeA-m2" with:
         |keys                   |values                     |type           |
         |transactions           |evaluate_and_send          |responseValue  |
         |tips                   |latestMilestone            |configValue    |

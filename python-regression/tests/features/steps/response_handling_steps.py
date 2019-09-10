@@ -166,7 +166,7 @@ def compare_gtta_with_milestones(step):
     logger.info('Transactions logged in /tests/features/machine3/blowball_logs.txt')
 
 
-@step(r'less than (\d+) percent of the returned transactions should reference milestones')
+@step(r'less than (\d+) percent of the returned transactions should be milestones')
 def less_than_max_percent(step, max_percent):
     """
     Checks the number of returned milestones and ensures that the total number of milestones returned is below a

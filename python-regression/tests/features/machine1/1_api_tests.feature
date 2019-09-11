@@ -123,6 +123,18 @@ Feature: Test API calls on Machine 1
 		|duration					|
 		|trunkTransaction				|
 
+	Scenario: GetTransactionsToApprove is called with a reference transaction
+    		Given "getTransactionsToApprove" is called on "nodeA" with:
+    		|keys       |values				|type           |
+    		|depth      |3					|int            |
+    		|reference  |
+
+    		Then a response with the following is returned:
+    		|keys						|
+    		|branchTransaction				|
+    		|duration					|
+    		|trunkTransaction				|
+
 
 	Scenario: CheckConsistency is called
 		Given "checkConsistency" is called on "nodeA" with:

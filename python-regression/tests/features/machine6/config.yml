@@ -36,7 +36,7 @@ db_with_snapshot: &db_with_snapshot
 
 db_with_ls_db: &db_with_ls_db
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_LS_Db.tar.gz
-  db_checksum: a9094c1b9648b1e094b39830bdbe250510af5166122412192b23fbc99f855205
+  db_checksum: d217729fd5efb0432d179ec59472f283cd61e8ad4ca9aab32e5c1f82632a1a29
   iri_args: *args
   ixis: *ixi
 

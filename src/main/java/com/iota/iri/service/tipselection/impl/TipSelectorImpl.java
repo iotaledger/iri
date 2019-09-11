@@ -27,6 +27,7 @@ public class TipSelectorImpl implements TipSelector {
 
     private static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final String TIPS_NOT_CONSISTENT = "inconsistent tips pair selected";
+    private static final String REFERENCE_TRANSACTION_IS_INVALID = "reference transaction is invalid";
 
     private final EntryPointSelector entryPointSelector;
     private final RatingCalculator ratingCalculator;
@@ -107,7 +108,7 @@ public class TipSelectorImpl implements TipSelector {
             tips.add(tip);
 
             if (reference.isPresent()) {
-                checkReference(reference.get(), rating);
+                checkReference(reference.get(), rating, walkValidator);
                 entryPoint = reference.get();
             }
 
@@ -126,9 +127,12 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(Hash reference, Map<Hash, Integer> rating)
-            throws InvalidAlgorithmParameterException {
-        if (!rating.containsKey(reference)) {
+    private void checkReference(Hash reference, Map<Hash, Integer> rating, WalkValidator walkValidator)
+            throws Exception {
+        if (config.getAlpha() == 0 && !walkValidator.isValid(reference)) {
+            throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_IS_INVALID);
+        }
+        else if (!rating.containsKey(reference)) {
             throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_TOO_OLD);
         }
     }

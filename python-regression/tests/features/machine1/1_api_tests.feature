@@ -127,7 +127,7 @@ Feature: Test API calls on Machine 1
     		Given "getTransactionsToApprove" is called on "nodeA" with:
     		|keys       |values				|type           |
     		|depth      |3					|int            |
-    		|reference  |
+    		|reference  |TEST_HASH          |staticList     |
 
     		Then a response with the following is returned:
     		|keys						|

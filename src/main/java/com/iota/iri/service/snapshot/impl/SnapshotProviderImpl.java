@@ -4,7 +4,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.LocalSnapshotViewModel;
-import com.iota.iri.model.*;
+
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 

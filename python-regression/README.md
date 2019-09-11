@@ -92,8 +92,8 @@ java -jar iri-CURRENT-VERSION.jar -p 14265 -t 15600
 true --local-snapshots-pruning-delay 10000
 ```
 
-Once the node is running, it's time to run the tests. The `output.yml` should contain the host and port details for your 
-nodes in a structure as follows: 
+Once the node is running, it's time to run the tests. The `output.yml` needs to be present in the same machine folder as
+the `config.yml` file and should contain the host and port details for your nodes in a structure as follows: 
 
 ```
 nodes:
@@ -125,7 +125,24 @@ nodes:
 
 Once the `output.yml` configuration is set, the tests can be run.
 
-From the `python-regression` directory, a test can be run using the following command structure:
+_**Note:** Each `machine[X]` directory will need its own unique `output.yml` to run that machines tests._
+
+
+The tests will be run from the `iri/python-regression` directory. The file structure for the test you wish to write 
+should look as follows: 
+
+```
+iri
+-/python-regression [Where the test is run]
+--/tests
+---/features
+----/machine1 [Same structure for other machines]
+-----/1_api_tests.feature
+-----/config.yml
+-----/output.yml
+```
+
+From the `iri/python-regression` directory, a test can be run using the following command structure:
  
 `aloe ` _`Feature file name`_  `-w` _`Location of feature file`_  `[-v]` `[--nologcapture]` 
 ```

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -123,37 +124,45 @@ public class WalkerAlpha implements Walker {
     }
 
     private Optional<Hash> select(Map<Hash, Integer> ratings, Set<Hash> approversSet) {
-
-        //filter based on tangle state when starting the walk
-        List<Hash> approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
-
-        //After filtering, if no approvers are available, it's a tip.
-        if (approvers.size() == 0) {
-            return Optional.empty();
-        }
-
-        //calculate the probabilities
-        List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());
-
-        Integer maxRating = walkRatings.stream().max(Integer::compareTo).orElse(0);
-        //walkRatings.stream().reduce(0, Integer::max);
-
-        //transition probability function (normalize ratings based on Hmax)
-        List<Integer> normalizedWalkRatings = walkRatings.stream().map(w -> w - maxRating).collect(Collectors.toList());
-        List<Double> weights = normalizedWalkRatings.stream().map(w -> Math.exp(alpha * w)).collect(Collectors.toList());
-
-        //select the next transaction
-        Double weightsSum = weights.stream().reduce(0.0, Double::sum);
-        double target = random.nextDouble() * weightsSum;
-
+        List<Hash> approvers;         
         int approverIndex;
-        for (approverIndex = 0; approverIndex < weights.size() - 1; approverIndex++) {
-            target -= weights.get(approverIndex);
-            if (target <= 0) {
-                break;
-            }
-        }
 
+        //Check if ratings map is empty. If so, alpha was set to 0 and a random approver will be selected.
+        if(!Collections.EMPTY_MAP.equals(ratings)) {
+            //filter based on tangle state when starting the walk            
+            approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
+            //After filtering, if no approvers are available, it's a tip.
+            if (approvers.size() == 0) {
+                return Optional.empty();
+            }
+
+            //calculate the probabilities
+            List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());
+
+            Integer maxRating = walkRatings.stream().max(Integer::compareTo).orElse(0);
+            //walkRatings.stream().reduce(0, Integer::max);
+
+            //transition probability function (normalize ratings based on Hmax)
+            List<Integer> normalizedWalkRatings = walkRatings.stream().map(w -> w - maxRating).collect(Collectors.toList());
+            List<Double> weights = normalizedWalkRatings.stream().map(w -> Math.exp(alpha * w)).collect(Collectors.toList());
+
+            //select the next transaction
+            Double weightsSum = weights.stream().reduce(0.0, Double::sum);
+            double target = random.nextDouble() * weightsSum;
+
+            for (approverIndex = 0; approverIndex < weights.size() - 1; approverIndex++) {
+                target -= weights.get(approverIndex);
+                if (target <= 0) {
+                    break;
+                }
+            }
+        } else {
+            approvers = approversSet.stream().collect(Collectors.toList());
+            if (approvers.size() == 0) {
+                return Optional.empty();
+            }
+            approverIndex = random.nextInt(approversSet.size());
+        }
         return Optional.of(approvers.get(approverIndex));
     }
 

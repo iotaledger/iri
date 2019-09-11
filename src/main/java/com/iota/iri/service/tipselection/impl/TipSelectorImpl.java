@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Collections;
 
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
@@ -92,7 +93,12 @@ public class TipSelectorImpl implements TipSelector {
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
-            Map<Hash, Integer> rating = ratingCalculator.calculate(entryPoint);
+            Map<Hash, Integer> rating;
+            if(config.getAlpha() == 0) {
+                rating = Collections.EMPTY_MAP;
+            } else {
+                rating = ratingCalculator.calculate(entryPoint);
+            }
 
             //random walk
             List<Hash> tips = new LinkedList<>();

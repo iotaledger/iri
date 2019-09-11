@@ -67,5 +67,5 @@ nodes:
   nodeD-m6:
     <<: *db_for_pruning
 
-  nodeE:
+  nodeE-m6:
     <<: *db_for_spent_addresses

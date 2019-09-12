@@ -123,6 +123,7 @@ Feature: Test API calls on Machine 1
 		|duration					|
 		|trunkTransaction				|
 
+	@Now
 	Scenario: GetTransactionsToApprove is called with a reference transaction
     		Given "getTransactionsToApprove" is called on "nodeA" with:
     		|keys       |values				|type           |

@@ -18,6 +18,8 @@ import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.storage.Tangle;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Implementation of <tt>TipSelector</tt> that selects 2 tips,
  * based on cumulative weights and transition function alpha.
@@ -127,7 +129,8 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(Hash reference, Map<Hash, Integer> rating, WalkValidator walkValidator)
+    @VisibleForTesting
+    void checkReference(Hash reference, Map<Hash, Integer> rating, WalkValidator walkValidator)
             throws Exception {
         if (config.getAlpha() != 0 && !rating.containsKey(reference)) {
             throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_TOO_OLD);

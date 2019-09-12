@@ -41,7 +41,7 @@ please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 This page contains basic instructions for setting up an IRI node. You can find the full documentation on:
 - Our [documentation website](https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview)
-- [IRI API refernece](https://docs.iota.org/docs/node-software/0.1/iri/references/api-reference)
+- [IRI API reference](https://docs.iota.org/docs/node-software/0.1/iri/references/api-reference)
 
 You can also use one of these great community guides:
 - [IOTA Partners guide](https://iota.partners/)
@@ -80,7 +80,7 @@ or in the `iota.ini` file — e.g., '`PORT = 14265`'.
 If the '`iota.ini`' file exists, it will be read.
 The port and all the command line options below take precedence over values specified in the ini config file.
 
-Here is an example script that specifies only the port, with all other setting to be read from the ini file **if it exists**:
+Here is an example script that specifies only the port, with all other settings to be read from the ini file **if it exists**:
 
 ```
 java -jar iri.jar -p 14265

@@ -184,7 +184,7 @@ def issue_several_milestones(step, num_milestones):
     for index in range(start_index, end_index):
         issue_a_milestone(step, index, node)
         #Give node a moment to update solid milestone
-        sleep(2)
+        wait_for_update(index, api)
 
 
 @step(r'milestone (\d+) is issued on "([^"]+)"')
@@ -208,3 +208,15 @@ def issue_a_milestone(step, index, node):
     milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
     milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
     world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
+
+
+def wait_for_update(index, api):
+    updated = False
+    for i in range(10):
+        node_info = api.get_node_info()
+        if node_info['latestSolidSubtangleMilestoneIndex'] == index:
+            updated = True
+            break
+        sleep(1)
+
+    assert updated is True, "The node was unable to update to index {}".format(index)

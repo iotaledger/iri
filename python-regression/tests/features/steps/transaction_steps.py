@@ -5,6 +5,7 @@ from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions
 from util.threading_logic import pool_logic as pool
 from util.milestone_logic import milestones
+from time import sleep
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -182,6 +183,8 @@ def issue_several_milestones(step, num_milestones):
 
     for index in range(start_index, end_index):
         issue_a_milestone(step, index, node)
+        #Give node a moment to update solid milestone
+        sleep(2)
 
 
 @step(r'milestone (\d+) is issued on "([^"]+)"')

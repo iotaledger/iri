@@ -90,13 +90,13 @@ Feature: Test Bootstrapping With LS
   Scenario: Check unconfirmed transaction is spent from
     Issues a value transaction that will be unconfirmed, and check that the address was spent from.
 
-    Given a transaction is generated and attached on "nodeE" with:
+    Given a transaction is generated and attached on "nodeE-m6" with:
       |keys                       |values                   |type           |
       |address                    |TEST_ADDRESS             |staticValue    |
       |value                      |10                       |int            |
       |seed                       |UNCONFIRMED_TEST_SEED    |staticValue    |
 
-    When "wereAddressesSpentFrom" is called on "nodeE" with:
+    When "wereAddressesSpentFrom" is called on "nodeE-m6" with:
       |keys                       |values                   |type             |
       |addresses                  |UNCONFIRMED_TEST_ADDRESS |staticValue      |
 
@@ -111,7 +111,7 @@ Feature: Test Bootstrapping With LS
     transaction has been pruned from the DB.
 
     # Check that addresses were spent from before pruning
-    Given "wereAddressesSpentFrom" is called on "nodeE" with:
+    Given "wereAddressesSpentFrom" is called on "nodeE-m6" with:
       |keys                       |values                   |type             |
       |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
 
@@ -122,7 +122,7 @@ Feature: Test Bootstrapping With LS
     When the next 100 milestones are issued
 
     # Check that addresses were spent after transaction have been pruned
-    And "wereAddressesSpentFrom" is called on "nodeE" with:
+    And "wereAddressesSpentFrom" is called on "nodeE-m6" with:
       |keys                       |values                   |type             |
       |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
 

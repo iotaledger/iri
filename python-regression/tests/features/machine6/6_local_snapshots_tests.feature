@@ -92,18 +92,18 @@ Feature: Test Bootstrapping With LS
     This file will then be checked to make sure the correct values have been exported to it. It will then merge these
     spent addresses into an empty node
 
-    Given the spent addresses are exported from "nodeA"
-    When reading the exported spent addresses file on "nodeA" returns with:
+    Given the spent addresses are exported from "nodeA-m6"
+    When reading the exported spent addresses file on "nodeA-m6" returns with:
       |keys                       |values                   |type             |
       |addresses                  |SPENT_ADDRESSES          |staticValue      |
 
     # This part uses a default provided spentAddresses.txt file to import
-    And the spent addresses are imported on "nodeF" from:
+    And the spent addresses are imported on "nodeF-m6" from:
       |keys                       |values                   |
       |basePath                   |/iri/data/               |
       |file                       |spentAddresses.txt       |
 
-    When "wereAddressesSpentFrom" is called on "nodeF" with:
+    When "wereAddressesSpentFrom" is called on "nodeF-m6" with:
       |keys                       |values                   |type             |
       |addresses                  |SPENT_ADDRESSES          |staticValue      |
 
@@ -117,22 +117,22 @@ Feature: Test Bootstrapping With LS
       Using the merge-spent tool in the iri-extensions library, several spent address text files will be merged into
       an empty node
 
-      Given the spent addresses are imported on "nodeG" from:
+      Given the spent addresses are imported on "nodeG-m6" from:
         |keys                       |values                   |
         |basePath                   |/iri/data/               |
         |file                       |MultiSpentAddresses.txt  |
 
-      And the spent addresses are imported on "nodeG" from:
+      And the spent addresses are imported on "nodeG-m6" from:
         |keys                       |values                   |
         |basePath                   |/iri/data/               |
         |file                       |MultiSpentAddresses2.txt |
 
-      And the spent addresses are imported on "nodeG" from:
+      And the spent addresses are imported on "nodeG-m6" from:
         |keys                       |values                   |
         |basePath                   |/iri/data/               |
         |file                       |MultiSpentAddresses3.txt |
 
-      When "wereAddressesSpentFrom" is called on "nodeG" with:
+      When "wereAddressesSpentFrom" is called on "nodeG-m6" with:
         |keys                       |values                   |type             |
         |addresses                  |LATER_SPENT_ADDRESSES    |staticValue      |
 

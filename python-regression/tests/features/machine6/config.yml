@@ -78,5 +78,8 @@ nodes:
   nodeD-m6:
     <<: *db_for_pruning
 
-  nodeF:
+  nodeF-m6:
+    <<: *db_empty
+
+  nodeG-m6:
     <<: *db_empty

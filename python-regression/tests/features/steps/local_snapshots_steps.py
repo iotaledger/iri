@@ -1,6 +1,7 @@
-from aloe import step
+from aloe import step, world
 from util.test_logic import api_test_logic as api_utils
-import os
+from kubernetes import client, config
+from kubernetes.stream import stream
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -103,6 +104,25 @@ def export_spent_addresses(step, node):
 
     logger.info("Spent addresses file exported as: {}".format(request_return['ixi']['fileName']))
 
+    try:
+        podname = world.machine['nodes'][node]['podname']
+        config.load_kube_config()
+        v1 = client.CoreV1Api()
+        response = stream(v1.connect_get_namespaced_pod_exec,
+                          podname, 'default',
+                          command=['cat', '/iri/data/spentAddresses.txt'],
+                          stderr=True, stdin=True, stdout=True, tty=False,
+                          _preload_content=False)
+
+        while response.is_open():
+            response.update(timeout=1)
+            if response.peek_stdout():
+                f = open("/tmp/spentAddresses.txt", "w+")
+                f.write(response.read_stdout())
+
+    except:
+        logger.info("No pod name found, skipping file transfer from k8s pod")
+
 
 @step(r'the spent addresses are imported on "([^"]+)" from:')
 def merge_spent_addresses_file(step, node):
@@ -145,7 +165,7 @@ def read_spent_addresses_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    file_name = '/iri/data/spentAddresses.txt'
+    file_name = '/tmp/spentAddresses.txt'
     lines = [line.rstrip() for line in open(file_name)]
 
     for x in options['addresses']:

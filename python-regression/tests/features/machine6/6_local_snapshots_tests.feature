@@ -35,12 +35,12 @@ Feature: Test Bootstrapping With LS
     And A local snapshot was taken on "nodeB-m6" at index 10220
 
     When reading the local snapshot state on "nodeB-m6" returns with:
-      |keys                       |values                   |type             |
-      |address                    |LS_TEST_STATE_ADDRESSES  |staticValue      |
+      |keys                       |values                   |type                   |
+      |address                    |LS_TEST_STATE_ADDRESSES  |staticValue            |
 
     And reading the local snapshot metadata on "nodeB-m6" returns with:
-      |keys                       |values                   |type             |
-      |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
+      |keys                       |values                   |type                   |
+      |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue            |
 
 
   Scenario: LS File node is synced
@@ -68,12 +68,12 @@ Feature: Test Bootstrapping With LS
     And we wait "30" second/seconds
 
     Then "checkConsistency" is called on "nodeC-m6" with:
-      |keys                       |values                   |type             |
-      |tails                      |LS_TEST_MILESTONE_HASHES |staticValue      |
+      |keys                       |values                   |type                   |
+      |tails                      |LS_TEST_MILESTONE_HASHES |staticValue            |
 
     And the response for "checkConsistency" should return with:
-      |keys                       |values                   |type             |
-      |state                      |True                     |bool             |
+      |keys                       |values                   |type                   |
+      |state                      |True                     |bool                   |
 
 
   Scenario: Old transactions are pruned
@@ -81,8 +81,8 @@ Feature: Test Bootstrapping With LS
     the pruning depth are no longer present.
 
     Given "checkConsistency" is called on "nodeD-m6" with:
-      |keys                       |values                   |type             |
-      |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue      |
+      |keys                       |values                   |type                   |
+      |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue            |
 
     Then the response for "checkConsistency" should return null
 
@@ -94,22 +94,22 @@ Feature: Test Bootstrapping With LS
 
     Given the spent addresses are exported from "nodeA-m6"
     When reading the exported spent addresses file on "nodeA-m6" returns with:
-      |keys                       |values                   |type             |
-      |addresses                  |SPENT_ADDRESSES          |staticValue      |
+      |keys                       |values                   |type                   |
+      |addresses                  |SPENT_ADDRESSES          |staticValue            |
 
     # This part uses a default provided spentAddresses.txt file to import
     And the spent addresses are imported on "nodeF-m6" from:
       |keys                       |values                   |
-      |basePath                   |/iri/data/               |
+      |basePath                   |/tmp/                    |
       |file                       |spentAddresses.txt       |
 
     When "wereAddressesSpentFrom" is called on "nodeF-m6" with:
-      |keys                       |values                   |type             |
-      |addresses                  |SPENT_ADDRESSES          |staticValue      |
+      |keys                       |values                   |type                   |
+      |addresses                  |SPENT_ADDRESSES          |staticValue            |
 
     Then the response for "wereAddressesSpentFrom" should return with:
-      |keys                       |values                   |type             |
-      |states                     |True                     |bool             |
+      |keys                       |values                   |type                   |
+      |states                     |True                     |bool                   |
 
 
 
@@ -118,25 +118,25 @@ Feature: Test Bootstrapping With LS
       an empty node
 
       Given the spent addresses are imported on "nodeG-m6" from:
-        |keys                       |values                   |
-        |basePath                   |/iri/data/               |
-        |file                       |MultiSpentAddresses.txt  |
+        |keys                       |values                                         |
+        |basePath                   |/cache/iri/python-regression/IXI/merge-spent/  |
+        |file                       |MultiSpentAddresses.txt                        |
 
       And the spent addresses are imported on "nodeG-m6" from:
-        |keys                       |values                   |
-        |basePath                   |/iri/data/               |
-        |file                       |MultiSpentAddresses2.txt |
+        |keys                       |values                                         |
+        |basePath                   |/cache/iri/python-regression/IXI/merge-spent/  |
+        |file                       |MultiSpentAddresses2.txt                       |
 
       And the spent addresses are imported on "nodeG-m6" from:
-        |keys                       |values                   |
-        |basePath                   |/iri/data/               |
-        |file                       |MultiSpentAddresses3.txt |
+        |keys                       |values                                         |
+        |basePath                   |/cache/iri/python-regression/IXI/merge-spent/  |
+        |file                       |MultiSpentAddresses3.txt                       |
 
       When "wereAddressesSpentFrom" is called on "nodeG-m6" with:
-        |keys                       |values                   |type             |
-        |addresses                  |LATER_SPENT_ADDRESSES    |staticValue      |
+        |keys                       |values                   |type                 |
+        |addresses                  |LATER_SPENT_ADDRESSES    |staticValue          |
 
       Then the response for "wereAddressesSpentFrom" should return with:
-        |keys                       |values                   |type             |
-        |states                     |True                     |bool             |
+        |keys                       |values                   |type                 |
+        |states                     |True                     |bool                 |
 

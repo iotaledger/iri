@@ -105,7 +105,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            //ISSUE #786: walkValidator should become a state less dependency
+            //ISSUE #786: walkValidator should become a stateless dependency
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);

@@ -18,6 +18,8 @@ import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.storage.Tangle;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Implementation of <tt>TipSelector</tt> that selects 2 tips,
  * based on cumulative weights and transition function alpha.
@@ -27,6 +29,7 @@ public class TipSelectorImpl implements TipSelector {
 
     private static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final String TIPS_NOT_CONSISTENT = "inconsistent tips pair selected";
+    private static final String REFERENCE_TRANSACTION_IS_INVALID = "reference transaction is invalid";
 
     private final EntryPointSelector entryPointSelector;
     private final RatingCalculator ratingCalculator;
@@ -102,12 +105,13 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
+            //ISSUE #786: walkValidator should become a stateless dependency
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 
             if (reference.isPresent()) {
-                checkReference(reference.get(), rating);
+                checkReference(reference.get(), rating, walkValidator);
                 entryPoint = reference.get();
             }
 
@@ -126,10 +130,15 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(Hash reference, Map<Hash, Integer> rating)
-            throws InvalidAlgorithmParameterException {
-        if (!rating.containsKey(reference)) {
+    //Because walkValidator currently can't be mocked, it is easier to test this private method directly
+    @VisibleForTesting
+    void checkReference(Hash reference, Map<Hash, Integer> rating, WalkValidator walkValidator)
+            throws Exception {
+        if (config.getAlpha() != 0 && !rating.containsKey(reference)) {
             throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_TOO_OLD);
+        }
+        else if (config.getAlpha() == 0 && !walkValidator.isValid(reference)) {
+            throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_IS_INVALID);
         }
     }
 }

@@ -105,6 +105,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
+            //ISSUE #786: walkValidator should become a state less dependency
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
@@ -129,6 +130,7 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
+    //Because walkValidator currently can't be mocked, it is easier to test this private method directly
     @VisibleForTesting
     void checkReference(Hash reference, Map<Hash, Integer> rating, WalkValidator walkValidator)
             throws Exception {

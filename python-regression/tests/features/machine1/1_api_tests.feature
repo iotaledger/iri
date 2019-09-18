@@ -123,6 +123,7 @@ Feature: Test API calls on Machine 1
 		|duration					|
 		|trunkTransaction				|
 
+
 	Scenario: CheckConsistency is called
 		Given "checkConsistency" is called on "nodeA" with:
 		|keys           |values				|type           |

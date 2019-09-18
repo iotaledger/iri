@@ -1,13 +1,15 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.tipselection.*;
+import com.iota.iri.service.tipselection.EntryPointSelector;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.WalkValidator;
+import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.storage.Tangle;
 
 import java.security.InvalidAlgorithmParameterException;
@@ -15,16 +17,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.openjdk.jmh.annotations.TearDown;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,7 +62,7 @@ public class TipSelectorImplTest {
     }
 
     @Before
-    public void setUpEach() throws Exception {
+    public void setUpEach() {
         when(config.getAlpha()).thenReturn(BaseIotaConfig.Defaults.ALPHA);
         tipSelector = new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
                 walker, config);

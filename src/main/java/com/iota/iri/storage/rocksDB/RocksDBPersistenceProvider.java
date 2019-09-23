@@ -302,7 +302,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 ColumnFamilyHandle handle = classTreeMap.get(value.getClass());
                 ColumnFamilyHandle referenceHandle = metadataReference.get(value.getClass());
 
-                if (value.merge()) {
+                if (value.canMerge()) {
                     writeBatch.merge(handle, key.bytes(), value.bytes());
                 } else {
                     writeBatch.put(handle, key.bytes(), value.bytes());

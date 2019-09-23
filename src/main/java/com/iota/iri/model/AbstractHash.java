@@ -37,7 +37,7 @@ public abstract class AbstractHash implements Hash, Serializable {
     public AbstractHash(byte[] source, int sourceOffset, int sourceSize) {
         if(sourceSize < SIZE_IN_TRITS) {
             byte[] dest = new byte[SIZE_IN_BYTES];
-            System.arraycopy(source, sourceOffset, dest, 0, sourceSize - sourceOffset > source.length ? source.length - sourceOffset : sourceSize);
+            System.arraycopy(source, sourceOffset, dest, 0, Math.min(dest.length, Math.min(source.length, sourceSize)));
             this.byteSafe = new ByteSafe(dest);
         } else {
             byte[] dest = new byte[SIZE_IN_TRITS];

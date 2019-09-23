@@ -67,7 +67,7 @@ public class StateDiff implements Persistable {
 
     @Override
     public boolean exists() {
-        return this.state == null || this.state.isEmpty();
+        return !(this.state == null || this.state.isEmpty());
     }
 
 }

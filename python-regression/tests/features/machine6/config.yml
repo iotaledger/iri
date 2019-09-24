@@ -47,14 +47,14 @@ db_for_pruning: &db_for_pruning
 
 
 nodes:
-  nodeA: #name
+  nodeA-m6: #name
     <<: *db_full
 
-  nodeB:
+  nodeB-m6:
     <<: *db_with_snapshot
 
-  nodeC:
+  nodeC-m6:
     <<: *db_with_LS_files
 
-  nodeD:
+  nodeD-m6:
     <<: *db_for_pruning

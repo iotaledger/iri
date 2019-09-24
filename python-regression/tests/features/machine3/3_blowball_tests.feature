@@ -10,11 +10,11 @@ Feature: Test GTTA for blowballs
 		|keys           |values                 |type           |
 		|depth          |3                      |int            |
 
-		And "findTransactions" is called on "nodeA" with:
+		And "findTransactions" is called on "nodeA-m3" with:
 		|keys           |values                 |type           |
 		|addresses      |TEST_BLOWBALL_COO      |staticList     |
 
 		#Insert your testnet coordinator address above
 		Then the returned GTTA transactions will be compared with the milestones
-		And less than 5 percent of the returned transactions should reference milestones
+		And less than 5 percent of the returned transactions should be milestones
 	

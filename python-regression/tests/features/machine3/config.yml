@@ -19,21 +19,21 @@ seeds: # For internal use by the regression system.
     - SIID
 
 nodes:
-  nodeA: #name
+  nodeA-m3: #name
     <<: *blowball_tests_config_files
   
-  nodeB:
+  nodeB-m3:
     <<: *blowball_tests_config_files
 
-  nodeC:
+  nodeC-m3:
     <<: *blowball_tests_config_files
 
-  nodeD:
+  nodeD-m3:
     <<: *blowball_tests_config_files
 
-  nodeE:
+  nodeE-m3:
     <<: *blowball_tests_config_files
 
-  nodeF:
+  nodeF-m3:
     <<: *blowball_tests_config_files
 

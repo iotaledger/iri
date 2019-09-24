@@ -15,8 +15,5 @@ defaults: &transaction_tests_config_files
   java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
 
 nodes:
-  nodeA: #name
-    <<: *transaction_tests_config_files
-
-  nodeB:
+  nodeA-m2: #name
     <<: *transaction_tests_config_files

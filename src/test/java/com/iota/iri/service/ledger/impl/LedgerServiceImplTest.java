@@ -32,7 +32,7 @@ public class LedgerServiceImplTest {
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    private LedgerServiceImpl ledgerService = new LedgerServiceImpl();
+    private LedgerServiceImpl ledgerService;
 
     @Mock
     private Tangle tangle;
@@ -59,9 +59,8 @@ public class LedgerServiceImplTest {
 
     @Before
     public void setUp() {
-        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
+        ledgerService = new LedgerServiceImpl(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
                 bundleValidator);
-
     }
 
     @Test

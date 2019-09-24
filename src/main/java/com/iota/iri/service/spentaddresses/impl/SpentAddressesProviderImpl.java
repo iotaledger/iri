@@ -36,25 +36,25 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
 
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesProvider.class);
 
-    private SnapshotConfig config;
+    private final SnapshotConfig config;
+    private final PersistenceProvider provider;
 
-    private PersistenceProvider provider;
+    /**
+     * Implements the spent addresses provider interface.
+     * @param configuration The snapshot configuration used for file location
+     * @param persistenceProvider A persistence provider for load/save the spent addresses
+     */
+    public SpentAddressesProviderImpl(SnapshotConfig configuration, PersistenceProvider persistenceProvider) {
+        this.config = configuration;
+        this.provider = persistenceProvider;
+    }
 
     /**
      * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
-     *
-     * @param config The snapshot configuration used for file location
-     * @param provider A persistence provider for load/save the spent addresses
-     * @param assertSpentAddressesExistence
-     * @return the current instance
      * @throws SpentAddressesException if we failed to create a file at the designated location
      */
-    public SpentAddressesProviderImpl init(SnapshotConfig config, PersistenceProvider provider,
-                                           boolean assertSpentAddressesExistence)
-            throws SpentAddressesException {
-        this.config = config;
+    public void init(boolean assertSpentAddressesExistence) throws SpentAddressesException {
         try {
-            this.provider = provider;
             this.provider.init();
             if (assertSpentAddressesExistence && !doSpentAddressesExist(provider)) {
                 log.error("Expecting to start with a populated spent-addresses-db when initializing from a " +
@@ -66,7 +66,6 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         } catch (Exception e) {
             throw new SpentAddressesException("There is a problem with accessing stored spent addresses", e);
         }
-        return this;
     }
 
     private boolean doSpentAddressesExist(PersistenceProvider provider) throws Exception {

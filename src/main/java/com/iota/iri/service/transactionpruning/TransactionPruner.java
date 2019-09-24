@@ -6,6 +6,7 @@ package com.iota.iri.service.transactionpruning;
  * parts of the code.
  */
 public interface TransactionPruner {
+
     /**
      * This method adds a job to the TransactionPruner, that consequently can be executed by the {@link #processJobs()}
      * method.
@@ -29,5 +30,20 @@ public interface TransactionPruner {
      * @throws TransactionPruningException if anything goes wrong while processing the jobs
      */
     void processJobs() throws TransactionPruningException;
+
+    /**
+     * This method initializes the instance by preparing the pruning jobs.
+     */
+    void init();
+
+    /**
+     * Starts the pruning jobs.
+     */
+    void start();
+
+    /**
+     * Shuts down the pruning jobs.
+     */
+    void shutdown();
 
 }

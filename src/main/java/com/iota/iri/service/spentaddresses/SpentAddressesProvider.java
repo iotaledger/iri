@@ -43,4 +43,13 @@ public interface SpentAddressesProvider {
     //used by IXI
     List<Hash> getAllAddresses();
 
+    /**
+     * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
+     * @param assertSpentAddressesExistence a flag that forces an assertion that
+     *        we have spent addresses data at startup
+     *
+     * @throws SpentAddressesException if we failed to create a file at the designated location
+     */
+    void init(boolean assertSpentAddressesExistence) throws SpentAddressesException;
+
 }

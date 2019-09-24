@@ -33,6 +33,7 @@ public class EntryPointSelectorImplTest {
     @Mock
     private Tangle tangle;
 
+
     @Mock
     private SnapshotProvider snapshotProvider;
 

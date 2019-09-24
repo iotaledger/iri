@@ -7,6 +7,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
+import com.iota.iri.network.TransactionCacheDigester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -136,7 +137,7 @@ public class ReplyStage implements Stage {
                 // send the requested tx data to the requester
                 neighborRouter.gossipTransactionTo(neighbor, tvm);
                 // cache the replied with tx
-                long txDigest = NeighborRouter.getTxCacheDigest(tvm.getBytes());
+                long txDigest = TransactionCacheDigester.getDigest(tvm.getBytes());
                 recentlySeenBytesCache.put(txDigest, tvm.getHash());
             } catch (Exception e) {
                 log.error("error adding reply tx to neighbor's send queue", e);

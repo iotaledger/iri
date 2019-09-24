@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import javax.naming.OperationNotSupportedException;
 import java.io.Serializable;
 
 /**
@@ -40,11 +41,27 @@ public interface Persistable extends Serializable {
     void readMetadata(byte[] bytes);
 
     /**
-     * Specifies whether the object should be appended to an existing key/index or should replace the old
-     * indexed object.
+     * Specifies whether two objects of the same type can be merged and their merged result used as a single object.
+     * For storing in a persistence provider this means we can append items to an index and
+     * for retrieving this means we can merge the results of multiple storage providers
      *
-     * @return <tt>true</tt> if we should add the object to a list for an existing key. <tt>false</tt> if we should
-     * false if we should replace the old value
+     * @return <tt>true</tt> if we mergeable <tt>false</tt> if not mergeable
      */
-    boolean merge();
+    boolean canMerge();
+
+    /**
+     * Merges source object into this object.
+     * @param source the persistable that will be merged into the called persistable
+     * @return the updated persistable, which contains both. Or {@code null} if the persistable cannot be merged
+     * @throws OperationNotSupportedException when the persistable called does not support merging. Call canMerge first.
+     */
+    Persistable mergeInto(Persistable source) throws OperationNotSupportedException;
+
+
+    /**
+     * Determines whether the data exists. This method is needed because non {@code null} data doesn't mean that the data doesn't exist.
+     *
+     * @return true if data exists , else returns false
+     */
+    boolean exists();
 }

@@ -72,7 +72,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * Holds Snapshot related configuration parameters.
      */
-    private SnapshotConfig config;
+    private final SnapshotConfig config;
 
     /**
      * Internal property for the value returned by {@link SnapshotProvider#getInitialSnapshot()}.
@@ -85,31 +85,19 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private Snapshot latestSnapshot;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It simply stores the passed in values in their corresponding private properties and loads the snapshots.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code snapshotProvider = new SnapshotProviderImpl().init(...);}
-     *
-     * @param config Snapshot related configuration parameters
-     * @throws SnapshotException if anything goes wrong while trying to read the snapshots
-     * @return the initialized instance itself to allow chaining
-     *
+     * Implements the snapshot provider interface.
+     * @param configuration Snapshot configuration properties.
      */
-    public SnapshotProviderImpl init(SnapshotConfig config) throws SnapshotException, SpentAddressesException {
-        this.config = config;
+    public SnapshotProviderImpl(SnapshotConfig configuration) {
+        this.config = configuration;
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void init() throws SnapshotException, SpentAddressesException {
         loadSnapshots();
-
-        return this;
     }
 
     /**

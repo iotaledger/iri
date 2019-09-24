@@ -1,5 +1,7 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
@@ -10,20 +12,21 @@ import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TransactionValidatorTest {
 
@@ -59,19 +62,19 @@ public class TransactionValidatorTest {
 
   @Before
   public void setUpEach() {
-    Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
+    when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     TipsViewModel tipsViewModel = new TipsViewModel();
     TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, new MainnetConfig());
     txValidator.setMwm(false, MAINNET_MWM);
   }
 
   @Test
-  public void testMinMwm() throws InterruptedException {
-    txValidator.init(false, 5);
-    assertTrue(txValidator.getMinWeightMagnitude() == 13);
-    txValidator.shutdown();
-    txValidator.init(false, MAINNET_MWM);
+  public void testMinMwm() {
+    ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
+    when(protocolConfig.getMwm()).thenReturn(5);
+    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig);
+    assertEquals("Expected testnet minimum minWeightMagnitude", 13, transactionValidator.getMinWeightMagnitude());
   }
 
   @Test
@@ -88,7 +91,7 @@ public class TransactionValidatorTest {
   }
 
   @Test
-  public void validateBytesWithNewCurl() throws Exception {
+  public void validateBytesWithNewCurl() {
     byte[] trits = getTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);

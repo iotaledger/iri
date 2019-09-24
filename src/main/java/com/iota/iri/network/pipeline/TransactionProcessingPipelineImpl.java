@@ -11,6 +11,7 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.TransactionCacheDigester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -23,7 +24,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,10 +69,22 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
 
-    @Override
-    public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
-                     SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
-                     LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
+    /**
+     * Creates a {@link TransactionProcessingPipeline}.
+     *
+     * @param neighborRouter         The {@link NeighborRouter} to use for broadcasting transactions
+     * @param config                 The config to set cache sizes and other options
+     * @param txValidator            The transaction validator to validate incoming transactions with
+     * @param tangle                 The {@link Tangle} database to use to store and load transactions.
+     * @param snapshotProvider       The {@link SnapshotProvider} to use to store transactions with.
+     * @param tipsViewModel          The {@link TipsViewModel} to load tips from in the reply stage
+     * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
+     *                               reply stage
+     */
+    public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
+            TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
+            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+            TransactionRequester transactionRequester) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
@@ -174,7 +186,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     public void process(byte[] txTrits) {
         byte[] txBytes = new byte[Transaction.SIZE];
         Converter.bytes(txTrits, txBytes);
-        long txDigest = NeighborRouter.getTxCacheDigest(txBytes);
+        long txDigest = TransactionCacheDigester.getDigest(txBytes);
         HashingPayload payload = new HashingPayload(null, txTrits, txDigest, null);
         hashAndValidate(new ProcessingContext(payload));
     }

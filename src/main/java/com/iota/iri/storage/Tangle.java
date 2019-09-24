@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.zmq.MessageQueueProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.naming.OperationNotSupportedException;
 
 /**
  * Delegates methods from {@link PersistenceProvider}
@@ -82,13 +83,37 @@ public class Tangle {
      * @see PersistenceProvider#get(Class, Indexable)
      */
     public Persistable load(Class<?> model, Indexable index) throws Exception {
-            Persistable out = null;
-            for(PersistenceProvider provider: this.persistenceProviders) {
-                if((out = provider.get(model, index)) != null) {
-                    break;
+        LinkedList<Persistable> outlist = new LinkedList<>();
+        for (PersistenceProvider provider : this.persistenceProviders) {
+            Persistable result = provider.get(model, index);
+
+            if (result != null && result.exists()) {
+                if (result.canMerge()) {
+
+                    outlist.add(result);
+                } else {
+                    // If it is a non-mergeable result then there is no need to ask another provider again.
+                    // return immediately
+                    return result;
                 }
             }
-            return out;
+        }
+        Persistable p = outlist.stream().reduce(null, (a, b) -> {
+            if (a == null) {
+                return b;
+            }
+            try {
+                return a.mergeInto(b);
+            } catch (OperationNotSupportedException e) {
+                log.error("Error merging data, call canMerge before to see if an object is mergable: ", e);
+                return null;
+            }
+        });
+        //For backwards compatibility. Should be solve with issue #1591
+        if (p == null) {
+            p = (Persistable) model.newInstance();
+        }
+        return p;
     }
 
     /**

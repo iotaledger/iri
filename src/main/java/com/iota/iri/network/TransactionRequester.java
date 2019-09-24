@@ -2,9 +2,6 @@ package com.iota.iri.network;
 
 import java.util.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -14,7 +11,6 @@ import com.iota.iri.storage.Tangle;
 
 public class TransactionRequester {
 
-    private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
     private final Set<Hash> recentlyRequestedTransactions = Collections.synchronizedSet(new HashSet<>());
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;

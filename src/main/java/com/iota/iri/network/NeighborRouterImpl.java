@@ -265,7 +265,10 @@ public class NeighborRouterImpl implements NeighborRouter {
             String domain = ipToDomainMapping.get(remoteAddr.getAddress().getHostAddress());
             if (domain != null) {
                 newNeighbor.setDomain(domain);
+            } else {
+                newNeighbor.setDomain(remoteAddr.getAddress().getHostAddress());
             }
+
             newNeighbor.send(Handshake.createHandshakePacket((char) networkConfig.getNeighboringSocketPort(),
                     byteEncodedCooAddress, (byte) protocolConfig.getMwm()));
             log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
@@ -666,7 +669,7 @@ public class NeighborRouterImpl implements NeighborRouter {
         tcpChannel.connect(addr);
         Neighbor neighbor = new NeighborImpl<>(selector, tcpChannel, addr.getAddress().getHostAddress(), addr.getPort(),
                 txPipeline);
-        neighbor.setDomain(addr.getHostName());
+        neighbor.setDomain(addr.getHostString());
         tcpChannel.register(selector, SelectionKey.OP_CONNECT, neighbor);
     }
 
@@ -842,7 +845,17 @@ public class NeighborRouterImpl implements NeighborRouter {
     public List<Neighbor> getNeighbors() {
         List<Neighbor> neighbors = new ArrayList<>(connectedNeighbors.values());
         reconnectPool.forEach(uri -> {
-            neighbors.add(new NeighborImpl<>(null, null, uri.getHost(), uri.getPort(), null));
+            // try to resolve the address of the neighbor which is not connected
+            InetSocketAddress inetAddr = new InetSocketAddress(uri.getHost(), uri.getPort());
+            String hostAddress = "";
+            if(!inetAddr.isUnresolved()){
+                hostAddress = inetAddr.getAddress().getHostAddress();
+            }
+            Neighbor neighbor = new NeighborImpl<>(null, null, hostAddress, uri.getPort(), null);
+            // enforce the domain to be set, if the uri contains the IP address, the host address will not be empty
+            // hence using the getNeighbors() HTTP API call will return a meaningful answer.
+            neighbor.setDomain(uri.getHost());
+            neighbors.add(neighbor);
         });
         return neighbors;
     }

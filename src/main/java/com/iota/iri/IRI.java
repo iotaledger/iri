@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *     </ul>
  * </p>
  *
- * @see <a href="https://docs.iota.org/iri">Online documentation on iri</a>
+ * @see <a href="https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview">Online documentation on iri</a>
  */
 public class IRI {
 

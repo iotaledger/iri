@@ -233,11 +233,12 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
                 addToIndex(writeBatch, columnMap.get(APPROVEE_INDEX),  model.getTrunkTransactionHash(), index);
                 addToIndex(writeBatch, columnMap.get(APPROVEE_INDEX),  model.getBranchTransactionHash(), index);
                 db.write(writeOptions, writeBatch);
+                return true;
             }
-
-
+        }else{
+            return true; //Already pinned, is fine to return true
         }
-        return false;
+
     }
 
     @Override
@@ -247,8 +248,8 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
 
             safeDeleteTransaction(writeBatch, index);
             db.write(writeOptions, writeBatch);
+            return true;
         }
-        return true;
     }
 
     @Override

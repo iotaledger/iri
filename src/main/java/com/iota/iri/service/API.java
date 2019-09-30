@@ -333,10 +333,11 @@ public class API {
     @Document(name="pinTransactionTrytes")
     public AbstractResponse pinTransactionTrytesStatement(List<String> trytes) throws Exception {
         final List<TransactionViewModel> elements = convertTrytes(trytes);
-        for (final TransactionViewModel transactionViewModel : elements) {
-            tangle.pinTransaction(transactionViewModel);
+        boolean[] result = new boolean[elements.size()];
+        for(int i = 0; i < elements.size(); i++){
+            result[i] = tangle.pinTransaction(elements.get(i));
         }
-        return AbstractResponse.createEmptyResponse();
+        return BooleanValuesResponse.create(result);
     }
 
     /**
@@ -348,12 +349,11 @@ public class API {
     @Document(name="pinTransactionHashes")
     private AbstractResponse pinTransactionHashesStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
-
-        for (Hash transaction : transactions) {
-            tangle.pinTransaction(transaction);
+        boolean[] result = new boolean[transactions.size()];
+        for(int i = 0; i < transactions.size(); i++){
+            result[i] = tangle.pinTransaction(transactions.get(i));
         }
-
-        return AbstractResponse.createEmptyResponse();
+        return BooleanValuesResponse.create(result);
     }
 
     /**

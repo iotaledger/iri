@@ -378,24 +378,35 @@ public class Tangle {
     // ---------- Permanent storage capabilities --------
 
 
-    public void pinTransaction(TransactionViewModel tvm)  throws Exception {
+    /**
+     * @see PermanentPersistenceProvider#pinTransaction(TransactionViewModel, Hash)
+     */
+    public boolean pinTransaction(TransactionViewModel tvm)  throws Exception {
+        boolean success = false;
         for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
-            provider.pinTransaction(tvm, tvm.getHash());
+            success = provider.pinTransaction(tvm, tvm.getHash()) || success ;
         }
+        return success ;
     }
 
-    public void pinTransaction(Hash hash)  throws Exception {
+    /**
+     * Retrieves transaction from persistence providers and then calls pinTransaction(TransactionViewModel, Hash)
+     */
+    public boolean pinTransaction(Hash hash)  throws Exception {
         Transaction tx = (Transaction)load(Transaction.class, hash);
         if(!tx.exists()) {
             TransactionViewModel tvm = new TransactionViewModel(tx, hash);
-            pinTransaction(tvm);
+            return pinTransaction(tvm);
         }
+        return false;
     }
 
-    public void unpinTransaction(Hash hash)  throws Exception {
+    public boolean unpinTransaction(Hash hash)  throws Exception {
+        boolean success = false;
         for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
-            provider.unpinTransaction(hash);
+            success = provider.unpinTransaction(hash) || success;
         }
+        return success;
     }
 
     public boolean[] isPinned(List<Hash> transactionHashes)  throws Exception {

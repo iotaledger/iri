@@ -4,7 +4,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.conf.SolidificationConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;

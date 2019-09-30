@@ -34,8 +34,8 @@ seeds: # For internal use by the regression system.
     - SIID
 
 nodes:
-  nodeA: #name
+  nodeA-m5: #name
     <<: *no_validation_tests_config_files
   
-  nodeB:
+  nodeB-m5:
     <<: *validation_tests_config_files

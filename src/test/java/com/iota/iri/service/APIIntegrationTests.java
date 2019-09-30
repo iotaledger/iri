@@ -2,7 +2,10 @@ package com.iota.iri.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.iota.iri.IXI;
+import com.iota.iri.MainInjectionConfiguration;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IXIConfig;
@@ -10,7 +13,9 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
+import com.iota.iri.network.NetworkInjectionConfiguration;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.utils.Converter;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.ResponseSpecBuilder;
@@ -87,20 +92,19 @@ public class APIIntegrationTests {
             String[] args = {"-p", portStr, "--testnet", String.valueOf(true), "--max-neighbors", String.valueOf(5), "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
             configuration.parseConfigFromArgs(args);
+            Injector injector = Guice.createInjector(new MainInjectionConfiguration(configuration),
+                    new NetworkInjectionConfiguration(configuration));
 
             //create node
-            iota = new Iota(configuration);
-            ixi = new IXI(iota);
-            api = new API(configuration, ixi, iota.transactionRequester,
-                    iota.spentAddressesService, iota.tangle, iota.bundleValidator,
-                    iota.snapshotProvider, iota.ledgerService, iota.neighborRouter, iota.tipsSelector,
-                    iota.tipsViewModel, iota.transactionValidator,
-                    iota.latestMilestoneTracker, iota.txPipeline);
+            iota = injector.getInstance(Iota.class);
+            ixi = injector.getInstance(IXI.class);
+            api = injector.getInstance(API.class);
 
             //init
             try {
                 iota.init();
-                iota.snapshotProvider.getInitialSnapshot().setTimestamp(0);
+                SnapshotProvider snapshotProvider = injector.getInstance(SnapshotProvider.class);
+                snapshotProvider.getInitialSnapshot().setTimestamp(0);
                 api.init(new RestEasy(configuration));
                 ixi.init(IXIConfig.IXI_DIR);
             } catch (final Exception e) {

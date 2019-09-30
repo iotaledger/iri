@@ -6,6 +6,7 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 
+import javax.naming.OperationNotSupportedException;
 import java.nio.ByteBuffer;
 
 
@@ -216,17 +217,16 @@ public class Transaction implements Persistable {
     }
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
 
     @Override
-    public Persistable mergeTwo(Persistable nrTwo){
-        return null;
+    public Persistable mergeInto(Persistable source) throws OperationNotSupportedException {
+        throw new OperationNotSupportedException("This object is not mergeable");
     }
     @Override
-    public boolean isEmpty() {
-        return bytes == null || bytes.length == 0;
+    public boolean exists() {
+        return !(bytes == null || bytes.length == 0);
     }
-
 }

@@ -8,8 +8,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.*;
-import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
-import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
@@ -77,53 +75,28 @@ public class SnapshotServiceImpl implements SnapshotService {
     /**
      * Holds the tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds the config with important snapshot specific settings.
      */
-    private SnapshotConfig config;
-
-    private SpentAddressesService spentAddressesService;
-
-    private SpentAddressesProvider spentAddressesProvider;
+    private final SnapshotConfig config;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code snapshotService = new SnapshotServiceImpl().init(...);}
-     *
-     * @param tangle Tangle object which acts as a database interface
-     * @param snapshotProvider data provider for the snapshots that are relevant for the node
-     * @param config important snapshot related configuration parameters
-     * @return the initialized instance itself to allow chaining
+     * Implements the snapshot service. See interface for more information.
+     * @param tangle acts as a database interface.
+     * @param snapshotProvider gives us access to the relevant snapshots.
+     * @param config configuration with snapshot specific settings.
      */
-    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-            SpentAddressesService spentAddressesService, SpentAddressesProvider spentAddressesProvider,
-            SnapshotConfig config) {
-
+    public SnapshotServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.spentAddressesService = spentAddressesService;
-        this.spentAddressesProvider = spentAddressesProvider;
         this.config = config;
-
-        return this;
     }
 
     /**

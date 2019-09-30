@@ -118,7 +118,8 @@ public class GetNeighborsResponse extends AbstractResponse {
             Neighbor ne = new Neighbor();
             NeighborMetrics metrics = neighbor.getMetrics();
             int port = neighbor.getRemoteServerSocketPort();
-            ne.address = neighbor.getHostAddressAndPort();
+            String hostAddr = neighbor.getHostAddress();
+            ne.address = hostAddr == null || hostAddr.isEmpty() ? "" : neighbor.getHostAddressAndPort();
             ne.domain = neighbor.getDomain();
             ne.numberOfAllTransactions = metrics.getAllTransactionsCount();
             ne.numberOfInvalidTransactions = metrics.getInvalidTransactionsCount();

@@ -17,7 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class NeighborRouterTest {
 
@@ -37,8 +38,6 @@ public class NeighborRouterTest {
 
     @Test
     public void initsWithConfigDefinedNeighbors() throws InterruptedException {
-        NeighborRouter neighborRouter = new NeighborRouter();
-
         List<String> configNeighbors = new ArrayList<>(Arrays.asList("tcp://127.0.0.1:11000", "tcp://127.0.0.1:12000"));
         Mockito.when(nodeConfigA.getNeighbors()).thenReturn(configNeighbors);
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
@@ -46,7 +45,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH);
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
 
-        neighborRouter.init(nodeConfigA, nodeConfigA, transactionRequester, txPipeline);
+        NeighborRouter neighborRouter = new NeighborRouterImpl(nodeConfigA, nodeConfigA, transactionRequester, txPipeline);
 
         Thread neighborRouterThread = new Thread(neighborRouter::route);
         neighborRouterThread.start();
@@ -66,9 +65,6 @@ public class NeighborRouterTest {
 
     @Test
     public void addAndRemoveNeighborsAddsAndRemovesConnectionsAccordingly() throws Exception {
-        NeighborRouter neighborRouterA = new NeighborRouter();
-        NeighborRouter neighborRouterB = new NeighborRouter();
-
         URI neighborAURI = URI.create("tcp://127.0.0.1:19000");
         String neighborAIdentity = String.format("%s:%d", neighborAURI.getHost(), neighborAURI.getPort());
         URI neighborBURI = URI.create("tcp://127.0.0.1:20000");
@@ -83,7 +79,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigA.isAutoTetheringEnabled()).thenReturn(true);
         Mockito.when(nodeConfigA.getMwm()).thenReturn(1);
-        neighborRouterA.init(nodeConfigA, nodeConfigA, transactionRequester, txPipeline);
+        NeighborRouter neighborRouterA = new NeighborRouterImpl(nodeConfigA, nodeConfigA, transactionRequester, txPipeline);
 
         List<String> configNeighborsB = new ArrayList<>();
         Mockito.when(nodeConfigB.isTestnet()).thenReturn(true);
@@ -95,7 +91,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigB.isAutoTetheringEnabled()).thenReturn(true);
         Mockito.when(nodeConfigB.getMwm()).thenReturn(1);
-        neighborRouterB.init(nodeConfigB, nodeConfigB, transactionRequester, txPipeline);
+        NeighborRouter neighborRouterB = new NeighborRouterImpl(nodeConfigB, nodeConfigB, transactionRequester, txPipeline);
 
         Thread neighborRouterAThread = new Thread(neighborRouterA::route, "A");
         Thread neighborRouterBThread = new Thread(neighborRouterB::route, "B");

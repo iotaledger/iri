@@ -75,7 +75,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private boolean available;
     
     private Cache cache, compressedCache;
-
+    private ColumnFamilyOptions columnFamilyOptions;
+    
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
                                       Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
@@ -106,7 +107,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
             IotaIOUtils.closeQuietly(columnFamilyHandle);
         }
-        IotaIOUtils.closeQuietly(db, options, bloomFilter, cache, compressedCache);
+        IotaIOUtils.closeQuietly(db, options, bloomFilter, cache, compressedCache, columnFamilyOptions);
     }
 
     @Override
@@ -484,24 +485,24 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             MergeOperator mergeOperator = new StringAppendOperator();
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
             
-            try (ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()){
-                columnFamilyOptions.setMergeOperator(mergeOperator)
+            columnFamilyOptions = new ColumnFamilyOptions()
+                .setMergeOperator(mergeOperator)
                 .setTableFormatConfig(blockBasedTableConfig)
                 .setMaxWriteBufferNumber(2)
                 .setWriteBufferSize(2 * SizeUnit.MB);
-                
-                //Add default column family. Main motivation is to not change legacy code
-                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
-                for (String name : columnFamilies.keySet()) {
-                    columnFamilyDescriptors.add(new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions));
-                }
-                // metadata descriptor is always last
-                if (metadataColumnFamily != null) {
-                    columnFamilyDescriptors.add(
-                            new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
-                    metadataReference = new HashMap<>();
-                }
+            
+            //Add default column family. Main motivation is to not change legacy code
+            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
+            for (String name : columnFamilies.keySet()) {
+                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions));
             }
+            // metadata descriptor is always last
+            if (metadataColumnFamily != null) {
+                columnFamilyDescriptors.add(
+                        new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
+                metadataReference = new HashMap<>();
+            }
+            
 
             db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
             db.enableFileDeletions(true);
@@ -509,7 +510,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             initClassTreeMap(columnFamilyDescriptors);
 
         } catch (Exception e) {
-            IotaIOUtils.closeQuietly(db);
+            IotaIOUtils.closeQuietly(db, options, bloomFilter, columnFamilyOptions, cache, compressedCache);
             throw e;
         }
     }

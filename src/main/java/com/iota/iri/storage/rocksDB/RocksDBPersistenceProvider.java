@@ -1,12 +1,5 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.utils.IotaIOUtils;
-import com.iota.iri.utils.Pair;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
@@ -34,6 +27,7 @@ import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.MergeOperator;
+import org.rocksdb.Priority;
 import org.rocksdb.RestoreOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
@@ -45,6 +39,13 @@ import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.PersistenceProvider;
+import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.Pair;
 
 public class RocksDBPersistenceProvider implements PersistenceProvider {
 
@@ -446,8 +447,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
             int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
             RocksEnv.getDefault()
-                .setBackgroundThreads(numThreads, RocksEnv.FLUSH_POOL)
-                .setBackgroundThreads(numThreads, RocksEnv.COMPACTION_POOL);
+                .setBackgroundThreads(numThreads, Priority.HIGH)
+                .setBackgroundThreads(numThreads, Priority.LOW);
 
             options = new DBOptions()
                 .setCreateIfMissing(true)

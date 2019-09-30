@@ -21,11 +21,13 @@ import org.rocksdb.BackupEngine;
 import org.rocksdb.BackupableDBOptions;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
+import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
+import org.rocksdb.LRUCache;
 import org.rocksdb.MergeOperator;
 import org.rocksdb.Priority;
 import org.rocksdb.RestoreOptions;
@@ -71,6 +73,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private DBOptions options;
     private BloomFilter bloomFilter;
     private boolean available;
+    
+    private Cache cache, compressedCache;
 
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
@@ -102,7 +106,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
             IotaIOUtils.closeQuietly(columnFamilyHandle);
         }
-        IotaIOUtils.closeQuietly(db, options, bloomFilter);
+        IotaIOUtils.closeQuietly(db, options, bloomFilter, cache, compressedCache);
     }
 
     @Override
@@ -321,7 +325,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models)
             throws Exception {
         if (CollectionUtils.isNotEmpty(models)) {
-            try (WriteBatch writeBatch = new WriteBatch()) {
+            try (WriteBatch writeBatch = new WriteBatch(); 
+                    WriteOptions writeOptions = new WriteOptions()
+                            //We are explicit about what happens if the node reboots before a flush to the db
+                            .setDisableWAL(false)
+                            //We want to make sure deleted data was indeed deleted
+                            .setSync(true)) {
+                
                 for (Pair<Indexable, ? extends Class<? extends Persistable>> entry : models) {
                     Indexable indexable = entry.low;
                     byte[] keyBytes = indexable.bytes();
@@ -333,11 +343,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     }
                 }
 
-                WriteOptions writeOptions = new WriteOptions()
-                        //We are explicit about what happens if the node reboots before a flush to the db
-                        .setDisableWAL(false)
-                        //We want to make sure deleted data was indeed deleted
-                        .setSync(true);
                 db.write(writeOptions, writeBatch);
             }
         }
@@ -424,6 +429,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         initDB(path, logPath, columnFamilies);
     }
 
+    // options is closed in shutdown
+    @SuppressWarnings("resource")
     private void initDB(String path, String logPath, Map<String, Class<? extends Persistable>> columnFamilies) throws Exception {
         try {
             try {
@@ -460,41 +467,41 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setMaxBackgroundCompactions(1);
 
             options.setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
-
             bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
-
-            BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
+            cache = new LRUCache(cacheSize * SizeUnit.KB, 2);
+            compressedCache = new LRUCache(32 * SizeUnit.KB, 10);
+            
+            BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilterPolicy(bloomFilter);
             blockBasedTableConfig
-                .setFilter(bloomFilter)
-                .setCacheNumShardBits(2)
+                .setFilterPolicy(bloomFilter)
                 .setBlockSizeDeviation(10)
                 .setBlockRestartInterval(16)
-                .setBlockCacheSize(cacheSize * SizeUnit.KB)
-                .setBlockCacheCompressedNumShardBits(10)
-                .setBlockCacheCompressedSize(32 * SizeUnit.KB);
+                .setBlockCache(cache)
+                .setBlockCacheCompressed(compressedCache);
 
             options.setAllowConcurrentMemtableWrite(true);
 
             MergeOperator mergeOperator = new StringAppendOperator();
-            ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()
-                .setMergeOperator(mergeOperator)
+            List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
+            
+            try (ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()){
+                columnFamilyOptions.setMergeOperator(mergeOperator)
                 .setTableFormatConfig(blockBasedTableConfig)
                 .setMaxWriteBufferNumber(2)
                 .setWriteBufferSize(2 * SizeUnit.MB);
-
-            List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
-            //Add default column family. Main motivation is to not change legacy code
-            columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
-            for (String name : columnFamilies.keySet()) {
-                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions));
+                
+                //Add default column family. Main motivation is to not change legacy code
+                columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
+                for (String name : columnFamilies.keySet()) {
+                    columnFamilyDescriptors.add(new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions));
+                }
+                // metadata descriptor is always last
+                if (metadataColumnFamily != null) {
+                    columnFamilyDescriptors.add(
+                            new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
+                    metadataReference = new HashMap<>();
+                }
             }
-            // metadata descriptor is always last
-            if (metadataColumnFamily != null) {
-                columnFamilyDescriptors.add(
-                        new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
-                metadataReference = new HashMap<>();
-            }
-
 
             db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
             db.enableFileDeletions(true);
@@ -514,7 +521,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         int i = 1;
         for (; i < columnFamilyDescriptors.size(); i++) {
 
-            String name = new String(columnFamilyDescriptors.get(i).columnFamilyName());
+            String name = new String(columnFamilyDescriptors.get(i).getName());
             if (name.equals(mcfName)) {
                 Map<Class<?>, ColumnFamilyHandle> metadataRef = new HashMap<>();
                 metadataRef.put(metadataColumnFamily.getValue(), columnFamilyHandles.get(i));

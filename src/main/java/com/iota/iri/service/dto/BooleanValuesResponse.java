@@ -1,20 +1,20 @@
 package com.iota.iri.service.dto;
 
-public class BooleanValuesRespones extends AbstractResponse {
+public class BooleanValuesResponse extends AbstractResponse {
     /**
      * States of the specified addresses in Boolean
      * Order of booleans is equal to order of the supplied addresses.
      */
-    private boolean[] values;
+    private boolean[] result;
 
 
     public static AbstractResponse create(boolean[] values) {
-        BooleanValuesRespones res = new BooleanValuesRespones();
-        res.values = values;
+        BooleanValuesResponse res = new BooleanValuesResponse();
+        res.result = values;
         return res;
     }
 
-    public boolean[] getValue() {
-        return this.values;
+    public boolean[] getResult() {
+        return this.result;
     }
 }

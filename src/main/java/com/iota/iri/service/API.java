@@ -365,7 +365,7 @@ public class API {
     @Document(name="isPinned")
     private AbstractResponse isPinnedStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
-        return BooleanValuesRespones.create(tangle.isPinned(transactions));
+        return BooleanValuesResponse.create(tangle.isPinned(transactions));
     }
 
     /**

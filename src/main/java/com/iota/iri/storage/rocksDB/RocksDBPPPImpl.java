@@ -38,7 +38,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     public static String TRANSACTION_COLUMN = "transaction";
     public static String ADDRESS_INDEX = "address-index";
     public static String BUNDLE_INDEX = "bundle-index";
-
     public static String TAG_INDEX = "tag-index";
     public static String APPROVEE_INDEX = "approvee-index";
 
@@ -55,7 +54,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
         this.dbPath = dbPath;
         this.logPath = logPath;
         this.cacheSize = cacheSize;
-
     }
 
     @Override
@@ -78,7 +76,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
         }
         IotaIOUtils.closeQuietly(db, options, bloomFilter);
     }
-
 
     //----------- PersistenceProvider only overrides ---------------
     @Override
@@ -114,7 +111,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     @Override
     public Persistable get(Class<?> model, Indexable index) throws Exception {
         Persistable object = (Persistable) model.newInstance();
-
 
         if(object instanceof Transaction) {
 
@@ -157,21 +153,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
             return toReturn;
         }
         return object;
-    }
-
-    public void loopAddressIndex(){
-        try (RocksIterator iterator = db.newIterator(columnMap.get(ADDRESS_INDEX))) {
-                iterator.seekToFirst();
-            while(iterator.isValid()) {
-                Hashes h = new Hashes();
-                byte[] value = iterator.value();
-                h.read(value);
-                Hash i = HashFactory.ADDRESS.create(iterator.value());
-                log.info(i.toString() + "  " + h.toString());
-                iterator.next();
-            }
-
-        }
     }
 
     @Override
@@ -249,8 +230,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
                 addToIndex(writeBatch, columnMap.get(ADDRESS_INDEX),  model.getAddressHash(), index);
                 addToIndex(writeBatch, columnMap.get(TAG_INDEX),  model.getTagValue(), index);
                 addToIndex(writeBatch, columnMap.get(BUNDLE_INDEX),  model.getBundleHash(), index);
-
-                //TODO only add when relevant in reference.
                 addToIndex(writeBatch, columnMap.get(APPROVEE_INDEX),  model.getTrunkTransactionHash(), index);
                 addToIndex(writeBatch, columnMap.get(APPROVEE_INDEX),  model.getBranchTransactionHash(), index);
                 db.write(writeOptions, writeBatch);
@@ -315,16 +294,12 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
                         buffer.put(delimiter);
                         buffer.put(subarray2);
                     }
-
-
                     writeBatch.put(column, key.bytes(), buffer.array());
                 }
-
             }
-
-
         }
     }
+
     @VisibleForTesting
     public void addToIndex(WriteBatch writeBatch, ColumnFamilyHandle column, Indexable key, Indexable indexValue) throws Exception{
         byte[] indexBytes = indexValue.bytes();
@@ -337,7 +312,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
         if(keyLoc == -1){//not found
 
             ByteBuffer buffer = ByteBuffer.allocate(dbResult.length + indexBytes.length + (dbResult.length > 0 ? 1 : 0));//+1 delimiter length
-
             buffer.put(dbResult);
             if(dbResult.length > 0){
                 //Means we add on the end of the current stream.
@@ -345,7 +319,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
                 buffer.put(delimiter);
             }
             buffer.put(indexBytes);
-
             writeBatch.put(column, key.bytes(), buffer.array());
         }
     }
@@ -473,9 +446,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(TAG_INDEX.getBytes("UTF-8"), columnFamilyOptions));
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(ADDRESS_INDEX.getBytes("UTF-8"), columnFamilyOptions));
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(APPROVEE_INDEX.getBytes("UTF-8"), columnFamilyOptions));
-
-
-
 
             db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
             db.enableFileDeletions(true);

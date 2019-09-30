@@ -390,12 +390,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.ixiDir = ixiDir;
     }
 
-
-
-
     //------- PERMADB -------------
-
-
     @Override
     public boolean isSelectivePermaEnabled() { return this.permaDbEnabled;}
 
@@ -470,9 +465,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setPermaRescanDb(boolean permaRescanDb) {
         this.permaRescanDb = permaRescanDb;
     }
-
-
     //-----------------------------
+
     @Override
     public String getDbPath() {
         return dbPath;

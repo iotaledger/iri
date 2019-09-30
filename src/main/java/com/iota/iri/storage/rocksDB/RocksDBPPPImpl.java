@@ -334,7 +334,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
                     break;
                 }
             }
-            if (found) return i;
+            if (found) {return i;}
         }
         return -1;
     }

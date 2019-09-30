@@ -386,7 +386,7 @@ public class Tangle {
 
     public void pinTransaction(Hash hash)  throws Exception {
         Transaction tx = (Transaction)load(Transaction.class, hash);
-        if(!tx.isEmpty()) {
+        if(!tx.exists()) {
             TransactionViewModel tvm = new TransactionViewModel(tx, hash);
             pinTransaction(tvm);
         }

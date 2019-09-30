@@ -114,10 +114,11 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     @Override
     public Persistable get(Class<?> model, Indexable index) throws Exception {
         Persistable object = (Persistable) model.newInstance();
-        Hash hashIndex = (Hash)index;
+
 
         if(object instanceof Transaction) {
-            TransactionViewModel tvm = getTransaction(hashIndex);
+
+            TransactionViewModel tvm = getTransaction((Hash)index);
             if(tvm == null){
                 return object;
             }
@@ -137,22 +138,22 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
 
         if(object instanceof Bundle){
             Bundle toReturn  = new Bundle();
-            toReturn.set =  findBundle(hashIndex).set;
+            toReturn.set =  findBundle((Hash)index).set;
             return toReturn;
         }
         if(object instanceof Address){
             Address toReturn  = new Address();
-            toReturn.set =  findAddress(hashIndex).set;
+            toReturn.set =  findAddress((Hash)index).set;
             return toReturn;
         }
         if(object instanceof Tag){
             Tag toReturn  = new Tag();
-            toReturn.set =  findTag(hashIndex).set;
+            toReturn.set =  findTag((Hash)index).set;
             return toReturn;
         }
         if(object instanceof Approvee){
             Approvee toReturn  = new Approvee();
-            toReturn.set =  findApprovee(hashIndex).set;
+            toReturn.set =  findApprovee((Hash)index).set;
             return toReturn;
         }
         return object;

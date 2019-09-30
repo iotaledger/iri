@@ -31,25 +31,13 @@ public class SpentAddress implements Persistable {
         return false;
     }
 
-
     @Override
     public Persistable mergeInto(Persistable source)  throws OperationNotSupportedException {
         throw new OperationNotSupportedException("This object is not mergeable");
     }
 
-
     @Override
     public boolean exists() {
-        return exists;
-    }
-
-    @Override
-    public Persistable mergeTwo(Persistable nrTwo){
-        return null;
-    }
-
-    @Override
-    public boolean isEmpty() {
         return exists;
     }
 

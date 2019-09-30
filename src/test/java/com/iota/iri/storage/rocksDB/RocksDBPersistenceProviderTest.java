@@ -44,7 +44,7 @@ public class RocksDBPersistenceProviderTest {
 
     @Test
     public void testDeleteBatch() throws Exception {
-        Persistable  tx = new Transaction();
+        Persistable tx = new Transaction();
         byte[] bytes = new byte[Transaction.SIZE];
         Arrays.fill(bytes, (byte) 1);
         tx.read(bytes);

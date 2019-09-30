@@ -44,15 +44,13 @@ public class RocksDBPersistenceProviderTest {
 
     @Test
     public void testDeleteBatch() throws Exception {
-        Transaction tx = new Transaction();
+        Persistable  tx = new Transaction();
         byte[] bytes = new byte[Transaction.SIZE];
         Arrays.fill(bytes, (byte) 1);
         tx.read(bytes);
         tx.readMetadata(bytes);
-
-
         List<Pair<Indexable, Persistable>> models = IntStream.range(1, 1000)
-                .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), (Persistable)tx))
+                .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), tx))
                 .collect(Collectors.toList());
 
         rocksDBPersistenceProvider.saveBatch(models);

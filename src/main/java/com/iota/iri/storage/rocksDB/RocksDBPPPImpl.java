@@ -73,6 +73,12 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     private BloomFilter bloomFilter;
     private boolean available;
 
+    /**
+     * Constructor
+     * @param dbPath database path
+     * @param logPath database log path
+     * @param cacheSize cache size
+     */
     public RocksDBPPPImpl(String dbPath, String logPath, int cacheSize) {
         this.dbPath = dbPath;
         this.logPath = logPath;

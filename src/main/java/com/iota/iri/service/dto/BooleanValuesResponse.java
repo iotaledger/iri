@@ -1,7 +1,9 @@
 package com.iota.iri.service.dto;
 
 
-
+/**
+ * Genereric boolean list response
+ */
 public class BooleanValuesResponse extends AbstractResponse {
     /**
      * List of boleans to use as an API result

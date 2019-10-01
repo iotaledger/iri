@@ -13,6 +13,7 @@ import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.SystemUtils;
+
 import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
@@ -102,7 +103,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
      */
     @Override
     public void delete(Class<?> model, Indexable index) throws Exception {
-        // Do Nothing
+        return;
     }
 
     /**
@@ -257,7 +258,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     @Override
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models)
             throws Exception {
-
+        return;
     }
 
     /**
@@ -265,7 +266,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
      */
     @Override
     public void clear(Class<?> column) throws Exception {
-
+        return;
     }
 
     /**
@@ -273,7 +274,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
      */
     @Override
     public void clearMetadata(Class<?> column) throws Exception {
-
+        return;
     }
 
     /**
@@ -354,7 +355,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
         removeFromIndex(writeBatch, columnMap.get(BUNDLE_INDEX), tx.getBundleHash(), key);
         removeFromIndex(writeBatch, columnMap.get(APPROVEE_INDEX), tx.getTrunkTransactionHash(), key);
         removeFromIndex(writeBatch, columnMap.get(APPROVEE_INDEX), tx.getBranchTransactionHash(), key);
-
     }
 
     /**

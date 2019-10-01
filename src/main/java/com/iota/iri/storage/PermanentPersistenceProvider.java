@@ -6,6 +6,9 @@ import com.iota.iri.model.persistables.Hashes;
 
 import java.util.List;
 
+/**
+ * Abstracts the permanent storage for transaction pinning
+ */
 public interface PermanentPersistenceProvider {
 
 

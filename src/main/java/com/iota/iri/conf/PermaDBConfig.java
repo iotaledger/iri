@@ -55,6 +55,9 @@ public interface PermaDBConfig extends Config {
      */
     boolean permaIsRescanDb();
 
+    /**
+     * Field descriptions
+     */
     interface Descriptions {
 
         String PERMADB_PATH = "The folder where the DB saves its data.";

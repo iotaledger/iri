@@ -46,9 +46,18 @@ public class Tangle {
     private final List<PermanentPersistenceProvider> permanentPersistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
 
+    /**
+     * Adds a persistence provider
+     * @param provider
+     */
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
     }
+
+    /**
+     * Adds a perment persistence provider
+     * @param provider
+     */
     public void addPermanentPersistenceProvider(PermanentPersistenceProvider provider) {
         this.permanentPersistenceProviders.add(provider);
     }

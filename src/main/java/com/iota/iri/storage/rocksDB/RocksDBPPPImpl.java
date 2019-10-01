@@ -3,8 +3,12 @@ package com.iota.iri.storage.rocksDB;
 import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.persistables.*;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Hashes;
 import com.iota.iri.storage.PermanentPersistenceProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -14,15 +18,33 @@ import com.iota.iri.utils.Pair;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.SystemUtils;
 
-import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.RocksDB;
+import org.rocksdb.DBOptions;
+import org.rocksdb.BloomFilter;
+import org.rocksdb.WriteBatch;
+import org.rocksdb.WriteOptions;
+import org.rocksdb.RocksEnv;
+import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.StringAppendOperator;
+import org.rocksdb.MergeOperator;
+import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.ColumnFamilyDescriptor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 /***
  * Implements the retrieval functions of a the normal persistence provider and the permanent persistence provider

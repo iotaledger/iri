@@ -3,9 +3,11 @@ package com.iota.iri.storage.rocksDB;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
-import com.iota.iri.storage.Indexable;
 import org.apache.commons.io.FileUtils;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.File;
 import java.util.Collections;

@@ -400,7 +400,9 @@ public class Tangle {
         }
         return false;
     }
-
+    /**
+     * @see PermanentPersistenceProvider#unpinTransaction(Hash)
+     */
     public boolean unpinTransaction(Hash hash)  throws Exception {
         boolean success = false;
         for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
@@ -408,7 +410,9 @@ public class Tangle {
         }
         return success;
     }
-
+    /**
+     * @see PermanentPersistenceProvider#isPinned(List)
+     */
     public boolean[] isPinned(List<Hash> transactionHashes)  throws Exception {
         boolean[] mergedResult = new boolean[transactionHashes.size()];
         for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {

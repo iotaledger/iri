@@ -1,8 +1,11 @@
 package com.iota.iri;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.iota.iri.model.LocalSnapshot;
+import com.iota.iri.model.persistables.SpentAddress;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,13 +144,13 @@ public class Iota {
         this.tipsSelector = tipsSelector;
     }
 
-    private void initDependencies() throws SnapshotException, SpentAddressesException {
+    private void initDependencies(PersistenceProvider localSnapshotDB) throws SnapshotException, SpentAddressesException {
         //snapshot provider must be initialized first
         //because we check whether spent addresses data exists
-        snapshotProvider.init();
+        snapshotProvider.init(localSnapshotDB);
         boolean assertSpentAddressesExistence = !configuration.isTestnet()
                 && snapshotProvider.getInitialSnapshot().getIndex() != configuration.getMilestoneStartIndex();
-        spentAddressesProvider.init(assertSpentAddressesExistence);
+        spentAddressesProvider.init(localSnapshotDB, assertSpentAddressesExistence);
         latestMilestoneTracker.init();
         seenMilestonesRetriever.init();
         if (transactionPruner != null) {
@@ -166,7 +169,7 @@ public class Iota {
      *                   error.
      */
     public void init() throws Exception {
-        initDependencies(); // remainder of injectDependencies method (contained init code)
+        initDependencies(initializeLocalSnapshotDB()); // remainder of injectDependencies method (contained init code)
 
         initializeTangle();
         tangle.init();
@@ -251,6 +254,19 @@ public class Iota {
 
         // free the resources of the snapshot provider last because all other instances need it
         snapshotProvider.shutdown();
+    }
+
+    private PersistenceProvider initializeLocalSnapshotDB() throws Exception {
+        PersistenceProvider persistenceProvider = new RocksDBPersistenceProvider(
+                configuration.getLocalSnapshotsDbPath(),
+                configuration.getLocalSnapshotsDbLogPath(),
+                1000,
+                new HashMap<String, Class<? extends Persistable>>(1) {{
+                    put("spent-addresses", SpentAddress.class);
+                    put("localsnapshots", LocalSnapshot.class);
+                }}, null);
+        persistenceProvider.init();
+        return persistenceProvider;
     }
 
     private void initializeTangle() {

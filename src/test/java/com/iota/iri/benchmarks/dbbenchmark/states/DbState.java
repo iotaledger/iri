@@ -63,8 +63,8 @@ public abstract class DbState {
                     }
                 }, null);
         localSnapshotDb.init();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig(), localSnapshotDb);
-        snapshotProvider.init();
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider.init(localSnapshotDb);
 
         tangle.addPersistenceProvider(dbProvider);
         String trytes = "";

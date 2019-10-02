@@ -98,16 +98,16 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * Implements the snapshot provider interface.
      * @param configuration Snapshot configuration properties.
      */
-    public SnapshotProviderImpl(SnapshotConfig configuration, PersistenceProvider localSnapshotsDb) {
+    public SnapshotProviderImpl(SnapshotConfig configuration) {
         this.config = configuration;
-        this.localSnapshotsDb = localSnapshotsDb;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void init() throws SnapshotException, SpentAddressesException {
+    public void init(PersistenceProvider localSnapshotsDb) throws SnapshotException, SpentAddressesException {
+        this.localSnapshotsDb = localSnapshotsDb;
         loadSnapshots();
     }
 

@@ -1,6 +1,7 @@
 package com.iota.iri.service.spentaddresses;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.storage.PersistenceProvider;
 
 import java.util.Collection;
 import java.util.List;
@@ -50,6 +51,6 @@ public interface SpentAddressesProvider {
      *
      * @throws SpentAddressesException if we failed to create a file at the designated location
      */
-    void init(boolean assertSpentAddressesExistence) throws SpentAddressesException;
+    void init(PersistenceProvider persistenceProvider, boolean assertSpentAddressesExistence) throws SpentAddressesException;
 
 }

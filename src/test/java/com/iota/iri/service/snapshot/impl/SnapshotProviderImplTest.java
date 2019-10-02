@@ -38,7 +38,7 @@ public class SnapshotProviderImplTest {
                     }
                 }, null);
         localSnapshotDb.init();
-        provider = new SnapshotProviderImpl(iotaConfig, localSnapshotDb);
+        provider = new SnapshotProviderImpl(iotaConfig);
         
         // When running multiple tests, the static cached snapshot breaks this test
         cachedBuildinSnapshot = SnapshotProviderImpl.builtinSnapshot;
@@ -55,7 +55,7 @@ public class SnapshotProviderImplTest {
     
     @Test
     public void testGetLatestSnapshot() throws SnapshotException, SpentAddressesException {
-        provider.init();
+        provider.init(localSnapshotDb);
 
         // If we run this on its own, it correctly takes the testnet milestone
         // However, running it with all tests makes it load the last global snapshot contained in the jar

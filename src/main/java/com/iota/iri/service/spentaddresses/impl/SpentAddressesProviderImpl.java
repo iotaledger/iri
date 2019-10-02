@@ -37,27 +37,26 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesProvider.class);
 
     private final SnapshotConfig config;
-    private final PersistenceProvider provider;
+    private PersistenceProvider provider;
 
     /**
      * Implements the spent addresses provider interface.
      * @param configuration The snapshot configuration used for file location
-     * @param persistenceProvider A persistence provider for load/save the spent addresses
      */
-    public SpentAddressesProviderImpl(SnapshotConfig configuration, PersistenceProvider persistenceProvider) {
+    public SpentAddressesProviderImpl(SnapshotConfig configuration) {
         this.config = configuration;
-        this.provider = persistenceProvider;
     }
 
     /**
      * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
      * @throws SpentAddressesException if we failed to create a file at the designated location
      */
-    public void init(boolean assertSpentAddressesExistence) throws SpentAddressesException {
+    public void init(PersistenceProvider persistenceProvider, boolean assertSpentAddressesExistence) throws SpentAddressesException {
         try {
+            this.provider = persistenceProvider;
             if (assertSpentAddressesExistence && !doSpentAddressesExist(provider)) {
-                log.error("Expecting to start with a populated spent-addresses-db when initializing from a " +
-                        "local snapshot. Shutting down now");
+                log.error("Expecting to start with a localsnapshots-db containing spent addresses when initializing " +
+                        "from a local snapshot. Shutting down now");
                 //explicitly exiting rather than throwing an exception
                 System.exit(1);
             }

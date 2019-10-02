@@ -1,6 +1,7 @@
 package com.iota.iri.service.snapshot;
 
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import com.iota.iri.storage.PersistenceProvider;
 
 /**
  * The data provider that allows to retrieve the {@link Snapshot} instances that are relevant for the node.
@@ -60,5 +61,5 @@ public interface SnapshotProvider {
      *
      * @throws SnapshotException if anything goes wrong while trying to read the snapshots
      */
-    void init() throws SnapshotException, SpentAddressesException;
+    void init(PersistenceProvider localSnapshotsDb) throws SnapshotException, SpentAddressesException;
 }

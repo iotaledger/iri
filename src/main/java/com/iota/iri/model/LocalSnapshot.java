@@ -2,6 +2,7 @@ package com.iota.iri.model;
 
 import com.iota.iri.storage.Persistable;
 
+import javax.naming.OperationNotSupportedException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,7 +108,18 @@ public class LocalSnapshot implements Persistable {
     }
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
+
+    @Override
+    public Persistable mergeInto(Persistable source) throws OperationNotSupportedException {
+        return null;
+    }
+
+    @Override
+    public boolean exists() {
+        return false;
+    }
+
 }

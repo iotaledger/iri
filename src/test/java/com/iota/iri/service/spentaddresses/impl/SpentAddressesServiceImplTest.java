@@ -36,8 +36,7 @@ public class SpentAddressesServiceImplTest {
 
     @Test
     public void doesntPersistZeroValueBundles() throws Exception {
-        SpentAddressesServiceImpl spentAddressesService = new SpentAddressesServiceImpl();
-        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, null);
+        SpentAddressesServiceImpl spentAddressesService = new SpentAddressesServiceImpl(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, null);
         List<TransactionViewModel> bundle = TangleMockUtils.mockValidBundle(tangle, bundleValidator, 1);
         spentAddressesService.persistValidatedSpentAddressesAsync(bundle);
         verify(spentAddressesProvider, never()).saveAddressesBatch(any());

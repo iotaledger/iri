@@ -2,6 +2,9 @@ package com.iota.iri.utils;
 
 import com.iota.iri.model.persistables.Transaction;
 
+/**
+ * Provides utility methods to truncate and expand raw transaction data.
+ */
 public class TransactionTruncator {
 
     /**

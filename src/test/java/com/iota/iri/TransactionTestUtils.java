@@ -10,12 +10,31 @@ import com.iota.iri.utils.Converter;
 
 import java.util.Random;
 
+import com.iota.iri.utils.TransactionTruncator;
 import org.apache.commons.lang3.StringUtils;
 
 public class TransactionTestUtils {
 
     private static Random seed = new Random(1);
-    
+
+    public final static int NON_EMPTY_SIG_PART_BYTES_COUNT = 1000;
+    public final static int TRUNCATION_BYTES_COUNT = TransactionTruncator.SIG_DATA_MAX_BYTES_LENGTH - NON_EMPTY_SIG_PART_BYTES_COUNT;
+    public final static int SIG_FILL = 3, REST_FILL = 4, EMPTY_FILL = 0;
+
+    public static byte[] constructTransactionBytes() {
+        byte[] originTxData = new byte[Transaction.SIZE];
+        for (int i = 0; i < NON_EMPTY_SIG_PART_BYTES_COUNT; i++) {
+            originTxData[i] = SIG_FILL;
+        }
+        for (int i = NON_EMPTY_SIG_PART_BYTES_COUNT; i < TransactionTruncator.SIG_DATA_MAX_BYTES_LENGTH; i++) {
+            originTxData[i] = EMPTY_FILL;
+        }
+        for (int i = TransactionTruncator.SIG_DATA_MAX_BYTES_LENGTH; i < Transaction.SIZE; i++) {
+            originTxData[i] = REST_FILL;
+        }
+        return originTxData;
+    }
+
     /**
      * Updates the transaction index in trits.
      * 

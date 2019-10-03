@@ -487,13 +487,15 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setBackgroundThreads(numThreads, Priority.HIGH)
                 .setBackgroundThreads(numThreads, Priority.LOW);
 
-            File config = Paths.get(configFile).toFile();
-            if (config.exists() && config.isFile() && config.canRead()) {
-                Properties configProperties = new Properties();
-                InputStream stream = new FileInputStream(config);
-                configProperties.load(stream);
-                options = DBOptions.getDBOptionsFromProps(configProperties);
-                stream.close();
+            if (configFile != null) {
+                File config = Paths.get(configFile).toFile();
+                if (config.exists() && config.isFile() && config.canRead()) {
+                    Properties configProperties = new Properties();
+                    InputStream stream = new FileInputStream(config);
+                    configProperties.load(stream);
+                    options = DBOptions.getDBOptionsFromProps(configProperties);
+                    stream.close();
+                }
             }
             if (options == null) {
                 options = new DBOptions()

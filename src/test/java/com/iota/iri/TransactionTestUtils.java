@@ -21,6 +21,12 @@ public class TransactionTestUtils {
     public final static int TRUNCATION_BYTES_COUNT = TransactionTruncator.SIG_DATA_MAX_BYTES_LENGTH - NON_EMPTY_SIG_PART_BYTES_COUNT;
     public final static int SIG_FILL = 3, REST_FILL = 4, EMPTY_FILL = 0;
 
+    /**
+     * Constructs transaction bytes where the signature message fragment is filled with 1000
+     * {@link TransactionTestUtils#SIG_FILL} bytes, 312 {@link TransactionTestUtils#EMPTY_FILL} bytes and
+     * the non signature message fragment part with 292 {@link TransactionTestUtils#REST_FILL} bytes.
+     * @return byte data of the transaction
+     */
     public static byte[] constructTransactionBytes() {
         byte[] originTxData = new byte[Transaction.SIZE];
         for (int i = 0; i < NON_EMPTY_SIG_PART_BYTES_COUNT; i++) {

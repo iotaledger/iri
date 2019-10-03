@@ -1,6 +1,8 @@
 package com.iota.iri.storage.rocksDB;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -61,6 +64,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private final String dbPath;
     private final String logPath;
+    private String configPath;
+    
     private final int cacheSize;
     private final Map<String, Class<? extends Persistable>> columnFamilies;
     private final Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily;
@@ -77,7 +82,30 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private Cache cache, compressedCache;
     private ColumnFamilyOptions columnFamilyOptions;
     
+    /**
+     * 
+     * @param dbPath
+     * @param logPath
+     * @param cacheSize
+     * @param columnFamilies
+     * @param metadataColumnFamily
+     */
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
+            Map<String, Class<? extends Persistable>> columnFamilies,
+            Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
+        this(dbPath, logPath, null, cacheSize, columnFamilies, metadataColumnFamily);
+    }
+    
+    /**
+     * 
+     * @param dbPath
+     * @param logPath
+     * @param configPath
+     * @param cacheSize
+     * @param columnFamilies
+     * @param metadataColumnFamily
+     */
+    public RocksDBPersistenceProvider(String dbPath, String logPath, String configPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
                                       Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
         this.dbPath = dbPath;
@@ -85,13 +113,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         this.cacheSize = cacheSize;
         this.columnFamilies = columnFamilies;
         this.metadataColumnFamily = metadataColumnFamily;
+        this.configPath = configPath;
 
     }
 
     @Override
     public void init() throws Exception {
         log.info("Initializing Database on " + dbPath);
-        initDB(dbPath, logPath, columnFamilies);
+        initDB(dbPath, logPath, configPath, columnFamilies);
         available = true;
         log.info("RocksDB persistence provider initialized.");
     }
@@ -427,12 +456,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 backupEngine.restoreDbFromLatestBackup(path, logPath, restoreOptions);
             }
         }
-        initDB(path, logPath, columnFamilies);
+        initDB(path, logPath, configPath, columnFamilies);
     }
 
     // options is closed in shutdown
     @SuppressWarnings("resource")
-    private void initDB(String path, String logPath, Map<String, Class<? extends Persistable>> columnFamilies) throws Exception {
+    private void initDB(String path, String logPath, String configFile, Map<String, Class<? extends Persistable>> columnFamilies) throws Exception {
         try {
             try {
                 RocksDB.loadLibrary();
@@ -458,16 +487,27 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setBackgroundThreads(numThreads, Priority.HIGH)
                 .setBackgroundThreads(numThreads, Priority.LOW);
 
-            options = new DBOptions()
-                .setCreateIfMissing(true)
-                .setCreateMissingColumnFamilies(true)
-                .setDbLogDir(logPath)
-                .setMaxLogFileSize(SizeUnit.MB)
-                .setMaxManifestFileSize(SizeUnit.MB)
-                .setMaxOpenFiles(10000)
-                .setMaxBackgroundCompactions(1);
+            File config = Paths.get(configFile).toFile();
+            if (config.exists() && config.isFile() && config.canRead()) {
+                Properties configProperties = new Properties();
+                InputStream stream = new FileInputStream(config);
+                configProperties.load(stream);
+                options = DBOptions.getDBOptionsFromProps(configProperties);
+                stream.close();
+            }
+            if (options == null) {
+                options = new DBOptions()
+                    .setCreateIfMissing(true)
+                    .setCreateMissingColumnFamilies(true)
+                    .setDbLogDir(logPath)
+                    .setMaxLogFileSize(SizeUnit.MB)
+                    .setMaxManifestFileSize(SizeUnit.MB)
+                    .setMaxOpenFiles(10000)
+                    .setMaxBackgroundCompactions(1)
+                    .setAllowConcurrentMemtableWrite(true)
+                    .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
+            }
 
-            options.setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
             bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
             cache = new LRUCache(cacheSize * SizeUnit.KB, 2);
             compressedCache = new LRUCache(32 * SizeUnit.KB, 10);
@@ -479,8 +519,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setBlockRestartInterval(16)
                 .setBlockCache(cache)
                 .setBlockCacheCompressed(compressedCache);
-
-            options.setAllowConcurrentMemtableWrite(true);
 
             MergeOperator mergeOperator = new StringAppendOperator();
             List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();

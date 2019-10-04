@@ -83,12 +83,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private ColumnFamilyOptions columnFamilyOptions;
     
     /**
+     * Creates a new RocksDB provider without reading from a configuration file
      * 
-     * @param dbPath
-     * @param logPath
-     * @param cacheSize
-     * @param columnFamilies
-     * @param metadataColumnFamily
+     * @param dbPath The location where the database will be stored
+     * @param logPath The location where the log files will be stored
+     * @param cacheSize the size of the cache used by the database implementation
+     * @param columnFamilies A map of the names related to their Persistable class
+     * @param metadataColumnFamily Map of metadata used by the Persistable class, can be <code>null</code>
      */
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
             Map<String, Class<? extends Persistable>> columnFamilies,
@@ -97,13 +98,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
     
     /**
+     * Creates a new RocksDB provider by reading the configuration to be used in this instance from a file
      * 
-     * @param dbPath
-     * @param logPath
-     * @param configPath
-     * @param cacheSize
-     * @param columnFamilies
-     * @param metadataColumnFamily
+     * @param dbPath The location where the database will be stored
+     * @param logPath The location where the log files will be stored
+     * @param configFile The location where the RocksDB config is read from
+     * @param cacheSize the size of the cache used by the database implementation
+     * @param columnFamilies A map of the names related to their Persistable class
+     * @param metadataColumnFamily Map of metadata used by the Persistable class, can be <code>null</code>
      */
     public RocksDBPersistenceProvider(String dbPath, String logPath, String configPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,

@@ -4,6 +4,7 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
+import javax.naming.OperationNotSupportedException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +56,18 @@ public class StateDiff implements Persistable {
     }
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
+
+    @Override
+    public Persistable mergeInto(Persistable source) throws OperationNotSupportedException {
+            throw new OperationNotSupportedException("This object is not mergeable");
+    }
+
+    @Override
+    public boolean exists() {
+        return !(this.state == null || this.state.isEmpty());
+    }
+
 }

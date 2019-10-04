@@ -5,8 +5,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Collections;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
@@ -17,8 +17,6 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.storage.Tangle;
-
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Implementation of <tt>TipSelector</tt> that selects 2 tips,
@@ -98,7 +96,7 @@ public class TipSelectorImpl implements TipSelector {
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
             Map<Hash, Integer> rating;
             if(config.getAlpha() == 0) {
-                rating = Collections.EMPTY_MAP;
+                rating = new RatingOne(tangle).calculate(entryPoint);
             } else {
                 rating = ratingCalculator.calculate(entryPoint);
             }

@@ -873,7 +873,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //TipSel
         int MAX_DEPTH = 15;
-        double ALPHA = 0.001d;
+        double ALPHA = 0d;
         int TIP_SELECTION_TIMEOUT_SEC = 60;
 
         //PearlDiver

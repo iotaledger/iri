@@ -56,13 +56,11 @@ public class SpentAddressesProviderImplTest {
     @Before
     public void setUp() throws Exception {
         when(config.isTestnet()).thenReturn(true);
-        
-        provider = new SpentAddressesProviderImpl();
-        provider.init(config, this.persistenceProvider, false);
+        provider = new SpentAddressesProviderImpl(config, this.persistenceProvider);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         persistenceProvider.shutdown();
     }
 
@@ -118,7 +116,7 @@ public class SpentAddressesProviderImplTest {
     public void failWhenAssertingForExistingData() throws Exception {
         exit.expectSystemExitWithStatus(1);
         when(persistenceProvider.first(SpentAddress.class, AddressHash.class)).thenReturn(new Pair<>(null,null));
-        provider.init(config, persistenceProvider, true);
+        provider.init(true);
     }
 
 }

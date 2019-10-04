@@ -157,7 +157,7 @@ public class WalkerAlpha implements Walker {
                 }
             }
         } else {
-            approvers = approversSet.stream().collect(Collectors.toList());
+            approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
             if (approvers.size() == 0) {
                 return Optional.empty();
             }

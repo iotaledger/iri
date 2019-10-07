@@ -2,6 +2,7 @@ package com.iota.iri.storage.rocksDB;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
@@ -45,6 +46,7 @@ import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -476,41 +478,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 throw e;
             }
 
-            File pathToLogDir = Paths.get(logPath).toFile();
-            if (!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
-                boolean success = pathToLogDir.mkdir();
-                if (!success) {
-                    log.warn("Unable to make directory: {}", pathToLogDir);
-                }
-            }
-
-            int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
-            RocksEnv.getDefault()
-                .setBackgroundThreads(numThreads, Priority.HIGH)
-                .setBackgroundThreads(numThreads, Priority.LOW);
-
-            if (configFile != null) {
-                File config = Paths.get(configFile).toFile();
-                if (config.exists() && config.isFile() && config.canRead()) {
-                    Properties configProperties = new Properties();
-                    InputStream stream = new FileInputStream(config);
-                    configProperties.load(stream);
-                    options = DBOptions.getDBOptionsFromProps(configProperties);
-                    stream.close();
-                }
-            }
-            if (options == null) {
-                options = new DBOptions()
-                    .setCreateIfMissing(true)
-                    .setCreateMissingColumnFamilies(true)
-                    .setDbLogDir(logPath)
-                    .setMaxLogFileSize(SizeUnit.MB)
-                    .setMaxManifestFileSize(SizeUnit.MB)
-                    .setMaxOpenFiles(10000)
-                    .setMaxBackgroundCompactions(1)
-                    .setAllowConcurrentMemtableWrite(true)
-                    .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
-            }
+            options = createOptions(logPath, configFile);
 
             bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
             cache = new LRUCache(cacheSize * SizeUnit.KB, 2);
@@ -544,7 +512,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                         new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
                 metadataReference = new HashMap<>();
             }
-            
 
             db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
             db.enableFileDeletions(true);
@@ -581,4 +548,56 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classTreeMap = MapUtils.unmodifiableMap(classMap);
     }
 
+    private DBOptions createOptions(String logPath, String configFile) throws IOException {
+        DBOptions options = null;
+        File pathToLogDir = Paths.get(logPath).toFile();
+        if (!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
+            boolean success = pathToLogDir.mkdir();
+            if (!success) {
+                log.warn("Unable to make directory: {}", pathToLogDir);
+            }
+        }
+
+        int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+        RocksEnv.getDefault()
+            .setBackgroundThreads(numThreads, Priority.HIGH)
+            .setBackgroundThreads(numThreads, Priority.LOW);
+
+        if (configFile != null) {
+            File config = Paths.get(configFile).toFile();
+            if (config.exists() && config.isFile() && config.canRead()) {
+                Properties configProperties = new Properties();
+                InputStream stream = new FileInputStream(config);
+                try {
+                    configProperties.load(stream);
+                    options = DBOptions.getDBOptionsFromProps(configProperties);
+                } catch (IllegalArgumentException e) {
+                    log.warn("RocksDB configuration file is empty, falling back to default values");
+                } finally {
+                    stream.close();
+                }
+            }
+        }
+        if (options == null) {
+            options = new DBOptions()
+                .setCreateIfMissing(true)
+                .setCreateMissingColumnFamilies(true)
+                .setMaxLogFileSize(SizeUnit.MB)
+                .setMaxManifestFileSize(SizeUnit.MB)
+                .setMaxOpenFiles(10000)
+                .setMaxBackgroundCompactions(1)
+                .setAllowConcurrentMemtableWrite(true)
+                .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
+        }
+        
+        if (!BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) && logPath != null) {
+            if (!options.dbLogDir().equals("")) {
+                log.warn("Defined a db log path in config and commandline; Using the command line setting."); 
+            }
+            
+            options.setDbLogDir(logPath);
+        }
+
+        return options;
+    }
 }

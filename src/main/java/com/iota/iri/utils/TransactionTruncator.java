@@ -51,7 +51,10 @@ public class TransactionTruncator {
         byte[] txDataBytes = new byte[Transaction.SIZE];
         int numOfBytesOfSigMsgFragToExpand = referenceSize - data.length;
         byte[] sigMsgFragPadding = new byte[numOfBytesOfSigMsgFragToExpand];
-        int sigMsgFragBytesToCopy = data.length - TransactionTruncator.NON_SIG_TX_PART_BYTES_LENGTH;
+        // we deduct the transaction bytes size from the reference to get the correct
+        // length of signature message bytes we need to copy from the source data
+        int sigMsgFragBytesToCopy = data.length - (referenceSize - Transaction.SIZE)
+                - TransactionTruncator.NON_SIG_TX_PART_BYTES_LENGTH;
 
         // build up transaction payload. empty signature message fragment equals padding with 1312x 0 bytes
         System.arraycopy(data, 0, txDataBytes, 0, sigMsgFragBytesToCopy);

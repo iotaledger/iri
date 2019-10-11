@@ -95,7 +95,7 @@ command line arguments.
 `docker run -d --net=host --name iota-node -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
 ### Command Line Options 
-A complete list can be found [here](src/main/java/com/iota/iri/conf/BaseIotaConfig.java). They are defined with the annotation `@Parameter`. The following table are the most frequently used arguments: 
+A complete list can be found [here](https://docs.iota.org/docs/node-software/0.1/iri/references/iri-configuration-options). The following table are the most frequently used arguments: 
 
 Option | Shortened version | Description | Example Input
 --- | --- | --- | --- 
@@ -112,7 +112,7 @@ Option | Shortened version | Description | Example Input
 `--dns-resolution` | | Toggle DNS resolution refreshing  | `--dns-resolution false`	
 ### INI File
 
-You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` or the `-c` flag. If no flag is supplied, IRI attempts to load from `iota.ini`.
+You can also provide a .ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` or the `-c` flag. If no flag is supplied, IRI attempts to load from  the `iota.ini` file.
 Every command line option can be used as a configuration field by replacing the `-` with a `_` (Snake case) and removing the initial `--`. They are case insensitive but it is good habit to make the fields upper case to prevent mixing configuration and command line.
 
 Here is an example INI file:

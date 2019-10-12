@@ -19,8 +19,5 @@ seeds: # For internal use by the regression system.
     - SIID
 
 nodes:
-  nodeA: #name
-    <<: *stitching_tests_config_files
-  
-  nodeB:
+  nodeA-m4: #name
     <<: *stitching_tests_config_files

@@ -46,22 +46,22 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     /**
      * Data provider for the relevant {@link com.iota.iri.service.snapshot.Snapshot} instances.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Service that contains the logic for generating local {@link com.iota.iri.service.snapshot.Snapshot}s.
      */
-    private SnapshotService snapshotService;
+    private final SnapshotService snapshotService;
 
     /**
      * Manager for the pruning jobs that allows us to clean up old transactions.
      */
-    private TransactionPruner transactionPruner;
+    private final TransactionPruner transactionPruner;
 
     /**
      * Configuration with important snapshot related parameters.
      */
-    private SnapshotConfig config;
+    private final SnapshotConfig config;
     
     /**
      * If this node is currently seen as in sync
@@ -77,37 +77,18 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It simply stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code localSnapshotManager = new LocalSnapshotManagerImpl().init(...);}
-     *
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param snapshotService service instance of the snapshot package that gives us access to packages' business logic
      * @param transactionPruner manager for the pruning jobs that allows us to clean up old transactions
      * @param config important snapshot related configuration parameters
-     * @return the initialized instance itself to allow chaining
      */
-    public LocalSnapshotManagerImpl init(SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+    public LocalSnapshotManagerImpl(SnapshotProvider snapshotProvider, SnapshotService snapshotService,
             TransactionPruner transactionPruner, SnapshotConfig config) {
-
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.transactionPruner = transactionPruner;
         this.config = config;
-        
         this.isInSync = false;
-
-        return this;
     }
 
     /**

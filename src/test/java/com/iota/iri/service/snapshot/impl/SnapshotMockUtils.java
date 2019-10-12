@@ -112,5 +112,86 @@ public class SnapshotMockUtils {
         return snapshotProvider;
     }
 
+    /**
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
+     * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
+     * Genesis timestamp set to {@value #DEFAULT_GENESIS_TIMESTAMP}.
+     * Initial snapshot hash set to DEFAULT_GENESIS_ADDRESS.
+     * Starting index is {@value #DEFAULT_MILESTONE_START_INDEX}
+     *
+     * @return The created snapshot
+     */
+    public static Snapshot createSnapshot() {
+        return createSnapshot(DEFAULT_MILESTONE_START_INDEX);
+    }
+
+    /**
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
+     * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
+     * Genesis timestamp set to {@value #DEFAULT_GENESIS_TIMESTAMP}.
+     * Initial snapshot hash set to DEFAULT_GENESIS_ADDRESS.
+     *
+     * @param milestoneStartIndex The index we use for the genesis/initial snapshot
+     * @return The created snapshot
+     */
+    public static Snapshot createSnapshot(int milestoneStartIndex) {
+        return createSnapshot(milestoneStartIndex, DEFAULT_GENESIS_HASH);
+    }
+
+    /**
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
+     * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
+     * Genesis timestamp set to {@value #DEFAULT_GENESIS_TIMESTAMP}.
+     *
+     * @param milestoneStartIndex The index we use for the genesis/initial snapshot
+     * @param genesisHash The Genesis hash
+     * @return The created snapshot
+     */
+    public static Snapshot createSnapshot(int milestoneStartIndex, Hash genesisHash) {
+
+        return createSnapshot(milestoneStartIndex, genesisHash, DEFAULT_GENESIS_TIMESTAMP);
+    }
+
+    /**
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
+     * The snapshot balances are configured so that the DEFAULT_GENESIS_ADDRESS (Null hash) has the entire IOTA supply.
+     *
+     * @param milestoneStartIndex The index we use for the genesis/initial snapshot
+     * @param genesisHash The Genesis hash
+     * @param genesisTimestamp The timestamp of the initial snapshot creation
+     * @return The created snapshot
+     */
+    public static Snapshot createSnapshot(int milestoneStartIndex, Hash genesisHash, long genesisTimestamp) {
+
+        Map<Hash, Long> balances = new HashMap<>();
+        balances.put(DEFAULT_GENESIS_ADDRESS, TransactionViewModel.SUPPLY);
+
+        return createSnapshot(milestoneStartIndex, genesisHash, genesisTimestamp, balances);
+    }
+
+    /**
+     * Creates a real snapshot which can be used directly or to stub a snapshot provider.
+     *
+     * @param milestoneStartIndex The index we use for the genesis/initial snapshot
+     * @param genesisHash The Genesis hash
+     * @param genesisTimestamp The timestamp of the initial snapshot creation
+     * @param balances The balances to add to the provider
+     * @return The created snapshot
+     */
+    public static Snapshot createSnapshot(int milestoneStartIndex, Hash genesisHash, long genesisTimestamp,
+                                          Map<Hash, Long> balances) {
+
+        Map<Hash, Integer> solidEntryPoints = new HashMap<>();
+        solidEntryPoints.put(genesisHash, milestoneStartIndex);
+
+        Snapshot snapshot = new SnapshotImpl(
+                new SnapshotStateImpl(balances),
+                new SnapshotMetaDataImpl(genesisHash, milestoneStartIndex, genesisTimestamp, solidEntryPoints,
+                        new HashMap<>())
+        );
+
+        return snapshot;
+    }
+
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

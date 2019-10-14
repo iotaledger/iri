@@ -6,6 +6,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.*;
@@ -106,6 +107,8 @@ public class Iota {
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
 
+    private BroadcastQueue broadcastQueue;
+
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
      *
@@ -181,7 +184,7 @@ public class Iota {
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
 
-        transactionValidator.init();
+        transactionValidator.init(this.broadcastQueue);
 
         txPipeline.start();
         neighborRouter.start();
@@ -272,6 +275,14 @@ public class Iota {
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
+    }
+
+    /**
+     * Sets the {@link BroadcastQueue} for this IRI instance
+     * @param broadcastQueue Baseline IRI {@link BroadcastQueue}
+     */
+    public void configureBroadcastQueue(BroadcastQueue broadcastQueue){
+        this.broadcastQueue = broadcastQueue;
     }
 
     /**

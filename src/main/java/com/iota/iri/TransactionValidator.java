@@ -10,6 +10,7 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ public class TransactionValidator {
     private static final long MAX_TIMESTAMP_FUTURE = 2L * 60L * 60L;
     private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1_000L;
 
-
+    private BroadcastQueue broadcastQueue;
     /////////////////////////////////fields for solidification thread//////////////////////////////////////
 
     private Thread newSolidThread;
@@ -85,7 +86,8 @@ public class TransactionValidator {
      *
      * @see #spawnSolidTransactionsPropagation()
      */
-    public void init() {
+    public void init(BroadcastQueue broadcastQueue) {
+        this.broadcastQueue = broadcastQueue;
         newSolidThread.start();
     }
 
@@ -277,7 +279,7 @@ public class TransactionValidator {
             }
         }
         if (solid) {
-            updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), analyzedHashes);
+            updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), analyzedHashes, broadcastQueue);
         }
         analyzedHashes.clear();
         return solid;

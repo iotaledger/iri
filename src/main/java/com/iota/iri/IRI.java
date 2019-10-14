@@ -7,6 +7,7 @@ import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.network.NetworkInjectionConfiguration;
+import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
@@ -119,6 +120,7 @@ public class IRI {
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
             String version = IotaUtils.getIriVersion();
+            BroadcastQueue broadcastQueue = config.getBroadcastQueue();
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, version);
 
             Injector injector = Guice.createInjector(
@@ -132,6 +134,7 @@ public class IRI {
             shutdownHook();
 
             try {
+                iota.configureBroadcastQueue(broadcastQueue);
                 iota.init();
                 //TODO redundant parameter but we will touch this when we refactor IXI
                 ixi.init(config.getIxiDir());

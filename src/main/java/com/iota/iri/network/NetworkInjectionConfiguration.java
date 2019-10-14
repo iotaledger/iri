@@ -48,7 +48,8 @@ public class NetworkInjectionConfiguration extends AbstractModule {
             TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
             TransactionRequester transactionRequester) {
         return new TransactionProcessingPipelineImpl(neighborRouter, configuration, txValidator, tangle,
-                snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester);
+                snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester,
+                configuration.getBroadcastQueue());
     }
 
     @Singleton

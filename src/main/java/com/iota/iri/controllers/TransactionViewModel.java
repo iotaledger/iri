@@ -2,6 +2,9 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
+import com.iota.iri.network.pipeline.BroadcastQueue;
+import com.iota.iri.network.pipeline.ProcessingContext;
+import com.iota.iri.network.pipeline.BroadcastPayload;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -712,7 +715,8 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT;
     }
 
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final LinkedHashSet<Hash> analyzedHashes)
+    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot,
+                                               final LinkedHashSet<Hash> analyzedHashes, BroadcastQueue broadcastQueue)
             throws Exception {
         Object[] hashes = analyzedHashes.toArray();
         TransactionViewModel transactionViewModel;
@@ -724,6 +728,8 @@ public class TransactionViewModel {
             if (!transactionViewModel.isSolid()) {
                 transactionViewModel.updateSolid(true);
                 transactionViewModel.update(tangle, initialSnapshot, "solid|height");
+                BroadcastPayload payload = new BroadcastPayload(null,transactionViewModel);
+                broadcastQueue.add(new ProcessingContext(payload));
             }
         }
     }

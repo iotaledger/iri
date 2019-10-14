@@ -24,6 +24,7 @@ dependency-reduced-pom.xml
 .checkstyle
 db-bench/
 db-log-bench/
+.factorypath
 
 # Created by https://www.gitignore.io/api/osx,linux,windows
 

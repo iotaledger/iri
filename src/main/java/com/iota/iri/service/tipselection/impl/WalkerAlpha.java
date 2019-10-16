@@ -128,7 +128,7 @@ public class WalkerAlpha implements Walker {
         int approverIndex;
 
         //Check if ratings map is empty. If so, alpha was set to 0 and a random approver will be selected.
-        if(!Collections.EMPTY_MAP.equals(ratings)) {
+        if(alpha != 0) {
             //filter based on tangle state when starting the walk            
             approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
             //After filtering, if no approvers are available, it's a tip.
@@ -161,7 +161,7 @@ public class WalkerAlpha implements Walker {
             if (approvers.size() == 0) {
                 return Optional.empty();
             }
-            approverIndex = random.nextInt(approversSet.size());
+            approverIndex = random.nextInt(approvers.size());
         }
         return Optional.of(approvers.get(approverIndex));
     }

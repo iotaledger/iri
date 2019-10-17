@@ -121,7 +121,6 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                 while (!Thread.currentThread().isInterrupted()) {
                     ProcessingContext queueTake;
                     if(name.equals("broadcast")) {
-                        log.info("Broadcasting");
                         queueTake = broadcastStageQueue.get().take();
                     } else{
                         queueTake = queue.take();

@@ -13,6 +13,7 @@ import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.solidifier.impl.QuickTransactionSolidifier;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
@@ -98,6 +99,8 @@ public class Iota {
 
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
+
+    public final QuickTransactionSolidifier quickTransactionSolidifier;
     public final TransactionRequester transactionRequester;
     public final TipsRequester tipsRequester;
     public final TransactionProcessingPipeline txPipeline;
@@ -112,7 +115,7 @@ public class Iota {
      * @param configuration Information about how this node will be configured.
      *
      */
-    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, QuickTransactionSolidifier quickTransactionSolidifier) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -130,6 +133,7 @@ public class Iota {
         this.neighborRouter = neighborRouter;
         this.txPipeline = transactionProcessingPipeline;
         this.tipsRequester = tipsRequester;
+        this.quickTransactionSolidifier = quickTransactionSolidifier;
 
         // legacy classes
         this.bundleValidator = bundleValidator;
@@ -192,6 +196,8 @@ public class Iota {
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
 
+        quickTransactionSolidifier.start();
+
         if (localSnapshotManager != null) {
             localSnapshotManager.start(latestMilestoneTracker);
         }
@@ -248,6 +254,7 @@ public class Iota {
         neighborRouter.shutdown();
         transactionValidator.shutdown();
         tangle.shutdown();
+        quickTransactionSolidifier.shutdown();
 
         // free the resources of the snapshot provider last because all other instances need it
         snapshotProvider.shutdown();

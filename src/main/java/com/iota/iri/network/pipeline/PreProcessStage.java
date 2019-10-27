@@ -4,7 +4,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.FIFOCache;
-import com.iota.iri.network.NeighborRouter;
+import com.iota.iri.network.TransactionCacheDigester;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
@@ -54,7 +54,7 @@ public class PreProcessStage implements Stage {
         payload.getOriginNeighbor().getMetrics().incrAllTransactionsCount();
 
         // compute digest of tx bytes data
-        long txDigest = NeighborRouter.getTxCacheDigest(txDataBytes);
+        long txDigest = TransactionCacheDigester.getDigest(txDataBytes);
 
         Hash receivedTxHash = recentlySeenBytesCache.get(txDigest);
         Hash requestedHash = HashFactory.TRANSACTION.create(reqHashBytes, 0,

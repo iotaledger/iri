@@ -48,28 +48,28 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     /**
      * Holds the Tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots that the node uses (for the ledger
      * state).
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the service instance containing the business logic of the milestone package.
      */
-    private MilestoneService milestoneService;
+    private final MilestoneService milestoneService;
 
     /**
      * Holds a reference to the manager that keeps track of the latest milestone.
      */
-    private LatestMilestoneTracker latestMilestoneTracker;
+    private final LatestMilestoneTracker latestMilestoneTracker;
 
     /**
      * Holds a reference to the service that contains the logic for applying milestones to the ledger state.
      */
-    private LedgerService ledgerService;
+    private final LedgerService ledgerService;
 
     /**
      * Holds a reference to the manager of the background worker.
@@ -125,10 +125,9 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * @param transactionRequester the manager which keeps and tracks transactions which are requested
      * @return the initialized instance itself to allow chaining
      */
-    public LatestSolidMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-                                                MilestoneService milestoneService, LedgerService ledgerService,
-                                                LatestMilestoneTracker latestMilestoneTracker,
-                                                TransactionRequester transactionRequester) {
+    public LatestSolidMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider,
+            MilestoneService milestoneService, LedgerService ledgerService,
+            LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
@@ -136,8 +135,6 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
         this.ledgerService = ledgerService;
         this.latestMilestoneTracker = latestMilestoneTracker;
         this.transactionRequester = transactionRequester;
-
-        return this;
     }
 
     @Override

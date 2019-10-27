@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.8.1</version>
+    <version>1.8.2</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -33,6 +33,7 @@
         <md-doclet-group>com.github.iotaledger</md-doclet-group>
         <md-doclet-artifact>java-md-doclet</md-doclet-artifact>
         <md-doclet-version>master-SNAPSHOT</md-doclet-version>
+        <guice-version>4.2.2</guice-version>
     </properties>
 
     <repositories>
@@ -148,6 +149,13 @@
 		    <artifactId>resteasy-jackson-provider</artifactId>
 		    <version>3.6.3.Final</version>
 		</dependency>
+
+        <!-- guice for dependency injection -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>${guice-version}</version>
+        </dependency>
 
         <!-- test dependencies -->
 

@@ -62,8 +62,25 @@ public class Hashes implements Persistable {
 
     }
 
+
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return true;
+    }
+
+    @Override
+    public Persistable mergeInto(Persistable source){
+        if(source instanceof Hashes){
+            Set<Hash> setTwo = ((Hashes) source).set;
+            set.addAll(setTwo);
+            return this;
+        }
+
+        return null;
+    }
+
+    @Override
+    public boolean exists() {
+        return !set.isEmpty();
     }
 }

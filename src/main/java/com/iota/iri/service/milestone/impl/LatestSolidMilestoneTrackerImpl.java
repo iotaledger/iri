@@ -1,5 +1,6 @@
 package com.iota.iri.service.milestone.impl;
 
+import com.iota.iri.conf.SolidificationConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -102,6 +103,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      */
     private SyncProgressInfo syncProgressInfo = new SyncProgressInfo();
 
+    private SolidificationConfig solidificationConfig;
+
     /**
      * <p>
      * This method initializes the instance and registers its dependencies.
@@ -126,8 +129,9 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * @return the initialized instance itself to allow chaining
      */
     public LatestSolidMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneService milestoneService, LedgerService ledgerService,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
+                                           MilestoneService milestoneService, LedgerService ledgerService,
+                                           LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester,
+                                           SolidificationConfig solidificationConfig) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
@@ -135,6 +139,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
         this.ledgerService = ledgerService;
         this.latestMilestoneTracker = latestMilestoneTracker;
         this.transactionRequester = transactionRequester;
+        this.solidificationConfig = solidificationConfig;
     }
 
     @Override
@@ -322,6 +327,10 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
 
         tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, latestSolidMilestoneIndex);
         tangle.publish("lmhs %s", latestMilestoneHash);
+
+        if (!solidificationConfig.isPrintSyncProgressEnabled()) {
+            return;
+        }
 
         int latestMilestoneIndex = latestMilestoneTracker.getLatestMilestoneIndex();
 

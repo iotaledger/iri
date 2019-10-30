@@ -123,7 +123,7 @@ NEIGHBORING_SOCKET_PORT = 15600
 NEIGHBORS = tcp://my.favorite.com:15600 tcp://my.other.favorite.com:15600 
 IXI_DIR = ixi
 DEBUG = false
-DB_PATH = db
+DB_PATH = mainnetdb
 ```
 
 ### Special Thanks To

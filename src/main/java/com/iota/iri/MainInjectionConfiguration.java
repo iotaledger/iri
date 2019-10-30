@@ -126,7 +126,7 @@ public class MainInjectionConfiguration extends AbstractModule {
             MilestoneService milestoneService, LedgerService ledgerService,
             LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
         return new LatestSolidMilestoneTrackerImpl(tangle, snapshotProvider, milestoneService, ledgerService,
-                latestMilestoneTracker, transactionRequester);
+                latestMilestoneTracker, transactionRequester, configuration);
     }
 
     @Singleton

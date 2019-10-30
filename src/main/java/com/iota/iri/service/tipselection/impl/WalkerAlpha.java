@@ -1,5 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -7,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;

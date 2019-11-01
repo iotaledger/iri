@@ -25,6 +25,13 @@ public interface DbConfig extends Config {
      * @return {@value DbConfig.Descriptions#DB_CACHE_SIZE}
      */
     int getDbCacheSize();
+    
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#DB_MAX_SIZE}
+     *
+     * @return {@value DbConfig.Descriptions#DB_MAX_SIZE}
+     */
+    String getDbMaxSize();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#MAIN_DB}
@@ -52,6 +59,7 @@ public interface DbConfig extends Config {
         String DB_PATH = "The folder where the DB saves its data.";
         String DB_LOG_PATH = "The folder where the DB logs info";
         String DB_CACHE_SIZE = "The size of the DB cache in KB";
+        String DB_MAX_SIZE = "The maximum size this database should be on disk. Human readable format (GB, GiB, MB, MiB)";
         String MAIN_DB = "The DB engine used to store the transactions. Currently only RocksDB is supported.";
         String REVALIDATE = "Reload from the db data about confirmed transaction (milestones), state of the ledger, " +
                 "and transaction metadata.";

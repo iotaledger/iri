@@ -1,18 +1,20 @@
 package com.iota.iri.service.snapshot.impl;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.snapshot.LocalSnapshotManager;
-import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.transactionpruning.TransactionPruner;
-
-import com.iota.iri.utils.thread.ThreadIdentifier;
-import com.iota.iri.utils.thread.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.snapshot.LocalSnapshotManager;
+import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.snapshot.conditions.SnapshotCondition;
+import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.utils.thread.ThreadIdentifier;
+import com.iota.iri.utils.thread.ThreadUtils;
 
 /**
  * <p>
@@ -76,6 +78,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      */
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
+    private final SnapshotCondition[] conditions;
+
     /**
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param snapshotService service instance of the snapshot package that gives us access to packages' business logic
@@ -83,12 +87,14 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param config important snapshot related configuration parameters
      */
     public LocalSnapshotManagerImpl(SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            TransactionPruner transactionPruner, SnapshotConfig config) {
+            TransactionPruner transactionPruner, SnapshotConfig config, SnapshotCondition... conditions) {
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.transactionPruner = transactionPruner;
         this.config = config;
         this.isInSync = false;
+        
+        this.conditions = conditions;
     }
 
     /**
@@ -113,42 +119,38 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * It periodically checks if a new {@link com.iota.iri.service.snapshot.Snapshot} has to be taken until the
      * {@link Thread} is terminated. If it detects that a {@link com.iota.iri.service.snapshot.Snapshot} is due it
      * triggers the creation of the {@link com.iota.iri.service.snapshot.Snapshot} by calling
-     * {@link SnapshotService#takeLocalSnapshot(LatestMilestoneTracker, TransactionPruner)}.
+     * {@link SnapshotService#takeLocalSnapshot(LatestMilestoneTracker, TransactionPruner, MilestoneViewModel)}.
      *
      * @param latestMilestoneTracker tracker for the milestones to determine when a new local snapshot is due
      */
     @VisibleForTesting
     void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
         while (!Thread.currentThread().isInterrupted()) {
-            int localSnapshotInterval = getSnapshotInterval(isInSync(latestMilestoneTracker));
-
-            int latestSnapshotIndex = snapshotProvider.getLatestSnapshot().getIndex();
-            int initialSnapshotIndex = snapshotProvider.getInitialSnapshot().getIndex();
-
-            if (latestSnapshotIndex - initialSnapshotIndex > config.getLocalSnapshotsDepth() + localSnapshotInterval) {
+            boolean isInSync = isInSync(latestMilestoneTracker);
+            
+            int lowestSnapshotIndex = -1;
+            for (SnapshotCondition condition : conditions) {
                 try {
-                    snapshotService.takeLocalSnapshot(latestMilestoneTracker, transactionPruner);
+                    if (condition.shouldTakeSnapshot(isInSync) && (lowestSnapshotIndex == -1 || condition.getSnapshotStartingMilestone() < lowestSnapshotIndex)) {
+                        lowestSnapshotIndex = condition.getSnapshotStartingMilestone();
+                    }
                 } catch (SnapshotException e) {
-                    log.error("error while taking local snapshot", e);
+                    log.error("error while checking local snapshot availabilty", e);
                 }
             }
-
+            
+            if (lowestSnapshotIndex != -1) {
+                try {
+                    snapshotService.takeLocalSnapshot(latestMilestoneTracker, transactionPruner, lowestSnapshotIndex);
+                } catch (SnapshotException e) {
+                    log.error("error while taking local snapshot", e);
+                } catch (Exception e) {
+                    log.error("could not load the target milestone", e);
+                }
+            }
+            
             ThreadUtils.sleep(LOCAL_SNAPSHOT_RESCAN_INTERVAL);
         }
-    }
-    
-    /**
-     * A snapshot is taken in an interval. 
-     * This interval changes based on the state of the node.
-     * 
-     * @param inSync if this node is in sync
-     * @return the current interval in which we take local snapshots
-     */
-    @VisibleForTesting
-    int getSnapshotInterval(boolean inSync) {
-        return inSync
-                ? config.getLocalSnapshotsIntervalSynced()
-                : config.getLocalSnapshotsIntervalUnsynced();
     }
 
     /**

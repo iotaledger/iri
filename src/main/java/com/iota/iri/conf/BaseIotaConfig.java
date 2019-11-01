@@ -1,23 +1,22 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.apache.commons.lang3.ArrayUtils;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
 
 /**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -64,6 +63,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String dbPath = Defaults.DB_PATH;
     protected String dbLogPath = Defaults.DB_LOG_PATH;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
+    protected String dbMaxSize = Defaults.DB_MAX_SIZE; //Human readable
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
@@ -416,7 +416,19 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbCacheSize(int dbCacheSize) {
         this.dbCacheSize = dbCacheSize;
     }
+    
+    
+    @Override
+    public String getDbMaxSize() {
+        return dbMaxSize;
+    }
 
+    @JsonProperty
+    @Parameter(names = {"--db-max-size"}, description = DbConfig.Descriptions.DB_MAX_SIZE)
+    protected void setDbMaxSize(String dbMaxSize) {
+        this.dbMaxSize = dbMaxSize;
+    }
+    
     @Override
     public String getMainDb() {
         return mainDb;
@@ -865,6 +877,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String DB_PATH = "mainnetdb";
         String DB_LOG_PATH = "mainnet.log";
         int DB_CACHE_SIZE = 100_000;
+        String DB_MAX_SIZE = "-1";
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;

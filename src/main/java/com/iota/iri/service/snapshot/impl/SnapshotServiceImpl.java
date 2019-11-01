@@ -1,23 +1,5 @@
 package com.iota.iri.service.snapshot.impl;
 
-import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.controllers.ApproveeViewModel;
-import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.StateDiffViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.snapshot.*;
-import com.iota.iri.service.transactionpruning.TransactionPruner;
-import com.iota.iri.service.transactionpruning.TransactionPruningException;
-import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
-import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJob;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.dag.DAGHelper;
-import com.iota.iri.utils.dag.TraversalException;
-import com.iota.iri.utils.log.ProgressLogger;
-import com.iota.iri.utils.log.interval.IntervalProgressLogger;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,6 +9,28 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.controllers.ApproveeViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.StateDiffViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotMetaData;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.service.transactionpruning.TransactionPruningException;
+import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
+import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJob;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.dag.DAGHelper;
+import com.iota.iri.utils.dag.TraversalException;
+import com.iota.iri.utils.log.ProgressLogger;
+import com.iota.iri.utils.log.interval.IntervalProgressLogger;
 
 /**
  * <p>
@@ -196,11 +200,11 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner)
+    public void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int targetMilestoneIndex)
             throws SnapshotException {
 
-        MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config);
-
+        MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config, targetMilestoneIndex);
+        
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
         if (transactionPruner != null) {
@@ -377,7 +381,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             snapshot.unlockWrite();
         }
     }
-
+    
     /**
      * <p>
      * This method determines the milestone that shall be used for the local snapshot.
@@ -394,19 +398,16 @@ public class SnapshotServiceImpl implements SnapshotService {
      * @throws SnapshotException if anything goes wrong while determining the target milestone for the local snapshot
      */
     private MilestoneViewModel determineMilestoneForLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider,
-            SnapshotConfig config) throws SnapshotException {
-
-        int targetMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
-
+            SnapshotConfig config, int lowestIndex) throws SnapshotException {
         MilestoneViewModel targetMilestone;
         try {
-            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, targetMilestoneIndex,
+            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, lowestIndex,
                     snapshotProvider.getInitialSnapshot().getIndex());
         } catch (Exception e) {
             throw new SnapshotException("could not load the target milestone", e);
         }
         if (targetMilestone == null) {
-            throw new SnapshotException("missing milestone with an index of " + targetMilestoneIndex + " or lower");
+            throw new SnapshotException("missing milestone with an index of " + lowestIndex + " or lower");
         }
 
         return targetMilestone;

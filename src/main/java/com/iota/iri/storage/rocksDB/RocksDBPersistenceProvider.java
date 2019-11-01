@@ -1,12 +1,5 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.utils.IotaIOUtils;
-import com.iota.iri.utils.Pair;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
@@ -39,12 +32,20 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksEnv;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.SstFileManager;
 import org.rocksdb.StringAppendOperator;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.PersistenceProvider;
+import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.Pair;
 
 public class RocksDBPersistenceProvider implements PersistenceProvider {
 
@@ -70,6 +71,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private DBOptions options;
     private BloomFilter bloomFilter;
     private boolean available;
+    private SstFileManager sstFileManager;
 
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
@@ -449,6 +451,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setBackgroundThreads(numThreads, RocksEnv.FLUSH_POOL)
                 .setBackgroundThreads(numThreads, RocksEnv.COMPACTION_POOL);
 
+            sstFileManager = new SstFileManager(Env.getDefault());
+            
             options = new DBOptions()
                 .setCreateIfMissing(true)
                 .setCreateMissingColumnFamilies(true)
@@ -456,7 +460,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setMaxLogFileSize(SizeUnit.MB)
                 .setMaxManifestFileSize(SizeUnit.MB)
                 .setMaxOpenFiles(10000)
-                .setMaxBackgroundCompactions(1);
+                .setMaxBackgroundCompactions(1)
+                .setSstFileManager(sstFileManager);
 
             options.setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
 
@@ -530,4 +535,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classTreeMap = MapUtils.unmodifiableMap(classMap);
     }
 
+    @Override
+    public long getPersistanceSize() {
+        return sstFileManager.getTotalSize();
+    }
 }

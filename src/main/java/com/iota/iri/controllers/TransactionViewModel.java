@@ -716,7 +716,7 @@ public class TransactionViewModel {
     }
 
     public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot,
-                                               final LinkedHashSet<Hash> analyzedHashes, BroadcastQueue broadcastQueue)
+                                               final Set<Hash> analyzedHashes, BroadcastQueue broadcastQueue)
             throws Exception {
         Object[] hashes = analyzedHashes.toArray();
         TransactionViewModel transactionViewModel;

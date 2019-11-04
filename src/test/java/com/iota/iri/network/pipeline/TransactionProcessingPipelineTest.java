@@ -11,7 +11,6 @@ import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 
-import com.sun.jmx.remote.internal.ArrayQueue;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -19,9 +18,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.lang.reflect.Array;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class TransactionProcessingPipelineTest {
@@ -91,9 +87,6 @@ public class TransactionProcessingPipelineTest {
 
     @Mock
     private ProcessingContext receivedCtx;
-
-    @Mock
-    private ProcessingContext finishCtx;
 
     @Mock
     private ProcessingContext broadcastCtx;

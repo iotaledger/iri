@@ -120,7 +120,6 @@ public class IRI {
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
             String version = IotaUtils.getIriVersion();
-            BroadcastQueue broadcastQueue = config.getBroadcastQueue();
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, version);
 
             Injector injector = Guice.createInjector(
@@ -134,7 +133,6 @@ public class IRI {
             shutdownHook();
 
             try {
-                iota.configureBroadcastQueue(broadcastQueue);
                 iota.init();
                 //TODO redundant parameter but we will touch this when we refactor IXI
                 ixi.init(config.getIxiDir());

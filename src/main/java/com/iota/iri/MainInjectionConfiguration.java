@@ -9,6 +9,7 @@ import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.ledger.LedgerService;
@@ -202,6 +203,12 @@ public class MainInjectionConfiguration extends AbstractModule {
         bind(Tangle.class).asEagerSingleton();
         bind(BundleValidator.class).asEagerSingleton();
         bind(TipsViewModel.class).asEagerSingleton();
+    }
+
+    @Singleton
+    @Provides
+    BroadcastQueue provideBroadcastQueue(){
+        return configuration.getBroadcastQueue();
     }
 
 }

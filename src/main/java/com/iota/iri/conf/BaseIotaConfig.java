@@ -62,6 +62,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //DB
     protected String dbPath = Defaults.DB_PATH;
     protected String dbLogPath = Defaults.DB_LOG_PATH;
+    protected String dbConfigFile = Defaults.DB_CONFIG_FILE;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
@@ -404,6 +405,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db-log-path"}, description = DbConfig.Descriptions.DB_LOG_PATH)
     protected void setDbLogPath(String dbLogPath) {
         this.dbLogPath = dbLogPath;
+    }
+    
+    @Override
+    public String getDbConfigFile() {
+        return dbConfigFile;
+    }
+    
+    @JsonProperty
+    @Parameter(names = {"--db-config-file"}, description = DbConfig.Descriptions.DB_CONFIG_FILE)
+    protected void setDbConfigFile(String dbConfigFile) {
+        this.dbConfigFile = dbConfigFile;
     }
 
     @Override
@@ -875,6 +887,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //DB
         String DB_PATH = "mainnetdb";
         String DB_LOG_PATH = "mainnet.log";
+        String DB_CONFIG_FILE = "rocksdb-config.properties";
         int DB_CACHE_SIZE = 100_000;
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;

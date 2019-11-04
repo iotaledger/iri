@@ -278,14 +278,6 @@ public class Iota {
     }
 
     /**
-     * Sets the {@link BroadcastQueue} for this IRI instance
-     * @param broadcastQueue Baseline IRI {@link BroadcastQueue}
-     */
-    public void configureBroadcastQueue(BroadcastQueue broadcastQueue){
-        this.broadcastQueue = broadcastQueue;
-    }
-
-    /**
      * Creates a new Persistable provider with the supplied settings
      *
      * @param path The location where the database will be stored

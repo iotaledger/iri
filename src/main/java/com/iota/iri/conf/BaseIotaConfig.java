@@ -63,7 +63,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String dbPath = Defaults.DB_PATH;
     protected String dbLogPath = Defaults.DB_LOG_PATH;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
-    protected String dbMaxSize = Defaults.DB_MAX_SIZE; //Human readable
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
@@ -101,6 +100,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsPruningDelay = Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY;
     protected int localSnapshotsIntervalSynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_SYNCED;
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
+    protected String localSnapshotsDbMaxSize = Defaults.LOCAL_SNAPSHOTS_DB_MAX_SIZE; //Human readable
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
     protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
@@ -417,18 +417,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.dbCacheSize = dbCacheSize;
     }
     
-    
-    @Override
-    public String getDbMaxSize() {
-        return dbMaxSize;
-    }
-
-    @JsonProperty
-    @Parameter(names = {"--db-max-size"}, description = DbConfig.Descriptions.DB_MAX_SIZE)
-    protected void setDbMaxSize(String dbMaxSize) {
-        this.dbMaxSize = dbMaxSize;
-    }
-    
     @Override
     public String getMainDb() {
         return mainDb;
@@ -576,6 +564,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.localSnapshotsDepth = localSnapshotsDepth;
     }
 
+    @Override
+    public String getLocalSnapshotsDbMaxSize() {
+        return localSnapshotsDbMaxSize;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-db-max-size"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_MAX_SIZE)
+    protected void setLocalSnapshotsDbMaxSize(String dbMaxSize) {
+        this.localSnapshotsDbMaxSize = dbMaxSize;
+    }
+    
     @Override
     public String getLocalSnapshotsBasePath() {
         return this.localSnapshotsBasePath;
@@ -877,7 +876,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String DB_PATH = "mainnetdb";
         String DB_LOG_PATH = "mainnet.log";
         int DB_CACHE_SIZE = 100_000;
-        String DB_MAX_SIZE = "-1";
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
@@ -918,6 +916,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
         boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
 
+        String LOCAL_SNAPSHOTS_DB_MAX_SIZE = "-1";
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;

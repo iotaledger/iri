@@ -63,8 +63,8 @@ public class LocalSnapshotManagerImplTest {
 
     @Before
     public void setUp() throws Exception {
-        this.lsManager = new LocalSnapshotManagerImpl(snapshotProvider, snapshotService, transactionPruner, config, new SnapshotDepthCondition(tangle, config, snapshotProvider));
-        
+        this.lsManager = new LocalSnapshotManagerImpl(snapshotProvider, snapshotService, transactionPruner, config);
+        this.lsManager.addSnapshotCondition(new SnapshotDepthCondition(tangle, config, snapshotProvider));
         
         when(snapshotProvider.getLatestSnapshot().getIndex()).thenReturn(-5, -1, 10, 998, 999, 1999, 2000);
         

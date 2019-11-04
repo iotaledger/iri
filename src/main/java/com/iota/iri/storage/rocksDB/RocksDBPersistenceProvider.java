@@ -467,8 +467,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
             bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
 
-            BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
-            blockBasedTableConfig
+            BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig()
                 .setFilter(bloomFilter)
                 .setCacheNumShardBits(2)
                 .setBlockSizeDeviation(10)
@@ -476,7 +475,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setBlockCacheSize(cacheSize * SizeUnit.KB)
                 .setBlockCacheCompressedNumShardBits(10)
                 .setBlockCacheCompressedSize(32 * SizeUnit.KB);
-
+            
+            
             options.setAllowConcurrentMemtableWrite(true);
 
             MergeOperator mergeOperator = new StringAppendOperator();

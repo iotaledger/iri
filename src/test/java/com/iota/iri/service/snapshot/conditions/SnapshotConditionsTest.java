@@ -1,6 +1,5 @@
 package com.iota.iri.service.snapshot.conditions;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 import org.junit.Before;
@@ -38,20 +37,9 @@ public class SnapshotConditionsTest {
     }
     
     @Test
-    public void getDelayTest() {
-        SnapshotDepthCondition condition = new SnapshotDepthCondition(tangle, config, snapshotProvider);
-        
-        assertEquals("Out of sync should return the config value at getLocalSnapshotsIntervalUnsynced", 
-                BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED, condition.getSnapshotInterval(false));
-        
-        assertEquals("In sync should return the config value at getLocalSnapshotsIntervalSynced", 
-                BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_INTERVAL_SYNCED, condition.getSnapshotInterval(true));
-    }
-    
-    @Test
     public void getDbSizeTest() {
 
-        when(config.getDbMaxSize()).thenReturn("-1", "5kb", "10GB", "99999999999999999999TB", "5 kb", "10 gB");
+        when(config.getLocalSnapshotsDbMaxSize()).thenReturn("-1", "5kb", "10GB", "99999999999999999999TB", "5 kb", "10 gB");
         
         SnapshotSizeCondition condition = new SnapshotSizeCondition(tangle, config, snapshotProvider);
         

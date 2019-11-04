@@ -78,7 +78,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      */
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
-    private final SnapshotCondition[] conditions;
+    private SnapshotCondition[] conditions;
 
     /**
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
@@ -87,14 +87,12 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param config important snapshot related configuration parameters
      */
     public LocalSnapshotManagerImpl(SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            TransactionPruner transactionPruner, SnapshotConfig config, SnapshotCondition... conditions) {
+            TransactionPruner transactionPruner, SnapshotConfig config) {
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.transactionPruner = transactionPruner;
         this.config = config;
         this.isInSync = false;
-        
-        this.conditions = conditions;
     }
 
     /**
@@ -125,6 +123,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      */
     @VisibleForTesting
     void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
+        System.out.println("Checking LS manager monitorThread");
         while (!Thread.currentThread().isInterrupted()) {
             boolean isInSync = isInSync(latestMilestoneTracker);
             
@@ -183,5 +182,12 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
         }
 
         return isInSync;
+    }
+
+    @Override
+    public void addSnapshotCondition(SnapshotCondition... conditions) {
+        if (this.conditions == null) {
+            this.conditions = conditions;
+        }
     }
 }

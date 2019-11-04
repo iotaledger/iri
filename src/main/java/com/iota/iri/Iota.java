@@ -1,5 +1,12 @@
 package com.iota.iri;
 
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -8,11 +15,17 @@ import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.*;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.milestone.SeenMilestonesRetriever;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.snapshot.conditions.SnapshotDepthCondition;
+import com.iota.iri.service.snapshot.conditions.SnapshotSizeCondition;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
@@ -25,13 +38,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
-
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -193,6 +199,9 @@ public class Iota {
         milestoneSolidifier.start();
 
         if (localSnapshotManager != null) {
+            localSnapshotManager.addSnapshotCondition(
+                    new SnapshotDepthCondition(tangle, configuration, snapshotProvider),
+                    new SnapshotSizeCondition(tangle, configuration, snapshotProvider));
             localSnapshotManager.start(latestMilestoneTracker);
         }
         if (transactionPruner != null) {

@@ -105,7 +105,6 @@ Feature: Test Bootstrapping With LS
       |addresses                  |True                     |boolList         |
 
 
-
   Scenario: Check addresses spent from after pruning
     Ensures that a node with a spent address registers that the address is spent from both before and after the
     transaction has been pruned from the DB.
@@ -119,7 +118,8 @@ Feature: Test Bootstrapping With LS
       |keys                       |values                   |type             |
       |addresses                  |True                     |boolList         |
 
-    When the next 100 milestones are issued
+    #Drop the spend transactions below the pruning depth
+    When the next 15 milestones are issued
 
     # Check that addresses were spent after transaction have been pruned
     And "wereAddressesSpentFrom" is called on "nodeE-m6" with:
@@ -130,4 +130,11 @@ Feature: Test Bootstrapping With LS
       |keys                       |values                   |type             |
       |addresses                  |True                     |boolList         |
 
+    # Check that transactions from those addresses were pruned
+    And "getTrytes" is called on "nodeE-m6" with:
+      |keys                       |values                   |type             |
+      |hashes                     |LS_SPENT_TRANSACTIONS    |staticValue      |
 
+    Then the response for "getTrytes" should return with:
+      |keys                       |values                   |type             |
+      |trytes                     |NULL_TRANSACTION_LIST    |staticValue      |

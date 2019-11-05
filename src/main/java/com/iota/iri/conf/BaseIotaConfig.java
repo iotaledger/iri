@@ -115,6 +115,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
     protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
 
+    //Solidification
+    protected boolean printSyncProgressEnabled = Defaults.PRINT_SYNC_PROGRESS_ENABLED;
+
     public BaseIotaConfig() {
         //empty constructor
     }
@@ -904,6 +907,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.powThreads = powThreads;
     }
 
+    @Override
+    public boolean isPrintSyncProgressEnabled() {
+        return printSyncProgressEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--print-sync-progress"}, description = SolidificationConfig.Descriptions.PRINT_SYNC_PROGRESS_ENABLED, arity = 1)
+    protected void setPrintSyncProgressEnabled(boolean printSyncProgressEnabled) {
+        this.printSyncProgressEnabled = printSyncProgressEnabled;
+    }
+
     /**
      * Represents the default values primarily used by the {@link BaseIotaConfig} field initialisation.
      */
@@ -968,7 +982,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //TipSel
         int MAX_DEPTH = 15;
-        double ALPHA = 0.001d;
+        double ALPHA = 0d;
         int TIP_SELECTION_TIMEOUT_SEC = 60;
 
         //PearlDiver
@@ -1004,6 +1018,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         long SNAPSHOT_TIME = 1554904800;
         int MILESTONE_START_INDEX = 1050000;
         int BELOW_MAX_DEPTH_TRANSACTION_LIMIT = 20_000;
+
+        //Solidification
+        boolean PRINT_SYNC_PROGRESS_ENABLED = true;
 
     }
 }

@@ -1,7 +1,7 @@
 package com.iota.iri.network.protocol;
 
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.utils.TransactionTruncator;
 
 import java.nio.ByteBuffer;
 
@@ -54,14 +54,6 @@ public class Protocol {
      * The amount of bytes used for the requested transaction hash.
      */
     public final static int GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH = 49;
-    /**
-     * The amount of bytes making up the non signature message fragment part of a transaction gossip payload.
-     */
-    public final static int NON_SIG_TX_PART_BYTES_LENGTH = 292;
-    /**
-     * The max amount of bytes a signature message fragment is made up from.
-     */
-    public final static int SIG_DATA_MAX_BYTES_LENGTH = 1312;
 
     /**
      * Parses the given buffer into a {@link ProtocolHeader}.
@@ -100,7 +92,7 @@ public class Protocol {
      * @return a {@link ByteBuffer} containing the transaction gossip packet.
      */
     public static ByteBuffer createTransactionGossipPacket(TransactionViewModel tvm, byte[] requestedHash) {
-        byte[] truncatedTx = truncateTx(tvm.getBytes());
+        byte[] truncatedTx = TransactionTruncator.truncateTransaction(tvm.getBytes());
         final short payloadLengthBytes = (short) (truncatedTx.length + GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
         ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
         addProtocolHeader(buf, ProtocolMessage.TRANSACTION_GOSSIP, payloadLengthBytes);
@@ -130,51 +122,6 @@ public class Protocol {
     public static void addProtocolHeader(ByteBuffer buf, ProtocolMessage protoMsg, short payloadLengthBytes) {
         buf.put(protoMsg.getTypeID());
         buf.putShort(payloadLengthBytes);
-    }
-
-    /**
-     * Expands a truncated bytes encoded transaction payload.
-     * 
-     * @param data the source data
-     */
-    public static byte[] expandTx(byte[] data) {
-        byte[] txDataBytes = new byte[Transaction.SIZE];
-        // we need to expand the tx data (signature message fragment) as
-        // it could have been truncated for transmission
-        int numOfBytesOfSigMsgFragToExpand = ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength() - data.length;
-        byte[] sigMsgFragPadding = new byte[numOfBytesOfSigMsgFragToExpand];
-        int sigMsgFragBytesToCopy = data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH
-                - Protocol.NON_SIG_TX_PART_BYTES_LENGTH;
-
-        // build up transaction payload. empty signature message fragment equals padding with 1312x 0 bytes
-        System.arraycopy(data, 0, txDataBytes, 0, sigMsgFragBytesToCopy);
-        System.arraycopy(sigMsgFragPadding, 0, txDataBytes, sigMsgFragBytesToCopy, sigMsgFragPadding.length);
-        System.arraycopy(data, sigMsgFragBytesToCopy, txDataBytes, Protocol.SIG_DATA_MAX_BYTES_LENGTH,
-                Protocol.NON_SIG_TX_PART_BYTES_LENGTH);
-        return txDataBytes;
-    }
-
-    /**
-     * Truncates the given bytes encoded transaction data.
-     * 
-     * @param txBytes the transaction bytes to truncate
-     * @return an array containing the truncated transaction data
-     */
-    public static byte[] truncateTx(byte[] txBytes) {
-        // check how many bytes from the signature can be truncated
-        int bytesToTruncate = 0;
-        for (int i = SIG_DATA_MAX_BYTES_LENGTH - 1; i >= 0; i--) {
-            if (txBytes[i] != 0) {
-                break;
-            }
-            bytesToTruncate++;
-        }
-        // allocate space for truncated tx
-        byte[] truncatedTx = new byte[SIG_DATA_MAX_BYTES_LENGTH - bytesToTruncate + NON_SIG_TX_PART_BYTES_LENGTH];
-        System.arraycopy(txBytes, 0, truncatedTx, 0, SIG_DATA_MAX_BYTES_LENGTH - bytesToTruncate);
-        System.arraycopy(txBytes, SIG_DATA_MAX_BYTES_LENGTH, truncatedTx, SIG_DATA_MAX_BYTES_LENGTH - bytesToTruncate,
-                NON_SIG_TX_PART_BYTES_LENGTH);
-        return truncatedTx;
     }
 
     /**

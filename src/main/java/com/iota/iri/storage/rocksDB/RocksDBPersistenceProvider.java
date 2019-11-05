@@ -104,7 +104,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
      * 
      * @param dbPath The location where the database will be stored
      * @param logPath The location where the log files will be stored
-     * @param configFile The location where the RocksDB config is read from
+     * @param configPath The location where the RocksDB config is read from
      * @param cacheSize the size of the cache used by the database implementation
      * @param columnFamilies A map of the names related to their Persistable class
      * @param metadataColumnFamily Map of metadata used by the Persistable class, can be <code>null</code>
@@ -567,14 +567,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             File config = Paths.get(configFile).toFile();
             if (config.exists() && config.isFile() && config.canRead()) {
                 Properties configProperties = new Properties();
-                InputStream stream = new FileInputStream(config);
-                try {
+                
+                try (InputStream stream = new FileInputStream(config)){
                     configProperties.load(stream);
                     options = DBOptions.getDBOptionsFromProps(configProperties);
                 } catch (IllegalArgumentException e) {
                     log.warn("RocksDB configuration file is empty, falling back to default values");
-                } finally {
-                    stream.close();
                 }
             }
         }

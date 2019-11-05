@@ -120,14 +120,13 @@ public class IotaUtils {
      */
     public static long parseFileSize(String humanReadableSize) {
         humanReadableSize = humanReadableSize.replaceAll(",", "").toLowerCase();
-        
         int spaceNdx = humanReadableSize.indexOf(" ");
         long ret;
-        
         //If we forgot a space,check until we find it
         if (spaceNdx == -1) {
             spaceNdx = 0;
-            while (spaceNdx < humanReadableSize.length() && Character.isDigit(humanReadableSize.charAt(spaceNdx))) {
+            while (spaceNdx < humanReadableSize.length() && 
+                    (Character.isDigit(humanReadableSize.charAt(spaceNdx)) || humanReadableSize.charAt(spaceNdx) == '.' )) {
                 spaceNdx++;
             }
 
@@ -140,7 +139,7 @@ public class IotaUtils {
             // ++ to skip the space
             ret = Long.parseLong(humanReadableSize.substring(0, spaceNdx++));
         }
-        
+
         //Default to GB
         String sub = ret == humanReadableSize.length() ? "GB" : humanReadableSize.substring(spaceNdx);
         switch (sub) {

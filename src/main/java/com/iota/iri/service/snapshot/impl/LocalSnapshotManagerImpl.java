@@ -123,7 +123,6 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      */
     @VisibleForTesting
     void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
-        System.out.println("Checking LS manager monitorThread");
         while (!Thread.currentThread().isInterrupted()) {
             boolean isInSync = isInSync(latestMilestoneTracker);
             

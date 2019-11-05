@@ -40,8 +40,8 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksEnv;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.SstFileManager;
+import org.rocksdb.Statistics;
 import org.rocksdb.StringAppendOperator;
-import org.rocksdb.TickerType;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
@@ -481,6 +481,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 throw e;
             }
 
+            
+            sstFileManager = new SstFileManager(Env.getDefault());
             options = createOptions(logPath, configFile);
 
             bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
@@ -592,6 +594,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
         }
         
+        //Defaults we always need to set
+        options.setSstFileManager(sstFileManager);
+        options.setStatistics(new Statistics());
+        
         if (!BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) && logPath != null) {
             if (!options.dbLogDir().equals("")) {
                 log.warn("Defined a db log path in config and commandline; Using the command line setting."); 
@@ -605,9 +611,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     
     @Override
     public long getPersistanceSize() {
-        System.out.println(options.statistics().getTickerCount(TickerType.READ_AMP_ESTIMATE_USEFUL_BYTES));
-        System.out.println(options.statistics().getTickerCount(TickerType.READ_AMP_TOTAL_READ_BYTES));
-        
         return sstFileManager.getTotalSize();
     }
 }

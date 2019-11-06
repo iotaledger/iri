@@ -554,6 +554,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         }
         
         // Does not prevent name changes, as this must be migrated. RocksDB will throw an error if attempted
+        // Should be fixed in Issue #1473
         long count = names.stream().map(name -> name.getBytes()).filter(name -> {
             for (ColumnFamilyDescriptor descriptor : columnFamilyDescriptors) {
                 if (Objects.deepEquals(name, descriptor.getName())) {

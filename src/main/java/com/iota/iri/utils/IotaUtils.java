@@ -116,12 +116,12 @@ public class IotaUtils {
      * 
      * Kb is not parsed as this is too small for us to be used in a persistence provider
      * 
-     * @return The size of the human readable string in bytes
+     * @return The size of the human readable string in bytes, rounded down.
      */
     public static long parseFileSize(String humanReadableSize) {
         humanReadableSize = humanReadableSize.replaceAll(",", "").toLowerCase();
         int spaceNdx = humanReadableSize.indexOf(" ");
-        long ret;
+        double ret;
         //If we forgot a space,check until we find it
         if (spaceNdx == -1) {
             spaceNdx = 0;
@@ -134,27 +134,27 @@ public class IotaUtils {
             if (spaceNdx == 0) {
                 return -1;
             }
-            ret = Long.parseLong(humanReadableSize.substring(0, spaceNdx));
+            ret = Double.parseDouble(humanReadableSize.substring(0, spaceNdx));
         } else {
             // ++ to skip the space
-            ret = Long.parseLong(humanReadableSize.substring(0, spaceNdx++));
+            ret = Double.parseDouble(humanReadableSize.substring(0, spaceNdx++));
         }
 
         //Default to GB
         String sub = ret == humanReadableSize.length() ? "GB" : humanReadableSize.substring(spaceNdx);
         switch (sub) {
             case "tb":
-                return ret * TB_FACTOR;
+                return (long) (ret * TB_FACTOR);
             case "tib":
-                return ret * TIB_FACTOR;
+                return (long) (ret * TIB_FACTOR);
             case "gb":
-                return ret * GB_FACTOR;
+                return (long) (ret * GB_FACTOR);
             case "gib":
-                return ret * GIB_FACTOR;
+                return (long) (ret * GIB_FACTOR);
             case "mb":
-                return ret * MB_FACTOR;
+                return (long) (ret * MB_FACTOR);
             case "mib":
-                return ret * MIB_FACTOR;
+                return (long) (ret * MIB_FACTOR);
         }
         return -1;
     }

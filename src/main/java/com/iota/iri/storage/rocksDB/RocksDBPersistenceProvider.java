@@ -33,6 +33,7 @@ import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
 import org.rocksdb.MergeOperator;
+import org.rocksdb.OptionsUtil;
 import org.rocksdb.Priority;
 import org.rocksdb.RestoreOptions;
 import org.rocksdb.RocksDB;
@@ -49,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.BaseIotaConfig;
+import com.iota.iri.conf.TestnetConfig;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -483,7 +485,11 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
             
             sstFileManager = new SstFileManager(Env.getDefault());
-            options = createOptions(logPath, configFile);
+            
+
+            List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
+            // Pass columnFamilyDescriptors so that they are loaded from options file, we check modifications later
+            options = createOptions(logPath, configFile, columnFamilyDescriptors);
 
             bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
             cache = new LRUCache(cacheSize * SizeUnit.KB, 2);
@@ -497,7 +503,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setBlockCacheCompressed(compressedCache);
 
             MergeOperator mergeOperator = new StringAppendOperator();
-            List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
             
             columnFamilyOptions = new ColumnFamilyOptions()
                 .setMergeOperator(mergeOperator)
@@ -505,6 +510,29 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setMaxWriteBufferNumber(2)
                 .setWriteBufferSize(2 * SizeUnit.MB);
             
+            
+            loadColumnFamilyDescriptors(columnFamilyDescriptors);
+            
+            db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
+            db.enableFileDeletions(true);
+
+            initClassTreeMap(columnFamilyDescriptors);
+
+        } catch (Exception e) {
+            IotaIOUtils.closeQuietly(db, options, bloomFilter, columnFamilyOptions, cache, compressedCache);
+            throw e;
+        }
+    }
+    
+    private void loadColumnFamilyDescriptors(List<ColumnFamilyDescriptor> columnFamilyDescriptors) {
+        boolean needsUpdate = checkUpdate(columnFamilyDescriptors, columnFamilies.keySet());
+        if (columnFamilyDescriptors.size() > 0 && needsUpdate) {
+                // We updated the database
+                log.info("IRI Database scheme has been updated.. Loading new ColumnFamilyDescriptors");
+                columnFamilyDescriptors.clear();
+            }
+        
+        if (columnFamilyDescriptors.size() == 0) {
             //Add default column family. Main motivation is to not change legacy code
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
             for (String name : columnFamilies.keySet()) {
@@ -516,16 +544,25 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                         new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
                 metadataReference = new HashMap<>();
             }
-
-            db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
-            db.enableFileDeletions(true);
-
-            initClassTreeMap(columnFamilyDescriptors);
-
-        } catch (Exception e) {
-            IotaIOUtils.closeQuietly(db, options, bloomFilter, columnFamilyOptions, cache, compressedCache);
-            throw e;
         }
+    }
+
+    private boolean checkUpdate(List<ColumnFamilyDescriptor> columnFamilyDescriptors, Set<String> names) {
+        int totalDescriptors = columnFamilies.size() + (metadataColumnFamily != null ? 2 : 1); // +1 for default
+        if (totalDescriptors != columnFamilyDescriptors.size()) {
+            return true;
+        }
+        
+        // Does not prevent name changes, as this must be migrated. RocksDB will throw an error if attempted
+        long count = names.stream().map(name -> name.getBytes()).filter(name -> {
+            for (ColumnFamilyDescriptor descriptor : columnFamilyDescriptors) {
+                if (Objects.deepEquals(name, descriptor.getName())) {
+                    return false;
+                }
+            }
+            return true;
+        }).count();
+        return count != 0;
     }
 
     private void initClassTreeMap(List<ColumnFamilyDescriptor> columnFamilyDescriptors) throws Exception {
@@ -552,7 +589,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classTreeMap = MapUtils.unmodifiableMap(classMap);
     }
 
-    private DBOptions createOptions(String logPath, String configFile) throws IOException {
+    private DBOptions createOptions(String logPath, String configFile, List<ColumnFamilyDescriptor> columnFamilyDescriptors) throws IOException {
         DBOptions options = null;
         File pathToLogDir = Paths.get(logPath).toFile();
         if (!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
@@ -571,7 +608,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             File config = Paths.get(configFile).toFile();
             if (config.exists() && config.isFile() && config.canRead()) {
                 Properties configProperties = new Properties();
-                
                 try (InputStream stream = new FileInputStream(config)){
                     configProperties.load(stream);
                     options = DBOptions.getDBOptionsFromProps(configProperties);
@@ -581,22 +617,32 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             }
         }
         if (options == null) {
-            options = new DBOptions()
-                .setCreateIfMissing(true)
-                .setCreateMissingColumnFamilies(true)
-                .setMaxLogFileSize(SizeUnit.MB)
-                .setMaxManifestFileSize(SizeUnit.MB)
-                .setMaxOpenFiles(10000)
-                .setMaxBackgroundCompactions(1)
-                .setAllowConcurrentMemtableWrite(true)
-                .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
+            options = new DBOptions();
+            try {
+                //Load previous settings
+                OptionsUtil.loadLatestOptions(dbPath, RocksEnv.getDefault(), options, columnFamilyDescriptors , true);
+            } catch (RocksDBException e) {
+                // We never started before
+                options.setCreateIfMissing(true)
+                    .setCreateMissingColumnFamilies(true)
+                    .setMaxLogFileSize(SizeUnit.MB)
+                    .setMaxManifestFileSize(SizeUnit.MB)
+                    .setMaxOpenFiles(10000)
+                    .setMaxBackgroundCompactions(1)
+                    .setAllowConcurrentMemtableWrite(true)
+                    .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
+            }  
         }
         
         //Defaults we always need to set
         options.setSstFileManager(sstFileManager);
         options.setStatistics(new Statistics());
         
-        if (!BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) && logPath != null) {
+        if (!(BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) || 
+                TestnetConfig.Defaults.DB_LOG_PATH.equals(logPath) ||
+                BaseIotaConfig.Defaults.SPENT_ADDRESSES_DB_LOG_PATH.equals(logPath)) 
+                && logPath != null) {
+            
             if (!options.dbLogDir().equals("")) {
                 log.warn("Defined a db log path in config and commandline; Using the command line setting."); 
             }

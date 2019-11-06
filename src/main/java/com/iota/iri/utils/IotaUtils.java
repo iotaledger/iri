@@ -155,8 +155,9 @@ public class IotaUtils {
                 return (long) (ret * MB_FACTOR);
             case "mib":
                 return (long) (ret * MIB_FACTOR);
+            default: 
+                return -1;
         }
-        return -1;
     }
     
     /**

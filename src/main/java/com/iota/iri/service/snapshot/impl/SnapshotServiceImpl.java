@@ -203,7 +203,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     public void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int targetMilestoneIndex)
             throws SnapshotException {
 
-        MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config, targetMilestoneIndex);
+        MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, targetMilestoneIndex);
         
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
@@ -393,12 +393,11 @@ public class SnapshotServiceImpl implements SnapshotService {
      * 
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
-     * @param config important snapshot related configuration parameters
      * @return the target milestone for the local snapshot
      * @throws SnapshotException if anything goes wrong while determining the target milestone for the local snapshot
      */
     private MilestoneViewModel determineMilestoneForLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider,
-            SnapshotConfig config, int lowestIndex) throws SnapshotException {
+            int lowestIndex) throws SnapshotException {
         MilestoneViewModel targetMilestone;
         try {
             targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, lowestIndex,

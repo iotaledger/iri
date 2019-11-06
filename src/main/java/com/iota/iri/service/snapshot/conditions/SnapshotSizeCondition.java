@@ -9,6 +9,11 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.IotaUtils;
 
+/**
+ * 
+ *
+ *
+ */
 public class SnapshotSizeCondition implements SnapshotCondition {
 
     private static final Logger log = LoggerFactory.getLogger(SnapshotSizeCondition.class);
@@ -22,6 +27,13 @@ public class SnapshotSizeCondition implements SnapshotCondition {
     // Otherwise we might attempt multiple snapshots when there shouldn't be one happening anymore
     private long lastSize = -1;
 
+    /**
+     * Implements a {@link SnapshotCondition} based on the total database size
+     * 
+     * @param tangle the database interface.
+     * @param config configuration with snapshot specific settings.
+     * @param snapshotProvider gives us access to the relevant snapshots.
+     */
     public SnapshotSizeCondition(Tangle tangle, SnapshotConfig config, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
         maxSize = IotaUtils.parseFileSize(config.getLocalSnapshotsDbMaxSize());
@@ -41,7 +53,10 @@ public class SnapshotSizeCondition implements SnapshotCondition {
 
     @Override
     public int getSnapshotStartingMilestone() throws SnapshotException {
+        int index =  snapshotProvider.getInitialSnapshot().getIndex() + 5;
+
+        // Set after getting index, incase getting the index fails
         lastSize = tangle.getPersistanceSize();
-        return snapshotProvider.getInitialSnapshot().getIndex() + 5;
+        return index;
     }
 }

@@ -23,6 +23,7 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import org.junit.Test;
 

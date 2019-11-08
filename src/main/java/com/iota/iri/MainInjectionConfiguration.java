@@ -9,7 +9,6 @@ import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.ledger.LedgerService;
@@ -46,6 +45,8 @@ import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.service.tipselection.impl.WalkerAlpha;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
@@ -136,8 +137,8 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    MilestoneSolidifier provideMilestoneSolidifier(SnapshotProvider snapshotProvider, TransactionValidator transactionValidator) {
-        return new MilestoneSolidifierImpl(snapshotProvider, transactionValidator);
+    MilestoneSolidifier provideMilestoneSolidifier(SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier) {
+        return new MilestoneSolidifierImpl(snapshotProvider, transactionSolidifier);
     }
 
     @Singleton
@@ -158,8 +159,14 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    TransactionValidator provideTransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
-        return new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester, configuration);
+    TransactionValidator provideTransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, TransactionSolidifier transactionSolidifier) {
+        return new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester, configuration, transactionSolidifier);
+    }
+
+    @Singleton
+    @Provides
+    TransactionSolidifier provideTransactionSolidifier(Tangle tangle, SnapshotProvider snapshotProvider, TransactionRequester transactionRequester){
+        return new TransactionSolidifier(tangle, snapshotProvider, transactionRequester);
     }
 
     @Singleton
@@ -177,8 +184,8 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
-        return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService, localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker, seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle, transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline, tipsRequester, tipsViewModel, tipsSelector);
+    Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, TransactionSolidifier transactionSolidifier) {
+        return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService, localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker, seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle, transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline, tipsRequester, tipsViewModel, tipsSelector, transactionSolidifier);
     }
 
     @Singleton
@@ -203,12 +210,6 @@ public class MainInjectionConfiguration extends AbstractModule {
         bind(Tangle.class).asEagerSingleton();
         bind(BundleValidator.class).asEagerSingleton();
         bind(TipsViewModel.class).asEagerSingleton();
-    }
-
-    @Singleton
-    @Provides
-    BroadcastQueue provideBroadcastQueue(){
-        return configuration.getBroadcastQueue();
     }
 
 }

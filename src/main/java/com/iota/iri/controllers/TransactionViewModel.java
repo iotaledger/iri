@@ -2,10 +2,8 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
-import com.iota.iri.network.pipeline.BroadcastQueue;
-import com.iota.iri.network.pipeline.ProcessingContext;
-import com.iota.iri.network.pipeline.BroadcastPayload;
 import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -715,29 +713,11 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT;
     }
 
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot,
-                                               final Set<Hash> analyzedHashes, BroadcastQueue broadcastQueue)
-            throws Exception {
-        Object[] hashes = analyzedHashes.toArray();
-        TransactionViewModel transactionViewModel;
-        for(int i = hashes.length -1; i >= 0; i--){
-            transactionViewModel = TransactionViewModel.fromHash(tangle, (Hash) hashes[i]);
-
-            transactionViewModel.updateHeights(tangle, initialSnapshot);
-
-            if (!transactionViewModel.isSolid()) {
-                transactionViewModel.updateSolid(true);
-                transactionViewModel.update(tangle, initialSnapshot, "solid|height");
-                BroadcastPayload payload = new BroadcastPayload(null,transactionViewModel);
-                broadcastQueue.add(new ProcessingContext(payload));
-            }
-        }
-    }
 
     /**
      * Updates the {@link Transaction#solid} value of the referenced {@link Transaction} object.
      *
-     * Used by the {@link com.iota.iri.TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
+     * Used by the {@link TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
      *
      * @param solid The solidity of the transaction in the database
      * @return True if the {@link Transaction#solid} has been updated, False if not.

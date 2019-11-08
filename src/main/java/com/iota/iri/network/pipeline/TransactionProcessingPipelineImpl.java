@@ -1,8 +1,10 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.batched.BatchedHasher;
 import com.iota.iri.crypto.batched.BatchedHasherFactory;
 import com.iota.iri.crypto.batched.HashRequest;
@@ -19,7 +21,10 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -62,12 +67,13 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BroadcastStage broadcastStage;
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
+    private TransactionSolidifier txSolidifier;
 
     private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
-    private BroadcastQueue broadcastStageQueue;
+    private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.
@@ -82,9 +88,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      *                               reply stage
      */
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
-            TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester transactionRequester, BroadcastQueue broadcastStageQueue) {
+                                             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
+                                             TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+                                             TransactionRequester transactionRequester, TransactionSolidifier txSolidifier) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
@@ -94,7 +100,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider, transactionRequester);
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
-        this.broadcastStageQueue = broadcastStageQueue;
+        this.txSolidifier = txSolidifier;
     }
 
     @Override
@@ -104,7 +110,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         addStage("validation", validationStageQueue, validationStage);
         addStage("reply", replyStageQueue, replyStage);
         addStage("received", receivedStageQueue, receivedStage);
-        addStage("broadcast", broadcastStageQueue.get(), broadcastStage);
+        addStage("broadcast", broadcastStageQueue, broadcastStage);
     }
 
     /**
@@ -120,11 +126,8 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
             try {
                 while (!Thread.currentThread().isInterrupted()) {
                     ProcessingContext queueTake;
-                    if(name.equals("broadcast")) {
-                        queueTake = broadcastStageQueue.get().take();
-                    } else{
-                        queueTake = queue.take();
-                    }
+                    queueTake = queue.take();
+
                     ProcessingContext ctx = stage.process(queueTake);
 
                     switch (ctx.getNextStage()) {
@@ -143,7 +146,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             receivedStageQueue.put(payload.getRight());
                             break;
                         case BROADCAST:
-                            broadcastStageQueue.add(ctx);
+                            broadcastStageQueue.put(ctx);
                             break;
                         case ABORT:
                             break;
@@ -168,7 +171,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
 
     @Override
     public BlockingQueue<ProcessingContext> getBroadcastStageQueue() {
-        return broadcastStageQueue.get();
+        return broadcastStageQueue;
     }
 
     @Override
@@ -185,6 +188,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     public void process(Neighbor neighbor, ByteBuffer data) {
         try {
             preProcessStageQueue.put(new ProcessingContext(new PreProcessPayload(neighbor, data)));
+            refillBroadcastQueue();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -197,6 +201,23 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         long txDigest = TransactionCacheDigester.getDigest(txBytes);
         HashingPayload payload = new HashingPayload(null, txTrits, txDigest, null);
         hashAndValidate(new ProcessingContext(payload));
+    }
+
+    @Override
+    public void refillBroadcastQueue(){
+        try{
+            Iterator<TransactionViewModel> hashIterator = txSolidifier.getBroadcastQueue().iterator();
+            Set<TransactionViewModel> toRemove = new LinkedHashSet<>();
+            while(!Thread.currentThread().isInterrupted() && hashIterator.hasNext()){
+                TransactionViewModel t = hashIterator.next();
+                broadcastStageQueue.put(new ProcessingContext(new BroadcastPayload(null, t)));
+                toRemove.add(t);
+                hashIterator.remove();
+            }
+            txSolidifier.clearBroadcastQueue(toRemove);
+        } catch(InterruptedException e){
+            log.info(e.getMessage());
+        }
     }
 
     /**

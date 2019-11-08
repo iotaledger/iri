@@ -7,7 +7,6 @@ import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.network.NetworkInjectionConfiguration;
-import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.service.restserver.resteasy.RestEasy;

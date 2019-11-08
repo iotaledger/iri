@@ -6,7 +6,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.*;
@@ -19,6 +18,8 @@ import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
@@ -95,6 +96,8 @@ public class Iota {
 
     public final MilestoneSolidifier milestoneSolidifier;
 
+    public final TransactionSolidifier transactionSolidifier;
+
     public final BundleValidator bundleValidator;
 
     public final Tangle tangle;
@@ -107,15 +110,13 @@ public class Iota {
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
 
-    private BroadcastQueue broadcastQueue;
-
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
      *
      * @param configuration Information about how this node will be configured.
      *
      */
-    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -133,6 +134,7 @@ public class Iota {
         this.neighborRouter = neighborRouter;
         this.txPipeline = transactionProcessingPipeline;
         this.tipsRequester = tipsRequester;
+        this.transactionSolidifier = transactionSolidifier;
 
         // legacy classes
         this.bundleValidator = bundleValidator;
@@ -184,7 +186,7 @@ public class Iota {
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
 
-        transactionValidator.init(this.broadcastQueue);
+        transactionValidator.init();
 
         txPipeline.start();
         neighborRouter.start();
@@ -194,6 +196,7 @@ public class Iota {
         latestSolidMilestoneTracker.start();
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
+        transactionSolidifier.start();
 
         if (localSnapshotManager != null) {
             localSnapshotManager.start(latestMilestoneTracker);
@@ -235,6 +238,7 @@ public class Iota {
     public void shutdown() throws Exception {
         // shutdown in reverse starting order (to not break any dependencies)
         milestoneSolidifier.shutdown();
+        transactionSolidifier.shutdown();
         seenMilestonesRetriever.shutdown();
         latestSolidMilestoneTracker.shutdown();
         latestMilestoneTracker.shutdown();

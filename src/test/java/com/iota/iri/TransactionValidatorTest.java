@@ -7,9 +7,10 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
@@ -44,7 +45,10 @@ public class TransactionValidatorTest {
   private static SnapshotProvider snapshotProvider;
 
   @Mock
-  private static BroadcastQueue broadcastQueue;
+  private static TransactionSolidifier txSolidifier;
+
+  @Mock
+  private static TransactionRequester txRequester;
 
   @BeforeClass
   public static void setUp() throws Exception {
@@ -69,16 +73,16 @@ public class TransactionValidatorTest {
     when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     TipsViewModel tipsViewModel = new TipsViewModel();
     TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, new MainnetConfig());
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, new MainnetConfig(), txSolidifier);
     txValidator.setMwm(false, MAINNET_MWM);
-    txValidator.init(broadcastQueue);
+    txValidator.init();
   }
 
   @Test
   public void testMinMwm() {
     ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
     when(protocolConfig.getMwm()).thenReturn(5);
-    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig);
+    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig, txSolidifier);
     assertEquals("Expected testnet minimum minWeightMagnitude", 13, transactionValidator.getMinWeightMagnitude());
   }
 
@@ -107,15 +111,17 @@ public class TransactionValidatorTest {
   @Test
   public void verifyTxIsSolid() throws Exception {
     TransactionViewModel tx = getTxWithBranchAndTrunk();
-    assertTrue(txValidator.checkSolidity(tx.getHash()));
-    assertTrue(txValidator.checkSolidity(tx.getHash()));
+    txSolidifier = new TransactionSolidifier(tangle, snapshotProvider, txRequester);
+    assertTrue(txSolidifier.checkSolidity(tx.getHash()));
+    assertTrue(txSolidifier.checkSolidity(tx.getHash()));
   }
 
   @Test
   public void verifyTxIsNotSolid() throws Exception {
     TransactionViewModel tx = getTxWithoutBranchAndTrunk();
-    assertFalse(txValidator.checkSolidity(tx.getHash()));
-    assertFalse(txValidator.checkSolidity(tx.getHash()));
+    txSolidifier = new TransactionSolidifier(tangle, snapshotProvider, txRequester);
+    assertFalse(txSolidifier.checkSolidity(tx.getHash()));
+    assertFalse(txSolidifier.checkSolidity(tx.getHash()));
   }
 
   @Test

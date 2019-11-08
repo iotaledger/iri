@@ -1,6 +1,7 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.NeighborRouter;
@@ -18,7 +19,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.util.concurrent.BlockingQueue;
 
 public class TransactionProcessingPipelineTest {
 
@@ -95,10 +95,7 @@ public class TransactionProcessingPipelineTest {
     private ProcessingContext abortCtx;
 
     @Mock
-    private BroadcastQueue broadcastQueue;
-
-    @Mock
-    private BlockingQueue blockingQueue;
+    private TransactionSolidifier transactionSolidifier;
 
     private void mockHashingStage(TransactionProcessingPipeline pipeline) {
         Mockito.when(hashingPayload.getTxTrits()).thenReturn(null);
@@ -122,7 +119,7 @@ public class TransactionProcessingPipelineTest {
 
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, broadcastQueue);
+                transactionRequester, transactionSolidifier);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -146,10 +143,6 @@ public class TransactionProcessingPipelineTest {
         Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);
         Mockito.when(receivedStage.process(receivedCtx)).thenReturn(broadcastCtx);
 
-        // mock broadcastQueue
-        Mockito.when(broadcastQueue.get()).thenReturn(blockingQueue);
-        Mockito.when(blockingQueue.take()).thenReturn(broadcastCtx);
-
         pipeline.start();
 
         // send in actual payload to kick off the 'processing'
@@ -171,7 +164,7 @@ public class TransactionProcessingPipelineTest {
     public void processingAKnownTransactionOnlyFlowsToTheReplyStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, broadcastQueue);
+                transactionRequester, transactionSolidifier);
 
         // inject mocks
         pipeline.setPreProcessStage(preProcessStage);
@@ -205,7 +198,7 @@ public class TransactionProcessingPipelineTest {
             throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, broadcastQueue);
+                transactionRequester, transactionSolidifier);
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
 
@@ -225,10 +218,6 @@ public class TransactionProcessingPipelineTest {
         // mock received
         Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);
         Mockito.when(receivedStage.process(receivedCtx)).thenReturn(broadcastCtx);
-
-        // mock broadcastQueue
-        Mockito.when(broadcastQueue.get()).thenReturn(blockingQueue);
-        Mockito.when(blockingQueue.take()).thenReturn(broadcastCtx);
 
         pipeline.start();
 
@@ -254,7 +243,7 @@ public class TransactionProcessingPipelineTest {
     public void anInvalidNewTransactionStopsBeingProcessedAfterTheValidationStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, broadcastQueue);
+                transactionRequester, transactionSolidifier);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);

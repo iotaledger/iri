@@ -1,6 +1,5 @@
-package com.iota.iri;
+package com.iota.iri.service.validation;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -10,7 +9,6 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.pipeline.BroadcastQueue;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
@@ -30,11 +28,11 @@ public class TransactionValidator {
     private final SnapshotProvider snapshotProvider;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
+    private final TransactionSolidifier transactionSolidifier;
     private int minWeightMagnitude = 81;
     private static final long MAX_TIMESTAMP_FUTURE = 2L * 60L * 60L;
     private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1_000L;
 
-    private BroadcastQueue broadcastQueue;
     /////////////////////////////////fields for solidification thread//////////////////////////////////////
 
     private Thread newSolidThread;
@@ -66,12 +64,13 @@ public class TransactionValidator {
      *                       minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the
      *                       transaction hash
      */
-    TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig) {
+    public TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig, TransactionSolidifier transactionSolidifier) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
         this.newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
+        this.transactionSolidifier = transactionSolidifier;
         setMwm(protocolConfig.isTestnet(), protocolConfig.getMwm());
     }
 
@@ -86,13 +85,11 @@ public class TransactionValidator {
      *
      * @see #spawnSolidTransactionsPropagation()
      */
-    public void init(BroadcastQueue broadcastQueue) {
-        this.broadcastQueue = broadcastQueue;
+    public void init() {
         newSolidThread.start();
     }
 
-    @VisibleForTesting
-    void setMwm(boolean testnet, int mwm) {
+    public void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
         //lowest allowed MWM encoded in 46 bytes.
@@ -212,78 +209,6 @@ public class TransactionValidator {
         return transactionViewModel;
     }
 
-    /**
-     * This method does the same as {@link #checkSolidity(Hash, int)} but defaults to an unlimited amount
-     * of transactions that are allowed to be traversed.
-     *
-     * @param hash hash of the transactions that shall get checked
-     * @return true if the transaction is solid and false otherwise
-     * @throws Exception if anything goes wrong while trying to solidify the transaction
-     */
-    public boolean checkSolidity(Hash hash) throws Exception {
-        return checkSolidity(hash, Integer.MAX_VALUE);
-    }
-
-    /**
-     * This method checks transactions for solidity and marks them accordingly if they are found to be solid.
-     *
-     * It iterates through all approved transactions until it finds one that is missing in the database or until it
-     * reached solid transactions on all traversed subtangles. In case of a missing transactions it issues a transaction
-     * request and returns false. If no missing transaction is found, it marks the processed transactions as solid in
-     * the database and returns true.
-     *
-     * Since this operation can potentially take a long time to terminate if it would have to traverse big parts of the
-     * tangle, it is possible to limit the amount of transactions that are allowed to be processed, while looking for
-     * unsolid / missing approvees. This can be useful when trying to "interrupt" the solidification of one transaction
-     * (if it takes too many steps) to give another one the chance to be solidified instead (i.e. prevent blocks in the
-     * solidification threads).
-     *
-     * @param hash hash of the transactions that shall get checked
-     * @param maxProcessedTransactions the maximum amount of transactions that are allowed to be traversed
-     * @return true if the transaction is solid and false otherwise
-     * @throws Exception if anything goes wrong while trying to solidify the transaction
-     */
-    public boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception {
-        if(fromHash(tangle, hash).isSolid()) {
-            return true;
-        }
-        LinkedHashSet<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
-        if(maxProcessedTransactions != Integer.MAX_VALUE) {
-            maxProcessedTransactions += analyzedHashes.size();
-        }
-        boolean solid = true;
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
-        Hash hashPointer;
-        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (!analyzedHashes.add(hashPointer)) {
-                continue;
-            }
-
-            if (analyzedHashes.size() >= maxProcessedTransactions) {
-                return false;
-            }
-
-            TransactionViewModel transaction = fromHash(tangle, hashPointer);
-            if (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
-                if (transaction.getType() == PREFILLED_SLOT) {
-                    solid = false;
-
-                    if (!transactionRequester.isTransactionRequested(hashPointer)) {
-                        transactionRequester.requestTransaction(hashPointer);
-                        continue;
-                    }
-                } else {
-                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
-                }
-            }
-        }
-        if (solid) {
-            updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), analyzedHashes, broadcastQueue);
-        }
-        analyzedHashes.clear();
-        return solid;
-    }
 
     public void addSolidTransaction(Hash hash) {
         synchronized (cascadeSync) {
@@ -318,8 +243,7 @@ public class TransactionValidator {
      * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
      * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
      */
-    @VisibleForTesting
-    void propagateSolidTransactions() {
+    public void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
         //synchronized to make sure no one is changing the newSolidTransactions collections during addAll
@@ -451,8 +375,7 @@ public class TransactionValidator {
         return approovee.isSolid();
     }
 
-    @VisibleForTesting
-    boolean isNewSolidTxSetsEmpty () {
+    public boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }
 
@@ -464,4 +387,5 @@ public class TransactionValidator {
             super(message);
         }
     }
+
 }

@@ -1,5 +1,6 @@
 package com.iota.iri.network.pipeline;
 
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.neighbor.Neighbor;
 
 import java.nio.ByteBuffer;
@@ -64,6 +65,12 @@ public interface TransactionProcessingPipeline {
      * @param txTrits the transaction trits
      */
     void process(byte[] txTrits);
+
+    /**
+     * Fetches a set of transactions from the {@link com.iota.iri.service.validation.TransactionSolidifier} and submits
+     * the object into the {@link BroadcastStage} queue.
+     */
+    void refillBroadcastQueue();
 
     /**
      * Shut downs the pipeline by shutting down all stages.

@@ -1,6 +1,5 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.neighbor.Neighbor;
 
 import java.nio.ByteBuffer;

@@ -274,14 +274,7 @@ public class TransactionSolidifier {
             }
         }
         if (solid) {
-            analyzedHashes.forEach(h -> {
-                try {
-                    solidified.add(h);
-                    transactionsToUpdate.put(h);
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
+          addToSolidificationQueue(analyzedHashes);
         }
         analyzedHashes.clear();
         return  solid;
@@ -296,7 +289,7 @@ public class TransactionSolidifier {
      */
     private void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, Hash analyzedHash)
             throws Exception {
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, analyzedHash);
+        TransactionViewModel transactionViewModel = fromHash(tangle, analyzedHash);
 
         transactionViewModel.updateHeights(tangle, initialSnapshot);
 
@@ -308,4 +301,21 @@ public class TransactionSolidifier {
             transactionsToBroadcast.add(transactionViewModel);
         }
     }
+
+    /**
+     * Iterate through analyzed hashes and place them in the {@link #transactionsToUpdate} queue
+     * @param hashes    Analyzed hashes from the {@link #checkSolidity(Hash)} call
+     */
+    private void addToSolidificationQueue(Set<Hash> hashes){
+        hashes.forEach(h -> {
+            try {
+                solidified.add(h);
+                transactionsToUpdate.put(h);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        });
+    }
+
+
 }

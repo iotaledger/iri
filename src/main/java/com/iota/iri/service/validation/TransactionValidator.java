@@ -314,6 +314,8 @@ public class TransactionValidator {
             transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
             tipsViewModel.setSolid(transactionViewModel.getHash());
             addSolidTransaction(transactionViewModel.getHash());
+        } else {
+            transactionSolidifier.addToSolidificationQueue(transactionViewModel.getHash());
         }
     }
 

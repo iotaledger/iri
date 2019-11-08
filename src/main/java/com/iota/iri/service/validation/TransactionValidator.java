@@ -89,6 +89,9 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
+    /**
+     * Set the Minimum Weight Magnitude for validation checks.
+     */
     public void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
@@ -377,6 +380,9 @@ public class TransactionValidator {
         return approovee.isSolid();
     }
 
+    /**
+     * Exclusively used in the {@link TansactionValidatorTest}
+     */
     public boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }

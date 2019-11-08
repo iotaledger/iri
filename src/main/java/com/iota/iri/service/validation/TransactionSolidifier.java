@@ -259,14 +259,10 @@ public class TransactionSolidifier {
             }
 
             TransactionViewModel transaction = fromHash(tangle, hashPointer);
-            if (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
+            if (isUnsolidWithoutEntryPoint(transaction, hashPointer)) {
                 if (transaction.getType() == PREFILLED_SLOT) {
                     solid = false;
-
-                    if (!transactionRequester.isTransactionRequested(hashPointer)) {
-                        transactionRequester.requestTransaction(hashPointer);
-                        continue;
-                    }
+                    checkRequester(hashPointer);
                 } else {
                     nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
@@ -303,6 +299,16 @@ public class TransactionSolidifier {
     }
 
     /**
+     * Check if a transaction is present in the {@link #transactionRequester}, if not, it is added.
+     * @param hashPointer   The hash of the transaction to request
+     */
+    private void checkRequester(Hash hashPointer){
+        if (!transactionRequester.isTransactionRequested(hashPointer)) {
+            transactionRequester.requestTransaction(hashPointer);
+        }
+    }
+
+    /**
      * Iterate through analyzed hashes and place them in the {@link #transactionsToUpdate} queue
      * @param hashes    Analyzed hashes from the {@link #checkSolidity(Hash)} call
      */
@@ -317,5 +323,10 @@ public class TransactionSolidifier {
         });
     }
 
-
+    /**
+     * Returns true if transaction is not solid and there are no solid entry points from the initial snapshot.
+     */
+    private boolean isUnsolidWithoutEntryPoint(TransactionViewModel transaction, Hash hashPointer){
+        return (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer));
+    }
 }

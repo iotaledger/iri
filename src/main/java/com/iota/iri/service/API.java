@@ -1805,7 +1805,7 @@ public class API {
 
     private Function<Map<String, Object>, AbstractResponse> pinTransactionTrytes() {
         return request -> {
-            final List<String> transactionTrytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+            List<String> transactionTrytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
             try {
                 return pinTransactionTrytesStatement(transactionTrytes);
             } catch (Exception e) {

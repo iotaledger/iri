@@ -65,7 +65,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     private final String logPath;
     private final int cacheSize;
     @VisibleForTesting
-    public Map<String, ColumnFamilyHandle> columnMap = new HashMap<>();
+    Map<String, ColumnFamilyHandle> columnMap = new HashMap<>();
 
     private RocksDB db;
     // DBOptions is only used in initDB(). However, it is closeable - so we keep a reference for shutdown.

@@ -373,7 +373,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
      * @throws Exception
      */
     @VisibleForTesting
-    public void safeDeleteTransaction(WriteBatch writeBatch, Hash key) throws Exception {
+    void safeDeleteTransaction(WriteBatch writeBatch, Hash key) throws Exception {
         byte[] keyBytes = key.bytes();
         TransactionViewModel tx = getTransaction(key);
         writeBatch.delete(columnMap.get(TRANSACTION_COLUMN), keyBytes);

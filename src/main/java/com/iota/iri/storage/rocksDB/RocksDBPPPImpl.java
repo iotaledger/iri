@@ -429,7 +429,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
      * @throws Exception
      */
     @VisibleForTesting
-    public void addToIndex(WriteBatch writeBatch, ColumnFamilyHandle column, Indexable key, Indexable indexValue)
+    void addToIndex(WriteBatch writeBatch, ColumnFamilyHandle column, Indexable key, Indexable indexValue)
             throws Exception {
         byte[] indexBytes = indexValue.bytes();
         byte[] dbResult = db.get(column, key.bytes());

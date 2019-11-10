@@ -1816,7 +1816,7 @@ public class API {
 
     private Function<Map<String, Object>, AbstractResponse> pinTransactionHashes() {
         return request -> {
-            final List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
             try {
                 return pinTransactionHashesStatement(txids);
             } catch (Exception e) {

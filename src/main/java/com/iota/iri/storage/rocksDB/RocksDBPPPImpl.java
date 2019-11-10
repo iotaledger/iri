@@ -395,7 +395,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
      * @throws Exception
      */
     @VisibleForTesting
-    public void removeFromIndex(WriteBatch writeBatch, ColumnFamilyHandle column, Indexable key, Indexable indexValue)
+    void removeFromIndex(WriteBatch writeBatch, ColumnFamilyHandle column, Indexable key, Indexable indexValue)
             throws Exception {
         byte[] indexBytes = indexValue.bytes();
         byte[] result = db.get(column, key.bytes());

@@ -1827,7 +1827,7 @@ public class API {
 
     private Function<Map<String, Object>, AbstractResponse> isPinned() {
         return request -> {
-            final List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
             try {
                 return isPinnedStatement(txids);
             } catch (Exception e) {

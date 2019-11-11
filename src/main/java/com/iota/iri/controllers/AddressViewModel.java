@@ -8,7 +8,10 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.Comparator;
 import java.util.Set;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Acts as a controller interface for an {@link Address} set. This controller is used within a
@@ -36,6 +39,34 @@ public class AddressViewModel implements HashesViewModel {
     private AddressViewModel(Address hashes, Indexable hash) {
         self = hashes == null || hashes.set == null ? new Address(): hashes;
         this.hash = hash;
+    }
+
+    /**
+     * Constructor for an {@link Address} set controller from an existing {@link Address} set.
+     * The resulting hash list is sorted
+     *
+     * @param tangle The tangle reference for the database to find the {@link Address} set in
+     * @param hash The hash identifier for the {@link Address} set that needs to be found
+     * @return The {@link AddressViewModel} controller generated
+     * @throws Exception Thrown if the database cannot load an {@link Address} set from the reference {@link Hash}
+     */
+    public static List<TransactionViewModel> loadAsSortedList(Tangle tangle, Indexable hash) throws Exception {
+        Address hashes = (Address)tangle.load(Address.class, hash);
+        return hashes.set.stream()
+                .map(item -> fromHash(tangle,item))
+                .sorted(Comparator.comparing(tvm -> tvm != null ? tvm.getTransaction().attachmentTimestamp : 0))
+                .collect(Collectors.toList());
+    }
+
+
+    //Extracted from lambda
+    private static TransactionViewModel fromHash(Tangle tangle, Hash hash){
+        try{
+            return TransactionViewModel.fromHash(tangle, hash);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

@@ -143,9 +143,7 @@ public class TransactionSolidifier {
      */
     public Set<TransactionViewModel> getBroadcastQueue(){
         synchronized (broadcastSync) {
-            Set<TransactionViewModel> broadcastQueue = new LinkedHashSet<TransactionViewModel>();
-            broadcastQueue.addAll(transactionsToBroadcast);
-            return broadcastQueue;
+            return new LinkedHashSet<TransactionViewModel>(transactionsToBroadcast);
         }
     }
 
@@ -177,8 +175,7 @@ public class TransactionSolidifier {
         Iterator<Hash> solidificationIterator = transactionsToSolidify.iterator();
         while(!Thread.currentThread().isInterrupted() && solidificationIterator.hasNext()){
             try {
-                Hash hash = solidificationIterator.next();
-                checkSolidity(hash);
+                checkSolidity(solidificationIterator.next());
                 solidificationIterator.remove();
             } catch(Exception e ){
                 log.info(e.getMessage());
@@ -195,8 +192,7 @@ public class TransactionSolidifier {
         Iterator<Hash> updateIterator = transactionsToUpdate.iterator();
         while(!Thread.currentThread().isInterrupted() && updateIterator.hasNext()){
             try{
-                Hash hash = updateIterator.next();
-                updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), hash);
+                updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), updateIterator.next());
                 updateIterator.remove();
             } catch(Exception e){
                 log.info(e.getMessage());

@@ -125,10 +125,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         stagesThreadPool.submit(new Thread(() -> {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
-                    ProcessingContext queueTake;
-                    queueTake = queue.take();
-
-                    ProcessingContext ctx = stage.process(queueTake);
+                    ProcessingContext ctx = stage.process(queue.take());
 
                     switch (ctx.getNextStage()) {
                         case REPLY:

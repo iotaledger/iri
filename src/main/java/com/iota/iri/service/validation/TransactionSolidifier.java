@@ -11,8 +11,6 @@ import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.iota.iri.controllers.TransactionViewModel.PREFILLED_SLOT;
@@ -46,12 +44,12 @@ public class TransactionSolidifier {
      * A queue for processing transactions with the {@link #checkSolidity(Hash)} call. Once a transaction has been
      * marked solid it will be placed into the {@link #transactionsToUpdate} queue.
      */
-    private BlockingQueue<Hash> transactionsToSolidify = new ArrayBlockingQueue(500);
+    private Deque<Hash> transactionsToSolidify = new ArrayDeque<>();
     /**
      * A queue for processing transactions with the {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} call.
      * Once the transaction is updated it is placed into the {@link #transactionsToBroadcast} set.
      */
-    private BlockingQueue<Hash> transactionsToUpdate = new ArrayBlockingQueue(500);
+    private Deque<Hash> transactionsToUpdate = new ArrayDeque<>();
     /**
      * A set of transactions that will be called by the {@link TransactionProcessingPipeline} to be broadcast to
      * neighboring nodes.
@@ -109,7 +107,7 @@ public class TransactionSolidifier {
     public void addToSolidificationQueue(Hash hash){
         try{
             if(!solidified.contains(hash) && !transactionsToSolidify.contains(hash)) {
-                transactionsToSolidify.put(hash);
+                transactionsToSolidify.addLast(hash);
             }
 
             checkSolidity(hash);
@@ -183,7 +181,7 @@ public class TransactionSolidifier {
                 checkSolidity(hash);
                 solidificationIterator.remove();
             } catch(Exception e ){
-                e.printStackTrace();
+                log.info(e.getMessage());
             }
         }
     }
@@ -201,7 +199,7 @@ public class TransactionSolidifier {
                 updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), hash);
                 updateIterator.remove();
             } catch(Exception e){
-                e.printStackTrace();
+                log.info(e.getMessage());
             }
         }
     }
@@ -316,9 +314,9 @@ public class TransactionSolidifier {
         hashes.forEach(h -> {
             try {
                 solidified.add(h);
-                transactionsToUpdate.put(h);
+                transactionsToUpdate.addLast(h);
             } catch(Exception e){
-                e.printStackTrace();
+                log.info(e.getMessage());
             }
         });
     }

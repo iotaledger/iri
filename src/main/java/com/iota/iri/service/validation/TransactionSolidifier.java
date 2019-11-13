@@ -60,6 +60,14 @@ public class TransactionSolidifier {
      */
     private Set<Hash> solidified = new LinkedHashSet<>();
     /**
+     * An object for synchronising access to the {@link #transactionsToSolidify} set.
+     */
+    private final Object solidificationSync = new Object();
+    /**
+     * An object for synchronising access to the {@link #transactionsToUpdate} set.
+     */
+    private final Object updateSync = new Object();
+    /**
      * An object for synchronising access to the {@link #transactionsToBroadcast} set.
      */
     private final Object broadcastSync = new Object();
@@ -107,7 +115,9 @@ public class TransactionSolidifier {
     public void addToSolidificationQueue(Hash hash){
         try{
             if(!solidified.contains(hash) && !transactionsToSolidify.contains(hash)) {
-                transactionsToSolidify.addLast(hash);
+                synchronized (solidificationSync) {
+                    transactionsToSolidify.add(hash);
+                }
             }
 
             checkSolidity(hash);
@@ -172,13 +182,15 @@ public class TransactionSolidifier {
      * Solid transactions are added to the {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} set.
      */
     private void processTransactionsToSolidify(){
-        Iterator<Hash> solidificationIterator = transactionsToSolidify.iterator();
-        while(!Thread.currentThread().isInterrupted() && solidificationIterator.hasNext()){
-            try {
-                checkSolidity(solidificationIterator.next());
-                solidificationIterator.remove();
-            } catch(Exception e ){
-                log.info(e.getMessage());
+        synchronized (solidificationSync) {
+            Iterator<Hash> solidificationIterator = transactionsToSolidify.iterator();
+            while (!Thread.currentThread().isInterrupted() && solidificationIterator.hasNext()) {
+                try {
+                    checkSolidity(solidificationIterator.next());
+                    solidificationIterator.remove();
+                } catch (Exception e) {
+                    log.info(e.getMessage());
+                }
             }
         }
     }
@@ -189,13 +201,16 @@ public class TransactionSolidifier {
      * {@link #transactionsToBroadcast} set.
      */
     private void processTransactionsToUpdate(){
-        Iterator<Hash> updateIterator = transactionsToUpdate.iterator();
-        while(!Thread.currentThread().isInterrupted() && updateIterator.hasNext()){
-            try{
-                updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), updateIterator.next());
-                updateIterator.remove();
-            } catch(Exception e){
-                log.info(e.getMessage());
+        synchronized (updateSync) {
+            Iterator<Hash> updateIterator = transactionsToUpdate.iterator();
+            while(!Thread.currentThread().isInterrupted() && updateIterator.hasNext()){
+                try{
+                    updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), updateIterator.next());
+                    updateIterator.remove();
+
+                } catch(Exception e){
+                    log.info(e.getMessage());
+                }
             }
         }
     }
@@ -264,7 +279,7 @@ public class TransactionSolidifier {
             }
         }
         if (solid) {
-          addToSolidificationQueue(analyzedHashes);
+          addToUpdateQueue(analyzedHashes);
         }
         analyzedHashes.clear();
         return  solid;
@@ -306,15 +321,18 @@ public class TransactionSolidifier {
      * Iterate through analyzed hashes and place them in the {@link #transactionsToUpdate} queue
      * @param hashes    Analyzed hashes from the {@link #checkSolidity(Hash)} call
      */
-    private void addToSolidificationQueue(Set<Hash> hashes){
-        hashes.forEach(h -> {
-            try {
-                solidified.add(h);
-                transactionsToUpdate.addLast(h);
-            } catch(Exception e){
-                log.info(e.getMessage());
-            }
-        });
+    private void addToUpdateQueue(Set<Hash> hashes){
+        synchronized(updateSync) {
+            hashes.forEach(h -> {
+                try {
+                    solidified.add(h);
+                    transactionsToUpdate.add(h);
+
+                } catch (Exception e) {
+                    log.info(e.getMessage());
+                }
+            });
+        }
     }
 
     /**

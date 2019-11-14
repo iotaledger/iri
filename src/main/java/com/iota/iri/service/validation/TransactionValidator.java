@@ -317,8 +317,6 @@ public class TransactionValidator {
             transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
             tipsViewModel.setSolid(transactionViewModel.getHash());
             addSolidTransaction(transactionViewModel.getHash());
-        } else {
-            transactionSolidifier.addToSolidificationQueue(transactionViewModel.getHash());
         }
     }
 
@@ -329,6 +327,7 @@ public class TransactionValidator {
      */
     private boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
         try {
+            transactionSolidifier.addToSolidificationQueue(transactionViewModel.getHash());
             return quickSetSolid(transactionViewModel);
         } catch (Exception e) {
             log.error(e.getMessage(), e);

@@ -30,7 +30,7 @@ public class TransactionSolidifier {
     /**
      * Interval that the {@link #transactionSolidifierThread()} will scan at.
      */
-    private static int RESCAN_INTERVAL = 5000;
+    private static int RESCAN_INTERVAL = 500;
 
     private static final IntervalLogger log = new IntervalLogger(TransactionSolidifier.class);
 
@@ -120,12 +120,10 @@ public class TransactionSolidifier {
                 }
             }
 
-            checkSolidity(hash);
             // Clear room in the solidified set for newer transaction hashes
             if(solidified.size() > MAX_SIZE){
                 popElderTransactions();
             }
-
         } catch(Exception e){
             log.error(e.getMessage());
         }

@@ -51,9 +51,6 @@ import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.storage.Tangle;
 
-import javax.annotation.Nullable;
-import java.security.SecureRandom;
-
 /**
  * Guice module. Configuration class for dependency injection.
  */

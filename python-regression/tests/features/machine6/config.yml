@@ -53,7 +53,7 @@ nodes:
   nodeB-m6:
     <<: *db_with_snapshot
 
-  nodeC:
+  nodeC-m6:
     <<: *db_with_ls_db
 
   nodeD-m6:

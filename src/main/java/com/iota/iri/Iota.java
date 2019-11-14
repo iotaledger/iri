@@ -18,7 +18,11 @@ import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.*;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.milestone.SeenMilestonesRetriever;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -275,6 +279,7 @@ public class Iota {
                 tangle.addPersistenceProvider(createRocksDbProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
+                        configuration.getDbConfigFile(),
                         configuration.getDbCacheSize(),
                         Tangle.COLUMN_FAMILIES,
                         Tangle.METADATA_COLUMN_FAMILY)
@@ -295,16 +300,17 @@ public class Iota {
      *
      * @param path The location where the database will be stored
      * @param log The location where the log files will be stored
+     * @param configFile The location where the RocksDB config is read from
      * @param cacheSize the size of the cache used by the database implementation
      * @param columnFamily A map of the names related to their Persistable class
      * @param metadata Map of metadata used by the Persistable class, can be <code>null</code>
      * @return A new Persistance provider
      */
-    private PersistenceProvider createRocksDbProvider(String path, String log, int cacheSize,
+    private PersistenceProvider createRocksDbProvider(String path, String log, String configFile, int cacheSize,
             Map<String, Class<? extends Persistable>> columnFamily,
             Map.Entry<String, Class<? extends Persistable>> metadata) {
         return new RocksDBPersistenceProvider(
-                path, log, cacheSize, columnFamily, metadata);
+                path, log, configFile, cacheSize, columnFamily, metadata);
     }
 
 }

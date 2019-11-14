@@ -1,5 +1,10 @@
 package com.iota.iri;
 
+import java.security.SecureRandom;
+import java.util.HashMap;
+
+import javax.annotation.Nullable;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;

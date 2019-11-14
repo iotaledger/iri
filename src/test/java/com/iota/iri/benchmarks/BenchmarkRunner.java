@@ -21,7 +21,8 @@ public class BenchmarkRunner {
                 .mode(Mode.AverageTime)
                 .timeUnit(TimeUnit.MILLISECONDS)
                 .warmupIterations(getWarmUpIterations(5))
-                .forks(getForks())
+                .forks(getForks(1))
+                .threads(getThreads())
                 .measurementIterations(getMeasurementIterations(10))
                 .shouldFailOnError(true)
                 .shouldDoGC(false)
@@ -38,7 +39,8 @@ public class BenchmarkRunner {
                 .mode(Mode.Throughput)
                 .timeUnit(TimeUnit.SECONDS)
                 .warmupIterations(getWarmUpIterations(5))
-                .forks(getForks())
+                .forks(getForks(1))
+                .threads(getThreads())
                 .measurementIterations(getMeasurementIterations(10))
                 .shouldFailOnError(true)
                 .shouldDoGC(false)
@@ -46,8 +48,12 @@ public class BenchmarkRunner {
         new Runner(opts).run();
     }
 
-    private int getForks() {
-        return getProperty("forks", String.valueOf(Runtime.getRuntime().availableProcessors()));
+    private int getThreads() {
+        return getProperty("threads", Integer.toString(Runtime.getRuntime().availableProcessors()));
+    }
+
+    private int getForks(int defValue) {
+        return getProperty("forks", Integer.toString(defValue));
     }
 
     private int getWarmUpIterations(int defValue) {
@@ -59,7 +65,6 @@ public class BenchmarkRunner {
     }
 
     private int getProperty(String property, String defValue){
-        int prop = Integer.valueOf(Optional.ofNullable(System.getProperty(property)).orElse(defValue));
-        return prop;
+        return Integer.valueOf(Optional.ofNullable(System.getProperty(property)).orElse(defValue));
     }
 }

@@ -577,10 +577,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     }
                     
                     if (options == null) {
-                        System.out.println("Options failed to parse, check the OPTIONS-00X in the db folder");
+                        log.warn("Options failed to parse, check the OPTIONS-00X in the db folder");
                     }
                 } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
+                    log.warn("Options failed to parse, check the OPTIONS-00X in the db folder", e);
                 }
             }
         }

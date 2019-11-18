@@ -26,15 +26,15 @@ import java.util.*;
  */
 public class WalkValidatorImpl implements WalkValidator {
 
-    private final Tangle tangle;
-    private final Logger log = LoggerFactory.getLogger(WalkValidator.class);
-    private final SnapshotProvider snapshotProvider;
-    private final LedgerService ledgerService;
-    private final TipSelConfig config;
+    protected final Tangle tangle;
+    protected final Logger log = LoggerFactory.getLogger(WalkValidator.class);
+    protected final SnapshotProvider snapshotProvider;
+    protected final LedgerService ledgerService;
+    protected final TipSelConfig config;
 
-    private Set<Hash> maxDepthOkMemoization;
-    private Map<Hash, Long> myDiff;
-    private Set<Hash> myApprovedHashes;
+    protected Set<Hash> maxDepthOkMemoization;
+    protected Map<Hash, Long> myDiff;
+    protected Set<Hash> myApprovedHashes;
 
     /**
      * Constructor of Walk Validator

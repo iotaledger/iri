@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
@@ -15,6 +16,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +35,9 @@ import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndB
 
 import static org.junit.Assert.*;
 
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(TransactionViewModel.class)
 public class TransactionViewModelTest {
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -102,7 +111,14 @@ public class TransactionViewModelTest {
 
     @Test
     public void fromHash() throws Exception {
+        TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
+        tx.store(tangle, snapshot);
+        Hash hash = tx.getHash();
 
+        PowerMockito.mockStatic(TransactionViewModel.class);
+        Mockito.when(TransactionViewModel.fromHash(tangle,hash)).thenReturn(tx);
+
+        assertEquals(hash, TransactionViewModel.fromHash(tangle, hash).getHash());
     }
 
     @Test

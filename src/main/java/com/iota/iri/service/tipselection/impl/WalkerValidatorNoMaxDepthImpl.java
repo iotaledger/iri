@@ -5,7 +5,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
 
 /**

@@ -101,7 +101,7 @@
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
-            <version>5.17.2</version>
+            <version>6.3.6</version>
         </dependency>
 
         <!-- json support -->
@@ -396,7 +396,7 @@
                                             commons-io:commons-io:2.5:jar:null:compile:2852e6e05fbb95076fc091f6d1780f1f8fe35e0f
                                         </urn>
                                         <urn>
-                                            org.rocksdb:rocksdbjni:5.17.2:jar:null:compile:bca52276cabe91a3b97cc18e50fa2eabc2986f58
+                                            org.rocksdb:rocksdbjni:6.3.6:jar:null:compile:2941662625cc8151e7ed5d22120fada1f76026a9
                                         </urn>
                                         <urn>
                                             com.google.code.gson:gson:2.8.1:jar:null:compile:02a8e0aa38a2e21cb39e2f5a7d6704cbdc941da0

@@ -142,7 +142,8 @@ public class ReplyStage implements Stage {
             } catch (Exception e) {
                 log.error("error adding reply tx to neighbor's send queue", e);
             }
-            ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
+            ctx.setPayload(new BroadcastPayload(null, tvm));
             return ctx;
         }
 

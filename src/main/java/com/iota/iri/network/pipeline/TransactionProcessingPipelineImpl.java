@@ -135,8 +135,6 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             hashAndValidate(ctx);
                             break;
                         case RECEIVED:
-                            ReceivedPayload receivedPayload = (ReceivedPayload) ctx.getPayload();
-                            txSolidifier.addToSolidificationQueue(receivedPayload.getTransactionViewModel().getHash());
                             receivedStageQueue.put(ctx);
                             break;
                         case MULTIPLE:

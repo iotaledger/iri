@@ -1,5 +1,10 @@
 package com.iota.iri;
 
+import java.security.SecureRandom;
+import java.util.HashMap;
+
+import javax.annotation.Nullable;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -52,10 +57,6 @@ import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 
-import javax.annotation.Nullable;
-import java.security.SecureRandom;
-import java.util.HashMap;
-
 /**
  * Guice module. Configuration class for dependency injection.
  */
@@ -84,6 +85,7 @@ public class MainInjectionConfiguration extends AbstractModule {
         PersistenceProvider persistenceProvider = new RocksDBPersistenceProvider(
                 configuration.getSpentAddressesDbPath(),
                 configuration.getSpentAddressesDbLogPath(),
+                configuration.getDbConfigFile(),
                 1000,
                 new HashMap<String, Class<? extends Persistable>>(1)
                 {{put("spent-addresses", SpentAddress.class);}}, null);

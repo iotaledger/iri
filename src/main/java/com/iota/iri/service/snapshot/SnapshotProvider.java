@@ -40,6 +40,23 @@ public interface SnapshotProvider {
     void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException;
 
     /**
+     * <p>
+     * Loads the builtin snapshot (last global snapshot) that is embedded in the jar (if a different path is provided it
+     * can also load from the disk).
+     * </p>
+     * <p>
+     * We first verify the integrity of the snapshot files by checking the signature of the files and then construct
+     * a {@link Snapshot} from the retrieved information.
+     * </p>
+     * <p>
+     * We add the NULL_HASH as the only solid entry point and an empty list of seen milestones.
+     * </p>
+     * @return the builtin snapshot (last global snapshot) that is embedded in the jar
+     * @throws SnapshotException if anything goes wrong while loading the builtin {@link Snapshot}
+     */
+    Snapshot loadBuiltInSnapshot() throws SnapshotException;
+
+    /**
      * Frees the resources of the {@link SnapshotProvider}.
      *
      * Snapshots require quite a bit of memory and should be cleaned up when they are not required anymore. This is

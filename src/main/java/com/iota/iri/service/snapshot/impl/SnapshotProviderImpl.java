@@ -233,22 +233,8 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         return null;
     }
 
-    /**
-     * <p>
-     * Loads the builtin snapshot (last global snapshot) that is embedded in the jar (if a different path is provided it
-     * can also load from the disk).
-     * </p>
-     * <p>
-     * We first verify the integrity of the snapshot files by checking the signature of the files and then construct
-     * a {@link Snapshot} from the retrieved information.
-     * </p>
-     * <p>
-     * We add the NULL_HASH as the only solid entry point and an empty list of seen milestones.
-     * </p>
-     * @return the builtin snapshot (last global snapshot) that is embedded in the jar
-     * @throws SnapshotException if anything goes wrong while loading the builtin {@link Snapshot}
-     */
-    private Snapshot loadBuiltInSnapshot() throws SnapshotException {
+    @Override
+    public Snapshot loadBuiltInSnapshot() throws SnapshotException {
         if (builtinSnapshot == null) {
             try {
                 if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(

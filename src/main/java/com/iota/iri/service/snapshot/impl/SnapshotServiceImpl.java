@@ -6,6 +6,9 @@ import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
@@ -302,6 +305,43 @@ public class SnapshotServiceImpl implements SnapshotService {
         progressLogger.finish();
 
         return seenMilestones;
+    }
+
+    @Override
+    public Snapshot generateFromStateDiffs() throws Exception {
+        Snapshot snapshot = snapshotProvider.loadBuiltInSnapshot();
+        MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
+        Integer endSnapshot = latest.index();
+            for (int snapshotIndex = snapshot.getIndex(); snapshotIndex <= endSnapshot; ++snapshotIndex) {
+                try {
+                    Milestone ms = (Milestone) tangle.load(Milestone.class, new IntegerIndex(snapshotIndex));
+                    StateDiff diff = (StateDiff) tangle.load(StateDiff.class, ms.hash);
+                    snapshot.applyStateDiff(new SnapshotStateDiffImpl(diff.state));
+                }
+                catch (Exception e) {
+                    throw new IllegalStateException(String.format("Milestone #%d is missing... Can't restore",
+                            snapshotIndex), e);
+                }
+        }
+
+         if (!snapshot.hasCorrectSupply()) {
+             throw new SnapshotException("Created a bad snapshot. Supply is incorrect");
+         }
+
+        fillInMetadata(snapshot, latest, endSnapshot);
+
+        return snapshot;
+    }
+
+    private void fillInMetadata(Snapshot snapshot, MilestoneViewModel latest, Integer endSnapshot) throws Exception {
+        snapshot.setHash(latest.getHash());
+        snapshot.setIndex(endSnapshot);
+        TransactionViewModel latestMs = TransactionViewModel.fromHash(tangle, latest.getHash());
+        snapshot.setTimestamp(latestMs.getTimestamp());
+        Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
+        if (latestSnapshot != null) {
+            snapshot.setSolidEntryPoints(latestSnapshot.getSolidEntryPoints());
+        }
     }
 
     /**

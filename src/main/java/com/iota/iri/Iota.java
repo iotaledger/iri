@@ -20,10 +20,7 @@ import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.milestone.SeenMilestonesRetriever;
-import com.iota.iri.service.snapshot.LocalSnapshotManager;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
@@ -183,6 +180,10 @@ public class Iota {
             tangle.clearColumn(com.iota.iri.model.persistables.Milestone.class);
             tangle.clearColumn(com.iota.iri.model.StateDiff.class);
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
+        }
+
+        if (configuration.isRestoreFromStateDiffs()) {
+            Snapshot snapshot = snapshotService.generateFromStateDiffs();
         }
 
         transactionValidator.init();

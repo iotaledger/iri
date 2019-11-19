@@ -1,6 +1,7 @@
 package com.iota.iri.storage.rocksDB;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.Bytes;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
@@ -21,6 +22,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.util.SizeUnit;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDB;
+import org.rocksdb.Priority;
 import org.rocksdb.DBOptions;
 import org.rocksdb.BloomFilter;
 import org.rocksdb.WriteBatch;
@@ -349,6 +351,9 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
             safeDeleteTransaction(writeBatch, index);
             db.write(writeOptions, writeBatch);
             return true;
+        }catch (Exception e) {
+            log.error(e.getLocalizedMessage());
+            return false;
         }
     }
 
@@ -360,7 +365,13 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
         boolean[] result = new boolean[indexes.size()];
         ColumnFamilyHandle handle = columnMap.get(TRANSACTION_COLUMN);
         for (int i = 0; i < result.length; i++) {
-            result[i] = db.keyMayExist(handle, indexes.get(i).bytes(), new StringBuilder());
+            byte[] keyBytes =  indexes.get(i).bytes();
+            if(db.keyMayExist(handle, keyBytes, new StringBuilder())){
+                result[i] = db.get(handle, keyBytes) != null;
+            }else{
+                result[i] = false;
+            }
+
         }
         return result;
     }
@@ -375,15 +386,16 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     @VisibleForTesting
     void safeDeleteTransaction(WriteBatch writeBatch, Hash key) throws Exception {
         byte[] keyBytes = key.bytes();
-        //TODO Handle null
         TransactionViewModel tx = getTransaction(key);
-        writeBatch.delete(columnMap.get(TRANSACTION_COLUMN), keyBytes);
+        if(tx != null) {
+            writeBatch.delete(columnMap.get(TRANSACTION_COLUMN), keyBytes);
 
-        removeFromIndex(writeBatch, columnMap.get(ADDRESS_INDEX), tx.getAddressHash(), key);
-        removeFromIndex(writeBatch, columnMap.get(TAG_INDEX), tx.getTagValue(), key);
-        removeFromIndex(writeBatch, columnMap.get(BUNDLE_INDEX), tx.getBundleHash(), key);
-        removeFromIndex(writeBatch, columnMap.get(APPROVEE_INDEX), tx.getTrunkTransactionHash(), key);
-        removeFromIndex(writeBatch, columnMap.get(APPROVEE_INDEX), tx.getBranchTransactionHash(), key);
+            removeFromIndex(writeBatch, columnMap.get(ADDRESS_INDEX), tx.getAddressHash(), key);
+            removeFromIndex(writeBatch, columnMap.get(TAG_INDEX), tx.getTagValue(), key);
+            removeFromIndex(writeBatch, columnMap.get(BUNDLE_INDEX), tx.getBundleHash(), key);
+            removeFromIndex(writeBatch, columnMap.get(APPROVEE_INDEX), tx.getTrunkTransactionHash(), key);
+            removeFromIndex(writeBatch, columnMap.get(APPROVEE_INDEX), tx.getBranchTransactionHash(), key);
+        }
     }
 
     /**
@@ -405,7 +417,8 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
                 // when it is the last one to delete just delete the entire index key space.
                 writeBatch.delete(column, key.bytes());
             } else {
-                int keyLoc = indexOf(result, indexBytes);
+
+                int keyLoc = Bytes.indexOf(result, indexBytes);
                 if (keyLoc >= 0) { // Does exists
                     ByteBuffer buffer = ByteBuffer.allocate(result.length - indexBytes.length - 1);
                     byte[] subarray1 = ArrayUtils.subarray(result, 0, keyLoc - 1);
@@ -433,13 +446,10 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     void addToIndex(WriteBatch writeBatch, ColumnFamilyHandle column, Indexable key, Indexable indexValue)
             throws Exception {
         byte[] indexBytes = indexValue.bytes();
-        byte[] dbResult = db.get(column, key.bytes());
-        if (dbResult == null) {
-            dbResult = new byte[0];
-        }
 
-        int keyLoc = indexOf(dbResult, indexBytes);
-        if (keyLoc == -1) {// not found
+        byte[] dbResult = db.get(column, key.bytes());
+
+        if (dbResult != null && Bytes.indexOf(dbResult, indexBytes) != -1) {// not found
 
             ByteBuffer buffer = ByteBuffer
                     .allocate(dbResult.length + indexBytes.length + (dbResult.length > 0 ? 1 : 0));// +1 delimiter
@@ -453,28 +463,6 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
             buffer.put(indexBytes);
             writeBatch.put(column, key.bytes(), buffer.array());
         }
-    }
-
-    /**
-     * Byte matching variant of string.indexOf
-     * @param outerArray Array to search in
-     * @param smallerArray What to find
-     * @return
-     */
-    public int indexOf(byte[] outerArray, byte[] smallerArray) {
-        for (int i = 0; i < outerArray.length - smallerArray.length + 1; ++i) {
-            boolean found = true;
-            for (int j = 0; j < smallerArray.length; ++j) {
-                if (outerArray[i + j] != smallerArray[j]) {
-                    found = false;
-                    break;
-                }
-            }
-            if (found) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     /**
@@ -522,7 +510,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
 
     private Hashes getIndex(ColumnFamilyHandle column, Indexable index) throws Exception {
         if (index == null) {
-            return null;
+            return new Hashes();
         }
         Hashes found = new Hashes();
         byte[] result = db.get(column, index.bytes());

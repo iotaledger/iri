@@ -34,6 +34,8 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
 
+import com.beust.jcommander.ParameterException;
+
 /**
  *
  * The main class of IRI. This will propagate transactions into and throughout the network. This data is stored as a
@@ -183,7 +185,10 @@ public class Iota {
         }
 
         if (configuration.isRestoreFromStateDiffs()) {
-            Snapshot snapshot = snapshotService.generateFromStateDiffs();
+            if (!configuration.getLocalSnapshotsEnabled()) {
+                throw new ParameterException("Local Snapshots must be enabled for restore to work");
+            }
+            snapshotService.updateLatestFromStateDiffs();
         }
 
         transactionValidator.init();

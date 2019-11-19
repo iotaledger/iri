@@ -133,11 +133,14 @@ public interface SnapshotService {
     /**
      * Generate the most up to date snapshot by applying {@link com.iota.iri.model.StateDiff}s on the built in
      * global snapshot. It should copy the metadata from the current latest snapshot if it indeed exists.
+     * After the invocation of this method the node's own ledger state (what is returned by
+     * {@link SnapshotProvider#getLatestSnapshot()} is updated.
      *
-     * @return Snapshot that contains the ledger
+     *
+     * @return Snapshot that contains the updated ledger
      * @throws IllegalStateException if {@link com.iota.iri.model.StateDiff}s are missing in the DB
      * @throws SnapshotException if snapshot validation fails
      * @throws Exception for any general DB error
      */
-    Snapshot generateFromStateDiffs() throws Exception;
+    Snapshot updateLatestFromStateDiffs() throws Exception;
 }

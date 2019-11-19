@@ -110,15 +110,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
     /**
      * {@inheritDoc}
-     */
-    @Override
-    public Snapshot getLatestSnapshot() {
-        return latestSnapshot;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
+     *
      * <p>
      * It first writes two temporary files, then renames the current files by appending them with a ".bkp" extension and
      * finally renames the temporary files. This mechanism reduces the chances of the files getting corrupted if IRI
@@ -157,6 +149,14 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         } finally {
             snapshot.unlockRead();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Snapshot getLatestSnapshot() {
+        return latestSnapshot;
     }
 
     /**

@@ -8,6 +8,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.*;
@@ -15,7 +16,10 @@ import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJob;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.dag.DAGHelper;
 import com.iota.iri.utils.dag.TraversalException;
 import com.iota.iri.utils.log.ProgressLogger;
@@ -308,27 +312,31 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     @Override
-    public Snapshot generateFromStateDiffs() throws Exception {
+    public Snapshot updateLatestFromStateDiffs() throws Exception {
         Snapshot snapshot = snapshotProvider.loadBuiltInSnapshot();
         MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
+        int startSnapshot = snapshot.getIndex();
         Integer endSnapshot = latest.index();
-            for (int snapshotIndex = snapshot.getIndex(); snapshotIndex <= endSnapshot; ++snapshotIndex) {
-                try {
-                    Milestone ms = (Milestone) tangle.load(Milestone.class, new IntegerIndex(snapshotIndex));
-                    StateDiff diff = (StateDiff) tangle.load(StateDiff.class, ms.hash);
-                    snapshot.applyStateDiff(new SnapshotStateDiffImpl(diff.state));
-                }
-                catch (Exception e) {
-                    throw new IllegalStateException(String.format("Milestone #%d is missing... Can't restore",
-                            snapshotIndex), e);
-                }
+        log.info("Starting to re-generate from milestone #{} using diffs", startSnapshot);
+        int diffCount = 0;
+        Pair<Indexable, Persistable> diffPair = tangle.getFirst(StateDiff.class, TransactionHash.class);
+        if (diffPair.low == null) {
+            throw new SnapshotException("State Diffs are not found, thus can't create new snapshot");
+        }
+        while (diffPair.low != null) {
+            snapshot.applyStateDiff(new SnapshotStateDiffImpl(((StateDiff) diffPair.hi).state));
+            log.debug("Applying state diff #{} of ms hash {}", ++diffCount, diffPair.low);
+            diffPair = tangle.next(StateDiff.class, diffPair.low);
         }
 
-         if (!snapshot.hasCorrectSupply()) {
-             throw new SnapshotException("Created a bad snapshot. Supply is incorrect");
-         }
+        log.info("Validating snapshot has correct supply");
+        if (!snapshot.hasCorrectSupply()) {
+            throw new SnapshotException("Created a bad snapshot. Supply is incorrect");
+        }
 
         fillInMetadata(snapshot, latest, endSnapshot);
+        log.info("Updating state with {} state diffs", diffCount);
+        snapshotProvider.getLatestSnapshot().update(snapshot);
 
         return snapshot;
     }
@@ -338,10 +346,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         snapshot.setIndex(endSnapshot);
         TransactionViewModel latestMs = TransactionViewModel.fromHash(tangle, latest.getHash());
         snapshot.setTimestamp(latestMs.getTimestamp());
-        Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
-        if (latestSnapshot != null) {
-            snapshot.setSolidEntryPoints(latestSnapshot.getSolidEntryPoints());
-        }
+        snapshot.setSolidEntryPoints(generateSolidEntryPoints(latest));
     }
 
     /**

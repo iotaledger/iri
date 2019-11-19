@@ -375,6 +375,7 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
     @VisibleForTesting
     void safeDeleteTransaction(WriteBatch writeBatch, Hash key) throws Exception {
         byte[] keyBytes = key.bytes();
+        //TODO Handle null
         TransactionViewModel tx = getTransaction(key);
         writeBatch.delete(columnMap.get(TRANSACTION_COLUMN), keyBytes);
 
@@ -552,8 +553,8 @@ public class RocksDBPPPImpl implements PermanentPersistenceProvider, Persistence
             }
 
             int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
-            RocksEnv.getDefault().setBackgroundThreads(numThreads, RocksEnv.FLUSH_POOL).setBackgroundThreads(numThreads,
-                    RocksEnv.COMPACTION_POOL);
+            RocksEnv.getDefault().setBackgroundThreads(numThreads, Priority.HIGH).setBackgroundThreads(numThreads,
+                    Priority.LOW);
 
             options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).setDbLogDir(logPath)
                     .setMaxLogFileSize(SizeUnit.MB).setMaxManifestFileSize(SizeUnit.MB).setMaxOpenFiles(10000)

@@ -67,6 +67,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
+    protected boolean restoreFromStateDiffs = Defaults.RESTORE_FROM_STATE_DIFFS;
+
 
     //Protocol
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
@@ -459,6 +461,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB, arity = 1)
     protected void setRescanDb(boolean rescanDb) {
         this.rescanDb = rescanDb;
+    }
+
+    @Override
+    public boolean isRestoreFromStateDiffs() {
+        return restoreFromStateDiffs;
+    }
+
+    @JsonProperty("RESTORE")
+    @Parameter(names = {"--restore"}, description= DbConfig.Descriptions.RESTORE_FROM_STATE_DIFF, arity = 1)
+    public void setRestoreFromStateDiffs(boolean restoreFromStateDiffs) {
+        this.restoreFromStateDiffs = restoreFromStateDiffs;
     }
 
     @Override
@@ -880,6 +893,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
+        boolean RESTORE_FROM_STATE_DIFFS = false;
 
         //Protocol
         double P_SEND_MILESTONE = 0.02d;

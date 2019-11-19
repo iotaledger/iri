@@ -54,7 +54,15 @@ public interface DbConfig extends Config {
      */
     boolean isRescanDb();
 
-    interface Descriptions {
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#RESTORE_FROM_STATE_DIFFS}
+     *
+     * @return {@value DbConfig.Descriptions#RESTORE_FROM_STATE_DIFF}
+     */
+     boolean isRestoreFromStateDiffs();
+
+
+        interface Descriptions {
 
         String DB_PATH = "The folder where the DB saves its data.";
         String DB_LOG_PATH = "The folder where the DB logs info";
@@ -63,6 +71,8 @@ public interface DbConfig extends Config {
         String REVALIDATE = "Reload from the db data about confirmed transaction (milestones), state of the ledger, " +
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
+        String RESTORE_FROM_STATE_DIFF = "Recalculate the ledger balances from the last global snapshot using only " +
+                "diffs in the DB.";
         String DB_CONFIG_FILE = "The location of the RocksDB configuration file";
     }
 }

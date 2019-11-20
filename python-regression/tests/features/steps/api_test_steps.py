@@ -1,9 +1,13 @@
 from aloe import *
+from iota import Transaction
 from util import static_vals
 from util.test_logic import api_test_logic as api_utils
 from util.threading_logic import pool_logic as pool
 from util.neighbor_logic import neighbor_logic as neighbors
 from util.response_logic import response_handling as responses
+from util.transaction_bundle_logic import transaction_logic as transactions
+from util.milestone_logic import milestones
+
 from time import sleep, time
 
 import logging
@@ -228,3 +232,63 @@ def check_node_sync(step, node, milestone):
         "Latest Solid Milestone {} on {} is not the expected {}".format(latestSolidMilestone, node, milestone)
 
 
+@step(r'A transaction is issued on "([^"]+)" with:')
+def issue_a_transaction(step, node):
+    """
+    Issues a single transaction
+
+    :param node: The identifier for the node (ie nodeA)
+    """
+    world.config['nodeId'] = node
+    api = api_utils.prepare_api_call(node)
+
+    transaction = transactions.evaluate_and_send(api, "", step.hashes)
+    transaction_hash = Transaction.from_tryte_string(transaction.get('trytes')[0]).hash
+    world.responses['transaction_hash'] = transaction_hash
+
+
+@step(r'"(\d+)" milestones are issued on "([^"]+)"')
+def issue_multiple_milestones(step, num_milestones, node):
+    """
+    Issues num_milestones milestones
+
+    :param num_milestones: The number of milestones to issue
+    :param node: The identifier for the node (ie nodeA)
+    """
+    address = static_vals.TEST_BLOWBALL_COO
+    api = api_utils.prepare_api_call(node)
+    seed = transactions.check_for_seed(step.hashes)
+
+    #Latest milestone is 8412
+    for iteration in range(int(num_milestones)):
+        api = api_utils.prepare_api_call(node, seed=seed)
+        logger.info('Issuing milestone {}'.format(iteration + 1))
+        milestone = milestones.issue_milestone(address, api, iteration + 8413)
+
+        milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
+        milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
+        logger.info("sleeping 3 sec")
+        sleep(int(3))
+
+    logger.info("milestones generated")
+
+
+@step(r'"([^"]+)" call on "([^"]+)" should return with:')
+def checkConsistency(step, api_call, node):
+    """
+    Checks the consistency of the ealier issues transaction which should currently
+    be available in the world
+
+    :param api_call: The api to cal
+    :param node: The identifier for the node (ie nodeA)
+    """
+    transaction_hash = world.responses['transaction_hash']
+
+    tails = [transaction_hash]
+    api = api_utils.prepare_api_call(node)
+    response = api_utils.fetch_call('checkConsistency', api, {'tails': tails})
+    world.responses[api_call] = {}
+    world.responses[api_call][node] = response
+
+    expected = eval(step.hashes[0]['values'])
+    assert response['state'] == expected

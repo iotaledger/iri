@@ -118,7 +118,7 @@ public class TransactionViewModelTest {
         PowerMockito.mockStatic(TransactionViewModel.class);
         Mockito.when(TransactionViewModel.fromHash(tangle,hash)).thenReturn(tx);
 
-        Assert.assertEquals("Transaction hashes should be equal", hash, TransactionViewModel.fromHash(tangle, hash).getHash());
+        assertEquals("Transaction hashes should be equal", hash, TransactionViewModel.fromHash(tangle, hash).getHash());
     }
 
     @Test

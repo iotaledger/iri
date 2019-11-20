@@ -250,3 +250,17 @@ Feature: Test API calls on Machine 1
 
 		Then a response for "findTransactions" should exist
 
+	Scenario: CheckConsistency on transaction that is below max depth
+		Sends one transaction followed by multiple milestones such that
+		the transaction becomes below max depth. Then calls checkConsistency
+
+		Given A transaction is issued on "nodeA-m1" with:
+		|keys 		|values						|type           |
+		|address    |TEST_STORE_ADDRESS			|staticValue    |
+		|value      |0							|int            |
+
+		When "20" milestones are issued on "nodeA-m1"
+
+		Then "checkConsistency" call on "nodeA-m1" should return with:
+		|keys                   |values                 |type	|
+		|state                  |True                 	|bool 	|

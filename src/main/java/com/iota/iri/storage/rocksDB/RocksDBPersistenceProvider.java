@@ -569,7 +569,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 try (InputStream stream = new FileInputStream(config)){
                     // Map will contain DBOptions, TableOptions/BlockBasedTable, CFOptions
                     // Currently we only use DBOptions
-                    Map<String, Properties> map = parseINI(stream);
+                    Map<String, Properties> map = IotaIOUtils.parseINI(stream);
                     if (map.containsKey("DBOptions")) {
                         options = DBOptions.getDBOptionsFromProps(map.get("DBOptions"));
                     } else if (map.containsKey("default")) {
@@ -606,32 +606,5 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         }
 
         return options;
-    }
-    
-    // https://stackoverflow.com/a/41084504/4512850 -ish
-    private static Map<String, Properties> parseINI(InputStream stream) throws IOException {
-        Map<String, Properties> result = new HashMap<>();
-        
-        @SuppressWarnings("serial")
-        Properties p = new Properties() {
-
-            private Properties section;
-
-            public synchronized Object put(Object key, Object value) {
-                String header = (((String) key) + " " + value).trim();
-                if (header.startsWith("[") && header.endsWith("]")) {
-                    return result.put(header.substring(1, header.length() - 1), 
-                            section = new Properties());
-                } else if (section != null){
-                    return section.put(key, value);
-                } else {
-                    return super.put(key, value);
-                }
-            };
-
-        };
-        p.load(stream);
-        result.put("default", p);
-        return result;
     }
 }

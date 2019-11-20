@@ -1,4 +1,5 @@
-from aloe import *
+from aloe import world, step
+from ast import literal_eval
 from iota import Transaction
 from util import static_vals
 from util.test_logic import api_test_logic as api_utils
@@ -263,10 +264,7 @@ def issue_multiple_milestones(step, num_milestones, node):
     for iteration in range(int(num_milestones)):
         api = api_utils.prepare_api_call(node, seed=seed)
         logger.info('Issuing milestone {}'.format(iteration + 1))
-        milestone = milestones.issue_milestone(address, api, iteration + 8413)
-
-        milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
-        milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
+        milestones.issue_milestone(address, api, iteration + 8413)
         logger.info("sleeping 3 sec")
         sleep(int(3))
 
@@ -290,5 +288,5 @@ def checkConsistency(step, api_call, node):
     world.responses[api_call] = {}
     world.responses[api_call][node] = response
 
-    expected = eval(step.hashes[0]['values'])
+    expected = literal_eval(step.hashes[0]['values'])
     assert response['state'] == expected

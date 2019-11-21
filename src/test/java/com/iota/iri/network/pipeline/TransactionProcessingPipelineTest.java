@@ -77,6 +77,9 @@ public class TransactionProcessingPipelineTest {
     private HashingPayload hashingPayload;
 
     @Mock
+    private BroadcastPayload broadcastPayload;
+
+    @Mock
     private ProcessingContext validationCtx;
 
     @Mock
@@ -141,6 +144,7 @@ public class TransactionProcessingPipelineTest {
 
         // mock received
         Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);
+        Mockito.when(broadcastCtx.getPayload()).thenReturn(broadcastPayload);
         Mockito.when(receivedStage.process(receivedCtx)).thenReturn(broadcastCtx);
 
         pipeline.start();

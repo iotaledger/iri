@@ -1,5 +1,6 @@
 package com.iota.iri.service.validation.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
@@ -296,5 +297,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     private boolean isUnsolidWithoutEntryPoint(TransactionViewModel transaction, Hash hashPointer){
         return (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer));
+    }
+
+    @VisibleForTesting
+    Set<Hash> getSolidificationQueue(){
+        return new LinkedHashSet<>(transactionsToSolidify);
     }
 }

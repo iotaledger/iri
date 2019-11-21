@@ -47,7 +47,7 @@ def create_inconsistent_transaction(step, node):
     """
     world.config['nodeId'] = node
     api = api_utils.prepare_api_call(node)
-    trunk = static.NULL_HASH
+    trunk = static.INVALID_HASH
     branch = trunk
     trytes = static.EMPTY_TRANSACTION_TRYTES
 

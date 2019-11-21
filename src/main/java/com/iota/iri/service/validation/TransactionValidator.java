@@ -10,6 +10,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

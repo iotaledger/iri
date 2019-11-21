@@ -47,6 +47,7 @@ import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.service.validation.impl.TransactionSolidifierImpl;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
@@ -166,7 +167,7 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     TransactionSolidifier provideTransactionSolidifier(Tangle tangle, SnapshotProvider snapshotProvider, TransactionRequester transactionRequester){
-        return new TransactionSolidifier(tangle, snapshotProvider, transactionRequester);
+        return new TransactionSolidifierImpl(tangle, snapshotProvider, transactionRequester);
     }
 
     @Singleton

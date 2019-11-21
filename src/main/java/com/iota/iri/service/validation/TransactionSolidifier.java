@@ -2,216 +2,39 @@ package com.iota.iri.service.validation;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.log.interval.IntervalLogger;
-import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
-import com.iota.iri.utils.thread.SilentScheduledExecutorService;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-import static com.iota.iri.controllers.TransactionViewModel.PREFILLED_SLOT;
-import static com.iota.iri.controllers.TransactionViewModel.fromHash;
+import java.util.Set;
 
-/**
- * A solidifier class for processing transactions. Transactions are checked for solidity, and missing transactions are
- * subsequently requested. Once a transaction is solidified correctly it is placed into a broadcasting set to be sent to
- * neighboring nodes.
- */
-public class TransactionSolidifier {
-
-    private Tangle tangle;
-    private SnapshotProvider snapshotProvider;
-    private TransactionRequester transactionRequester;
+public interface TransactionSolidifier {
 
     /**
-     * Interval that the {@link #transactionSolidifierThread()} will scan at.
+     * Initialize the executor service. Start processing transactions to solidify.
      */
-    private static int RESCAN_INTERVAL = 500;
-
-    private static final IntervalLogger log = new IntervalLogger(TransactionSolidifier.class);
-
-    /**
-     * Executor service for running the {@link #transactionSolidifierThread()}.
-     */
-    private SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
-            "Transaction Solidifier", log.delegate());
-
-    /**
-     * A queue for processing transactions with the {@link #checkSolidity(Hash)} call. Once a transaction has been
-     * marked solid it will be placed into the {@link #transactionsToUpdate} queue.
-     */
-    private Deque<Hash> transactionsToSolidify = new ArrayDeque<>();
-    /**
-     * A queue for processing transactions with the {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} call.
-     * Once the transaction is updated it is placed into the {@link #transactionsToBroadcast} set.
-     */
-    private Deque<Hash> transactionsToUpdate = new ArrayDeque<>();
-    /**
-     * A set of transactions that will be called by the {@link TransactionProcessingPipeline} to be broadcast to
-     * neighboring nodes.
-     */
-    private Set<TransactionViewModel> transactionsToBroadcast = new LinkedHashSet<>();
-    /**
-     * A set containing the hash of already solidified transactions
-     */
-    private Set<Hash> solidified = new LinkedHashSet<>();
-    /**
-     * An object for synchronising access to the {@link #transactionsToSolidify} set.
-     */
-    private final Object solidificationSync = new Object();
-    /**
-     * An object for synchronising access to the {@link #transactionsToUpdate} set.
-     */
-    private final Object updateSync = new Object();
-    /**
-     * An object for synchronising access to the {@link #transactionsToBroadcast} set.
-     */
-    private final Object broadcastSync = new Object();
-
-    /**
-     * Max size and buffer for {@link #solidified} set.
-     */
-    private static int MAX_SIZE= 10000;
-    private static int BUFFER = 5000;
-
-
-    /**
-     * Constructor for the solidifier.
-     * @param tangle                    The DB reference
-     * @param snapshotProvider          For fetching entry points for solidity checks
-     * @param transactionRequester      A requester for missing transactions
-     */
-    public TransactionSolidifier(Tangle tangle, SnapshotProvider snapshotProvider, TransactionRequester transactionRequester){
-        this.tangle = tangle;
-        this.snapshotProvider = snapshotProvider;
-        this.transactionRequester = transactionRequester;
-    }
-
-    /**
-     * Initialize the executor service.
-     */
-    public void start(){
-        executorService.silentScheduleWithFixedDelay(this::transactionSolidifierThread, 0, RESCAN_INTERVAL,
-                TimeUnit.MILLISECONDS);
-    }
+    void start();
 
     /**
      * Interrupt thread processes and shut down the executor service.
      */
-    public void shutdown() {
-        executorService.shutdownNow();
-    }
+    void shutdown();
 
     /**
      * Add a hash to the solidification queue, and runs an initial {@link #checkSolidity} call.
      *
      * @param hash      Hash of the transaction to solidify
-     * @return          True if the transaction is solid, False if not
      */
-    public void addToSolidificationQueue(Hash hash){
-        try{
-            if(!solidified.contains(hash) && !transactionsToSolidify.contains(hash)) {
-                synchronized (solidificationSync) {
-                    transactionsToSolidify.add(hash);
-                }
-            }
-
-            // Clear room in the solidified set for newer transaction hashes
-            if(solidified.size() > MAX_SIZE){
-                popElderTransactions();
-            }
-        } catch(Exception e){
-            log.error(e.getMessage());
-        }
-    }
+    void addToSolidificationQueue(Hash hash);
 
     /**
-     * Clears the older half of the {@link #solidified} set to reduce memory footprint.
-     */
-    private void popElderTransactions(){
-        try{
-            Iterator<Hash> solidifiedIterator = solidified.iterator();
-            for(int i = 0; i < BUFFER; i++){
-                solidifiedIterator.next();
-                solidifiedIterator.remove();
-            }
-        } catch(Exception e){
-            log.info(e.getMessage());
-        }
-    }
-
-
-    /**
-     * Fetch a copy of the current {@link #transactionsToBroadcast} set.
+     * Fetch a copy of the current transactionsToBroadcast set.
      * @return          A set of {@link TransactionViewModel} objects to be broadcast.
      */
-    public Set<TransactionViewModel> getBroadcastQueue(){
-        synchronized (broadcastSync) {
-            return new LinkedHashSet<TransactionViewModel>(transactionsToBroadcast);
-        }
-    }
+    Set<TransactionViewModel> getBroadcastQueue();
 
     /**
-     * Remove any broadcasted transactions from the {@link #transactionsToBroadcast} set
+     * Remove any broadcasted transactions from the transactionsToBroadcast set
      * @param transactionsBroadcasted   A set of {@link TransactionViewModel} objects to remove from the set.
      */
-    public void clearBroadcastQueue(Set<TransactionViewModel> transactionsBroadcasted){
-        synchronized (broadcastSync) {
-            for (TransactionViewModel tvm : transactionsBroadcasted) {
-                transactionsToBroadcast.remove(tvm);
-            }
-        }
-    }
-
-    /**
-     * Main thread. Process the {@link #transactionsToSolidify} and {@link #transactionsToUpdate} queue's.
-     */
-    private void transactionSolidifierThread(){
-        processTransactionsToSolidify();
-        processTransactionsToUpdate();
-    }
-
-    /**
-     * Iterate through the {@link #transactionsToSolidify} queue and call {@link #checkSolidity(Hash)} on each hash.
-     * Solid transactions are added to the {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} set.
-     */
-    private void processTransactionsToSolidify(){
-        synchronized (solidificationSync) {
-            Iterator<Hash> solidificationIterator = transactionsToSolidify.iterator();
-            while (!Thread.currentThread().isInterrupted() && solidificationIterator.hasNext()) {
-                try {
-                    checkSolidity(solidificationIterator.next());
-                    solidificationIterator.remove();
-                } catch (Exception e) {
-                    log.info(e.getMessage());
-                }
-            }
-        }
-    }
-
-    /**
-     * Iterate through the {@link #transactionsToUpdate} queue and call
-     * {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} on each hash. Passes updated transactions to the
-     * {@link #transactionsToBroadcast} set.
-     */
-    private void processTransactionsToUpdate(){
-        synchronized (updateSync) {
-            Iterator<Hash> updateIterator = transactionsToUpdate.iterator();
-            while(!Thread.currentThread().isInterrupted() && updateIterator.hasNext()){
-                try{
-                    updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), updateIterator.next());
-                    updateIterator.remove();
-
-                } catch(Exception e){
-                    log.info(e.getMessage());
-                }
-            }
-        }
-    }
+    void clearFromBroadcastQueue(Set<TransactionViewModel> transactionsBroadcasted);
 
     /**
      * This method does the same as {@link #checkSolidity(Hash, int)} but defaults to an unlimited amount
@@ -221,10 +44,7 @@ public class TransactionSolidifier {
      * @return true if the transaction is solid and false otherwise
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
-
-    public boolean checkSolidity(Hash hash) throws Exception {
-        return checkSolidity(hash, Integer.MAX_VALUE);
-    }
+    boolean checkSolidity(Hash hash) throws Exception;
 
     /**
      * This method checks transactions for solidity and marks them accordingly if they are found to be solid.
@@ -245,98 +65,6 @@ public class TransactionSolidifier {
      * @return true if the transaction is solid and false otherwise
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
-    public boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception {
-        if(fromHash(tangle, hash).isSolid()) {
-            return true;
-        }
-        LinkedHashSet<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
-        if(maxProcessedTransactions != Integer.MAX_VALUE) {
-            maxProcessedTransactions += analyzedHashes.size();
-        }
-        boolean solid = true;
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
-        Hash hashPointer;
-        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (!analyzedHashes.add(hashPointer)) {
-                continue;
-            }
+    boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception;
 
-            if (analyzedHashes.size() >= maxProcessedTransactions) {
-                return false;
-            }
-
-            TransactionViewModel transaction = fromHash(tangle, hashPointer);
-            if (isUnsolidWithoutEntryPoint(transaction, hashPointer)) {
-                if (transaction.getType() == PREFILLED_SLOT) {
-                    solid = false;
-                    checkRequester(hashPointer);
-                } else {
-                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
-                }
-            }
-        }
-        if (solid) {
-          addToUpdateQueue(analyzedHashes);
-        }
-        analyzedHashes.clear();
-        return  solid;
-    }
-
-    /**
-     * Updates the solidity of a transaction object and places it into the {@link #transactionsToBroadcast} set.
-     * @param tangle            The DB reference
-     * @param initialSnapshot   Initial snapshot from the {@link #snapshotProvider}
-     * @param analyzedHash      Hash of the transaction that is being updated
-     * @throws Exception        Throws an exception if there is an error updating the transaction object's solidity
-     */
-    private void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, Hash analyzedHash)
-            throws Exception {
-        TransactionViewModel transactionViewModel = fromHash(tangle, analyzedHash);
-
-        transactionViewModel.updateHeights(tangle, initialSnapshot);
-
-        if (!transactionViewModel.isSolid()) {
-            transactionViewModel.updateSolid(true);
-            transactionViewModel.update(tangle, initialSnapshot, "solid|height");
-        }
-        synchronized (broadcastSync) {
-            transactionsToBroadcast.add(transactionViewModel);
-        }
-    }
-
-    /**
-     * Check if a transaction is present in the {@link #transactionRequester}, if not, it is added.
-     * @param hashPointer   The hash of the transaction to request
-     */
-    private void checkRequester(Hash hashPointer){
-        if (!transactionRequester.isTransactionRequested(hashPointer)) {
-            transactionRequester.requestTransaction(hashPointer);
-        }
-    }
-
-    /**
-     * Iterate through analyzed hashes and place them in the {@link #transactionsToUpdate} queue
-     * @param hashes    Analyzed hashes from the {@link #checkSolidity(Hash)} call
-     */
-    private void addToUpdateQueue(Set<Hash> hashes){
-        synchronized(updateSync) {
-            hashes.forEach(h -> {
-                try {
-                    solidified.add(h);
-                    transactionsToUpdate.add(h);
-
-                } catch (Exception e) {
-                    log.info(e.getMessage());
-                }
-            });
-        }
-    }
-
-    /**
-     * Returns true if transaction is not solid and there are no solid entry points from the initial snapshot.
-     */
-    private boolean isUnsolidWithoutEntryPoint(TransactionViewModel transaction, Hash hashPointer){
-        return (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer));
-    }
 }

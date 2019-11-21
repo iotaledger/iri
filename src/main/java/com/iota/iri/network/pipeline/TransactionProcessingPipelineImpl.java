@@ -143,6 +143,8 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             receivedStageQueue.put(payload.getRight());
                             break;
                         case BROADCAST:
+                            BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
+                            txSolidifier.addToSolidificationQueue(broadcastPayload.getTransactionViewModel().getHash());
                             broadcastStageQueue.put(ctx);
                             break;
                         case ABORT:
@@ -206,12 +208,12 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
             Iterator<TransactionViewModel> hashIterator = txSolidifier.getBroadcastQueue().iterator();
             Set<TransactionViewModel> toRemove = new LinkedHashSet<>();
             while(!Thread.currentThread().isInterrupted() && hashIterator.hasNext()){
-                TransactionViewModel t = hashIterator.next();
-                broadcastStageQueue.put(new ProcessingContext(new BroadcastPayload(null, t)));
-                toRemove.add(t);
+                TransactionViewModel tx = hashIterator.next();
+                broadcastStageQueue.put(new ProcessingContext(new BroadcastPayload(null, tx)));
+                toRemove.add(tx);
                 hashIterator.remove();
             }
-            txSolidifier.clearBroadcastQueue(toRemove);
+            txSolidifier.clearFromBroadcastQueue(toRemove);
         } catch(InterruptedException e){
             log.info(e.getMessage());
         }

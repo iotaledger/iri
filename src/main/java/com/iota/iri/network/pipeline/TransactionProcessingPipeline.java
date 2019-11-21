@@ -1,6 +1,7 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.service.validation.TransactionSolidifier;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
@@ -66,7 +67,7 @@ public interface TransactionProcessingPipeline {
     void process(byte[] txTrits);
 
     /**
-     * Fetches a set of transactions from the {@link com.iota.iri.service.validation.TransactionSolidifier} and submits
+     * Fetches a set of transactions from the {@link TransactionSolidifier} and submits
      * the object into the {@link BroadcastStage} queue.
      */
     void refillBroadcastQueue();

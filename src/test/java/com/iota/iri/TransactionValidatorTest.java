@@ -11,6 +11,7 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.service.validation.impl.TransactionSolidifierImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
@@ -111,7 +112,7 @@ public class TransactionValidatorTest {
   @Test
   public void verifyTxIsSolid() throws Exception {
     TransactionViewModel tx = getTxWithBranchAndTrunk();
-    txSolidifier = new TransactionSolidifier(tangle, snapshotProvider, txRequester);
+    txSolidifier = new TransactionSolidifierImpl(tangle, snapshotProvider, txRequester);
     assertTrue(txSolidifier.checkSolidity(tx.getHash()));
     assertTrue(txSolidifier.checkSolidity(tx.getHash()));
   }
@@ -119,7 +120,7 @@ public class TransactionValidatorTest {
   @Test
   public void verifyTxIsNotSolid() throws Exception {
     TransactionViewModel tx = getTxWithoutBranchAndTrunk();
-    txSolidifier = new TransactionSolidifier(tangle, snapshotProvider, txRequester);
+    txSolidifier = new TransactionSolidifierImpl(tangle, snapshotProvider, txRequester);
     assertFalse(txSolidifier.checkSolidity(tx.getHash()));
     assertFalse(txSolidifier.checkSolidity(tx.getHash()));
   }

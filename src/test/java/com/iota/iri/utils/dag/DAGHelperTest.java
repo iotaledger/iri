@@ -1,5 +1,6 @@
 package com.iota.iri.utils.dag;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.HashSet;
@@ -78,7 +79,7 @@ public class DAGHelperTest {
         assertEquals("Last transaction hash should have been C", tx.getHash(), C);
         assertEquals("Last transaction should have TX3 its address", tx.getAddressHash(), TX3.address);
         assertEquals("Last transaction should have TX3 its timestamp", tx.getAttachmentTimestamp(), TX3.attachmentTimestamp);
-        assertEquals("Last transaction should have TX3 its bytes", tx.getBytes(), TX3.bytes());
+        assertArrayEquals("Last transaction should have TX3 its bytes", tx.getTransaction().bytes(), TX3.bytes());
     }
         
 
@@ -102,7 +103,7 @@ public class DAGHelperTest {
         assertEquals("Last transaction hash should have been the genisis hash", tx.getHash(), Hash.NULL_HASH);
         assertEquals("Last transaction should have TX1 its address", tx.getAddressHash(), TX1.address);
         assertEquals("Last transaction should have TX1 its timestamp", tx.getAttachmentTimestamp(), TX1.attachmentTimestamp);
-        assertEquals("Last transaction should have TX1 its bytes", tx.getBytes(), TX1.bytes());
+        assertArrayEquals("Last transaction should have TX1 its bytes", tx.getTransaction().bytes(), TX1.bytes());
     }
 
 }

@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *     IRI implements all the core functionality necessary for participating in an IOTA network as a full node.
  *     This includes, but is not limited to:
  *     <ul>
- *         <li>Receiving and broadcasting transactions through TCP and UDP.</li>
+ *         <li>Receiving and broadcasting transactions through TCP</li>
  *         <li>Handling of HTTP requests from clients.</li>
  *         <li>Tracking and validating Milestones.</li>
  *         <li>Loading custom modules that extend the API.</li>

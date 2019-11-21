@@ -211,19 +211,14 @@ public class IXI {
             return;
         }
         Map packageJson;
-        Reader packageJsonReader;
-        try {
-            packageJsonReader = new FileReader(packageJsonPath.toFile());
+
+        try (Reader packageJsonReader = new FileReader(packageJsonPath.toFile()) ){
             packageJson = gson.fromJson(packageJsonReader, Map.class);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             log.error("Could not load {}", packageJsonPath);
             return;
         }
-        try {
-            packageJsonReader.close();
-        } catch (IOException e) {
-            log.error("Could not close file {}", packageJsonPath);
-        }
+
         if(packageJson != null && packageJson.get("main") != null) {
             log.info("Loading module: {}", getModuleName(modulePath, true));
             Path pathToMain = Paths.get(modulePath.toString(), (String) packageJson.get("main"));
@@ -242,33 +237,25 @@ public class IXI {
     }
 
     private void attach(Path pathToMain, String moduleName) {
-        Reader ixiModuleReader;
-        try {
-            ixiModuleReader = new FileReader(pathToMain.toFile());
-        } catch (FileNotFoundException e) {
-            log.error("Could not load {}", pathToMain);
-            return;
-        }
-        log.info("Starting script: {}", pathToMain);
-        Map<String, CallableRequest<AbstractResponse>> ixiMap = new HashMap<>();
-        Map<String, Runnable> startStop = new HashMap<>();
+        try (Reader ixiModuleReader = new FileReader(pathToMain.toFile())) {
+            log.info("Starting script: {}", pathToMain);
+            Map<String, CallableRequest<AbstractResponse>> ixiMap = new HashMap<>();
+            Map<String, Runnable> startStop = new HashMap<>();
 
-        Bindings bindings = scriptEngine.createBindings();
-        bindings.put("API", ixiMap);
-        bindings.put("IXICycle", startStop);
-        bindings.put("IOTA", iota);
+            Bindings bindings = scriptEngine.createBindings();
+            bindings.put("API", ixiMap);
+            bindings.put("IXICycle", startStop);
+            bindings.put("IOTA", iota);
 
-        ixiAPI.put(moduleName, ixiMap);
-        ixiLifetime.put(moduleName, startStop);
-        try {
-            scriptEngine.eval(ixiModuleReader, bindings);
-        } catch (ScriptException e) {
-            log.error("Script error", e);
-        }
-        try {
-            ixiModuleReader.close();
+            ixiAPI.put(moduleName, ixiMap);
+            ixiLifetime.put(moduleName, startStop);
+            try {
+                scriptEngine.eval(ixiModuleReader, bindings);
+            } catch (ScriptException e) {
+                log.error("Script error", e);
+            }
         } catch (IOException e) {
-            log.error("Could not close {}", pathToMain);
+            log.error("Could not load {}", pathToMain);
         }
     }
 

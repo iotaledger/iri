@@ -88,9 +88,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      *                               reply stage
      */
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
-                                             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-                                             TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-                                             TransactionRequester transactionRequester, TransactionSolidifier txSolidifier) {
+            TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
+            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+            TransactionRequester transactionRequester, TransactionSolidifier txSolidifier) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
@@ -143,8 +143,12 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             receivedStageQueue.put(payload.getRight());
                             break;
                         case BROADCAST:
-                            BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-                            txSolidifier.addToSolidificationQueue(broadcastPayload.getTransactionViewModel().getHash());
+                            try {
+                                BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
+                                txSolidifier.addToSolidificationQueue(broadcastPayload.getTransactionViewModel().getHash());
+                            } catch(Exception e){
+                                log.info("Error placing transaction in solidifier: " + e.getMessage());
+                            }
                             broadcastStageQueue.put(ctx);
                             break;
                         case ABORT:

@@ -212,7 +212,8 @@ def issue_a_milestone(step, index, node):
 
 def wait_for_update(index, api):
     updated = False
-    for i in range(10):
+    i = 0
+    while i < 10:
         node_info = api.get_node_info()
         if node_info['latestSolidSubtangleMilestoneIndex'] == index:
             updated = True

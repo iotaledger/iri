@@ -1,5 +1,7 @@
 package com.iota.iri.network.protocol;
 
+import com.iota.iri.utils.TransactionTruncator;
+
 /**
  * Defines the different message types supported by the protocol and their characteristics.
  */
@@ -23,8 +25,8 @@ public enum ProtocolMessage {
      * The transaction payload + requested transaction hash gossipping packet. In reality most of this packets won't
      * take up their full 1604 bytes as the signature message fragment of the tx is truncated.
      */
-    TRANSACTION_GOSSIP((byte) 2, (short) (Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH + Protocol.NON_SIG_TX_PART_BYTES_LENGTH
-            + Protocol.SIG_DATA_MAX_BYTES_LENGTH), true);
+    TRANSACTION_GOSSIP((byte) 2, (short) (Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH + TransactionTruncator.NON_SIG_TX_PART_BYTES_LENGTH
+            + TransactionTruncator.SIG_DATA_MAX_BYTES_LENGTH), true);
 
     private static final ProtocolMessage[] lookup = new ProtocolMessage[256];
 

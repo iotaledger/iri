@@ -218,6 +218,7 @@ def wait_for_update(index, api):
         if node_info['latestSolidSubtangleMilestoneIndex'] == index:
             updated = True
             break
+        i += 1;
         sleep(1)
 
     assert updated is True, "The node was unable to update to index {}".format(index)

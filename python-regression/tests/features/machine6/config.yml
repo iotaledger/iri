@@ -51,7 +51,7 @@ db_for_pruning: &db_for_pruning
 
 db_for_spent_addresses: &db_for_spent_addresses
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/SpentAddressesTestDB.tar
-  db_checksum: 4cc5f5be44e225f50fcb78abed13ac85a2b3d0c8a7730b7b12e635b327893556
+  db_checksum: 2b27e005497d72b7d7642e04f03552f098ab49b1168bb05a4c7ddd31db7980f5
   iri_args: *args
 
 nodes:

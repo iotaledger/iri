@@ -23,7 +23,7 @@ public class SnapshotProviderImplTest {
     private final IotaConfig iotaConfig = ConfigFactory.createIotaConfig(true);
     private SnapshotProviderImpl provider;
 
-    private SnapshotImpl cachedBuildinSnapshot;
+    private SnapshotImpl cachedBuiltinSnapshot;
 
     private PersistenceProvider localSnapshotDb;
 
@@ -41,7 +41,7 @@ public class SnapshotProviderImplTest {
         provider = new SnapshotProviderImpl(iotaConfig);
         
         // When running multiple tests, the static cached snapshot breaks this test
-        cachedBuildinSnapshot = SnapshotProviderImpl.builtinSnapshot;
+        cachedBuiltinSnapshot = SnapshotProviderImpl.builtinSnapshot;
         SnapshotProviderImpl.builtinSnapshot = null;
     }
 
@@ -50,7 +50,7 @@ public class SnapshotProviderImplTest {
         provider.shutdown();
         
         // Set back the cached snapshot for tests after us who might use it
-        SnapshotProviderImpl.builtinSnapshot = cachedBuildinSnapshot;
+        SnapshotProviderImpl.builtinSnapshot = cachedBuiltinSnapshot;
     }
     
     @Test

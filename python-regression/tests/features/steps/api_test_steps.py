@@ -9,6 +9,8 @@ from util.response_logic import response_handling as responses
 from util.transaction_bundle_logic import transaction_logic as transactions
 from util.milestone_logic import milestones
 
+from transaction_steps import issue_a_milestone
+
 from time import sleep, time
 
 import logging
@@ -232,61 +234,30 @@ def check_node_sync(step, node, milestone):
     assert latestSolidMilestone == int(milestone), \
         "Latest Solid Milestone {} on {} is not the expected {}".format(latestSolidMilestone, node, milestone)
 
-
-@step(r'A transaction is issued on "([^"]+)" with:')
-def issue_a_transaction(step, node):
-    """
-    Issues a single transaction
-
-    :param node: The identifier for the node (ie nodeA)
-    """
-    world.config['nodeId'] = node
+@step(r'the next (\d+) milestones are issued')
+def issue_several_milestones(step, num_milestones):
+    node = world.config['nodeId']
     api = api_utils.prepare_api_call(node)
 
-    transaction = transactions.evaluate_and_send(api, "", step.hashes)
-    transaction_hash = Transaction.from_tryte_string(transaction.get('trytes')[0]).hash
-    world.responses['transaction_hash'] = transaction_hash
+    latest_milestone_index = int(api.get_node_info()['latestSolidSubtangleMilestoneIndex'])
+    logger.info('Latest Milestone Index: {}'.format(latest_milestone_index))
+    start_index = latest_milestone_index + 1
+    end_index = start_index + int(num_milestones)
 
+    for index in range(start_index, end_index):
+        issue_a_milestone(step, index, node)
+        #Give node a moment to update solid milestone
+        wait_for_update(index, api)
 
-@step(r'"(\d+)" milestones are issued on "([^"]+)"')
-def issue_multiple_milestones(step, num_milestones, node):
-    """
-    Issues num_milestones milestones
+def wait_for_update(index, api):
+    updated = False
+    i = 0
+    while i < 10:
+        node_info = api.get_node_info()
+        if node_info['latestSolidSubtangleMilestoneIndex'] == index:
+            updated = True
+            break
+        i += 1
+        sleep(1)
 
-    :param num_milestones: The number of milestones to issue
-    :param node: The identifier for the node (ie nodeA)
-    """
-    address = static_vals.TEST_BLOWBALL_COO
-    api = api_utils.prepare_api_call(node)
-    seed = transactions.check_for_seed(step.hashes)
-
-    #Latest milestone is 8412
-    for iteration in range(int(num_milestones)):
-        api = api_utils.prepare_api_call(node, seed=seed)
-        logger.info('Issuing milestone {}'.format(iteration + 1))
-        milestones.issue_milestone(address, api, iteration + 8413)
-        logger.info("sleeping 3 sec")
-        sleep(int(3))
-
-    logger.info("milestones generated")
-
-
-@step(r'"([^"]+)" call on "([^"]+)" should return with:')
-def checkConsistency(step, api_call, node):
-    """
-    Checks the consistency of the ealier issues transaction which should currently
-    be available in the world
-
-    :param api_call: The api to cal
-    :param node: The identifier for the node (ie nodeA)
-    """
-    transaction_hash = world.responses['transaction_hash']
-
-    tails = [transaction_hash]
-    api = api_utils.prepare_api_call(node)
-    response = api_utils.fetch_call('checkConsistency', api, {'tails': tails})
-    world.responses[api_call] = {}
-    world.responses[api_call][node] = response
-
-    expected = literal_eval(step.hashes[0]['values'])
-    assert response['state'] == expected
+    assert updated is True, "The node was unable to update to index {}".format(index)

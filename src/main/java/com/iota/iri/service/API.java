@@ -28,7 +28,7 @@ import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.service.tipselection.impl.TipSelectionCancelledException;
-import com.iota.iri.service.tipselection.impl.WalkerValidatorNoMaxDepthImpl;
+import com.iota.iri.service.tipselection.impl.WalkValidatorNoMaxDepthImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
@@ -401,7 +401,7 @@ public class API {
         if (state) {
             snapshotProvider.getLatestSnapshot().lockRead();
             try {
-                WalkValidator walkValidator = new WalkerValidatorNoMaxDepthImpl(tangle, snapshotProvider, ledgerService, configuration);
+                WalkValidator walkValidator = new WalkValidatorNoMaxDepthImpl(tangle,ledgerService);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
                         state = false;

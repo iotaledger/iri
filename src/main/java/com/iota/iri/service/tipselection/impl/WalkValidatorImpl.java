@@ -5,36 +5,25 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
+
 
 /**
- * Implementation of {@link WalkValidator} that checks consistency of the ledger as part of validity checks.
- *
- *     A transaction is only valid if:
- *      <ol>
- *      <li>it is a tail
- *      <li>all the history of the transaction is present (is solid)
- *      <li>it does not reference an old unconfirmed transaction (not belowMaxDepth)
- *      <li>the ledger is still consistent if the transaction is added
- *          (balances of all addresses are correct and all signatures are valid)
- *      </ol>
+ * Does the same thing as {@link WalkValidatorNoMaxDepthImpl} except it adds a below max depth check
  */
-public class WalkValidatorImpl implements WalkValidator {
+public class WalkValidatorImpl extends WalkValidatorNoMaxDepthImpl {
 
-    protected final Tangle tangle;
-    protected final Logger log = LoggerFactory.getLogger(WalkValidator.class);
-    protected final SnapshotProvider snapshotProvider;
-    protected final LedgerService ledgerService;
-    protected final TipSelConfig config;
+    private final SnapshotProvider snapshotProvider;
+    private final TipSelConfig config;
 
-    protected Set<Hash> maxDepthOkMemoization;
-    protected Map<Hash, Long> myDiff;
-    protected Set<Hash> myApprovedHashes;
+    private Set<Hash> maxDepthOkMemoization;
 
     /**
      * Constructor of Walk Validator
@@ -44,10 +33,10 @@ public class WalkValidatorImpl implements WalkValidator {
      * @param config configurations to set internal parameters.
      */
     public WalkValidatorImpl(Tangle tangle, SnapshotProvider snapshotProvider, LedgerService ledgerService,
-                             TipSelConfig config) {
-        this.tangle = tangle;
+            TipSelConfig config) {
+
+        super(tangle, ledgerService);
         this.snapshotProvider = snapshotProvider;
-        this.ledgerService = ledgerService;
         this.config = config;
 
         maxDepthOkMemoization = new HashSet<>();
@@ -58,22 +47,12 @@ public class WalkValidatorImpl implements WalkValidator {
     @Override
     public boolean isValid(Hash transactionHash) throws Exception {
 
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionHash);
-        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-            log.debug("Validation failed: {} is missing in db", transactionHash);
+        if (!super.isValid(transactionHash)) {
             return false;
-        } else if (transactionViewModel.getCurrentIndex() != 0) {
-            log.debug("Validation failed: {} not a tail", transactionHash);
-            return false;
-        } else if (!transactionViewModel.isSolid()) {
-            log.debug("Validation failed: {} is not solid", transactionHash);
-            return false;
-        } else if (belowMaxDepth(transactionViewModel.getHash(),
+        }
+        if (belowMaxDepth(transactionHash,
                 snapshotProvider.getLatestSnapshot().getIndex() - config.getMaxDepth())) {
             log.debug("Validation failed: {} is below max depth", transactionHash);
-            return false;
-        } else if (!ledgerService.isBalanceDiffConsistent(myApprovedHashes, myDiff, transactionViewModel.getHash())) {
-            log.debug("Validation failed: {} is not consistent", transactionHash);
             return false;
         }
         return true;

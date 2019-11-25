@@ -254,13 +254,21 @@ Feature: Test API calls on Machine 1
 		Sends one transaction followed by multiple milestones such that
 		the transaction becomes below max depth. Then calls checkConsistency
 
-		Given A transaction is issued on "nodeA-m1" with:
-		|keys 		|values						|type           |
-		|address    |TEST_STORE_ADDRESS			|staticValue    |
-		|value      |0							|int            |
+		Given a transaction is generated and attached on "nodeA-m1" with:
+			|keys       |values				|type           |
+			|address    |TEST_STORE_ADDRESS	|staticValue    |
+			|value      |0					|int            |
 
-		When "20" milestones are issued on "nodeA-m1"
+		Then a response with the following is returned:
+			|keys						|
+			|trytes						|
 
-		Then "checkConsistency" call on "nodeA-m1" should return with:
-		|keys                   |values                 |type	|
-		|state                  |True                 	|bool 	|
+		When the next 20 milestones are issued
+
+		And "checkConsistency" is called on "nodeA-m1" with:
+			|keys           |values				|type           |
+			|tails          |attachToTangleTransactionHash      |responseList   |
+
+		Then the response for "checkConsistency" should return with:
+			|keys      	|values         |type           |
+			|state		|True          	|bool           |

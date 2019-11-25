@@ -32,6 +32,13 @@ def generate_transaction_and_attach(step, node):
     world.responses['attachToTangle'] = {}
     world.responses['attachToTangle'][node] = transaction
 
+    transaction_trytes = transaction.get('trytes')
+    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
+
+    if 'attachToTangleTransactionHash' not in world.responses:
+        world.responses['attachToTangleTransactionHash'] = {}
+    world.responses['attachToTangleTransactionHash'][node] = transaction_hash.hash
+
     setattr(static, "TEST_STORE_TRANSACTION", transaction.get('trytes'))
     return transaction
 

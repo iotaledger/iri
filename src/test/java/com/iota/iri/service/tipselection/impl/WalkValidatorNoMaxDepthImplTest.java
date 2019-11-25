@@ -11,6 +11,10 @@ import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+
+import java.util.HashMap;
+import java.util.HashSet;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -26,35 +30,28 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.HashMap;
-import java.util.HashSet;
-
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(TransactionViewModel.class)
-public class WalkerValidatorNoMaxDepthImplTest {
-
-    @Rule
-    public MockitoRule mockitoRule = MockitoJUnit.rule();
+public class WalkValidatorNoMaxDepthImplTest {
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
-    private TipSelConfig config = new MainnetConfig();
-
     @Mock
     private static SnapshotProvider snapshotProvider;
-
     @Mock
     private static LedgerService ledgerService;
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
+    private TipSelConfig config = new MainnetConfig();
 
     @BeforeClass
     public static void setUp() throws Exception {
         tangle = new Tangle();
         dbFolder.create();
         logFolder.create();
-        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(
-                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(), 1000,
-                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
+        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
+                logFolder.getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
     }
 
@@ -62,24 +59,6 @@ public class WalkerValidatorNoMaxDepthImplTest {
     public void setUpEach() {
         Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
         Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
-    }
-
-    @Test
-    public void shouldFailOnBelowMaxDepth() throws Exception {
-        TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
-        tx.store(tangle, snapshotProvider.getInitialSnapshot());
-        tx.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 2);
-        Hash hash = tx.getHash();
-        tx.updateSolid(true);
-
-        PowerMockito.mockStatic(TransactionViewModel.class);
-        Mockito.when(TransactionViewModel.fromHash(tangle, hash)).thenReturn(tx);
-        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
-                .thenReturn(true);
-        snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
-
-        WalkValidator walkerValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
-        Assert.assertFalse("Validation should have failed because transaction is below max depth", walkerValidator.isValid(hash));
     }
 
     @Test
@@ -92,11 +71,11 @@ public class WalkerValidatorNoMaxDepthImplTest {
 
         PowerMockito.mockStatic(TransactionViewModel.class);
         Mockito.when(TransactionViewModel.fromHash(tangle, hash)).thenReturn(tx);
-        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
-                .thenReturn(true);
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash)).thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
 
-        WalkValidator walkerValidator = new WalkerValidatorNoMaxDepthImpl(tangle, snapshotProvider, ledgerService, config);
-        Assert.assertTrue("Validation failed but should have succeeded without checking max depth", walkerValidator.isValid(hash));
+        WalkValidator walkerValidator = new WalkValidatorNoMaxDepthImpl(tangle, ledgerService);
+        Assert.assertTrue("Validation failed but should have succeeded without checking max depth",
+                walkerValidator.isValid(hash));
     }
 }

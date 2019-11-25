@@ -1,8 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.TransactionTestUtils;
-import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
@@ -43,7 +41,6 @@ public class WalkValidatorNoMaxDepthImplTest {
     private static LedgerService ledgerService;
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
-    private TipSelConfig config = new MainnetConfig();
 
     @BeforeClass
     public static void setUp() throws Exception {

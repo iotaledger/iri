@@ -1,19 +1,14 @@
+import logging
 from aloe import world, step
-from ast import literal_eval
-from iota import Transaction
+from time import sleep, time
 from util import static_vals
-from util.test_logic import api_test_logic as api_utils
-from util.threading_logic import pool_logic as pool
 from util.neighbor_logic import neighbor_logic as neighbors
 from util.response_logic import response_handling as responses
-from util.transaction_bundle_logic import transaction_logic as transactions
-from util.milestone_logic import milestones
+from util.test_logic import api_test_logic as api_utils
+from util.threading_logic import pool_logic as pool
 
 from transaction_steps import issue_a_milestone
 
-from time import sleep, time
-
-import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -96,7 +91,7 @@ def threaded_call(step, api_call, node):
         world.config['future_results'] = {}
     world.config['future_results'][api_call] = future_results
 
-    
+
 @step(r'we wait "(\d+)" second/seconds')
 def wait_for_step(step, time):
     """
@@ -130,7 +125,7 @@ def compare_thread_return(step, api_call):
         response_keys = response_list.keys()
 
         expected_values = {}
-        api_utils.prepare_options(step.hashes,expected_values)
+        api_utils.prepare_options(step.hashes, expected_values)
         keys = expected_values.keys()
 
         # Confirm that the lists are of equal length before comparing
@@ -234,6 +229,7 @@ def check_node_sync(step, node, milestone):
     assert latestSolidMilestone == int(milestone), \
         "Latest Solid Milestone {} on {} is not the expected {}".format(latestSolidMilestone, node, milestone)
 
+
 @step(r'the next (\d+) milestones are issued')
 def issue_several_milestones(step, num_milestones):
     node = world.config['nodeId']
@@ -246,8 +242,9 @@ def issue_several_milestones(step, num_milestones):
 
     for index in range(start_index, end_index):
         issue_a_milestone(step, index, node)
-        #Give node a moment to update solid milestone
+        # Give node a moment to update solid milestone
         wait_for_update(index, api)
+
 
 def wait_for_update(index, api):
     updated = False

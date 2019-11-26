@@ -13,6 +13,7 @@ import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
@@ -55,7 +56,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
      */
     public void init(boolean assertSpentAddressesExistence) throws SpentAddressesException {
         try {
-            if (assertSpentAddressesExistence && !doSpentAddressesExist(localSnapshotsPersistenceProvider.getProvider())) {
+            if (assertSpentAddressesExistence && !doSpentAddressesExist(localSnapshotsPersistenceProvider)) {
                 log.error("Expecting to start with a localsnapshots-db containing spent addresses when initializing " +
                         "from a local snapshot. Shutting down now");
                 //explicitly exiting rather than throwing an exception
@@ -67,8 +68,8 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         }
     }
 
-    private boolean doSpentAddressesExist(PersistenceProvider provider) throws Exception {
-        Pair<Indexable, Persistable> first = provider.first(SpentAddress.class, AddressHash.class);
+    private boolean doSpentAddressesExist(LocalSnapshotsPersistenceProvider provider) throws Exception {
+        Pair<Indexable, Persistable> first = provider.getFirst(SpentAddress.class, AddressHash.class);
         return first.hi != null && ((SpentAddress) first.hi).exists();
     }
 

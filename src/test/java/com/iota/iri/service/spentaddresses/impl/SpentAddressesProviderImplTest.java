@@ -115,9 +115,14 @@ public class SpentAddressesProviderImplTest {
         }
     }
 
+    //The ExpectedSystemExit rule works by issuing a SecurityException.
+    //Since we don't have a specific Exception for db errors yet we catch a general exception in the
+    //SpentAddressProvider and rethrow it as SpentAddressesException. So unfortunately for the test it also
+    //catches the security exception. Once we fix exceptions for the persistence layer we can fix this test as well.
     @Test(expected = SpentAddressesException.class)
     public void failWhenAssertingForExistingData() throws Exception {
-        when(persistenceProvider.first(SpentAddress.class, AddressHash.class))
+        exit.expectSystemExitWithStatus(1);
+        when(localSnapshotsPersistenceProvider.getFirst(SpentAddress.class, AddressHash.class))
                 .thenReturn(new Pair<>(null,null));
         provider.init(true);
     }

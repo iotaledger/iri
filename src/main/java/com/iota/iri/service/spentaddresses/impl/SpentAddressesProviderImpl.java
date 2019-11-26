@@ -16,10 +16,7 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.*;
 import com.iota.iri.utils.Pair;
 
 import org.slf4j.Logger;
@@ -37,24 +34,24 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesProvider.class);
 
     private final SnapshotConfig config;
-    private PersistenceProvider provider;
+    private LocalSnapshotsPersistenceProvider localSnapshotsPersistenceProvider;
 
     /**
      * Implements the spent addresses provider interface.
      * @param configuration The snapshot configuration used for file location
      */
-    public SpentAddressesProviderImpl(SnapshotConfig configuration) {
+    public SpentAddressesProviderImpl(SnapshotConfig configuration, LocalSnapshotsPersistenceProvider localSnapshotsPersistenceProvider) {
         this.config = configuration;
+        this.localSnapshotsPersistenceProvider = localSnapshotsPersistenceProvider;
     }
 
     /**
      * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
      * @throws SpentAddressesException if we failed to create a file at the designated location
      */
-    public void init(PersistenceProvider persistenceProvider, boolean assertSpentAddressesExistence) throws SpentAddressesException {
+    public void init(boolean assertSpentAddressesExistence) throws SpentAddressesException {
         try {
-            this.provider = persistenceProvider;
-            if (assertSpentAddressesExistence && !doSpentAddressesExist(provider)) {
+            if (assertSpentAddressesExistence && !doSpentAddressesExist(localSnapshotsPersistenceProvider.getProvider())) {
                 log.error("Expecting to start with a localsnapshots-db containing spent addresses when initializing " +
                         "from a local snapshot. Shutting down now");
                 //explicitly exiting rather than throwing an exception
@@ -96,7 +93,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public boolean containsAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            return provider.exists(SpentAddress.class, addressHash);
+            return localSnapshotsPersistenceProvider.exists(SpentAddress.class, addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
@@ -105,7 +102,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public void saveAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            provider.save(new SpentAddress(), addressHash);
+            localSnapshotsPersistenceProvider.save(new SpentAddress(), addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
@@ -116,7 +113,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         try {
             // Its bytes are always new byte[0], therefore identical in storage
             SpentAddress spentAddressModel = new SpentAddress();
-            provider.saveBatch(addressHash
+            localSnapshotsPersistenceProvider.saveBatch(addressHash
                 .stream()
                 .map(address -> new Pair<Indexable, Persistable>(address, spentAddressModel))
                 .collect(Collectors.toList())
@@ -129,7 +126,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public List<Hash> getAllAddresses() {
         List<Hash> addresses = new ArrayList<>();
-        for (byte[] bytes : provider.loadAllKeysFromTable(SpentAddress.class)) {
+        for (byte[] bytes : localSnapshotsPersistenceProvider.getProvider().loadAllKeysFromTable(SpentAddress.class)) {
             addresses.add(HashFactory.ADDRESS.create(bytes));
         }
         return addresses;

@@ -1,7 +1,6 @@
 package com.iota.iri;
 
 import java.security.SecureRandom;
-import java.util.HashMap;
 
 import javax.annotation.Nullable;
 
@@ -49,6 +48,7 @@ import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.service.tipselection.impl.WalkerAlpha;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 
 /**
@@ -69,14 +69,14 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    SnapshotProvider provideSnapshotProvider() {
-        return new SnapshotProviderImpl(configuration);
+    SnapshotProvider provideSnapshotProvider(LocalSnapshotsPersistenceProvider localSnapshotsPersistenceProvider) {
+        return new SnapshotProviderImpl(configuration, localSnapshotsPersistenceProvider);
     }
 
     @Singleton
     @Provides
-    SpentAddressesProvider provideSpentAddressesProvider() {
-        return new SpentAddressesProviderImpl(configuration);
+    SpentAddressesProvider provideSpentAddressesProvider(LocalSnapshotsPersistenceProvider localSnapshotsDb) {
+        return new SpentAddressesProviderImpl(configuration, localSnapshotsDb);
     }
 
     @Singleton
@@ -167,8 +167,14 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
-        return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService, localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker, seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle, transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline, tipsRequester, tipsViewModel, tipsSelector);
+    Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb) {
+        return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService, localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker, seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle, transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline, tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb);
+    }
+
+    @Singleton
+    @Provides
+    LocalSnapshotsPersistenceProvider provideLocalSnapshotsPersistenceProvider(){
+        return new LocalSnapshotsPersistenceProvider(configuration);
     }
 
     @Singleton

@@ -51,6 +51,6 @@ public interface SpentAddressesProvider {
      *
      * @throws SpentAddressesException if we failed to create a file at the designated location
      */
-    void init(PersistenceProvider persistenceProvider, boolean assertSpentAddressesExistence) throws SpentAddressesException;
+    void init(boolean assertSpentAddressesExistence) throws SpentAddressesException;
 
 }

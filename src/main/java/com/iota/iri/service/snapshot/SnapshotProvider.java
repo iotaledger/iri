@@ -61,5 +61,5 @@ public interface SnapshotProvider {
      *
      * @throws SnapshotException if anything goes wrong while trying to read the snapshots
      */
-    void init(PersistenceProvider localSnapshotsDb) throws SnapshotException, SpentAddressesException;
+    void init() throws SnapshotException, SpentAddressesException;
 }

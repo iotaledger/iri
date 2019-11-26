@@ -4,8 +4,8 @@ import static org.junit.Assert.*;
 
 import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.model.persistables.SpentAddress;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.After;
 import org.junit.Before;
@@ -25,20 +25,13 @@ public class SnapshotProviderImplTest {
 
     private SnapshotImpl cachedBuiltinSnapshot;
 
-    private PersistenceProvider localSnapshotDb;
+    private LocalSnapshotsPersistenceProvider localSnapshotDb;
 
     @Before
     public void setUp() throws Exception {
-        localSnapshotDb = new RocksDBPersistenceProvider(iotaConfig.getLocalSnapshotsDbPath(),
-                iotaConfig.getLocalSnapshotsDbLogPath(), 1000,
-                new HashMap<String, Class<? extends Persistable>>(1) {
-                    {
-                        put("spent-addresses", SpentAddress.class);
-                        put("localsnapshots", LocalSnapshot.class);
-                    }
-                }, null);
+        localSnapshotDb = new LocalSnapshotsPersistenceProvider(iotaConfig);
         localSnapshotDb.init();
-        provider = new SnapshotProviderImpl(iotaConfig);
+        provider = new SnapshotProviderImpl(iotaConfig, localSnapshotDb);
         
         // When running multiple tests, the static cached snapshot breaks this test
         cachedBuiltinSnapshot = SnapshotProviderImpl.builtinSnapshot;
@@ -55,7 +48,7 @@ public class SnapshotProviderImplTest {
     
     @Test
     public void testGetLatestSnapshot() throws SnapshotException, SpentAddressesException {
-        provider.init(localSnapshotDb);
+        provider.init();
 
         // If we run this on its own, it correctly takes the testnet milestone
         // However, running it with all tests makes it load the last global snapshot contained in the jar

@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,22 +92,22 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      */
     private Snapshot latestSnapshot;
 
-    private PersistenceProvider localSnapshotsDb;
+    private LocalSnapshotsPersistenceProvider localSnapshotsDb;
 
     /**
      * Implements the snapshot provider interface.
      * @param configuration Snapshot configuration properties.
      */
-    public SnapshotProviderImpl(SnapshotConfig configuration) {
+    public SnapshotProviderImpl(SnapshotConfig configuration, LocalSnapshotsPersistenceProvider localSnapshotsDb) {
         this.config = configuration;
+        this.localSnapshotsDb = localSnapshotsDb;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void init(PersistenceProvider localSnapshotsDb) throws SnapshotException, SpentAddressesException {
-        this.localSnapshotsDb = localSnapshotsDb;
+    public void init() throws SnapshotException, SpentAddressesException {
         loadSnapshots();
     }
 
@@ -181,7 +181,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             // persist new one
             new LocalSnapshotViewModel(snapshot.getHash(), snapshot.getIndex(), snapshot.getTimestamp(),
                     snapshot.getSolidEntryPoints(), snapshot.getSeenMilestones(), snapshot.getBalances())
-                            .store(localSnapshotsDb);
+                            .store(localSnapshotsDb.getProvider());
             log.info("persisted local snapshot; ms hash/index: {}/{}", snapshot.getHash().toString(),
                     snapshot.getIndex());
         } catch (Exception e) {
@@ -244,7 +244,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             return null;
         }
         try {
-            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, IntegerIndex.class);
+            Pair<Indexable, Persistable> pair = localSnapshotsDb.getFirst(LocalSnapshot.class, IntegerIndex.class);
             if (pair.hi == null) {
                 log.info("no local snapshot persisted in the database");
                 return null;
@@ -331,7 +331,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
                         new HashMap<>()
                 )
         );
-        return builtinSnapshot;
+        return builtinSnapshot.clone();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

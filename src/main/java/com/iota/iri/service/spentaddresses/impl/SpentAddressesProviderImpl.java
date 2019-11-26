@@ -13,7 +13,6 @@ import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
@@ -21,7 +20,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.Pair;
 
 import org.slf4j.Logger;

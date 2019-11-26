@@ -2,11 +2,7 @@ package com.iota.iri.service.snapshot.impl;
 
 import static org.junit.Assert.*;
 
-import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,8 +11,6 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
-
-import java.util.HashMap;
 
 public class SnapshotProviderImplTest {
 

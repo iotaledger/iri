@@ -3,7 +3,13 @@ package com.iota.iri;
 import java.util.List;
 import java.util.Map;
 
-import com.iota.iri.storage.*;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.PersistenceProvider;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +36,6 @@ import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
 

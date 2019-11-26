@@ -1,7 +1,6 @@
 package com.iota.iri.service.spentaddresses;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.storage.PersistenceProvider;
 
 import java.util.Collection;
 import java.util.List;

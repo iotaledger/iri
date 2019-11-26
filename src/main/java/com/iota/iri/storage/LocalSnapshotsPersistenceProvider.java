@@ -16,6 +16,10 @@ public class LocalSnapshotsPersistenceProvider {
     private PersistenceProvider provider;
     private IotaConfig config;
 
+    /**
+     * Constructor for local snapshots persistence provider
+     * @param config    Configuration for the node
+     */
     public LocalSnapshotsPersistenceProvider(IotaConfig config){
         this.config = config;
     }

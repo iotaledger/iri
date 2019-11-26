@@ -3,9 +3,10 @@ package com.iota.iri.benchmarks.dbbenchmark.states;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
+import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import org.apache.commons.io.FileUtils;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
@@ -15,12 +16,9 @@ import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
-import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -52,20 +50,13 @@ public abstract class DbState {
                 dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(), null, BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         dbProvider.init();
         tangle = new Tangle();
-
+        IotaConfig config = new MainnetConfig();
         lsFolder.mkdirs();
         lsLogFolder.mkdirs();
-        PersistenceProvider localSnapshotDb = new RocksDBPersistenceProvider(lsFolder.getAbsolutePath(),
-                lsLogFolder.getAbsolutePath(), 1000,
-                new HashMap<String, Class<? extends Persistable>>(1) {
-                    {
-                        put("spent-addresses", SpentAddress.class);
-                        put("localsnapshots", LocalSnapshot.class);
-                    }
-                }, null);
+        LocalSnapshotsPersistenceProvider localSnapshotDb = new LocalSnapshotsPersistenceProvider(config);
         localSnapshotDb.init();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
-        snapshotProvider.init(localSnapshotDb);
+        snapshotProvider = new SnapshotProviderImpl(config, localSnapshotDb);
+        snapshotProvider.init();
 
         tangle.addPersistenceProvider(dbProvider);
         String trytes = "";

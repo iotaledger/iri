@@ -34,6 +34,12 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * Interval that the {@link #transactionSolidifierThread()} will scan at.
      */
     private static final int RESCAN_INTERVAL = 500;
+    /**
+     * Max size and buffer for {@link #solidified} set.
+     */
+    private static final int MAX_SIZE= 10000;
+    private static final int BUFFER= 5000;
+
 
     private static final IntervalLogger log = new IntervalLogger(TransactionSolidifier.class);
 
@@ -47,27 +53,22 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * A queue for processing transactions with the {@link #checkSolidity(Hash)} call. Once a transaction has been
      * marked solid it will be placed into the {@link #transactionsToUpdate} queue.
      */
-    private Queue<Hash> transactionsToSolidify = new ArrayBlockingQueue<>(1000);
+    private Queue<Hash> transactionsToSolidify = new ArrayBlockingQueue<>(MAX_SIZE);
     /**
      * A queue for processing transactions with the {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} call.
      * Once the transaction is updated it is placed into the {@link #transactionsToBroadcast} set.
      */
-    private Queue<Hash> transactionsToUpdate = new ArrayBlockingQueue<>(1000);
+    private Queue<Hash> transactionsToUpdate = new ArrayBlockingQueue<>(MAX_SIZE);
     /**
      * A set of transactions that will be called by the {@link TransactionProcessingPipeline} to be broadcast to
      * neighboring nodes.
      */
-    private Queue<TransactionViewModel> transactionsToBroadcast = new ArrayBlockingQueue<>(1000);
+    private Queue<TransactionViewModel> transactionsToBroadcast = new ArrayBlockingQueue<>(MAX_SIZE);
     /**
      * A set containing the hash of already solidified transactions
      */
     private Set<Hash> solidified = new LinkedHashSet<>();
 
-    /**
-     * Max size and buffer for {@link #solidified} set.
-     */
-    private static final int MAX_SIZE= 5000;
-    private static final int BUFFER = 2500;
 
 
     /**
@@ -105,13 +106,12 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     @Override
     public void addToSolidificationQueue(Hash hash){
         try{
-            if(!solidified.contains(hash) && !transactionsToSolidify.contains(hash)) {
-                    transactionsToSolidify.add(hash);
+            if(transactionsToSolidify.size() >= MAX_SIZE){
+                transactionsToSolidify.remove();
             }
 
-            // Clear room in the solidified set for newer transaction hashes
-            if(transactionsToSolidify.size() > MAX_SIZE){
-                popElderTransactions();
+            if(!solidified.contains(hash) && !transactionsToSolidify.contains(hash)) {
+                    transactionsToSolidify.add(hash);
             }
         } catch(Exception e){
             log.error(e.getMessage());
@@ -284,6 +284,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             try {
                 solidified.add(hash);
                 if(!transactionsToUpdate.contains(hash)) {
+                    if(transactionsToUpdate.size() >= MAX_SIZE){
+                        transactionsToUpdate.remove();
+                    }
+
                     transactionsToUpdate.add(hash);
                 }
             } catch (Exception e) {
@@ -304,6 +308,9 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     @Override
     public void addToBroadcastQueue(TransactionViewModel tvm){
+        if(transactionsToBroadcast.size() >= MAX_SIZE){
+            transactionsToBroadcast.remove();
+        }
         transactionsToBroadcast.add(tvm);
     }
 

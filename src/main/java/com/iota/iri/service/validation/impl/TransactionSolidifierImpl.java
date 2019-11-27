@@ -148,11 +148,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * Solid transactions are added to the {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} set.
      */
     private void processTransactionsToSolidify(){
-        Iterator<Hash> solidificationIterator = transactionsToSolidify.iterator();
-        while (!Thread.currentThread().isInterrupted() && solidificationIterator.hasNext()) {
+        Hash hash;
+        while (!Thread.currentThread().isInterrupted() && (hash = transactionsToSolidify.poll())!= null) {
             try {
-                checkSolidity(solidificationIterator.next());
-                solidificationIterator.remove();
+                checkSolidity(hash);
             } catch (Exception e) {
                 log.info(e.getMessage());
             }
@@ -165,17 +164,14 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * {@link #transactionsToBroadcast} set.
      */
     private void processTransactionsToUpdate(){
-            Iterator<Hash> updateIterator = transactionsToUpdate.iterator();
-            while(!Thread.currentThread().isInterrupted() && updateIterator.hasNext()){
-                try{
-                    updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), updateIterator.next());
-                    updateIterator.remove();
-
-                } catch(Exception e){
-                    log.info(e.getMessage());
-                }
+        Hash hash;
+        while(!Thread.currentThread().isInterrupted() && (hash = transactionsToUpdate.poll()) != null) {
+            try {
+                updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), hash);
+            } catch (Exception e) {
+                log.info(e.getMessage());
             }
-
+        }
     }
 
     /**

@@ -72,7 +72,7 @@ public class TransactionValidatorTest {
   public void setUpEach() {
     when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     TipsViewModel tipsViewModel = new TipsViewModel();
-    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
+    txRequester = new TransactionRequester(tangle, snapshotProvider);
     txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, new MainnetConfig(), txSolidifier);
     txValidator.setMwm(false, MAINNET_MWM);
     txValidator.init();

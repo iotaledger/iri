@@ -13,7 +13,7 @@ import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.iota.iri.controllers.TransactionViewModel.PREFILLED_SLOT;
@@ -47,17 +47,17 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * A queue for processing transactions with the {@link #checkSolidity(Hash)} call. Once a transaction has been
      * marked solid it will be placed into the {@link #transactionsToUpdate} queue.
      */
-    private Queue<Hash> transactionsToSolidify = new ConcurrentLinkedQueue<>();
+    private Queue<Hash> transactionsToSolidify = new ArrayBlockingQueue<>(1000);
     /**
      * A queue for processing transactions with the {@link #updateSolidTransactions(Tangle, Snapshot, Hash)} call.
      * Once the transaction is updated it is placed into the {@link #transactionsToBroadcast} set.
      */
-    private Queue<Hash> transactionsToUpdate = new ConcurrentLinkedQueue<>();
+    private Queue<Hash> transactionsToUpdate = new ArrayBlockingQueue<>(1000);
     /**
      * A set of transactions that will be called by the {@link TransactionProcessingPipeline} to be broadcast to
      * neighboring nodes.
      */
-    private Queue<TransactionViewModel> transactionsToBroadcast = new ConcurrentLinkedQueue<>();
+    private Queue<TransactionViewModel> transactionsToBroadcast = new ArrayBlockingQueue<>(1000);
     /**
      * A set containing the hash of already solidified transactions
      */
@@ -262,7 +262,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             transactionViewModel.updateSolid(true);
             transactionViewModel.update(tangle, initialSnapshot, "solid|height");
         }
-        transactionsToBroadcast.add(transactionViewModel);
+        addToBroadcastQueue(transactionViewModel);
     }
 
     /**
@@ -297,6 +297,14 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     private boolean isUnsolidWithoutEntryPoint(TransactionViewModel transaction, Hash hashPointer){
         return (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addToBroadcastQueue(TransactionViewModel tvm){
+        transactionsToBroadcast.add(tvm);
     }
 
     @VisibleForTesting

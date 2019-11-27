@@ -58,7 +58,7 @@ public class TransactionSolidifierImplTest {
     @Before
     public void setUpEach() {
         when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
-        TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
+        txRequester = new TransactionRequester(tangle, snapshotProvider);
         txSolidifier = new TransactionSolidifierImpl(tangle, snapshotProvider, txRequester);
         txSolidifier.start();
     }

@@ -1,5 +1,6 @@
 package com.iota.iri.service.validation;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -93,6 +94,7 @@ public class TransactionValidator {
     /**
      * Set the Minimum Weight Magnitude for validation checks.
      */
+    @VisibleForTesting
     public void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
@@ -328,7 +330,6 @@ public class TransactionValidator {
      */
     private boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
         try {
-            transactionSolidifier.addToSolidificationQueue(transactionViewModel.getHash());
             return quickSetSolid(transactionViewModel);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -355,6 +356,7 @@ public class TransactionValidator {
             if(solid) {
                 transactionViewModel.updateSolid(true);
                 transactionViewModel.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
+                transactionSolidifier.addToBroadcastQueue(transactionViewModel);
                 return true;
             }
         }
@@ -383,6 +385,7 @@ public class TransactionValidator {
     /**
      * Exclusively used in the {@link TansactionValidatorTest}
      */
+    @VisibleForTesting
     public boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }

@@ -2,9 +2,15 @@ package com.iota.iri.service.validation;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.TransactionRequester;
 
 import java.util.Set;
 
+/**
+ * Solidification tool. Transactions placed into the solidification queue will be checked for solidity. Any missing
+ * reference transactions will be placed into the {@link TransactionRequester}. If a transaction is found to be solid
+ * it is updated as such and placed into the BroadcastQueue to be sent off to the node's neighbours.
+ */
 public interface TransactionSolidifier {
 
     /**
@@ -66,5 +72,11 @@ public interface TransactionSolidifier {
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
     boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception;
+
+    /**
+     * Add transaction to the BroadcastQueue set
+     * @param tvm The transaction to be broadcast
+     */
+    void addToBroadcastQueue(TransactionViewModel tvm);
 
 }

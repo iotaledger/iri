@@ -145,7 +145,8 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                         case BROADCAST:
                             try {
                                 BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-                                txSolidifier.addToSolidificationQueue(broadcastPayload.getTransactionViewModel().getHash());
+                                TransactionViewModel tvm = broadcastPayload.getTransactionViewModel();
+                                txSolidifier.addToSolidificationQueue(tvm.getHash());
                             } catch(Exception e){
                                 log.info("Error placing transaction in solidifier: " + e.getMessage());
                             }

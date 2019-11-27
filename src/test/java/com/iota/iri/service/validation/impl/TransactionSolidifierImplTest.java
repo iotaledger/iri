@@ -77,15 +77,15 @@ public class TransactionSolidifierImplTest {
     @Test
     public void verifyTxIsSolid() throws Exception {
         TransactionViewModel tx = getTxWithBranchAndTrunk();
-        assertTrue(txSolidifier.checkSolidity(tx.getHash()));
-        assertTrue(txSolidifier.checkSolidity(tx.getHash()));
+        assertTrue("Expected transaction to be solid", txSolidifier.checkSolidity(tx.getHash()));
+        assertTrue("Expected transaction to be solid", txSolidifier.checkSolidity(tx.getHash()));
     }
 
     @Test
     public void verifyTxIsNotSolid() throws Exception {
         TransactionViewModel tx = getTxWithoutBranchAndTrunk();
-        assertFalse(txSolidifier.checkSolidity(tx.getHash()));
-        assertFalse(txSolidifier.checkSolidity(tx.getHash()));
+        assertFalse("Expected transaction to fail solidity check", txSolidifier.checkSolidity(tx.getHash()));
+        assertFalse("Expected transaction to fail solidity check", txSolidifier.checkSolidity(tx.getHash()));
     }
 
     @Test
@@ -99,10 +99,12 @@ public class TransactionSolidifierImplTest {
     public void verifyTransactionIsProcessedFully() throws Exception {
         TransactionViewModel tx = getTxWithBranchAndTrunk();
         txSolidifier.addToSolidificationQueue(tx.getHash());
-        assertTrue(txSolidifier.getSolidificationQueue().contains(tx.getHash()));
+        assertTrue("Expected transaction to be present in the solidification queue",
+                txSolidifier.getSolidificationQueue().contains(tx.getHash()));
         //Time to process through the steps
         Thread.sleep(1000);
-        assertTrue(txSolidifier.getBroadcastQueue().contains(tx));
+        assertTrue("Expected transaction to be present in the broadcast queue",
+                txSolidifier.getBroadcastQueue().contains(tx));
     }
 
 
@@ -110,10 +112,12 @@ public class TransactionSolidifierImplTest {
     public void verifyInconsistentTransactionIsNotProcessedFully() throws Exception {
         TransactionViewModel tx = getTxWithoutBranchAndTrunk();
         txSolidifier.addToSolidificationQueue(tx.getHash());
-        assertTrue(txSolidifier.getSolidificationQueue().contains(tx.getHash()));
+        assertTrue("Expected transaction to be present in the solidification queue",
+                txSolidifier.getSolidificationQueue().contains(tx.getHash()));
         //Time to process through the steps
         Thread.sleep(1000);
-        assertFalse(txSolidifier.getBroadcastQueue().contains(tx));
+        assertFalse("Expected transaction not to be present in the broadcast queue",
+                txSolidifier.getBroadcastQueue().contains(tx));
     }
 
     private TransactionViewModel getTxWithBranchAndTrunk() throws Exception {

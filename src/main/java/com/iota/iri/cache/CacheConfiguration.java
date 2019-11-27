@@ -1,128 +1,54 @@
 package com.iota.iri.cache;
 
-/**
- * Cache configuration. This class represents the config values used to instantiate a {@link Cache}
- */
-public class CacheConfiguration {
+public interface CacheConfiguration {
 
-    public static final long DEFAULT_MAX_SIZE = 256;
-    public static final int DEFAULT_EVICTION_COUNT = 10;
-    public static final boolean DEFAULT_WEAK_REFERENCE = false;
-    public static final CacheEvictionPolicy DEFAULT_EVICTION_POLICY = CacheEvictionPolicy.FIFO;
-    public static final boolean DEFAULT_IS_NULL_ALLOWED = false;
-    public static final int DEFAULT_TIME_TO_IDLE_SECONDS = 0;
+    long DEFAULT_MAX_SIZE = 256;
+    int DEFAULT_EVICTION_COUNT = 10;
+    boolean DEFAULT_WEAK_REFERENCE = false;
+    CacheEvictionPolicy DEFAULT_EVICTION_POLICY = CacheEvictionPolicy.FIFO;
+    boolean DEFAULT_IS_NULL_ALLOWED = false;
+    int DEFAULT_TIME_TO_IDLE_SECONDS = 0;
 
     /**
-     * Max size of the cache
+     * Gets the max size of the cache
+     * 
+     * @return The max size
      */
-    private long maxSize = DEFAULT_MAX_SIZE;
+    long getMaxSize();
 
     /**
-     * The number of items to evict in a single batch of eviction.
+     * Gets the number of items to evict in a single batch of eviction
+     * 
+     * @return eviction count
      */
-    private int evictionCount = DEFAULT_EVICTION_COUNT;
+    int getEvictionCount();
 
     /**
-     * A flag to determine if the cache should use weak/soft reference to values or not
+     * Determines if the cache should use weak/soft reference to values or not
+     * 
+     * @return True if weak references are used. Otherwise, false.
      */
-    private boolean weakReference = DEFAULT_WEAK_REFERENCE;
+    boolean isWeakReference();
+
+    /**
+     * Gets the {@link CacheEvictionPolicy}
+     * 
+     * @return The cache eviction policy
+     */
+    CacheEvictionPolicy getEvictionPolicy();
 
     /**
      * The maximum number of seconds an element can exist in cache without it being accessed. Idle elements will not be
      * returned. The default value is 0, which means there's no TTL on this cache
+     *
+     * @return The time to idle
      */
-    private int timeToIdleSeconds = DEFAULT_TIME_TO_IDLE_SECONDS;
-
-    /**
-     * The {@link CacheEvictionPolicy} policy used.
-     */
-    private CacheEvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+    int getTimeToIdleSeconds();
 
     /**
      * Determines if null values are allowed in the cache
-     */
-    private boolean isNullAllowed = DEFAULT_IS_NULL_ALLOWED;
-
-    /**
-     * Empty constructor
-     */
-    public CacheConfiguration() {
-    }
-
-    /**
-     * Constructor for this cache manager
      * 
-     * @param maxSize           Max size of the cache
-     * @param evictionCount     The number of items to evict at a time
-     * @param weakReference     If week references should be used
-     * @param evictionPolicy    The eviction policy. See {@link CacheEvictionPolicy}
-     * @param isNullAllowed     If null values are allowed to be cached
-     * @param timeToIdleSeconds Maximum seconds before a cached items becomes idle
+     * @return True if null allowed. Otherwise, false.
      */
-    public CacheConfiguration(long maxSize, int evictionCount, boolean weakReference,
-            CacheEvictionPolicy evictionPolicy, boolean isNullAllowed, int timeToIdleSeconds) {
-        this.maxSize = maxSize;
-        this.evictionCount = evictionCount;
-        this.weakReference = weakReference;
-        this.evictionPolicy = evictionPolicy;
-        this.isNullAllowed = isNullAllowed;
-        this.timeToIdleSeconds = timeToIdleSeconds;
-    }
-
-    public long getMaxSize() {
-        return maxSize;
-    }
-
-    public void setMaxSize(long maxSize) {
-        this.maxSize = maxSize;
-    }
-
-    public int getEvictionCount() {
-        return evictionCount;
-    }
-
-    public void setEvictionCount(int evictionCount) {
-        this.evictionCount = evictionCount;
-    }
-
-    public boolean isWeakReference() {
-        return weakReference;
-    }
-
-    public void setWeakReference(boolean weakReference) {
-        this.weakReference = weakReference;
-    }
-
-    public CacheEvictionPolicy getEvictionPolicy() {
-        return evictionPolicy;
-    }
-
-    public void setEvictionPolicy(CacheEvictionPolicy evictionPolicy) {
-        this.evictionPolicy = evictionPolicy;
-    }
-
-    public int getTimeToIdleSeconds() {
-        return timeToIdleSeconds;
-    }
-
-    public void setTimeToIdleSeconds(int timeToIdleSeconds) {
-        this.timeToIdleSeconds = timeToIdleSeconds;
-    }
-
-    public boolean isNullAllowed() {
-        return isNullAllowed;
-    }
-
-    public void setNullAllowed(boolean nullAllowed) {
-        isNullAllowed = nullAllowed;
-    }
-
-    /**
-     * Validates the configuration
-     * 
-     * @throws InvalidCacheConfigurationException Exception to be thrown in case of invalid config
-     */
-    public void validateConfiguration() throws InvalidCacheConfigurationException {
-        // Empty body
-    }
+    boolean isNullAllowed();
 }

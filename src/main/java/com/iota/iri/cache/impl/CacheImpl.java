@@ -33,7 +33,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     /**
      * Constructor
      * 
-     * @param cacheConfiguration Cache configuration to use to create this cache
+     * @param cacheConfiguration The configuration to use to instantiate this cache
      */
     public CacheImpl(CacheConfiguration cacheConfiguration) {
         this.cacheConfiguration = cacheConfiguration;

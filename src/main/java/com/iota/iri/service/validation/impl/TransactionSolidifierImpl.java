@@ -38,8 +38,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * Max size and buffer for {@link #solidified} set.
      */
     private static final int MAX_SIZE= 10000;
-    private static final int BUFFER= 5000;
-
 
     private static final IntervalLogger log = new IntervalLogger(TransactionSolidifier.class);
 
@@ -115,21 +113,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             }
         } catch(Exception e){
             log.error(e.getMessage());
-        }
-    }
-
-    /**
-     * Clears the older half of the {@link #solidified} set to reduce memory footprint.
-     */
-    private void popElderTransactions(){
-        try{
-            Iterator<Hash> solidifiedIterator = transactionsToSolidify.iterator();
-            for(int i = 0; i < BUFFER; i++){
-                solidifiedIterator.next();
-                solidifiedIterator.remove();
-            }
-        } catch(Exception e){
-            log.info(e.getMessage());
         }
     }
 

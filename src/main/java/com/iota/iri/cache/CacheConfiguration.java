@@ -5,33 +5,33 @@ package com.iota.iri.cache;
  */
 public class CacheConfiguration {
 
-    public static long DEFAULT_MAX_SIZE = 256;
-    public static int DEFAULT_EVICTION_COUNT = 10;
-    public static boolean DEFAULT_WEAK_REFERENCE = false;
-    public static CacheEvictionPolicy DEFAULT_EVICTION_POLICY = CacheEvictionPolicy.FIFO;
-    public static boolean DEFAULT_IS_NULL_ALLOWED = false;
-    public static int DEFAULT_TIME_TO_IDLE_SECONDS = 0;
+    public static final long DEFAULT_MAX_SIZE = 256;
+    public static final int DEFAULT_EVICTION_COUNT = 10;
+    public static final boolean DEFAULT_WEAK_REFERENCE = false;
+    public static final CacheEvictionPolicy DEFAULT_EVICTION_POLICY = CacheEvictionPolicy.FIFO;
+    public static final boolean DEFAULT_IS_NULL_ALLOWED = false;
+    public static final int DEFAULT_TIME_TO_IDLE_SECONDS = 0;
 
     /**
      * Max size of the cache
      */
-    protected long maxSize = DEFAULT_MAX_SIZE;
+    private long maxSize = DEFAULT_MAX_SIZE;
 
     /**
      * The number of items to evict in a single batch of eviction.
      */
-    protected int evictionCount = DEFAULT_EVICTION_COUNT;
+    private int evictionCount = DEFAULT_EVICTION_COUNT;
 
     /**
      * A flag to determine if the cache should use weak/soft reference to values or not
      */
-    protected boolean weakReference = DEFAULT_WEAK_REFERENCE;
+    private boolean weakReference = DEFAULT_WEAK_REFERENCE;
 
     /**
      * The maximum number of seconds an element can exist in cache without it being accessed. Idle elements will not be
      * returned. The default value is 0, which means there's no TTL on this cache
      */
-    protected int timeToIdleSeconds = DEFAULT_TIME_TO_IDLE_SECONDS;
+    private int timeToIdleSeconds = DEFAULT_TIME_TO_IDLE_SECONDS;
 
     /**
      * The {@link CacheEvictionPolicy} policy used.
@@ -43,20 +43,21 @@ public class CacheConfiguration {
      */
     private boolean isNullAllowed = DEFAULT_IS_NULL_ALLOWED;
 
-    // TODO: Maybe a builder pattern is preferable?
-
+    /**
+     * Empty constructor
+     */
     public CacheConfiguration() {
     }
 
     /**
      * Constructor for this cache manager
      * 
-     * @param maxSize
-     * @param evictionCount
-     * @param weakReference
-     * @param evictionPolicy
-     * @param isNullAllowed
-     * @param timeToIdleSeconds
+     * @param maxSize           Max size of the cache
+     * @param evictionCount     The number of items to evict at a time
+     * @param weakReference     If week references should be used
+     * @param evictionPolicy    The eviction policy. See {@link CacheEvictionPolicy}
+     * @param isNullAllowed     If null values are allowed to be cached
+     * @param timeToIdleSeconds Maximum seconds before a cached items becomes idle
      */
     public CacheConfiguration(long maxSize, int evictionCount, boolean weakReference,
             CacheEvictionPolicy evictionPolicy, boolean isNullAllowed, int timeToIdleSeconds) {
@@ -100,7 +101,28 @@ public class CacheConfiguration {
         this.evictionPolicy = evictionPolicy;
     }
 
-    public void validateConfiguration() throws InvalidCacheConfigurationException {
+    public int getTimeToIdleSeconds() {
+        return timeToIdleSeconds;
+    }
 
+    public void setTimeToIdleSeconds(int timeToIdleSeconds) {
+        this.timeToIdleSeconds = timeToIdleSeconds;
+    }
+
+    public boolean isNullAllowed() {
+        return isNullAllowed;
+    }
+
+    public void setNullAllowed(boolean nullAllowed) {
+        isNullAllowed = nullAllowed;
+    }
+
+    /**
+     * Validates the configuration
+     * 
+     * @throws InvalidCacheConfigurationException Exception to be thrown in case of invalid config
+     */
+    public void validateConfiguration() throws InvalidCacheConfigurationException {
+        // Empty body
     }
 }

@@ -3,30 +3,37 @@ package com.iota.iri.cache.impl;
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheManager;
 
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Cache Manager
+ */
 public class CacheManagerImpl implements CacheManager {
 
-    ConcurrentHashMap<String, Cache> cacheMap;
+    /**
+     * Cache map to store caches
+     */
+    ConcurrentHashMap<Class<?>, Cache> cacheMap;
+
+    /**
+     * Constructor
+     */
+    public CacheManagerImpl() {
+        cacheMap = new ConcurrentHashMap<>();
+    }
 
     @Override
-    public Collection<String> getCacheNames() {
+    public <T> Cache getCache(Class<T> type) {
         return null;
     }
 
     @Override
-    public Cache getCache(String name) {
+    public <T> Cache lookup(Class<T> type) {
         return null;
     }
 
     @Override
-    public Cache lookup(String name) {
+    public <T> Cache add(Class<T> type) {
         return null;
-    }
-
-    @Override
-    public void add(Cache cache) {
-
     }
 }

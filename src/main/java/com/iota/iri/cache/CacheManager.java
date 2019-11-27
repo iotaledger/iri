@@ -1,39 +1,35 @@
 package com.iota.iri.cache;
 
-import java.util.Collection;
-
 /**
  * Cache Manager
  */
 public interface CacheManager {
 
     /**
-     * Get the names of all caches
+     * Get the cache with the specified value type. If the cache is not found, it will be created
      * 
-     * @return A collection of cache names
+     * @param type Value type
+     * @param <T>  Template
+     * @return The cache found.
      */
-    Collection<String> getCacheNames();
+    <T> Cache getCache(Class<T> type);
 
     /**
-     * Get the cache with the specified name
+     * Check if the cache with the specified valye type eixsts. If it does not exists, returns {@code null}
      * 
-     * @param name The name of the cache to get
-     * @return The cache with the specified name
+     * @param type Value type
+     * @param <T>  Template
+     * @return Cache if found. Otherwise, {@code null}
      */
-    Cache getCache(String name);
+    <T> Cache lookup(Class<T> type);
 
     /**
-     * Check if a cache exists. If it exists, returns it. Else, returns null
-     * 
-     * @param name The name of the cache to check
-     * @return The cache if found.
+     * Adds a new cache of the specified type. If a cache with the specified types already exists, the existing one will
+     * be returned. Otherwise, created.
+     *
+     * @param type The type of the cache
+     * @param <T>  Template
+     * @return The new cache created.
      */
-    Cache lookup(String name);
-
-    /**
-     * Adds a new cache to this cache manager
-     * 
-     * @param cache The cache to add
-     */
-    void add(Cache cache);
+    <T> Cache add(Class<T> type);
 }

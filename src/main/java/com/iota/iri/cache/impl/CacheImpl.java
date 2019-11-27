@@ -2,28 +2,42 @@ package com.iota.iri.cache.impl;
 
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
-import com.iota.iri.cache.util.ValueWrapper;
-import com.iota.iri.storage.PersistenceProvider;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.collect.MapMaker;
 
-public class CacheImpl implements Cache {
+/**
+ * Cache operations
+ */
+public class CacheImpl<K, V> implements Cache<K, V> {
 
-    private final String name;
+    /**
+     * Cache config
+     */
     private final CacheConfiguration cacheConfiguration;
-    private final ConcurrentMap<Object, Object> store;
 
-    public CacheImpl(String name) {
-        this(name, new CacheConfiguration());
-    }
+    /**
+     * Store the state of entries. True for "Fresh" and False for "dirty"
+     */
+    private final ConcurrentMap<K, Boolean> entryState;
 
-    public CacheImpl(String name, CacheConfiguration cacheConfiguration) {
-        this.name = name;
+    /**
+     * Actual cache store
+     */
+    private final ConcurrentMap<K, V> store;
+
+    /**
+     * Constructor
+     * 
+     * @param cacheConfiguration Cache configuration to use to create this cache
+     */
+    public CacheImpl(CacheConfiguration cacheConfiguration) {
         this.cacheConfiguration = cacheConfiguration;
+        this.entryState = new ConcurrentHashMap<>();
         MapMaker mapMaker = new MapMaker().concurrencyLevel(5);
         if (cacheConfiguration.isWeakReference()) {
             mapMaker = mapMaker.weakKeys();
@@ -32,52 +46,17 @@ public class CacheImpl implements Cache {
     }
 
     @Override
-    public void clear() {
-
-    }
-
-    @Override
-    public void evict(Object key) {
-
-    }
-
-    @Override
-    public void evict() {
-
-    }
-
-    @Override
-    public void evict(Collection<Object> keys) {
-
-    }
-
-    @Override
-    public String getName() {
+    public Cache get(K key) {
         return null;
     }
 
     @Override
-    public ValueWrapper get(Object key) {
+    public Map<K, V> getAll(Collection<K> keys) {
         return null;
     }
 
     @Override
-    public <T> T get(Object key, Class<T> type) throws IllegalStateException {
-        return null;
-    }
-
-    @Override
-    public <T> T get(Object key, PersistenceProvider persistenceProvider) {
-        return null;
-    }
-
-    @Override
-    public Map<Object, ValueWrapper> getAll(Collection<Object> keys) {
-        return null;
-    }
-
-    @Override
-    public Collection<Object> getKeys() {
+    public Collection<K> getKeys() {
         return null;
     }
 
@@ -87,17 +66,37 @@ public class CacheImpl implements Cache {
     }
 
     @Override
-    public void put(Object key, Object value) {
-
+    public void put(K key, V value) {
+        // Empty body
     }
 
     @Override
-    public void putIfAbsent(Object key, Object value) {
-
+    public void putIfAbsent(K key, V value) {
+        // Empty body
     }
 
     @Override
-    public void putAll(Collection<Object> values) {
+    public void putAll(Collection<V> values) {
+        // Empty body
+    }
 
+    @Override
+    public void evict(K key) {
+        // Empty body
+    }
+
+    @Override
+    public void evict() {
+        // Empty body
+    }
+
+    @Override
+    public void evict(Collection<K> keys) {
+        // Empty body
+    }
+
+    @Override
+    public void clear() {
+        // Empty body
     }
 }

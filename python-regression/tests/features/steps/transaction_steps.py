@@ -195,7 +195,7 @@ def issue_several_milestones(step, num_milestones):
 
 
 @step(r'milestone (\d+) is issued on "([^"]+)"')
-def issue_a_milestone(step, index, node):
+def issue_a_milestone(step, index, node, address=""):
     """
     This method issues a milestone with a given index.
 
@@ -203,7 +203,8 @@ def issue_a_milestone(step, index, node):
     :param node: The node that the milestone will be attached to
     """
     world.config['nodeId'] = node
-    address = static.TEST_BLOWBALL_COO
+    if address == "":
+        address = static.TEST_BLOWBALL_COO
     api = api_utils.prepare_api_call(node)
 
     logger.info('Issuing milestone {}'.format(index))

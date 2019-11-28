@@ -234,6 +234,7 @@ def check_node_sync(step, node, milestone):
 def issue_several_milestones(step, num_milestones):
     node = world.config['nodeId']
     api = api_utils.prepare_api_call(node)
+    address = static_vals.TEST_TRANSACTIONS_COO
 
     latest_milestone_index = int(api.get_node_info()['latestSolidSubtangleMilestoneIndex'])
     logger.info('Latest Milestone Index: {}'.format(latest_milestone_index))
@@ -241,7 +242,7 @@ def issue_several_milestones(step, num_milestones):
     end_index = start_index + int(num_milestones)
 
     for index in range(start_index, end_index):
-        issue_a_milestone(step, index, node)
+        issue_a_milestone(step, index, node, address)
         # Give node a moment to update solid milestone
         wait_for_update(index, api)
 

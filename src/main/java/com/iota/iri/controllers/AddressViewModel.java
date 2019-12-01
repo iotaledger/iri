@@ -3,6 +3,7 @@ package com.iota.iri.controllers;
 import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -51,22 +52,18 @@ public class AddressViewModel implements HashesViewModel {
      * @throws Exception Thrown if the database cannot load an {@link Address} set from the reference {@link Hash}
      */
     public static List<TransactionViewModel> loadAsSortedList(Tangle tangle, Indexable hash) throws Exception {
-        Address hashes = (Address)tangle.load(Address.class, hash);
-        return hashes.set.stream()
-                .map(item -> fromHash(tangle,item))
-                .sorted(Comparator.comparing(tvm -> tvm != null ? tvm.getTransaction().attachmentTimestamp : 0))
+        Address hashes = (Address) tangle.load(Address.class, hash);
+        return hashes.set.stream().map(item -> {
+            try {
+                if (tangle.exists(Transaction.class, item)) {
+                    return TransactionViewModel.fromHash(tangle, item);
+                }
+                return null;
+            } catch (Exception e) {
+                return null;
+            }
+        }).sorted(Comparator.comparing(tvm -> tvm != null ? tvm.getTransaction().attachmentTimestamp : 0))
                 .collect(Collectors.toList());
-    }
-
-
-    //Extracted from lambda
-    private static TransactionViewModel fromHash(Tangle tangle, Hash hash){
-        try{
-            return TransactionViewModel.fromHash(tangle, hash);
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-        return null;
     }
 
     /**

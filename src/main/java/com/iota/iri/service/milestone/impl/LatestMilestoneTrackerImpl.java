@@ -311,7 +311,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     return;
                 }
 
-                if (seenMilestoneCandidates.add(tvm)) {
+                if (tvm != null && seenMilestoneCandidates.add(tvm)) {
                     milestoneCandidatesToAnalyze.addFirst(tvm);
                 }
             }

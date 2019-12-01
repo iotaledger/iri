@@ -1,5 +1,8 @@
 package com.iota.iri.cache;
 
+/**
+ * Configuration for instantiating a cache
+ */
 public interface CacheConfiguration {
 
     long DEFAULT_MAX_SIZE = 256;

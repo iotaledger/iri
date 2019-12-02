@@ -118,4 +118,11 @@ public interface TransactionProcessingPipeline {
      * @param hashingStage the {@link HashingStage} to use
      */
     void setHashingStage(HashingStage hashingStage);
+
+    /**
+     * Sets the solidify stage. This method should only be used for injecting mocked objects.
+     *
+     * @param solidifyStage the {@link SolidifyStage} to use
+     */
+    void setSolidifyStage(SolidifyStage solidifyStage);
 }

@@ -281,4 +281,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     public void setHashingStage(HashingStage hashingStage) {
         this.hashingStage = hashingStage;
     }
+
+    @Override
+    public void setSolidifyStage(SolidifyStage solidifyStage){
+        this.solidifyStage = solidifyStage;
+    }
 }

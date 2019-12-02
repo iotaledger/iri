@@ -115,7 +115,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     @Override
     public boolean addMilestoneToSolidificationQueue(Hash hash, int maxToProcess){
         try{
-            TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
+            TransactionViewModel tx = fromHash(tangle, hash);
             if(tx.isSolid()){
                 return true;
             }
@@ -232,7 +232,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     private void updateTransactions(Set<Hash> hashes) {
         hashes.forEach(hash -> {
             try {
-                TransactionViewModel tvm = TransactionViewModel.fromHash(tangle, hash);
+                TransactionViewModel tvm = fromHash(tangle, hash);
                 tvm.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
 
                 if(!tvm.isSolid()){

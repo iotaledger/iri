@@ -11,7 +11,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -31,7 +30,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     private TransactionRequester transactionRequester;
 
     /**
-     * Max size and buffer for {@link #solidified} set.
+     * Max size for all queues.
      */
     private static final int MAX_SIZE= 10000;
 
@@ -57,11 +56,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * neighboring nodes.
      */
     private BlockingQueue<TransactionViewModel> transactionsToBroadcast = new ArrayBlockingQueue<>(MAX_SIZE);
-    /**
-     * A set containing the hash of already solidified transactions
-     */
-    private Queue<Hash> solidified = new CircularFifoQueue<>(MAX_SIZE);
-
 
 
     /**
@@ -104,7 +98,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                 transactionsToSolidify.remove();
             }
 
-            if(!solidified.contains(hash) && !transactionsToSolidify.contains(hash)) {
+            if(!transactionsToSolidify.contains(hash)) {
                     transactionsToSolidify.put(hash);
             }
         } catch(Exception e){
@@ -262,7 +256,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             if (transactionsToBroadcast.size() >= MAX_SIZE) {
                 transactionsToBroadcast.remove();
             }
-            solidified.add(tvm.getHash());
+
             transactionsToBroadcast.put(tvm);
         } catch(Exception e){
             log.error("Error placing transaction into broadcast queue", e);

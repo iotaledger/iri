@@ -80,9 +80,6 @@ public class TransactionProcessingPipelineTest {
     private BroadcastPayload broadcastPayload;
 
     @Mock
-    private ReceivedPayload receivedPayload;
-
-    @Mock
     private SolidifyStage solidifyStage;
 
     @Mock

@@ -53,7 +53,6 @@ public class ReceivedStage implements Stage {
         boolean stored;
         try {
             stored = tvm.store(tangle, snapshotProvider.getInitialSnapshot());
-            log.info("STORED!!!!!!!");
         } catch (Exception e) {
             log.error("error persisting newly received tx", e);
             if (originNeighbor != null) {

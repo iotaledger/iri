@@ -350,13 +350,15 @@ public class TransactionViewModel {
      * The method then ensures that the {@link Transaction#bytes} are present before adding the {@link Transaction} and
      * {@link Hash} identifier to the already compiled list of {@link Transaction} components.
      *
-     * @return A complete list of all {@link Transaction} component objects paired with their {@link Hash} identifiers
+     * @return A complete list of all {@link Transaction} component objects paired with their {@link Hash} identifiers.
+     * The transaction object itself must be the last item in the list.
      * @throws Exception Thrown if the metadata fails to fetch, or if the bytes are not retrieved correctly
      */
     public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
         hashesList.addAll(getMetadataSaveBatch());
         getBytes();
+        //must be last
         hashesList.add(new Pair<>(hash, transaction));
         return hashesList;
     }

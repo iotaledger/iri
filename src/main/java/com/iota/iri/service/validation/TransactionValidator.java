@@ -344,7 +344,7 @@ public class TransactionValidator {
      * @return <tt>true</tt> if we made the transaction solid, else <tt>false</tt>.
      * @throws Exception
      */
-    private boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
+    public boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
         if(!transactionViewModel.isSolid()) {
             boolean solid = true;
             if (!checkApproovee(transactionViewModel.getTrunkTransaction(tangle))) {

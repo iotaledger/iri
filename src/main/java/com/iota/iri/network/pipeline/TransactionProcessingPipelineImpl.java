@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
 public class TransactionProcessingPipelineImpl implements TransactionProcessingPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionProcessingPipelineImpl.class);
-    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(6);
+    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(7);
 
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;
@@ -67,6 +67,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BroadcastStage broadcastStage;
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
+    private SolidifyStage solidifyStage;
     private TransactionSolidifier txSolidifier;
 
     private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
@@ -74,6 +75,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> solidifyStageQueue = new ArrayBlockingQueue<>(100);
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.
@@ -100,6 +102,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider, transactionRequester);
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
+        this.solidifyStage = new SolidifyStage(txSolidifier, txValidator, tipsViewModel, tangle);
         this.txSolidifier = txSolidifier;
     }
 
@@ -111,6 +114,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         addStage("reply", replyStageQueue, replyStage);
         addStage("received", receivedStageQueue, receivedStage);
         addStage("broadcast", broadcastStageQueue, broadcastStage);
+        addStage("solidify", solidifyStageQueue, solidifyStage);
     }
 
     /**
@@ -144,6 +148,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             break;
                         case BROADCAST:
                             broadcastStageQueue.put(ctx);
+                            break;
+                        case SOLIDIFY:
+                            solidifyStageQueue.put(ctx);
                             break;
                         case ABORT:
                             break;

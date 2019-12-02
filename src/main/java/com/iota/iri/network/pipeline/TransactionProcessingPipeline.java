@@ -15,7 +15,7 @@ public interface TransactionProcessingPipeline {
      * Defines the different stages of the {@link TransactionProcessingPipelineImpl}.
      */
     enum Stage {
-        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH,
+        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH, SOLIDIFY,
     }
 
     /**

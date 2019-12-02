@@ -89,18 +89,20 @@ public class TransactionSolidifierImplTest {
     }
 
     @Test
-    public void getSolidificationQueue() throws Exception{
+    public void getSolidificationQueue() throws Exception {
         TransactionViewModel tx = getTxWithBranchAndTrunk();
-        txSolidifier.addToSolidificationQueue(tx.getHash());
-
+        for(int i = 0; i < 10; i++) {
+            txSolidifier.addToSolidificationQueue(tx.getHash());
+        }
+        assertTrue("Expected transaction to be present in the solidification queue",
+                txSolidifier.getSolidificationQueue().contains(tx.getHash()));
     }
 
     @Test
     public void verifyTransactionIsProcessedFully() throws Exception {
         TransactionViewModel tx = getTxWithBranchAndTrunk();
         txSolidifier.addToSolidificationQueue(tx.getHash());
-        assertTrue("Expected transaction to be present in the solidification queue",
-                txSolidifier.getSolidificationQueue().contains(tx.getHash()));
+
         //Time to process through the steps
         Thread.sleep(1000);
         assertTrue("Expected transaction to be present in the broadcast queue",
@@ -112,8 +114,7 @@ public class TransactionSolidifierImplTest {
     public void verifyInconsistentTransactionIsNotProcessedFully() throws Exception {
         TransactionViewModel tx = getTxWithoutBranchAndTrunk();
         txSolidifier.addToSolidificationQueue(tx.getHash());
-        assertTrue("Expected transaction to be present in the solidification queue",
-                txSolidifier.getSolidificationQueue().contains(tx.getHash()));
+
         //Time to process through the steps
         Thread.sleep(1000);
         assertFalse("Expected transaction not to be present in the broadcast queue",

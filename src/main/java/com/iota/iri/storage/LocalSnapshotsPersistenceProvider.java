@@ -45,7 +45,10 @@ public class LocalSnapshotsPersistenceProvider {
      * @see PersistenceProvider#save(Persistable, Indexable)
      */
     public Boolean save(Persistable model, Indexable index) throws Exception {
-        return provider.save(model, index);
+        if(provider.getClass().desiredAssertionStatus()) {
+            return provider.save(model, index);
+        }
+        return false;
     }
 
     /**

@@ -60,6 +60,9 @@ public class SpentAddressesProviderImplTest {
     @Before
     public void setUp() throws Exception {
         when(config.isTestnet()).thenReturn(true);
+        localSnapshotsPersistenceProvider.injectProvider(persistenceProvider);
+        localSnapshotsPersistenceProvider.init();
+
         provider = new SpentAddressesProviderImpl(config, localSnapshotsPersistenceProvider);
         provider.init(false);
     }
@@ -80,6 +83,7 @@ public class SpentAddressesProviderImplTest {
 
     @Test
     public void testSaveAddress() throws Exception {
+        when(localSnapshotsPersistenceProvider.save(new SpentAddress(), A)).thenReturn(true);
         provider.saveAddress(A);
         
         try {

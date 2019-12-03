@@ -2,15 +2,23 @@ package com.iota.iri.service.snapshot.impl;
 
 import static org.junit.Assert.*;
 
+import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
+import com.iota.iri.storage.PersistenceProvider;
+import com.iota.iri.utils.Pair;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class SnapshotProviderImplTest {
 
@@ -19,12 +27,20 @@ public class SnapshotProviderImplTest {
 
     private SnapshotImpl cachedBuiltinSnapshot;
 
+    @Rule
+    public final MockitoRule mockitoRule = MockitoJUnit.rule();
+
+    @Mock
     private LocalSnapshotsPersistenceProvider localSnapshotDb;
+
+    @Mock
+    private PersistenceProvider persistenceProvider;
 
     @Before
     public void setUp() throws Exception {
-        localSnapshotDb = new LocalSnapshotsPersistenceProvider();
+        localSnapshotDb.injectProvider(persistenceProvider);
         localSnapshotDb.init();
+
         provider = new SnapshotProviderImpl(iotaConfig, localSnapshotDb);
         
         // When running multiple tests, the static cached snapshot breaks this test
@@ -41,9 +57,14 @@ public class SnapshotProviderImplTest {
     }
     
     @Test
-    public void testGetLatestSnapshot() throws SnapshotException, SpentAddressesException {
-        provider.init();
-
+    public void testGetLatestSnapshot() throws SnapshotException {
+        try{
+            Mockito.when(localSnapshotDb.getFirst(LocalSnapshot.class, IntegerIndex.class))
+                    .thenReturn(new Pair<>(null,null));
+            provider.init();
+        } catch(Exception e){
+            throw new SnapshotException(e);
+        }
         // If we run this on its own, it correctly takes the testnet milestone
         // However, running it with all tests makes it load the last global snapshot contained in the jar
         assertEquals("Initial snapshot index should be the same as the milestone start index", 

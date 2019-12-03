@@ -1,5 +1,5 @@
 nodes:
-  nodeE-m6:
+  nodeA:
     host: localhost
     podip: localhost
     ports:

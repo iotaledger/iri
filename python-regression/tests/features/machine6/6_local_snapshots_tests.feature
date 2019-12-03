@@ -86,7 +86,7 @@ Feature: Test Bootstrapping With LS
 
     Then the response for "checkConsistency" should return null
 
-  @now
+
   Scenario: Check unconfirmed transaction is spent from
     Issues a value transaction that will be unconfirmed, and check that the address was spent from.
 
@@ -104,7 +104,7 @@ Feature: Test Bootstrapping With LS
       |keys                       |values                   |type             |
       |addresses                  |True                     |boolList         |
 
-  @now
+
   Scenario: Check addresses spent from after pruning
     Ensures that a node with a spent address registers that the address is spent from both before and after the
     transaction has been pruned from the DB.

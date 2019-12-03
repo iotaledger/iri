@@ -21,7 +21,7 @@ public class TransactionViewModel {
 
     /** Length of a transaction object in trytes */
     public static final int SIZE = 1604;
-    private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
+    public static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
 
     /** Total supply of IOTA available in the network. Used for ensuring a balanced ledger state and bundle balances */
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2

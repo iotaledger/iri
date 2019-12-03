@@ -1,10 +1,11 @@
 package com.iota.iri.service.milestone.impl;
 
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneException;
 import com.iota.iri.service.milestone.MilestoneService;
@@ -12,14 +13,13 @@ import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,7 +52,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     /**
      * Holds the Tangle object which acts as a database interface.
      */
-    private final Tangle tangle;
+    protected final Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots that the node uses (for faster
@@ -91,16 +91,11 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      */
     private Hash latestMilestoneHash;
 
-    /**
-     * A set that allows us to keep track of the candidates that have been seen and added to the {@link
-     * #milestoneCandidatesToAnalyze} already.
-     */
-    private final Set<Hash> seenMilestoneCandidates = new HashSet<>();
 
     /**
      * A list of milestones that still have to be analyzed.
      */
-    private final Deque<Hash> milestoneCandidatesToAnalyze = new ArrayDeque<>();
+    protected final Deque<Hash> milestoneCandidatesToAnalyze = new ArrayDeque<>();
 
     /**
      * A flag that allows us to detect if the background worker is in its first iteration (for different log
@@ -303,20 +298,27 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * @throws MilestoneException if anything unexpected happens while collecting the new milestone candidates
      */
     private void collectNewMilestoneCandidates() throws MilestoneException {
+        int latestMilestoneIndex = getLatestMilestoneIndex();
         try {
-            for (Hash hash : AddressViewModel.load(tangle, coordinatorAddress).getHashes()) {
-                if (Thread.currentThread().isInterrupted()) {
-                    return;
-                }
-
-                if (seenMilestoneCandidates.add(hash)) {
-                    milestoneCandidatesToAnalyze.addFirst(hash);
+            ObsoleteTag tag;
+            do {
+                byte[] indexTrits = new byte[TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE];
+                Converter.copyTrits(++latestMilestoneIndex, indexTrits, 0,
+                        TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE);
+                byte[] indexBytes = new byte[TransactionViewModel.TAG_SIZE_IN_BYTES];
+                Converter.bytes(indexTrits, indexBytes);
+                tag = (ObsoleteTag) tangle.load(ObsoleteTag.class, HashFactory.OBSOLETETAG.create(indexBytes));
+                if (tag != null && tag.exists()) {
+                    tag.set.forEach(milestoneCandidatesToAnalyze::offer);
                 }
             }
-        } catch (Exception e) {
-            throw new MilestoneException("failed to collect the new milestone candidates", e);
+            while (tag != null);
+        }
+        catch (Exception e) {
+            throw new MilestoneException("Problem while trying to load milestone #" + latestMilestoneIndex);
         }
     }
+
 
     /**
      * <p>
@@ -339,9 +341,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
             }
 
             Hash candidateTransactionHash = milestoneCandidatesToAnalyze.pollFirst();
-            if(!processMilestoneCandidate(candidateTransactionHash)) {
-                seenMilestoneCandidates.remove(candidateTransactionHash);
-            }
+            processMilestoneCandidate(candidateTransactionHash);
         }
     }
 

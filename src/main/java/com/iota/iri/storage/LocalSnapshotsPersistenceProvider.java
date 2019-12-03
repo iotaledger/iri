@@ -18,7 +18,11 @@ public class LocalSnapshotsPersistenceProvider {
         provider.init();
     }
 
-
+    /**
+     * Inject the localsnapshots-db persistence provider into the class
+     *
+     * @param persistenceProvider   The persistence provider instance for the localsnapshots-db
+     */
     public void injectProvider(PersistenceProvider persistenceProvider){
         this.provider = persistenceProvider;
     }

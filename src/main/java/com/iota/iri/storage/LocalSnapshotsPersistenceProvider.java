@@ -1,12 +1,7 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.model.persistables.SpentAddress;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -14,30 +9,18 @@ import java.util.List;
  */
 public class LocalSnapshotsPersistenceProvider {
     private PersistenceProvider provider;
-    private IotaConfig config;
-
-    /**
-     * Constructor for local snapshots persistence provider
-     * @param config    Configuration for the node
-     */
-    public LocalSnapshotsPersistenceProvider(IotaConfig config){
-        this.config = config;
-    }
 
     /**
      * Initialize the provider
      * @throws Exception
      */
     public void init() throws Exception{
-        provider = new RocksDBPersistenceProvider(
-                config.getLocalSnapshotsDbPath(),
-                config.getLocalSnapshotsDbLogPath(),
-                1000,
-                new HashMap<String, Class<? extends Persistable>>(1) {{
-                    put("spent-addresses", SpentAddress.class);
-                    put("localsnapshots", LocalSnapshot.class);
-                }}, null);
         provider.init();
+    }
+
+
+    public void injectProvider(PersistenceProvider persistenceProvider){
+        this.provider = persistenceProvider;
     }
 
     /**

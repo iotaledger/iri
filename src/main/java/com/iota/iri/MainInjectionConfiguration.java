@@ -173,12 +173,6 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    LocalSnapshotsPersistenceProvider provideLocalSnapshotsPersistenceProvider(){
-        return new LocalSnapshotsPersistenceProvider(configuration);
-    }
-
-    @Singleton
-    @Provides
     IXI provideIxi(Iota iota) {
         return new IXI(iota);
     }
@@ -197,6 +191,7 @@ public class MainInjectionConfiguration extends AbstractModule {
     protected void configure() {
         // beans that only need a default constructor
         bind(Tangle.class).asEagerSingleton();
+        bind(LocalSnapshotsPersistenceProvider.class).asEagerSingleton();
         bind(BundleValidator.class).asEagerSingleton();
         bind(TipsViewModel.class).asEagerSingleton();
     }

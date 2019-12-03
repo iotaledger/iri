@@ -105,7 +105,9 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public void saveAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            localSnapshotsPersistenceProvider.save(new SpentAddress(), addressHash);
+            if(localSnapshotsPersistenceProvider.getProvider().getClass().desiredAssertionStatus()) {
+                localSnapshotsPersistenceProvider.save(new SpentAddress(), addressHash);
+            }
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }

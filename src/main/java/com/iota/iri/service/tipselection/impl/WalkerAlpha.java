@@ -134,7 +134,7 @@ public class WalkerAlpha implements Walker {
             return Optional.empty();
         }
 
-        //Check if ratings map is empty. If so, alpha was set to 0 and a random approver will be selected.
+        //Check if alpha was set to 0. If so, weight calculations are skipped and a random approver will be selected.
         if(alpha != 0) {
             //calculate the probabilities
             List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());

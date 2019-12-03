@@ -23,7 +23,7 @@ public class SnapshotProviderImplTest {
 
     @Before
     public void setUp() throws Exception {
-        localSnapshotDb = new LocalSnapshotsPersistenceProvider(iotaConfig);
+        localSnapshotDb = new LocalSnapshotsPersistenceProvider();
         localSnapshotDb.init();
         provider = new SnapshotProviderImpl(iotaConfig, localSnapshotDb);
         

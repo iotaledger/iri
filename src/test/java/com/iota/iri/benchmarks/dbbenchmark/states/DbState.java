@@ -53,7 +53,7 @@ public abstract class DbState {
         IotaConfig config = new MainnetConfig();
         lsFolder.mkdirs();
         lsLogFolder.mkdirs();
-        LocalSnapshotsPersistenceProvider localSnapshotDb = new LocalSnapshotsPersistenceProvider(config);
+        LocalSnapshotsPersistenceProvider localSnapshotDb = new LocalSnapshotsPersistenceProvider();
         localSnapshotDb.init();
         snapshotProvider = new SnapshotProviderImpl(config, localSnapshotDb);
         snapshotProvider.init();

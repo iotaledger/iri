@@ -247,11 +247,8 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         return (!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer));
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addToBroadcastQueue(TransactionViewModel tvm) {
+
+    private void addToBroadcastQueue(TransactionViewModel tvm) {
         try {
             if (transactionsToBroadcast.size() >= MAX_SIZE) {
                 transactionsToBroadcast.remove();

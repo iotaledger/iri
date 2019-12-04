@@ -81,11 +81,4 @@ public interface TransactionSolidifier {
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
     boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception;
-
-    /**
-     * Add transaction to the BroadcastQueue set
-     * @param tvm The transaction to be broadcast
-     */
-    void addToBroadcastQueue(TransactionViewModel tvm);
-
 }

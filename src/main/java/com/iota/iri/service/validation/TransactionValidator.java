@@ -11,7 +11,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,6 @@ public class TransactionValidator {
     private final SnapshotProvider snapshotProvider;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
-    private final TransactionSolidifier transactionSolidifier;
     private int minWeightMagnitude = 81;
     private static final long MAX_TIMESTAMP_FUTURE = 2L * 60L * 60L;
     private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1_000L;
@@ -66,13 +64,12 @@ public class TransactionValidator {
      *                       minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the
      *                       transaction hash
      */
-    public TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig, TransactionSolidifier transactionSolidifier) {
+    public TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
         this.newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
-        this.transactionSolidifier = transactionSolidifier;
         setMwm(protocolConfig.isTestnet(), protocolConfig.getMwm());
     }
 
@@ -356,7 +353,6 @@ public class TransactionValidator {
             if(solid) {
                 transactionViewModel.updateSolid(true);
                 transactionViewModel.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
-                transactionSolidifier.addToBroadcastQueue(transactionViewModel);
                 return true;
             }
         }

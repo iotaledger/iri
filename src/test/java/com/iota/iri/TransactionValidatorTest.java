@@ -9,7 +9,6 @@ import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
-import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -45,9 +44,6 @@ public class TransactionValidatorTest {
   private static SnapshotProvider snapshotProvider;
 
   @Mock
-  private static TransactionSolidifier txSolidifier;
-
-  @Mock
   private static TransactionRequester txRequester;
 
   @BeforeClass
@@ -73,7 +69,7 @@ public class TransactionValidatorTest {
     when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     TipsViewModel tipsViewModel = new TipsViewModel();
     txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, new MainnetConfig(), txSolidifier);
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, new MainnetConfig());
     txValidator.setMwm(false, MAINNET_MWM);
     txValidator.init();
   }
@@ -82,7 +78,7 @@ public class TransactionValidatorTest {
   public void testMinMwm() {
     ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
     when(protocolConfig.getMwm()).thenReturn(5);
-    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig, txSolidifier);
+    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig);
     assertEquals("Expected testnet minimum minWeightMagnitude", 13, transactionValidator.getMinWeightMagnitude());
   }
 

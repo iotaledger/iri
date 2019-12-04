@@ -90,12 +90,14 @@ public class TransactionSolidifierImplTest {
 
     @Test
     public void getSolidificationQueue() throws Exception {
-        TransactionViewModel tx = getTxWithBranchAndTrunk();
+        TransactionViewModel mainTx = getTxWithBranchAndTrunk();
         for(int i = 0; i < 10; i++) {
+            TransactionViewModel tx = getTxWithBranchAndTrunk();
             txSolidifier.addToSolidificationQueue(tx.getHash());
         }
+        txSolidifier.addToSolidificationQueue(mainTx.getHash());
         assertTrue("Expected transaction to be present in the solidification queue",
-                txSolidifier.getSolidificationQueue().contains(tx.getHash()));
+                txSolidifier.getSolidificationQueue().contains(mainTx.getHash()));
     }
 
     @Test

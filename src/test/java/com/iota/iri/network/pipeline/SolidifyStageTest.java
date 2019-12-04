@@ -3,6 +3,7 @@ package com.iota.iri.network.pipeline;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
@@ -82,12 +83,13 @@ public class SolidifyStageTest {
     public void unsolidTransactionBroadcastsRandomSolidTip() throws Exception{
         Mockito.when(tvm.isSolid()).thenReturn(false);
         Mockito.when(transactionValidator.quickSetSolid(tvm)).thenReturn(false);
-        Mockito.when(tipsViewModel.getRandomSolidTipHash()).thenReturn(tipHash);
+        TransactionViewModel tip = new TransactionViewModel(new Transaction(), tipHash);
 
         SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, transactionValidator, tipsViewModel, tangle);
         SolidifyPayload solidifyPayload = new SolidifyPayload(null, tvm);
         ProcessingContext ctx = new ProcessingContext(solidifyPayload);
 
+        solidifyStage.injectTip(tip);
         solidifyStage.process(ctx);
         Thread.sleep(100);
 

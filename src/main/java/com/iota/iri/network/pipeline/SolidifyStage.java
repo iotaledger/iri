@@ -1,5 +1,6 @@
 package com.iota.iri.network.pipeline;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -26,6 +27,7 @@ public class SolidifyStage implements Stage {
     private TransactionValidator txValidator;
     private TipsViewModel tipsViewModel;
     private Tangle tangle;
+    private TransactionViewModel tip;
 
     /**
      * Constructor for the {@link SolidifyStage}.
@@ -67,23 +69,40 @@ public class SolidifyStage implements Stage {
 
             txSolidifier.addToSolidificationQueue(tvm.getHash());
 
-            Hash tipHash = tipsViewModel.getRandomSolidTipHash();
-            if(tipHash != null) {
-                TransactionViewModel solidTip = fromHash(tangle, tipHash);
-                if(solidTip.isSolid()) {
-                    ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-                    ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), solidTip));
-                    return ctx;
-                }
-            }
-
-            ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
-            return ctx;
+            return broadcastTip(ctx, payload);
         }catch (Exception e){
             log.error("Failed to process transaction for solidification", e);
             ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
             return ctx;
         }
 
+    }
+
+    private ProcessingContext broadcastTip(ProcessingContext ctx, SolidifyPayload payload) throws  Exception{
+        if(tip == null) {
+            Hash tipHash = tipsViewModel.getRandomSolidTipHash();
+
+            if (tipHash == null) {
+                ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+                return ctx;
+            }
+
+            tip = fromHash(tangle, tipHash);
+        }
+
+        if(tip.isSolid()) {
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
+            ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), tip));
+            return ctx;
+        }
+
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+        return ctx;
+    }
+
+    @VisibleForTesting
+    void injectTip(TransactionViewModel tvm) throws Exception {
+        tip = tvm;
+        tip.updateSolid(true);
     }
 }

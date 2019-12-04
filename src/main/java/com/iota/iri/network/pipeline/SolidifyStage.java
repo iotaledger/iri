@@ -70,9 +70,11 @@ public class SolidifyStage implements Stage {
             Hash tipHash = tipsViewModel.getRandomSolidTipHash();
             if(tipHash != null) {
                 TransactionViewModel solidTip = fromHash(tangle, tipHash);
-                ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-                ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), solidTip));
-                return ctx;
+                if(solidTip.isSolid()) {
+                    ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
+                    ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), solidTip));
+                    return ctx;
+                }
             }
 
             ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);

@@ -4,10 +4,7 @@ import java.io.File;
 import java.util.*;
 
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.Persistable;
 import org.apache.commons.io.FileUtils;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
@@ -35,12 +32,6 @@ public abstract class DbState {
     private SnapshotProvider snapshotProvider;
     private List<TransactionViewModel> transactions;
 
-    private static Map<String, Class<? extends Persistable>>lsColumnFamilies =
-            new HashMap<String, Class<? extends  Persistable>>(){{
-        put("spent-addresses", SpentAddress.class);
-        put("localsnapshots", LocalSnapshot.class);
-    }};
-
 
     @Param({"10", "100", "500", "1000", "3000"})
     private int numTxsToTest;
@@ -59,7 +50,7 @@ public abstract class DbState {
         dbProvider.init();
 
         PersistenceProvider lsDbProvider = new RocksDBPersistenceProvider(
-                lsFolder.getAbsolutePath(), lsLogFolder.getAbsolutePath(), null, BaseIotaConfig.Defaults.DB_CACHE_SIZE, lsColumnFamilies, null);
+                lsFolder.getAbsolutePath(), lsLogFolder.getAbsolutePath(), null, BaseIotaConfig.Defaults.DB_CACHE_SIZE, LocalSnapshotsPersistenceProvider.COLUMN_FAMILIES, null);
         lsDbProvider.init();
 
         tangle = new Tangle();

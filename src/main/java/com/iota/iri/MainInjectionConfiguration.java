@@ -200,10 +200,7 @@ public class MainInjectionConfiguration extends AbstractModule {
                 configuration.getLocalSnapshotsDbLogPath(),
                 configuration.getDbConfigFile(),
                 1000,
-                new HashMap<String, Class<? extends Persistable>>() {{
-                    put("spent-addresses", SpentAddress.class);
-                    put("localsnapshots", LocalSnapshot.class);
-                }}, null));
+                LocalSnapshotsPersistenceProvider.COLUMN_FAMILIES, null));
     }
 
     @Override

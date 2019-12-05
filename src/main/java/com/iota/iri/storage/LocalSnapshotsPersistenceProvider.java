@@ -1,5 +1,7 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.model.LocalSnapshot;
+import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.utils.Pair;
 
 import java.util.*;
@@ -9,6 +11,12 @@ import java.util.*;
  */
 public class LocalSnapshotsPersistenceProvider implements PersistenceProvider {
     private PersistenceProvider provider;
+
+    public static final Map<String, Class<? extends Persistable>> COLUMN_FAMILIES =
+            new LinkedHashMap<String, Class<? extends Persistable>>() {{
+                put("spent-addresses", SpentAddress.class);
+                put("localsnapshots", LocalSnapshot.class);
+            }};
 
     /**
      * Constructor for {@link LocalSnapshotsPersistenceProvider}. Stores the {@link PersistenceProvider} to act as an
@@ -56,10 +64,7 @@ public class LocalSnapshotsPersistenceProvider implements PersistenceProvider {
      */
     @Override
     public boolean save(Persistable model, Indexable index) throws Exception {
-        if(provider.getClass().desiredAssertionStatus()) {
-            return provider.save(model, index);
-        }
-        return false;
+        return provider.save(model, index);
     }
 
     /**

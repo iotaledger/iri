@@ -1,5 +1,6 @@
-package com.iota.iri;
+package com.iota.iri.service.validation;
 
+import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;

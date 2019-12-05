@@ -92,7 +92,7 @@ public class TransactionValidator {
      * Set the Minimum Weight Magnitude for validation checks.
      */
     @VisibleForTesting
-    public void setMwm(boolean testnet, int mwm) {
+    void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
         //lowest allowed MWM encoded in 46 bytes.
@@ -382,7 +382,7 @@ public class TransactionValidator {
      * Exclusively used in the {@link TansactionValidatorTest}
      */
     @VisibleForTesting
-    public boolean isNewSolidTxSetsEmpty () {
+    boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }
 

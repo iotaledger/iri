@@ -256,7 +256,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
 
             transactionsToBroadcast.put(tvm);
         } catch(Exception e){
-            log.error("Error placing transaction into broadcast queue", e);
+            log.info("Error placing transaction into broadcast queue: " + e.getMessage());
         }
     }
 

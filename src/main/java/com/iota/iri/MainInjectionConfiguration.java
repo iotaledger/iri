@@ -1,8 +1,6 @@
 package com.iota.iri;
 
 import java.security.SecureRandom;
-import java.util.HashMap;
-
 import javax.annotation.Nullable;
 
 import com.google.inject.AbstractModule;
@@ -10,8 +8,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
@@ -52,7 +48,6 @@ import com.iota.iri.service.tipselection.impl.WalkerAlpha;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 

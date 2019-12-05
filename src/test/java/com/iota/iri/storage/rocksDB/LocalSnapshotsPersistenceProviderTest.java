@@ -1,17 +1,17 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.conf.ConfigFactory;
-import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.Assert;
 import org.junit.rules.TemporaryFolder;
 
 public class LocalSnapshotsPersistenceProviderTest {
@@ -20,15 +20,13 @@ public class LocalSnapshotsPersistenceProviderTest {
 
 
     private LocalSnapshotsPersistenceProvider provider;
-    private SnapshotProvider snapshotProvider;
     private static final IntegerIndex LS_KEY = new IntegerIndex(1);
     private static Hash milestoneHash = HashFactory.TRANSACTION.create("MILESTONE");
 
 
 
     @Before
-    public void setup() throws Exception {
-        IotaConfig config = ConfigFactory.createIotaConfig(true);
+    public void setUp() throws Exception {
         dbFolder.create();
         logFolder.create();
         provider = new LocalSnapshotsPersistenceProvider(

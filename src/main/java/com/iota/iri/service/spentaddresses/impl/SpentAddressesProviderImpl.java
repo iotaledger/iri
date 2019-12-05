@@ -67,7 +67,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     }
 
     private boolean doSpentAddressesExist(LocalSnapshotsPersistenceProvider provider) throws Exception {
-        Pair<Indexable, Persistable> first = provider.getFirst(SpentAddress.class, AddressHash.class);
+        Pair<Indexable, Persistable> first = provider.first(SpentAddress.class, AddressHash.class);
         return first.hi != null && ((SpentAddress) first.hi).exists();
     }
 
@@ -129,7 +129,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public List<Hash> getAllAddresses() {
         List<Hash> addresses = new ArrayList<>();
-        for (byte[] bytes : localSnapshotsPersistenceProvider.getProvider().loadAllKeysFromTable(SpentAddress.class)) {
+        for (byte[] bytes : localSnapshotsPersistenceProvider.loadAllKeysFromTable(SpentAddress.class)) {
             addresses.add(HashFactory.ADDRESS.create(bytes));
         }
         return addresses;

@@ -140,7 +140,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             // persist new one
             new LocalSnapshotViewModel(snapshot.getHash(), snapshot.getIndex(), snapshot.getTimestamp(),
                     snapshot.getSolidEntryPoints(), snapshot.getSeenMilestones(), snapshot.getBalances())
-                            .store(localSnapshotsDb.getProvider());
+                            .store(localSnapshotsDb);
             log.info("persisted local snapshot; ms hash/index: {}/{}", snapshot.getHash().toString(),
                     snapshot.getIndex());
         } catch (Exception e) {
@@ -203,7 +203,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             return null;
         }
         try {
-            Pair<Indexable, Persistable> pair = localSnapshotsDb.getFirst(LocalSnapshot.class, IntegerIndex.class);
+            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, IntegerIndex.class);
             if (pair.hi == null) {
                 log.info("no local snapshot persisted in the database");
                 return null;

@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.Pair;
 import org.junit.After;
 import org.junit.Before;
@@ -33,12 +32,8 @@ public class SnapshotProviderImplTest {
     @Mock
     private LocalSnapshotsPersistenceProvider localSnapshotDb;
 
-    @Mock
-    private PersistenceProvider persistenceProvider;
-
     @Before
     public void setUp() throws Exception {
-        localSnapshotDb.injectProvider(persistenceProvider);
         localSnapshotDb.init();
 
         provider = new SnapshotProviderImpl(iotaConfig, localSnapshotDb);
@@ -59,7 +54,7 @@ public class SnapshotProviderImplTest {
     @Test
     public void testGetLatestSnapshot() throws SnapshotException {
         try{
-            Mockito.when(localSnapshotDb.getFirst(LocalSnapshot.class, IntegerIndex.class))
+            Mockito.when(localSnapshotDb.first(LocalSnapshot.class, IntegerIndex.class))
                     .thenReturn(new Pair<>(null,null));
             provider.init();
         } catch(Exception e){

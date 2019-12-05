@@ -1,12 +1,13 @@
 package com.iota.iri.benchmarks.dbbenchmark.states;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.model.LocalSnapshot;
+import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
+import com.iota.iri.storage.Persistable;
 import org.apache.commons.io.FileUtils;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
@@ -34,6 +35,13 @@ public abstract class DbState {
     private SnapshotProvider snapshotProvider;
     private List<TransactionViewModel> transactions;
 
+    private static Map<String, Class<? extends Persistable>>lsColumnFamilies =
+            new HashMap<String, Class<? extends  Persistable>>(){{
+        put("spent-addresses", SpentAddress.class);
+        put("localsnapshots", LocalSnapshot.class);
+    }};
+
+
     @Param({"10", "100", "500", "1000", "3000"})
     private int numTxsToTest;
 
@@ -49,11 +57,18 @@ public abstract class DbState {
         PersistenceProvider dbProvider = new RocksDBPersistenceProvider(
                 dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(), null, BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         dbProvider.init();
+
+        PersistenceProvider lsDbProvider = new RocksDBPersistenceProvider(
+                lsFolder.getAbsolutePath(), lsLogFolder.getAbsolutePath(), null, BaseIotaConfig.Defaults.DB_CACHE_SIZE, lsColumnFamilies, null);
+        lsDbProvider.init();
+
         tangle = new Tangle();
         IotaConfig config = new MainnetConfig();
         lsFolder.mkdirs();
         lsLogFolder.mkdirs();
-        LocalSnapshotsPersistenceProvider localSnapshotDb = new LocalSnapshotsPersistenceProvider();
+
+
+        LocalSnapshotsPersistenceProvider localSnapshotDb = new LocalSnapshotsPersistenceProvider(lsDbProvider);
         localSnapshotDb.init();
         snapshotProvider = new SnapshotProviderImpl(config, localSnapshotDb);
         snapshotProvider.init();

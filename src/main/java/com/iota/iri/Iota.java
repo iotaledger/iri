@@ -1,11 +1,8 @@
 package com.iota.iri;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
@@ -179,7 +176,7 @@ public class Iota {
      *                   error.
      */
     public void init() throws Exception {
-        injectLocalSnapshotsDb();
+        localSnapshotsDb.init();
         initDependencies(); // remainder of injectDependencies method (contained init code)
 
         initializeTangle();
@@ -289,20 +286,6 @@ public class Iota {
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
-    }
-
-    private void injectLocalSnapshotsDb() throws Exception{
-        localSnapshotsDb.injectProvider(createRocksDbProvider(
-                configuration.getLocalSnapshotsDbPath(),
-                configuration.getLocalSnapshotsDbLogPath(),
-                configuration.getDbConfigFile(),
-                1000,
-                new HashMap<String, Class<? extends Persistable>>() {{
-                    put("spent-addresses", SpentAddress.class);
-                    put("localsnapshots", LocalSnapshot.class);
-                }}, null));
-
-        localSnapshotsDb.init();
     }
 
     /**

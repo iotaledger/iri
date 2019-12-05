@@ -9,7 +9,6 @@ import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.Pair;
 
 import java.util.LinkedList;
@@ -50,9 +49,6 @@ public class SpentAddressesProviderImplTest {
     private SnapshotConfig config;
 
     @Mock
-    PersistenceProvider persistenceProvider;
-
-    @Mock
     private LocalSnapshotsPersistenceProvider localSnapshotsPersistenceProvider;
     
     private SpentAddressesProviderImpl provider;
@@ -60,7 +56,6 @@ public class SpentAddressesProviderImplTest {
     @Before
     public void setUp() throws Exception {
         when(config.isTestnet()).thenReturn(true);
-        localSnapshotsPersistenceProvider.injectProvider(persistenceProvider);
         localSnapshotsPersistenceProvider.init();
 
         provider = new SpentAddressesProviderImpl(config, localSnapshotsPersistenceProvider);
@@ -126,7 +121,7 @@ public class SpentAddressesProviderImplTest {
     @Test(expected = SpentAddressesException.class)
     public void failWhenAssertingForExistingData() throws Exception {
         exit.expectSystemExitWithStatus(1);
-        when(localSnapshotsPersistenceProvider.getFirst(SpentAddress.class, AddressHash.class))
+        when(localSnapshotsPersistenceProvider.first(SpentAddress.class, AddressHash.class))
                 .thenReturn(new Pair<>(null,null));
         provider.init(true);
     }

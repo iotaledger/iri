@@ -59,7 +59,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      * List of stages that will be ignored when determining thread count
      */
     private static List<Stage> IGNORED_STAGES = new LinkedList<Stage>(){{
-        add(Stage.HASHING);
+        add(Stage.MULTIPLE);
         add(Stage.ABORT);
         add(Stage.FINISH);
     }};

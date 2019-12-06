@@ -19,13 +19,13 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +55,15 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private static final Logger log = LoggerFactory.getLogger(TransactionProcessingPipelineImpl.class);
     private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(getNumberOfThreads());
 
+    /**
+     * List of stages that will be ignored when determining thread count
+     */
+    private static List<Stage> IGNORED_STAGES = new LinkedList<Stage>(){{
+        add(Stage.HASHING);
+        add(Stage.ABORT);
+        add(Stage.FINISH);
+    }};
+
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;
     private ReceivedStage receivedStage;
@@ -71,9 +80,13 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
 
     private int getNumberOfThreads() {
-        Reflections reflections = new Reflections(this.getClass().getPackage().getName());
-        //exclude the hashing stage as it is only run manually
-        return reflections.getSubTypesOf(com.iota.iri.network.pipeline.Stage.class).size() - 1;
+        int threads = 0;
+        for(Stage stage: Stage.values()) {
+            if(!IGNORED_STAGES.contains(stage)){
+                threads += 1;
+            }
+        }
+        return threads;
     }
 
     /**

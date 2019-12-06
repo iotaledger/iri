@@ -25,6 +25,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ import org.slf4j.LoggerFactory;
 public class TransactionProcessingPipelineImpl implements TransactionProcessingPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionProcessingPipelineImpl.class);
-    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(6);
+    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(getNumberOfThreads());
 
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;
@@ -68,6 +69,12 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
+
+    private int getNumberOfThreads() {
+        Reflections reflections = new Reflections(this.getClass().getPackage().getName());
+        //exclude the hashing stage as it is only run manually
+        return reflections.getSubTypesOf(com.iota.iri.network.pipeline.Stage.class).size() - 1;
+    }
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.

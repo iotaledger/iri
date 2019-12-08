@@ -408,23 +408,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
-        List<byte[]> itemsToDelete = new ArrayList<>();
-        try (RocksIterator iterator = db.newIterator(handle)) {
-
-            for (iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
-                itemsToDelete.add(iterator.key());
-            }
-        }
-        if (!itemsToDelete.isEmpty()) {
-            log.info("Amount to delete: " + itemsToDelete.size());
-        }
-        int counter = 0;
-        for (byte[] itemToDelete : itemsToDelete) {
-            if (++counter % 10000 == 0) {
-                log.info("Deleted: {}", counter);
-            }
-            db.delete(handle, itemToDelete);
-        }
+            log.info("Dropping {} from DB", new String(handle.getName()));
+            db.dropColumnFamily(handle);
     }
 
     @Override

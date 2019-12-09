@@ -1,5 +1,8 @@
 package com.iota.iri.storage.rocksDB;
 
+import com.iota.iri.TransactionTestUtils;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
@@ -75,5 +78,18 @@ public class RocksDBPersistenceProviderTest {
             Assert.assertArrayEquals("saved bytes are not as expected in index " + index.getValue(), tx.bytes(),
                     rocksDBPersistenceProvider.get(Transaction.class, index).bytes());
         }
+    }
+
+    @Test
+    public void testClear() throws Exception {
+        Transaction tx = TransactionTestUtils.buildTransaction(TransactionTestUtils.getTransactionTrits());
+        Hash hash = TransactionTestUtils.getTransactionHash();
+        rocksDBPersistenceProvider.save(tx, hash);
+        Assert.assertTrue("Tx isn't found in DB after it was saved",
+                rocksDBPersistenceProvider.exists(Transaction.class, hash));
+        rocksDBPersistenceProvider.clear(Transaction.class);
+        rocksDBPersistenceProvider.clearMetadata(Transaction.class);
+        Assert.assertFalse("Tx is found in DB after it was cleared",
+                rocksDBPersistenceProvider.exists(Transaction.class, hash));
     }
 }

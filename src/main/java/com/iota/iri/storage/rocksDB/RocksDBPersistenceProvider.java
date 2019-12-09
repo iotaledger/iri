@@ -408,8 +408,28 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
-            log.info("Dropping {} from DB", new String(handle.getName()));
-            db.dropColumnFamily(handle);
+        try (WriteBatch delBatch = new WriteBatch();
+             WriteOptions writeOptions = new WriteOptions()
+                     //We are explicit about what happens if the node reboots before a flush to the db
+                     .setDisableWAL(false)
+                     //We want to make sure deleted data was indeed deleted
+                     .setSync(true)) {
+            int counter = 0;
+            try (RocksIterator iterator = db.newIterator(handle)) {
+                for (iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
+                    delBatch.delete(handle, iterator.key());
+                    if (++counter % 10000 == 0) {
+                        db.write(writeOptions, delBatch);
+                        log.info("Deleted: {}", counter);
+                        delBatch.clear();
+                    }
+                }
+            }
+
+            //delete remaining
+            db.write(writeOptions, delBatch);
+            log.info("Deleted {} entries in total", counter);
+        }
     }
 
     @Override

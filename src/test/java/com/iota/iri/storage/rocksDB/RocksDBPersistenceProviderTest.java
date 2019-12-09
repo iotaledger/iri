@@ -1,7 +1,6 @@
 package com.iota.iri.storage.rocksDB;
 
 import com.iota.iri.TransactionTestUtils;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Transaction;
@@ -9,15 +8,16 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
-import org.apache.commons.io.FileUtils;
-import org.junit.*;
-import org.junit.runners.MethodSorters;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.apache.commons.io.FileUtils;
+import org.junit.*;
+import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class RocksDBPersistenceProviderTest {

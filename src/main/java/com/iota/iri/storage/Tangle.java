@@ -1,5 +1,8 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.cache.Cache;
+import com.iota.iri.cache.CacheManager;
+import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.Address;
@@ -43,6 +46,7 @@ public class Tangle {
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
+    private CacheManager cacheManager;
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -56,6 +60,7 @@ public class Tangle {
         for(PersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
+        cacheManager = new CacheManagerImpl();
     }
 
     /**
@@ -368,5 +373,16 @@ public class Tangle {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.clearMetadata(column);
         }
+    }
+
+    public <T> Cache<Indexable, T> getCache(Class<T> type){
+       return getCacheManager().getCache(type);
+    }
+
+    public CacheManager getCacheManager(){
+        if(cacheManager == null){
+            cacheManager = new CacheManagerImpl();
+        }
+        return cacheManager;
     }
 }

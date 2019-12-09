@@ -2,6 +2,7 @@ package com.iota.iri.cache.impl;
 
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheManager;
+import com.iota.iri.storage.Indexable;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,17 +24,29 @@ public class CacheManagerImpl implements CacheManager {
     }
 
     @Override
-    public <T> Cache getCache(Class<T> type) {
-        return null;
+    public <V> Cache<Indexable, V> getCache(Class<V> type) {
+        Cache<Indexable, V> cache = cacheMap.get(type);
+        if (cache == null) {
+            cache = add(type);
+        }
+        return cache;
     }
 
     @Override
-    public <T> Cache lookup(Class<T> type) {
-        return null;
+    public <V> Cache<Indexable, V> lookup(Class<V> type) {
+        return cacheMap.get(type);
     }
 
     @Override
-    public <T> Cache add(Class<T> type) {
-        return null;
+    public <V> Cache add(Class<V> type) {
+        Cache<Indexable, V> cache = new CacheImpl<>(new CacheConfigurationImpl());
+        cacheMap.put(type, cache);
+        return cache;
+    }
+
+    @Override
+    public void clearAllCaches() {
+        cacheMap.entrySet().stream().forEach(entry -> entry.getValue().clear());
+        cacheMap.clear();
     }
 }

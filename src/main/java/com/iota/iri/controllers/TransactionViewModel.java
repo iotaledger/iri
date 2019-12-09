@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.cache.Cache;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.service.snapshot.Snapshot;
@@ -83,19 +84,28 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
+    // true if entry is fresh. False if dirty
+    private boolean isCacheEntryFresh = true;
+
+    private static Snapshot initialSnapshot;
+
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
      * it will return with no response. If the {@link Transaction} object has not been parsed, and the
      * {@link TransactionViewModel} type is <tt>FILLED_SLOT</tt>, the saved metadata batch will be saved to the
      * database.
      *
-     * @param tangle The tangle reference for the database.
+     * @param tangle               The tangle reference for the database.
      * @param transactionViewModel The {@link TransactionViewModel} whose Metadata is to be filled.
      * @throws Exception Thrown if the database fails to save the batch of data.
      */
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
-            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
+            // tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
+
+            // setAttachmentData();
+            // setMetadata();
+            transactionViewModel.getMetadataSaveBatch();
         }
     }
 
@@ -105,15 +115,30 @@ public class TransactionViewModel {
      * identifier, provided the {@link Transaction} exists in the database.
      *
      * @param tangle The tangle reference for the database
-     * @param hash The source that the {@link Hash} identifier will be created from, and the {@link Transaction} object
-     * will be fetched from the database from
+     * @param hash   The source that the {@link Hash} identifier will be created from, and the {@link Transaction}
+     *               object will be fetched from the database from
      * @return The {@link TransactionViewModel} with its Metadata filled in.
      * @throws Exception Thrown if the database fails to find the {@link Transaction} object
      */
     public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(
-                (Transaction) tangle.find(Transaction.class, hash), HashFactory.TRANSACTION.create(hash));
+        Hash hashIdentifier = HashFactory.TRANSACTION.create(hash);
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        TransactionViewModel transactionViewModel = null;
+
+        if (cache != null) {
+            transactionViewModel = cache.get(hashIdentifier);
+            if (transactionViewModel != null) {
+                return transactionViewModel;
+            }
+        }
+
+        transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash),
+                hashIdentifier);
         fillMetadata(tangle, transactionViewModel);
+
+        if (cache != null) {
+            cachePut(tangle, transactionViewModel, hashIdentifier);
+        }
         return transactionViewModel;
     }
 
@@ -123,14 +148,26 @@ public class TransactionViewModel {
      * database.
      *
      * @param tangle The tangle reference for the database
-     * @param hash The {@link Hash} identifier to search with
+     * @param hash   The {@link Hash} identifier to search with
      * @return The {@link TransactionViewModel} with its Metadata filled in.
      * @throws Exception Thrown if there is an error loading the {@link Transaction} object from the database
      */
     public static TransactionViewModel fromHash(Tangle tangle, final Hash hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(
-                (Transaction) tangle.load(Transaction.class, hash), hash);
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        TransactionViewModel transactionViewModel = null;
+        if (cache != null) {
+            transactionViewModel = cache.get(hash);
+            if (transactionViewModel != null) {
+                return transactionViewModel;
+            }
+        }
+
+        transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
         fillMetadata(tangle, transactionViewModel);
+
+        if (cache != null) {
+            cachePut(tangle, transactionViewModel, hash);
+        }
         return transactionViewModel;
     }
 
@@ -139,7 +176,7 @@ public class TransactionViewModel {
      * manipulate a provided {@link Transaction} set.
      *
      * @param transaction {@link Transaction} set that the {@link TransactionViewModel} will be created for
-     * @param hash The {@link Hash} identifier of the {@link Transaction} set
+     * @param hash        The {@link Hash} identifier of the {@link Transaction} set
      */
     public TransactionViewModel(final Transaction transaction, Hash hash) {
         this.transaction = transaction == null || transaction.bytes == null ? new Transaction() : transaction;
@@ -154,7 +191,7 @@ public class TransactionViewModel {
      * {@link Transaction} set. This {@link Transaction} set is then indexed by the provided {@link Hash} identifier.
      *
      * @param trits The input trits that the {@link Transaction} and {@link TransactionViewModel} will be created from.
-     * @param hash The {@link TransactionHash} identifier of the {@link Transaction} set
+     * @param hash  The {@link TransactionHash} identifier of the {@link Transaction} set
      */
     public TransactionViewModel(final byte[] trits, Hash hash) {
         transaction = new Transaction();
@@ -182,7 +219,7 @@ public class TransactionViewModel {
      * {@link Transaction} object might exist in the database. If it definitively does not exist, it will return False.
      *
      * @param tangle The tangle reference for the database
-     * @param hash The {@link Hash} identifier of the object you are looking for
+     * @param hash   The {@link Hash} identifier of the object you are looking for
      * @return True if the key might exist in the database, False if it definitively does not
      * @throws Exception Thrown if there is an error checking the database
      */
@@ -194,11 +231,14 @@ public class TransactionViewModel {
      * Determines whether the {@link Transaction} object exists in the database or not.
      *
      * @param tangle The tangle reference for the database.
-     * @param hash The {@link Hash} identifier for the {@link Transaction} object
+     * @param hash   The {@link Hash} identifier for the {@link Transaction} object
      * @return True if the transaction exists in the database, False if not
      * @throws Exception Thrown if there is an error determining if the transaction exists or not
      */
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {
+        if (tangle.getCache(TransactionViewModel.class).get(hash) != null) {
+            return true;
+        }
         return tangle.exists(Transaction.class, hash);
     }
 
@@ -210,6 +250,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error getting the count of objects
      */
     public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
+        // TODO: should add freshly cached transactions?
         return tangle.getCount(Transaction.class).intValue();
     }
 
@@ -255,9 +296,9 @@ public class TransactionViewModel {
      * returns false, and if not, it attempts to update the {@link Transaction} object and the referencing {@link Hash}
      * identifier in the database.
      *
-     * @param tangle The tangle reference for the database
+     * @param tangle          The tangle reference for the database
      * @param initialSnapshot snapshot that acts as genesis
-     * @param item The string identifying the purpose of the update
+     * @param item            The string identifying the purpose of the update
      * @throws Exception Thrown if any of the metadata fails to fetch, or if the database update fails
      */
     public void update(Tangle tangle, Snapshot initialSnapshot, String item) throws Exception {
@@ -272,6 +313,18 @@ public class TransactionViewModel {
         if (initialSnapshot.hasSolidEntryPoint(hash)) {
             return;
         }
+
+        TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
+        if (cachedTvm != null) {
+            this.isCacheEntryFresh = false;
+        }
+        cachePut(tangle, this, hash);
+
+        // Will be called when this dirty cache entry is to be evicted to DB
+        // tangle.update(transaction, hash, item);
+    }
+
+    private void updateDB(Tangle tangle, Transaction transaction, Hash hash, String item) throws Exception {
         tangle.update(transaction, hash, item);
     }
 
@@ -309,7 +362,8 @@ public class TransactionViewModel {
 
     /**
      * @return The trits stored in the {@link TransactionViewModel} . If the trits aren't available in the controller,
-     * the trits are generated from the transaction object and stored in the controller {@link #trits()} variable.
+     *         the trits are generated from the transaction object and stored in the controller {@link #trits()}
+     *         variable.
      */
     public synchronized byte[] trits() {
         return (trits == null) ? (trits = trits(transaction.bytes)) : trits;
@@ -317,12 +371,13 @@ public class TransactionViewModel {
 
     /**
      * Deletes the {@link Transaction} object from the database
-     * 
+     *
      * @param tangle The tangle reference for the database
      * @throws Exception Thrown if there is an error removing the object
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Transaction.class, hash);
+        cacheEvict(tangle, hash);
     }
 
     /**
@@ -330,7 +385,7 @@ public class TransactionViewModel {
      * {@link Address}, {@link Tag}, {@link #trunk} and {@link #branch}.
      *
      * @return The list of {@link Hash} objects indexed by the {@link TransactionHash} identifier. Returns False if
-     * there is a problem populating the list.
+     *         there is a problem populating the list.
      */
     public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
@@ -383,32 +438,43 @@ public class TransactionViewModel {
      * already contains the {@link Transaction}, then the method returns False. Otherwise, the method tries to store the
      * {@link Transaction} batch into the database.
      *
-     * @param tangle The tangle reference for the database.
+     * @param tangle          The tangle reference for the database.
      * @param initialSnapshot snapshot that acts as genesis
      * @return True if the {@link Transaction} is stored, False if not.
      * @throws Exception Thrown if there is an error fetching the batch or storing in the database.
      */
     public boolean store(Tangle tangle, Snapshot initialSnapshot) throws Exception {
-        if (initialSnapshot.hasSolidEntryPoint(hash) || exists(tangle, hash)) {
+        // save snapshot that it can be used for eviction
+        this.initialSnapshot = initialSnapshot;
+
+        if (initialSnapshot.hasSolidEntryPoint(hash)) {
             return false;
         }
 
+        // We need to save approvees, tags, and other metadata that is used by
+        // non-cached operations.
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
         if (exists(tangle, hash)) {
             return false;
         }
-        return tangle.saveBatch(batch);
+        tangle.saveBatch(batch);
+
+        if (tangle.getCache(TransactionViewModel.class).get(hash) != null) {
+            return false;
+        }
+        cachePut(tangle, this, hash);
+        return true;
     }
-    
+
     /**
      * Creates a copy of the underlying {@link Transaction} object.
-     * 
+     *
      * @return the transaction object
      */
     public Transaction getTransaction() {
         Transaction t = new Transaction();
-        
-        //if the supplied array to the call != null the transaction bytes are copied over from the buffer.
+
+        // if the supplied array to the call != null the transaction bytes are copied over from the buffer.
         t.read(getBytes());
         t.readMetadata(transaction.metadata());
         return t;
@@ -448,7 +514,7 @@ public class TransactionViewModel {
 
     /**
      * Sets the {@link Transaction#arrivalTime}.
-     * 
+     *
      * @param time The time to be set in the {@link Transaction}
      */
     public void setArrivalTime(long time) {
@@ -622,10 +688,10 @@ public class TransactionViewModel {
      * Updates the {@link Transaction#validity} in the database.
      *
      * The validity can be one of three states: <tt>1: Valid; -1: Invalid; 0: Unknown</tt>
-     * 
-     * @param tangle The tangle reference for the database
+     *
+     * @param tangle          The tangle reference for the database
      * @param initialSnapshot snapshot that acts as genesis
-     * @param validity The state of validity that the {@link Transaction} will be updated to
+     * @param validity        The state of validity that the {@link Transaction} will be updated to
      * @throws Exception Thrown if there is an error with the update
      */
     public void setValidity(Tangle tangle, Snapshot initialSnapshot, int validity) throws Exception {
@@ -647,7 +713,7 @@ public class TransactionViewModel {
 
     /**
      * Creates an array copy of the signature message fragment of the {@link Transaction} and returns it.
-     * 
+     *
      * @return The signature message fragment in array format.
      */
     public byte[] getSignature() {
@@ -712,11 +778,11 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT;
     }
 
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final LinkedHashSet<Hash> analyzedHashes)
-            throws Exception {
+    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot,
+            final LinkedHashSet<Hash> analyzedHashes) throws Exception {
         Object[] hashes = analyzedHashes.toArray();
         TransactionViewModel transactionViewModel;
-        for(int i = hashes.length -1; i >= 0; i--){
+        for (int i = hashes.length - 1; i >= 0; i--) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, (Hash) hashes[i]);
 
             transactionViewModel.updateHeights(tangle, initialSnapshot);
@@ -759,9 +825,9 @@ public class TransactionViewModel {
      *
      * This is used to set a milestone transactions index.
      *
-     * @param tangle The tangle reference for the database.
+     * @param tangle          The tangle reference for the database.
      * @param initialSnapshot snapshot that acts as genesis
-     * @param index The new index to be attached to the {@link Transaction} object
+     * @param index           The new index to be attached to the {@link Transaction} object
      * @throws Exception Thrown if the database update does not return correctly
      */
     public void setSnapshot(Tangle tangle, Snapshot initialSnapshot, final int index) throws Exception {
@@ -774,13 +840,13 @@ public class TransactionViewModel {
     /**
      * This method sets the {@link Transaction#milestone} flag.
      *
-     * It gets automatically called by the {@link com.iota.iri.service.milestone.LatestMilestoneTracker} and marks transactions that represent a
-     * milestone accordingly. It first checks if the {@link Transaction#milestone} flag has changed and if so, it issues
-     * a database update.
+     * It gets automatically called by the {@link com.iota.iri.service.milestone.LatestMilestoneTracker} and marks
+     * transactions that represent a milestone accordingly. It first checks if the {@link Transaction#milestone} flag
+     * has changed and if so, it issues a database update.
      *
-     * @param tangle Tangle instance which acts as a database interface
+     * @param tangle          Tangle instance which acts as a database interface
      * @param initialSnapshot the snapshot representing the starting point of our ledger
-     * @param isMilestone true if the transaction is a milestone and false otherwise
+     * @param isMilestone     true if the transaction is a milestone and false otherwise
      * @throws Exception if something goes wrong while saving the changes to the database
      */
     public void isMilestone(Tangle tangle, Snapshot initialSnapshot, final boolean isMilestone) throws Exception {
@@ -812,7 +878,7 @@ public class TransactionViewModel {
 
     /**
      * Updates the {@link Transaction#height}.
-     * 
+     *
      * @param height The new height of the {@link Transaction}
      */
     private void updateHeight(long height) throws Exception {
@@ -823,23 +889,24 @@ public class TransactionViewModel {
         TransactionViewModel transactionVM = this, trunk = this.getTrunkTransaction(tangle);
         Stack<Hash> transactionViewModels = new Stack<>();
         transactionViewModels.push(transactionVM.getHash());
-        while(trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !initialSnapshot.hasSolidEntryPoint(trunk.getHash())) {
+        while (trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT
+                && !initialSnapshot.hasSolidEntryPoint(trunk.getHash())) {
             transactionVM = trunk;
             trunk = transactionVM.getTrunkTransaction(tangle);
             transactionViewModels.push(transactionVM.getHash());
         }
-        while(transactionViewModels.size() != 0) {
+        while (transactionViewModels.size() != 0) {
             transactionVM = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
             long currentHeight = transactionVM.getHeight();
-            if(initialSnapshot.hasSolidEntryPoint(trunk.getHash()) && trunk.getHeight() == 0
+            if (initialSnapshot.hasSolidEntryPoint(trunk.getHash()) && trunk.getHeight() == 0
                     && !initialSnapshot.hasSolidEntryPoint(transactionVM.getHash())) {
-                if(currentHeight != 1L ){
+                if (currentHeight != 1L) {
                     transactionVM.updateHeight(1L);
                     transactionVM.update(tangle, initialSnapshot, "height");
                 }
-            } else if ( trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0){
+            } else if (trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0) {
                 long newHeight = 1L + trunk.getHeight();
-                if(currentHeight != newHeight) {
+                if (currentHeight != newHeight) {
                     transactionVM.updateHeight(newHeight);
                     transactionVM.update(tangle, initialSnapshot, "height");
                 }
@@ -852,7 +919,7 @@ public class TransactionViewModel {
 
     /**
      * Updates the {@link Transaction#sender}.
-     * 
+     *
      * @param sender The sender of the {@link Transaction}
      */
     public void updateSender(String sender) throws Exception {
@@ -892,5 +959,43 @@ public class TransactionViewModel {
     public String toString() {
         return "transaction " + hash.toString();
     }
-}
 
+    // This methods will be reworked when the persistence layer is refactored properly.
+    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
+            cacheEvict(tangle);
+        }
+        cache.put(hash, transactionViewModel);
+    }
+
+    // evict a number of items according to the cache config
+    private static void cacheEvict(Tangle tangle) throws Exception {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        cache.cleanEvictionQueue();
+        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
+            TransactionViewModel tvm = cache.get(cache.nextEvictionKey());
+            cache.cleanEvictionQueue();
+            if (tvm != null) {
+                if (!tvm.getIsCacheEntryFresh()) {
+                    tvm.updateDB(tangle, tvm.getTransaction(), tvm.getHash(), "");
+                }
+                cache.evict(tvm.getHash());
+            }
+        }
+    }
+
+    // evict this item from the cache
+    private static void cacheEvict(Tangle tangle, Hash hash) {
+        tangle.getCache(TransactionViewModel.class).evict(hash);
+    }
+
+    /**
+     * The state of the cache entry
+     * 
+     * @return True if fresh. False otherwise
+     */
+    public boolean getIsCacheEntryFresh() {
+        return isCacheEntryFresh;
+    }
+}

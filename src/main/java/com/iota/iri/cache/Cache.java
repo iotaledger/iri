@@ -1,6 +1,7 @@
 package com.iota.iri.cache;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,7 +18,7 @@ public interface Cache<K, V> {
      * @param key The keys whos value is to be returned
      * @return The mapped value of the specified key
      */
-    Cache get(K key);
+    V get(K key);
 
     /**
      * Get all elements from the cache for the keys specified.
@@ -32,7 +33,7 @@ public interface Cache<K, V> {
      * 
      * @return A collection of keys in the cache
      */
-    Collection<K> getKeys();
+    List<K> getKeys();
 
     /**
      * The size of the cache
@@ -60,13 +61,6 @@ public interface Cache<K, V> {
     void putIfAbsent(K key, V value);
 
     /**
-     * Puts the list of values in the cache
-     * 
-     * @param values values to be put in the cache
-     */
-    void putAll(Collection<V> values);
-
-    /**
      * Evict the specified key from the cache
      * 
      * @param key
@@ -81,10 +75,50 @@ public interface Cache<K, V> {
     /**
      * Evict all items specified in the given collection
      */
-    void evict(Collection<K> keys);
+    void evict(List<K> keys);
 
     /**
      * Clear the cache by removing all mappings
      */
     void clear();
+
+    /**
+     * The number of cache hits
+     * 
+     * @return The number of cache hits
+     */
+    int getCacheHits();
+
+    /**
+     * The number of cache misses
+     * 
+     * @return The number of cache misses
+     */
+    int getCacheMisses();
+
+    /**
+     * Gets the cache configuration being used
+     * 
+     * @return Cached configuration
+     */
+    CacheConfiguration getConfiguration();
+
+    /**
+     * Poll and return the next key to evict
+     * 
+     * @return The key to evict
+     */
+    K nextEvictionKey();
+
+    /**
+     * Due to the usage of weak references for values, cache size is basically dependent on GC and not on
+     * {@link Cache#evict()}
+     *
+     * This results in a scenario where evictionQueue has more items in cache because GC had already collected some old
+     * cached items.
+     *
+     * e.g cacheSize = 1000 and evictionQueue = 1010 We now have to clean the eviction queue before evicting the
+     * required number of items
+     */
+    void cleanEvictionQueue();
 }

@@ -123,7 +123,7 @@ public class SnapshotProviderImplTest {
         assertEquals("Expected loaded snapshot index to match stored snapshot index",
                 snapshot.getIndex(), loadedSnapshot.milestoneIndex);
 
-        assertEquals("Expeced loaded snapshot ledger state to match stored snapshot ledger state",
+        assertEquals("Expected loaded snapshot ledger state to match stored snapshot ledger state",
                 snapshot.getBalances(), loadedSnapshot.ledgerState);
     }
 }

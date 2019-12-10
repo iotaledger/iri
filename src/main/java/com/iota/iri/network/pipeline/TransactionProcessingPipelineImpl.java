@@ -80,13 +80,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
 
     private int getNumberOfThreads() {
-        int threads = 0;
-        for(Stage stage: Stage.values()) {
-            if(!IGNORED_STAGES.contains(stage)){
-                threads += 1;
-            }
-        }
-        return threads;
+        return Stage.values().length - IGNORED_STAGES.size();
     }
 
     /**

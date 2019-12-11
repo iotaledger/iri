@@ -22,9 +22,9 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     private final CacheConfiguration cacheConfiguration;
 
     // Actual store
-    private final ConcurrentMap<K, V> store;
-
-    // eviction queue
+    private final ConcurrentMap<K, V> strongStore;
+    //weak store. Eligible for GC
+    private final ConcurrentMap<K,V> weakStore;
     private final ConcurrentLinkedQueue<K> evictionQueue;
 
     // stats
@@ -38,23 +38,34 @@ public class CacheImpl<K, V> implements Cache<K, V> {
      */
     public CacheImpl(CacheConfiguration cacheConfiguration) {
         this.cacheConfiguration = cacheConfiguration;
-        MapMaker mapMaker = new MapMaker().concurrencyLevel(5);
-        if (cacheConfiguration.isWeakReference()) {
-            mapMaker = mapMaker.weakValues();
-        }
-        this.store = mapMaker.makeMap();
+        this.strongStore = new MapMaker().concurrencyLevel(5).makeMap();
+        this.weakStore = new MapMaker().concurrencyLevel(5).weakValues().makeMap();
         this.evictionQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
     public V get(K key) {
-        V value = store.get(key);
+        if(key == null){
+            return null;
+        }
+        V value = strongStore.get(key);
+        if(value == null && weakStore.containsKey(key)){
+            put(key, weakStore.get(key));
+            value = strongStore.get(key);
+            weakStore.remove(key);
+        }
         if (value != null) {
             cacheHit();
         } else {
             cacheMiss();
         }
         return value;
+    }
+
+    @Override
+    public V lookup(K key) {
+        //TODO: do this for now
+        return get(key);
     }
 
     @Override
@@ -66,12 +77,12 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public List<K> getKeys() {
-        return store.keySet().stream().collect(Collectors.toList());
+        return strongStore.keySet().stream().collect(Collectors.toList());
     }
 
     @Override
     public int getSize() {
-        return store.size();
+        return strongStore.size();
     }
 
     @Override
@@ -80,7 +91,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
             evict();
         }
         // new entry
-        if (store.put(key, value) == null) {
+        if (strongStore.put(key, value) == null) {
             evictionQueue.offer(key);
         }
     }
@@ -90,7 +101,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         if (getSize() == cacheConfiguration.getMaxSize()) {
             evict();
         }
-        if (!store.containsKey(key)) {
+        if (!strongStore.containsKey(key)) {
             put(key, value);
             evictionQueue.offer(key);
         }
@@ -98,33 +109,33 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void evict(K key) {
-        if (store.remove(key) != null) {
-            evictionQueue.remove(key);
+        if(key == null || !strongStore.containsKey(key)){
+            return;
         }
+        V value = strongStore.get(key);
+        weakStore.put(key, value);
+        strongStore.remove(key);
+        evictionQueue.remove(key);
     }
 
     @Override
     public void evict() {
         for (int i = 0; i < cacheConfiguration.getEvictionCount(); i++) {
-            K key = evictionQueue.peek();
-            if (store.remove(key) != null) {
-                evictionQueue.poll();
-            }
+           evict(evictionQueue.peek());
         }
     }
 
     @Override
     public void evict(List<K> keys) {
         keys.forEach(key -> {
-            if (store.remove(key) != null) {
-                evictionQueue.remove(key);
-            }
+            evict(key);
         });
     }
 
     @Override
     public void clear() {
-        store.clear();
+        strongStore.clear();
+        weakStore.clear();
         evictionQueue.clear();
     }
 
@@ -154,18 +165,5 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     @Override
     public K nextEvictionKey() {
         return evictionQueue.peek();
-    }
-
-    @Override
-    public void cleanEvictionQueue() {
-        if (evictionQueue.size() <= getSize()) {
-            return;
-        }
-
-        evictionQueue.forEach(key -> {
-            if (!store.containsKey(key)) {
-                evictionQueue.remove(key);
-            }
-        });
     }
 }

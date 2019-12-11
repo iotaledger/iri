@@ -2,7 +2,6 @@ package com.iota.iri.cache;
 
 import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.storage.Indexable;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -39,7 +38,6 @@ public class CacheManagerTest {
 
     @Test
     public void shouldReturnNullCache() {
-        Cache<Indexable, TransactionViewModel> cache = cacheManager.lookup(TransactionViewModel.class);
         Assert.assertNull("Cache should be null", cacheManager.lookup(TransactionViewModel.class));
     }
 

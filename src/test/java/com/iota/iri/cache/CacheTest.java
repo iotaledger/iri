@@ -67,7 +67,7 @@ public class CacheTest {
 
         cache.put(hash, tvm);
 
-        Assert.assertTrue("Values map should not be empty", values.size() > 0);
+        Assert.assertTrue("Values map should not be empty", !values.isEmpty());
         Assert.assertEquals("TVMs should be equals", tvm, cache.getAll(keys).get(hash));
     }
 
@@ -76,7 +76,7 @@ public class CacheTest {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
         List<Indexable> keys = cache.getKeys();
 
-        Assert.assertTrue("Key list should not be empty", keys.size() > 0);
+        Assert.assertTrue("Key list should not be empty", !keys.isEmpty());
         Assert.assertEquals("The first key should be hash", keys.get(0), hash);
     }
 
@@ -139,15 +139,6 @@ public class CacheTest {
     public void shouldClearCache() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
         cache.put(hash1, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH1), hash1));
-
-        List<Indexable> keys = new ArrayList<Indexable>() {
-
-            {
-                add(hash);
-                add(hash1);
-            }
-        };
-
         cache.clear();
 
         Assert.assertTrue("Cache should be empty", cache.getSize() == 0);

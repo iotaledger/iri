@@ -13,12 +13,20 @@ import java.util.Map;
 public interface Cache<K, V> {
 
     /**
-     * Get the value mapped to the specified key. Returns {@code null} if the mapping is not found.
+     * Get the value mapped to the specified key.
+     * If it's not foudn, it reads from DB and updates cache.
      * 
      * @param key The keys whos value is to be returned
      * @return The mapped value of the specified key
      */
     V get(K key);
+
+    /**
+     * Gets the value if it is in cache. Does not read from DB if not found.
+     * @param key The key
+     * @return The cached value.
+     */
+    V lookup(K key);
 
     /**
      * Get all elements from the cache for the keys specified.
@@ -109,16 +117,4 @@ public interface Cache<K, V> {
      * @return The key to evict
      */
     K nextEvictionKey();
-
-    /**
-     * Due to the usage of weak references for values, cache size is basically dependent on GC and not on
-     * {@link Cache#evict()}
-     *
-     * This results in a scenario where evictionQueue has more items in cache because GC had already collected some old
-     * cached items.
-     *
-     * e.g cacheSize = 1000 and evictionQueue = 1010 We now have to clean the eviction queue before evicting the
-     * required number of items
-     */
-    void cleanEvictionQueue();
 }

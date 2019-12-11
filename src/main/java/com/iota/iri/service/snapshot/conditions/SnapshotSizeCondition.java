@@ -52,7 +52,7 @@ public class SnapshotSizeCondition implements SnapshotCondition {
     public SnapshotSizeCondition(Tangle tangle, SnapshotConfig config, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
         if (config.getLocalSnapshotsPruningEnabled()) {
-            maxSize = (int) Math.floor(IotaUtils.parseFileSize(config.getLocalSnapshotsDbMaxSize()) / 100 * 100-MARGIN);
+            maxSize = (long) Math.floor(IotaUtils.parseFileSize(config.getLocalSnapshotsDbMaxSize()) / 100 * (100-MARGIN));
         } else {
             if (config.getLocalSnapshotsDbMaxSize() != BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_DB_MAX_SIZE) {
                 log.warn("Local snapshots with size condition does not work with pruning disabled");

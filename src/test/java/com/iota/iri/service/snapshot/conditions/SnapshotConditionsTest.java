@@ -1,6 +1,7 @@
 package com.iota.iri.service.snapshot.conditions;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -44,26 +45,20 @@ public class SnapshotConditionsTest {
         when(config.getLocalSnapshotsIntervalSynced()).thenReturn(BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_INTERVAL_SYNCED);
         when(config.getLocalSnapshotsIntervalUnsynced()).thenReturn(BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED);
 
+        when(config.getLocalSnapshotsEnabled()).thenReturn(true);
+        when(config.getLocalSnapshotsPruningEnabled()).thenReturn(true);
+        
+        when(config.getLocalSnapshotsDbMaxSize()).thenReturn("10GB");
+
         condition = new SnapshotSizeCondition(tangle, config, snapshotProvider);
     }
     
     @Test
     public void getDbSizeTest() {
-
-        when(config.getLocalSnapshotsDbMaxSize()).thenReturn("-1", "5kb", "10GB", "99999999999999999999TB", "5 mb", "10 gB");
-
-        when(tangle.getPersistanceSize()).thenReturn(SizeUnit.GB * 8);
+        when(tangle.getPersistanceSize()).thenReturn(SizeUnit.GB * 8, SizeUnit.GB * 20);
         
-        SnapshotSizeCondition condition = new SnapshotSizeCondition(tangle, config, snapshotProvider);
-        
-        // -1 is disabled
-        assertTrue("Should not have allowed a snapshot", condition.shouldTakeSnapshot(false));
+        assertFalse("Should not have allowed a snapshot", condition.shouldTakeSnapshot(true));
         assertTrue("Should have allowed a snapshot", condition.shouldTakeSnapshot(true));
-        assertTrue("Should not have allowed a snapshot", condition.shouldTakeSnapshot(false));
-        assertTrue("Should not have allowed a snapshot", condition.shouldTakeSnapshot(false));
-
-        assertTrue("Should have allowed a snapshot", condition.shouldTakeSnapshot(true));
-        assertTrue("Should not have allowed a snapshot", condition.shouldTakeSnapshot(false));
     }
     
     @Test

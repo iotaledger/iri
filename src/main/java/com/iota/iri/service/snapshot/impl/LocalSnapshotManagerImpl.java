@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -155,8 +154,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     }
 
     private boolean canTakeSnapshot(int lowestSnapshotIndex, LatestMilestoneTracker latestMilestoneTracker) {
+        int latest = latestMilestoneTracker.getLatestMilestoneIndex() ;
         return lowestSnapshotIndex != -1 
-                && lowestSnapshotIndex < latestMilestoneTracker.getLatestMilestoneIndex() - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN;
+                && lowestSnapshotIndex < (latest - config.getLocalSnapshotsDepth());
     }
 
     /**

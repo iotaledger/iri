@@ -87,7 +87,7 @@ public class LocalSnapshotManagerImplTest {
         when(milestoneTracker.isInitialScanComplete()).thenReturn(true);
         
         // When we call it, we are in sync
-        when(milestoneTracker.getLatestMilestoneIndex()).thenReturn(-5);
+        when(milestoneTracker.getLatestMilestoneIndex()).thenReturn(200);
         
         // We are more then the depth ahead
         when(snapshotProvider.getLatestSnapshot().getIndex()).thenReturn(100);

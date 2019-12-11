@@ -230,7 +230,8 @@ public class Iota {
                 log.info("Rescanned {} Transactions", counter);
             }
             List<Pair<Indexable, Persistable>> saveBatch = tx.getSaveBatch();
-            saveBatch.remove(5);
+            //don't re-save the tx itself
+            saveBatch.remove(saveBatch.size() - 1);
             tangle.saveBatch(saveBatch);
             tx = tx.next(tangle);
         }

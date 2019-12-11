@@ -88,6 +88,7 @@ def prepare_options(args, option_list):
                 'responseHashes': value_fetch.fetch_response_value_hashes,
                 'configValue': value_fetch.fetch_config_value,
                 'configList': value_fetch.fetch_config_list,
+                'boolList': value_fetch.fetch_bool_list,
                 # TODO: remove the need for this logic
                 'ignore': value_fetch.fetch_string
             }

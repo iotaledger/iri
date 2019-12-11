@@ -41,11 +41,6 @@ public class SnapshotSizeCondition implements SnapshotCondition {
      * The cached size of the db, so we don't keep snapshotting when the size doesn't change after a snapshot 
      */
     private long lastSize = -1;
-    
-    /**
-     * If the DB doesn't decrease with the time in between one snapshot and the tangle.getPersistanceSize() change, we snapshot more next time
-     */
-    private int increasedBigger = 1;
 
     /**
      * Implements a {@link SnapshotCondition} based on the total database size
@@ -88,6 +83,6 @@ public class SnapshotSizeCondition implements SnapshotCondition {
 
     @Override
     public int getSnapshotStartingMilestone() throws SnapshotException {
-        return snapshotProvider.getInitialSnapshot().getIndex() + (MILESTONES * increasedBigger);
+        return snapshotProvider.getInitialSnapshot().getIndex() + MILESTONES;
     }
 }

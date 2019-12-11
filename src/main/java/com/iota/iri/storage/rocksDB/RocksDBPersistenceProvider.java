@@ -41,7 +41,6 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksEnv;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.SstFileManager;
-import org.rocksdb.Statistics;
 import org.rocksdb.StringAppendOperator;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
@@ -88,7 +87,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private SstFileManager sstFileManager;
     private Cache cache, compressedCache;
     private ColumnFamilyOptions columnFamilyOptions;
-    private Statistics statistics;
     
     /**
      * Creates a new RocksDB provider without reading from a configuration file

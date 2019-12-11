@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,19 +31,15 @@ import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
-import org.rocksdb.FlushOptions;
 import org.rocksdb.LRUCache;
 import org.rocksdb.MergeOperator;
 import org.rocksdb.OptionsUtil;
 import org.rocksdb.Priority;
-import org.rocksdb.Range;
 import org.rocksdb.RestoreOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksEnv;
 import org.rocksdb.RocksIterator;
-import org.rocksdb.SizeApproximationFlag;
-import org.rocksdb.Slice;
 import org.rocksdb.SstFileManager;
 import org.rocksdb.Statistics;
 import org.rocksdb.StringAppendOperator;
@@ -93,6 +88,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private SstFileManager sstFileManager;
     private Cache cache, compressedCache;
     private ColumnFamilyOptions columnFamilyOptions;
+    private Statistics statistics;
     
     /**
      * Creates a new RocksDB provider without reading from a configuration file
@@ -637,7 +633,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             }
         }
         
-        
         if (options == null) {
             options = new DBOptions();
             try {
@@ -655,10 +650,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
             }  
         }
-        
+
         //Defaults we always need to set
         options.setSstFileManager(sstFileManager);
-        options.setStatistics(new Statistics());
         
         if (!(BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) || 
                 TestnetConfig.Defaults.DB_LOG_PATH.equals(logPath) ||
@@ -677,26 +671,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     
     @Override
     public long getPersistanceSize() {
-        long size = 0;
-        try (FlushOptions flushOption = new FlushOptions().setWaitForFlush(true)){
-            List<Range> ranges = new LinkedList<Range>();
-            ranges.add(new Range(new Slice("a"), new Slice("z")));
-            
-            for (ColumnFamilyHandle handle : this.columnFamilyHandles) {
-                size += db.getApproximateSizes(handle, ranges, SizeApproximationFlag.INCLUDE_FILES, SizeApproximationFlag.INCLUDE_MEMTABLES)[0];
-            }
-            
-            String estSize = db.getProperty("rocksdb.estimate-live-data-size");
-            System.out.println("Estimated rocksdb size: " + estSize);
-
-            db.flushWal(true);
-            db.flush(flushOption);
-        } catch (RocksDBException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        // Size on disk: sstFileManager.getTotalSize()
-        
-        return size;
+        return sstFileManager.getTotalSize();
     }
 }

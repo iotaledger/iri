@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -129,7 +130,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
             int lowestSnapshotIndex = -1;
             for (SnapshotCondition condition : conditions) {
                 try {
-                    if (condition.shouldTakeSnapshot(isInSync) && (lowestSnapshotIndex == -1 || condition.getSnapshotStartingMilestone() < lowestSnapshotIndex)) {
+                    if (condition.shouldTakeSnapshot(isInSync) && (lowestSnapshotIndex == -1 
+                            || condition.getSnapshotStartingMilestone() < lowestSnapshotIndex)) {
+                        
                         lowestSnapshotIndex = condition.getSnapshotStartingMilestone();
                     }
                 } catch (SnapshotException e) {
@@ -137,7 +140,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 }
             }
             
-            if (lowestSnapshotIndex != -1) {
+            if (canTakeSnapshot(lowestSnapshotIndex, latestMilestoneTracker)) {
                 try {
                     snapshotService.takeLocalSnapshot(latestMilestoneTracker, transactionPruner, lowestSnapshotIndex);
                 } catch (SnapshotException e) {
@@ -149,6 +152,11 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
             
             ThreadUtils.sleep(LOCAL_SNAPSHOT_RESCAN_INTERVAL);
         }
+    }
+
+    private boolean canTakeSnapshot(int lowestSnapshotIndex, LatestMilestoneTracker latestMilestoneTracker) {
+        return lowestSnapshotIndex != -1 
+                && lowestSnapshotIndex < latestMilestoneTracker.getLatestMilestoneIndex() - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN;
     }
 
     /**

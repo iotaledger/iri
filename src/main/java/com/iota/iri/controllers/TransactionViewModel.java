@@ -238,9 +238,9 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error determining if the transaction exists or not
      */
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {
-        if (tangle.getCache(TransactionViewModel.class).get(hash) != null) {
-            return true;
-        }
+//        if (tangle.getCache(TransactionViewModel.class).lookup(hash) != null) {
+//            return true;
+//        }
         return tangle.exists(Transaction.class, hash);
     }
 
@@ -459,9 +459,6 @@ public class TransactionViewModel {
         }
         tangle.saveBatch(batch);
 
-        if (tangle.getCache(TransactionViewModel.class).get(hash) != null) {
-            return false;
-        }
         cachePut(tangle, this, hash);
         return true;
     }

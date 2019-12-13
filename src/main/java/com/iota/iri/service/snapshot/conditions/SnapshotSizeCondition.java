@@ -12,7 +12,7 @@ import com.iota.iri.utils.IotaUtils;
 
 /**
  * 
- *
+ * 
  *
  */
 public class SnapshotSizeCondition implements SnapshotCondition {
@@ -42,6 +42,8 @@ public class SnapshotSizeCondition implements SnapshotCondition {
      */
     private long lastSize = -1;
 
+    private SnapshotConfig config;
+
     /**
      * Implements a {@link SnapshotCondition} based on the total database size
      * 
@@ -51,6 +53,7 @@ public class SnapshotSizeCondition implements SnapshotCondition {
      */
     public SnapshotSizeCondition(Tangle tangle, SnapshotConfig config, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
+        this.config = config;
         if (config.getLocalSnapshotsPruningEnabled()) {
             maxSize = (long) Math.floor(IotaUtils.parseFileSize(config.getLocalSnapshotsDbMaxSize()) / 100 * (100-MARGIN));
         } else {
@@ -64,7 +67,7 @@ public class SnapshotSizeCondition implements SnapshotCondition {
 
     /**
      * We only take a snapshot if the db size updated since last check and the new size is bigger than the maximum allowed.
-     * A margin of 1% is taken, based on the min amount of milestones, resulting in ~10GB DB, 100MB.
+     * A margin of 1% is taken, based on the min amount of milestones, resulting in ~10GB DB, 100MB margin.
      * This corresponds to the, default, 64MB buffer for writing to disk, which is at most 128 of size.
      * 
       * {@inheritDoc}
@@ -78,7 +81,10 @@ public class SnapshotSizeCondition implements SnapshotCondition {
         
         // Update the last size
         lastSize = size;
-        return size > maxSize;
+        
+        // We only take snapshots when depth allowed by pruning delay (min 10k)
+        int distance = snapshotProvider.getLatestSnapshot().getIndex() - snapshotProvider.getInitialSnapshot().getIndex();
+        return size > maxSize && distance > config.getLocalSnapshotsPruningDelay();
     }
 
     @Override

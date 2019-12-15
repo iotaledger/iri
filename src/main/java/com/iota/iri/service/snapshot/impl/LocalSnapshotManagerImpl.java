@@ -1,13 +1,16 @@
 package com.iota.iri.service.snapshot.impl;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
@@ -124,39 +127,104 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     @VisibleForTesting
     void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
         while (!Thread.currentThread().isInterrupted()) {
-            boolean isInSync = isInSync(latestMilestoneTracker);
+            // Possibly takes a snapshot if we can
+            Snapshot takenSnapshot = handleSnapshot(latestMilestoneTracker);
             
-            int lowestSnapshotIndex = -1;
-            for (SnapshotCondition condition : conditions) {
-                try {
-                    if (condition.shouldTakeSnapshot(isInSync) && (lowestSnapshotIndex == -1 
-                            || condition.getSnapshotStartingMilestone() < lowestSnapshotIndex)) {
-                        
-                        lowestSnapshotIndex = condition.getSnapshotStartingMilestone();
-                    }
-                } catch (SnapshotException e) {
-                    log.error("error while checking local snapshot availabilty", e);
-                }
-            }
-            
-            if (canTakeSnapshot(lowestSnapshotIndex, latestMilestoneTracker)) {
-                try {
-                    snapshotService.takeLocalSnapshot(latestMilestoneTracker, transactionPruner, lowestSnapshotIndex);
-                } catch (SnapshotException e) {
-                    log.error("error while taking local snapshot", e);
-                } catch (Exception e) {
-                    log.error("could not load the target milestone", e);
-                }
-            }
+            // Prunes data separate of a snapshot if we made a snapshot of the pruned data now or previously
+            handlePruning(takenSnapshot);
             
             ThreadUtils.sleep(LOCAL_SNAPSHOT_RESCAN_INTERVAL);
         }
     }
-
+    
+    private Snapshot handleSnapshot(LatestMilestoneTracker latestMilestoneTracker) {
+        boolean isInSync = isInSync(latestMilestoneTracker);
+        int lowestSnapshotIndex = calculateLowestSnapshotIndex(isInSync);
+        log.debug("Attempting snapshot at index " + lowestSnapshotIndex);
+        if (canTakeSnapshot(lowestSnapshotIndex, latestMilestoneTracker)) {
+            try {
+                log.debug("Taking snapshot at index " + lowestSnapshotIndex);
+                return snapshotService.takeLocalSnapshot(
+                        latestMilestoneTracker, transactionPruner, lowestSnapshotIndex);
+            } catch (SnapshotException e) {
+                log.error("error while taking local snapshot", e);
+            } catch (Exception e) {
+                log.error("could not load the target milestone", e);
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Calculates the oldest milestone index allowed by all conditions.
+     * 
+     * @param isInSync IF this node is considered in sync, to prevent recalculation.
+     * @return The lowest allowed milestone we can snapshot according to the node
+     */
+    private int calculateLowestSnapshotIndex(boolean isInSync) {
+        int lowestSnapshotIndex = -1;
+        for (SnapshotCondition condition : conditions) {
+            try {
+                if (condition.shouldTakeSnapshot(isInSync) && (lowestSnapshotIndex == -1 
+                        || condition.getSnapshotStartingMilestone() < lowestSnapshotIndex)) {
+                    
+                    lowestSnapshotIndex = condition.getSnapshotStartingMilestone();
+                }
+            } catch (SnapshotException e) {
+                log.error("error while checking local snapshot availabilty", e);
+            }
+        }
+        return lowestSnapshotIndex;
+    }
+    
     private boolean canTakeSnapshot(int lowestSnapshotIndex, LatestMilestoneTracker latestMilestoneTracker) {
-        int latest = latestMilestoneTracker.getLatestMilestoneIndex() ;
         return lowestSnapshotIndex != -1 
-                && lowestSnapshotIndex < (latest - config.getLocalSnapshotsDepth());
+                && lowestSnapshotIndex > snapshotProvider.getInitialSnapshot().getIndex()
+                && lowestSnapshotIndex <= snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
+    }
+    
+    private void handlePruning(Snapshot takenSnapshot) {
+        try {
+            int snapshotIndex = takenSnapshot == null 
+                    ? snapshotProvider.getInitialSnapshot().getIndex()
+                    : takenSnapshot.getIndex();
+            int pruningMilestoneIndex = calculateLowestPruningIndex(snapshotIndex);
+            log.debug("Attempting pruning at index " + pruningMilestoneIndex);
+            if (canPrune(snapshotIndex, pruningMilestoneIndex)) {
+                // Pruning will not happen when pruning is turned off, but we don't want to know about that here
+                snapshotService.pruneSnapshotData(transactionPruner, takenSnapshot, pruningMilestoneIndex);
+            }
+        } catch (SnapshotException e) {
+            log.error("error while pruning", e);
+        } catch (Exception e) {
+            log.error("could not prune data", e);
+        }
+    }
+    
+    /**
+     * Calculates the oldest pruning milestone index allowed by all conditions.
+     * If the lowest index violates our set minimum pruning depth, the minimum will be returned instead.
+     * 
+     * @param newLowestMinestoneIndex The milestone of the newly generated Snapshot
+     * @return The lowest allowed milestone we can prune according to the node, or -1 if we cannot
+     * @throws SnapshotException if we could not obtain the requirements for determining the snapshot milestone
+     */
+    private int calculateLowestPruningIndex(int newLowestMinestoneIndex) throws SnapshotException {
+        int lowestSnapshotIndex = -1;
+        for (SnapshotCondition condition : conditions) {
+            if (lowestSnapshotIndex == -1 || condition.getSnapshotPruningMilestone() < lowestSnapshotIndex) {
+                lowestSnapshotIndex = condition.getSnapshotPruningMilestone();
+            }
+        }
+        
+        int difference = this.snapshotProvider.getLatestSnapshot().getIndex() - lowestSnapshotIndex; 
+        return lowestSnapshotIndex == -1 || difference > BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
+                ? lowestSnapshotIndex : lowestSnapshotIndex - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN;
+    }
+    
+    private boolean canPrune(int snapshotIndex, int pruningMilestoneIndex) {
+        // -1 means we can't prune, smaller than snapshotIndex because we prune until index + 1
+        return pruningMilestoneIndex > 0 && pruningMilestoneIndex < snapshotIndex;
     }
 
     /**
@@ -194,7 +262,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     @Override
     public void addSnapshotCondition(SnapshotCondition... conditions) {
         if (this.conditions == null) {
-            this.conditions = conditions;
+            this.conditions = conditions.clone();
+        } else {
+            this.conditions = ArrayUtils.addAll(this.conditions, conditions);
         }
     }
 }

@@ -200,21 +200,30 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int targetMilestoneIndex)
+    public Snapshot takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int targetMilestoneIndex)
             throws SnapshotException {
 
         MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, targetMilestoneIndex);
         
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
+        persistLocalSnapshot(snapshotProvider, newSnapshot, config);
         if (transactionPruner != null) {
             cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
-                    newSnapshot.getSolidEntryPoints(), transactionPruner);
-
-            cleanupOldData(config, transactionPruner, targetMilestone);
+                newSnapshot.getSolidEntryPoints(), transactionPruner);
         }
+        
+        return newSnapshot;
+    }
 
-        persistLocalSnapshot(snapshotProvider, newSnapshot, config);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void pruneSnapshotData(TransactionPruner transactionPruner, Snapshot newSnapshot, int pruningMilestoneIndex) throws SnapshotException {
+        if (transactionPruner != null) {
+            cleanupOldData(config, transactionPruner, pruningMilestoneIndex);
+        }
     }
 
     /**
@@ -462,13 +471,11 @@ public class SnapshotServiceImpl implements SnapshotService {
      * 
      * @param config important snapshot related configuration parameters
      * @param transactionPruner  manager for the pruning jobs that takes care of cleaning up the old data that
-     * @param targetMilestone milestone that was used as a reference point for the local snapshot
+     * @param targetIndex target milestone we use to prune anything older
      * @throws SnapshotException if anything goes wrong while issuing the cleanup jobs
      */
     private void cleanupOldData(SnapshotConfig config, TransactionPruner transactionPruner,
-            MilestoneViewModel targetMilestone) throws SnapshotException {
-
-        int targetIndex = targetMilestone.index() - config.getLocalSnapshotsPruningDelay();
+            int targetIndex) throws SnapshotException {
         int startingIndex = config.getMilestoneStartIndex() + 1;
 
         try {

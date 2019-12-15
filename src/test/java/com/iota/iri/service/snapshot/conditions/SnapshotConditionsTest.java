@@ -67,6 +67,6 @@ public class SnapshotConditionsTest {
         when(snapshotProvider.getInitialSnapshot()).thenReturn(snapshot);
         
         
-        assertEquals("Starting milestoen should be 5 above the initial index", 10, condition.getSnapshotStartingMilestone());
+        assertEquals("Starting milestoen should be 5 above the initial index", 10, condition.getSnapshotPruningMilestone());
     }
 }

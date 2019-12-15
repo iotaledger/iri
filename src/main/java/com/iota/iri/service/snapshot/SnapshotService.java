@@ -75,11 +75,27 @@ public interface SnapshotService {
      * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
      * @param snapshotUntillIndex The last milestone we keep, everything before gets snapshotted. 
      *                            If we can't find the milestone of this index, we attempt to look back further until we do
+     * @return The Snapshot we ended up making
      * @throws SnapshotException if anything goes wrong while creating the local snapshot
      */
-    void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int snapshotUntillIndex) throws
+    Snapshot takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int snapshotUntillIndex) throws
             SnapshotException;
 
+    /**
+     * <p>
+     * This method is called when the node is cleaning up data. 
+     * The newSnapshot is obtained from taking a successful local snapshot.
+     * No data should be pruned if pruning is disabled on this node.
+     * <p>
+     * 
+     * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
+     * @param newSnapshot The newest snapshot we made, used to clean up old entrypoints
+     * @param pruningMilestoneIndex The index of the milestone we will prune until (excluding)
+     * @throws SnapshotException if anything goes wrong while pruning
+     */
+    void pruneSnapshotData(TransactionPruner transactionPruner, Snapshot newSnapshot, int pruningMilestoneIndex)
+            throws SnapshotException;
+    
     /**
      * <p>
      * This method generates a local snapshot of the full ledger state at the given milestone.

@@ -56,6 +56,12 @@ public class SnapshotSizeCondition implements SnapshotCondition {
         this.config = config;
         if (config.getLocalSnapshotsPruningEnabled()) {
             maxSize = (long) Math.floor(IotaUtils.parseFileSize(config.getLocalSnapshotsDbMaxSize()) / 100 * (100-MARGIN));
+            
+            if (config.getLocalSnapshotsPruningDelay() != BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
+                log.warn("We recommend setting pruning delay to the minimum(" 
+                        + BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
+                        + ") when using db size limitation.");
+            }
         } else {
             if (config.getLocalSnapshotsDbMaxSize() != BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_DB_MAX_SIZE) {
                 log.warn("Local snapshots with size condition does not work with pruning disabled");
@@ -82,13 +88,18 @@ public class SnapshotSizeCondition implements SnapshotCondition {
         // Update the last size
         lastSize = size;
         
-        // We only take snapshots when depth allowed by pruning delay (min 10k)
-        int distance = snapshotProvider.getLatestSnapshot().getIndex() - snapshotProvider.getInitialSnapshot().getIndex();
-        return size > maxSize && distance > config.getLocalSnapshotsPruningDelay();
+        return size > maxSize;
     }
 
     @Override
     public int getSnapshotStartingMilestone() throws SnapshotException {
+        // Snapshot by size doesn't need a recent snapshot, we calculate here so we can reuse it when we call getSnapshotPruningMilestone.
+        // This will not go below the allowed snapshot depth due to the other conditions
+        return -1;
+    }
+
+    @Override
+    public int getSnapshotPruningMilestone() throws SnapshotException {
         return snapshotProvider.getInitialSnapshot().getIndex() + MILESTONES;
     }
 }

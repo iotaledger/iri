@@ -20,12 +20,21 @@ public interface SnapshotCondition {
     boolean shouldTakeSnapshot(boolean isInSync);
     
     /**
-     * Determines the amount of milestones that should be snapshotted. 
-     * Should only be called when {@link #shouldTakeSnapshot(boolean)} returs <code>true</code>
+     * Determines the Milestone index from which we should snapshot.
+     * Should only be called when {@link #shouldTakeSnapshot(boolean)} returns <code>true</code>
      * 
-     * @return The number of the last milestone we will keep in the database. 
-     *         Everything before this number will be snapshotted away.
-     * @throws SnapshotException if we could not obtain the requirements for determining the snapshot index
+     * @return The index of the milestone we will create a new Snapshot at
+     * @throws SnapshotException if we could not obtain the requirements for determining the milestone index
      */
     int getSnapshotStartingMilestone() throws SnapshotException;
+    
+    /**
+     * Determines the milestone at which we should start pruning. 
+     * This does not take the minimum amount of milestones in the database into account.
+     * 
+     * @return The index of the last milestone we will keep in the database. 
+     *         Everything before this number will be pruned away if allowed.
+     * @throws SnapshotException if we could not obtain the requirements for determining the milestone index
+     */
+    int getSnapshotPruningMilestone() throws SnapshotException;
 }

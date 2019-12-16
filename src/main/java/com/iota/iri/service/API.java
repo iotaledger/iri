@@ -752,122 +752,29 @@ public class API {
      * <p>
      * Get the inclusion states of a set of transactions.
      * This endpoint determines if a transaction is confirmed by the network (referenced by a valid milestone).
-     * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
      * </p>
      * <p>
      * This API call returns a list of boolean values in the same order as the submitted transactions.
      * Boolean values will be <tt>true</tt> for confirmed transactions, otherwise <tt>false</tt>.
      * </p>
-     * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
      *
      * @param transactions List of transactions you want to get the inclusion state for.
-     * @param tips List of tip transaction hashes (including milestones) you want to search for
      * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse}
      * @throws Exception When a transaction cannot be loaded from hash
      **/
     @Document(name="getInclusionStates")
-    private AbstractResponse getInclusionStatesStatement(
-            final List<String> transactions,
-            final List<String> tips) throws Exception {
+    private AbstractResponse getInclusionStatesStatement(final List<String> transactions ) throws Exception {
 
         final List<Hash> trans = transactions.stream()
                 .map(HashFactory.TRANSACTION::create)
                 .collect(Collectors.toList());
 
-        final List<Hash> tps = tips.stream().
-                map(HashFactory.TRANSACTION::create)
-                .collect(Collectors.toList());
-
-        int numberOfNonMetTransactions = trans.size();
-        final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
-
-        List<Integer> tipsIndex = new LinkedList<>();
-        {
-            for(Hash tip: tps) {
-                TransactionViewModel tx = TransactionViewModel.fromHash(tangle, tip);
-                if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    tipsIndex.add(tx.snapshotIndex());
-                }
-            }
+        boolean[] inclusionStates = new boolean[trans.size()];
+        for(int i = 0; i < trans.size(); i++){
+            inclusionStates[i] = TransactionViewModel.fromHash(tangle, trans.get(i)).snapshotIndex() > 0;
         }
 
-        // Finds the lowest tips index, or 0
-        int minTipsIndex = tipsIndex.stream().reduce((a, b) -> a < b ? a : b).orElse(0);
-
-        // If the lowest tips index (minTipsIndex) is 0 (or lower),
-        // we can't check transactions against snapshots because there were no tips,
-        // or tips have not been confirmed by a snapshot yet
-        if (minTipsIndex > 0) {
-            // Finds the highest tips index, or 0
-            int maxTipsIndex = tipsIndex.stream().reduce((a, b) -> a > b ? a : b).orElse(0);
-            int count = 0;
-
-            // Checks transactions with indexes of tips, and sets inclusionStates byte to 1 or -1 accordingly
-            // Sets to -1 if the transaction is only known by hash,
-            // or has no index, or index is above the max tip index (not included).
-
-            // Sets to 1 if the transaction index is below the max index of tips (included).
-            for(Hash hash: trans) {
-                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
-                    inclusionStates[count] = -1;
-                } else if (transaction.snapshotIndex() > maxTipsIndex) {
-                    inclusionStates[count] = -1;
-                } else if (transaction.snapshotIndex() < maxTipsIndex) {
-                    inclusionStates[count] = 1;
-                }
-                count++;
-            }
-        }
-
-        Set<Hash> analyzedTips = new HashSet<>();
-        Map<Integer, Integer> sameIndexTransactionCount = new HashMap<>();
-        Map<Integer, Queue<Hash>> sameIndexTips = new HashMap<>();
-
-        // Sorts all tips per snapshot index. Stops if a tip is not in our database, or just as a hash.
-        for (final Hash tip : tps) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
-            if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
-                return ErrorResponse.create("One of the tips is absent");
-            }
-            int snapshotIndex = transactionViewModel.snapshotIndex();
-            sameIndexTips.putIfAbsent(snapshotIndex, new LinkedList<>());
-            sameIndexTips.get(snapshotIndex).add(tip);
-        }
-
-        // Loop over all transactions without a state, and counts the amount per snapshot index
-        for(int i = 0; i < inclusionStates.length; i++) {
-            if(inclusionStates[i] == 0) {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, trans.get(i));
-                int snapshotIndex = transactionViewModel.snapshotIndex();
-                sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
-                sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
-            }
-        }
-
-        // Loop over all snapshot indexes of transactions that were not confirmed.
-        // If we encounter an invalid tangle, stop this function completely.
-        for (Integer index : sameIndexTransactionCount.keySet()) {
-            // Get the tips from the snapshot indexes we are missing
-            Queue<Hash> sameIndexTip = sameIndexTips.get(index);
-
-            // We have tips on the same level as transactions, do a manual search.
-            if (sameIndexTip != null && !exhaustiveSearchWithinIndex(
-                    sameIndexTip, analyzedTips, trans,
-                    inclusionStates, sameIndexTransactionCount.get(index), index)) {
-
-                return ErrorResponse.create(INVALID_SUBTANGLE);
-            }
-        }
-        final boolean[] inclusionStatesBoolean = new boolean[inclusionStates.length];
-        for (int i = 0; i < inclusionStates.length; i++) {
-            // If a state is 0 by now, we know nothing so assume not included
-            inclusionStatesBoolean[i] = inclusionStates[i] == 1;
-        }
-
-        {
-            return GetInclusionStatesResponse.create(inclusionStatesBoolean);
-        }
+        return GetInclusionStatesResponse.create(inclusionStates);
     }
 
     /**
@@ -1597,10 +1504,9 @@ public class API {
                 return ErrorResponse.create(INVALID_SUBTANGLE);
             }
             final List<String> transactions = getParameterAsList(request, "transactions", HASH_SIZE);
-            final List<String> tips = getParameterAsList(request, "tips", HASH_SIZE);
 
             try {
-                return getInclusionStatesStatement(transactions, tips);
+                return getInclusionStatesStatement(transactions);
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }

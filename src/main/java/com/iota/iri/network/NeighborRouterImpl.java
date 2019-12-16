@@ -782,6 +782,7 @@ public class NeighborRouterImpl implements NeighborRouter {
         }
 
         // remove the neighbor from connection attempts
+        boolean isSeen = reconnectPool.contains(neighborURI);
         reconnectPool.remove(neighborURI);
         URI rawURI = URI.create(String.format("%s%s:%d", PROTOCOL_PREFIX, inetAddr.getAddress().getHostAddress(),
                 neighborURI.getPort()));
@@ -789,7 +790,11 @@ public class NeighborRouterImpl implements NeighborRouter {
 
         String identity = String.format("%s:%d", inetAddr.getAddress().getHostAddress(), inetAddr.getPort());
         Neighbor neighbor = connectedNeighbors.get(identity);
+
         if (neighbor == null) {
+            if(isSeen){
+                return NeighborMutOp.OK;
+            }
             return NeighborMutOp.UNKNOWN_NEIGHBOR;
         }
 

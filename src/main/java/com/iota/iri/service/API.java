@@ -1676,7 +1676,7 @@ public class API {
                 storeTransactionsStatement(trytes);
             } catch (Exception e) {
                 //transaction not valid
-                return ErrorResponse.create("Invalid trytes input");
+                return ErrorResponse.create("Error: " + e.getMessage());
             }
             return AbstractResponse.createEmptyResponse();
         };

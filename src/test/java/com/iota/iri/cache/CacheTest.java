@@ -72,15 +72,6 @@ public class CacheTest {
     }
 
     @Test
-    public void shouldGetKeys() {
-        cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
-        List<Indexable> keys = cache.getKeys();
-
-        Assert.assertTrue("Key list should not be empty", !keys.isEmpty());
-        Assert.assertEquals("The first key should be hash", keys.get(0), hash);
-    }
-
-    @Test
     public void sizeShouldBeOne() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
 

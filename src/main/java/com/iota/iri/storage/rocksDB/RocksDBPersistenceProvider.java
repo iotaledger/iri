@@ -1,5 +1,14 @@
 package com.iota.iri.storage.rocksDB;
 
+import com.iota.iri.conf.BaseIotaConfig;
+import com.iota.iri.conf.TestnetConfig;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.PersistenceProvider;
+import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.Pair;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -47,15 +56,6 @@ import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.conf.TestnetConfig;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.utils.IotaIOUtils;
-import com.iota.iri.utils.Pair;
 
 public class RocksDBPersistenceProvider implements PersistenceProvider {
 
@@ -509,6 +509,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setWriteBufferSize(2 * SizeUnit.MB);
             
             
+            // Column families could get loaded from the config
             loadColumnFamilyDescriptors(columnFamilyDescriptors);
             
             db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
@@ -522,14 +523,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         }
     }
     
+    /**
+     * Checks if we have correct column families
+     * Currently does not use the columnFamilyDescriptors parameter, and just cleans the list.
+     * @param columnFamilyDescriptors The descriptors we had in described in the config
+     */
     private void loadColumnFamilyDescriptors(List<ColumnFamilyDescriptor> columnFamilyDescriptors) {
-        boolean needsUpdate = checkUpdate(columnFamilyDescriptors, columnFamilies.keySet());
-        if (!columnFamilyDescriptors.isEmpty() && needsUpdate) {
-            // We updated the database
-            log.info("IRI Database scheme has been updated.. Loading new ColumnFamilyDescriptors");
-            
-        }
-        
         columnFamilyDescriptors.clear();
         if (columnFamilyDescriptors.isEmpty()) {
             //Add default column family. Main motivation is to not change legacy code
@@ -544,25 +543,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 metadataReference = new HashMap<>();
             }
         }
-    }
-
-    private boolean checkUpdate(List<ColumnFamilyDescriptor> columnFamilyDescriptors, Set<String> names) {
-        int totalDescriptors = columnFamilies.size() + (metadataColumnFamily != null ? 2 : 1); // +1 for default
-        if (totalDescriptors != columnFamilyDescriptors.size()) {
-            return true;
-        }
-        
-        // Does not prevent name changes, as this must be migrated. RocksDB will throw an error if attempted
-        // Should be fixed in Issue #1473
-        long count = names.stream().map(name -> name.getBytes()).filter(name -> {
-            for (ColumnFamilyDescriptor descriptor : columnFamilyDescriptors) {
-                if (Objects.deepEquals(name, descriptor.getName())) {
-                    return false;
-                }
-            }
-            return true;
-        }).count();
-        return count != 0;
     }
 
     private void initClassTreeMap(List<ColumnFamilyDescriptor> columnFamilyDescriptors) throws Exception {

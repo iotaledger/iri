@@ -1,10 +1,5 @@
 package com.iota.iri.service.snapshot.impl;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
@@ -18,6 +13,12 @@ import com.iota.iri.service.snapshot.conditions.SnapshotCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -140,10 +141,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private Snapshot handleSnapshot(LatestMilestoneTracker latestMilestoneTracker) {
         boolean isInSync = isInSync(latestMilestoneTracker);
         int lowestSnapshotIndex = calculateLowestSnapshotIndex(isInSync);
-        log.debug("Attempting snapshot at index " + lowestSnapshotIndex);
         if (canTakeSnapshot(lowestSnapshotIndex, latestMilestoneTracker)) {
             try {
-                log.debug("Taking snapshot at index " + lowestSnapshotIndex);
+                log.debug("Taking snapshot at index {}", lowestSnapshotIndex);
                 return snapshotService.takeLocalSnapshot(
                         latestMilestoneTracker, transactionPruner, lowestSnapshotIndex);
             } catch (SnapshotException e) {
@@ -191,8 +191,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                     ? snapshotProvider.getInitialSnapshot().getIndex()
                     : takenSnapshot.getIndex();
             int pruningMilestoneIndex = calculateLowestPruningIndex(isInSync, snapshotIndex);
-            log.debug("Attempting pruning at index " + pruningMilestoneIndex);
             if (canPrune(snapshotIndex, pruningMilestoneIndex)) {
+                log.debug("Pruning at index {}", pruningMilestoneIndex);
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
                 snapshotService.pruneSnapshotData(transactionPruner, takenSnapshot, pruningMilestoneIndex);
             }

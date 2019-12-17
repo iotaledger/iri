@@ -14,9 +14,9 @@ public interface Cache<K, V> {
 
     /**
      * Get the value mapped to the specified key.
-     * If it's not foudn, it reads from DB and updates cache.
+     * If it's not found, it reads from DB and updates cache.
      * 
-     * @param key The keys whos value is to be returned
+     * @param key The keys whose value is to be returned
      * @return The mapped value of the specified key
      */
     V get(K key);
@@ -35,13 +35,6 @@ public interface Cache<K, V> {
      * @return A map of key and value associations.
      */
     Map<K, V> getAll(Collection<K> keys);
-
-    /**
-     * Get the all keys of the cache
-     * 
-     * @return A collection of keys in the cache
-     */
-    List<K> getKeys();
 
     /**
      * The size of the cache

@@ -75,10 +75,6 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         return result;
     }
 
-    @Override
-    public List<K> getKeys() {
-        return strongStore.keySet().stream().collect(Collectors.toList());
-    }
 
     @Override
     public int getSize() {

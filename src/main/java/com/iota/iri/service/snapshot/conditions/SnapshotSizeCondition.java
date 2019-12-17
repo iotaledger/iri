@@ -5,10 +5,15 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.IotaUtils;
+import com.iota.iri.utils.Pair;
 
 /**
  * 
@@ -100,6 +105,16 @@ public class SnapshotSizeCondition implements SnapshotCondition {
 
     @Override
     public int getSnapshotPruningMilestone() throws SnapshotException {
-        return snapshotProvider.getInitialSnapshot().getIndex() + MILESTONES;
+        int initialIndex = -1;
+        try {
+            Pair<Indexable, Persistable> ms = tangle.getFirst(Milestone.class, IntegerIndex.class);
+            initialIndex = ((IntegerIndex)ms.low).getValue();
+        } catch (Exception e) {
+            log.error("failed to find oldest milestone", e);
+            // This should never fail, if it does, we just don't prune
+            return -1;
+        }
+        
+        return initialIndex + MILESTONES;
     }
 }

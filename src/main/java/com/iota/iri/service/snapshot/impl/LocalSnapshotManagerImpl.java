@@ -131,7 +131,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
             Snapshot takenSnapshot = handleSnapshot(latestMilestoneTracker);
             
             // Prunes data separate of a snapshot if we made a snapshot of the pruned data now or previously
-            handlePruning(takenSnapshot);
+            handlePruning(takenSnapshot, latestMilestoneTracker);
             
             ThreadUtils.sleep(LOCAL_SNAPSHOT_RESCAN_INTERVAL);
         }
@@ -158,7 +158,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     /**
      * Calculates the oldest milestone index allowed by all conditions.
      * 
-     * @param isInSync IF this node is considered in sync, to prevent recalculation.
+     * @param isInSync If this node is considered in sync, to prevent recalculation.
      * @return The lowest allowed milestone we can snapshot according to the node
      */
     private int calculateLowestSnapshotIndex(boolean isInSync) {
@@ -183,12 +183,14 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 && lowestSnapshotIndex <= snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
     }
     
-    private void handlePruning(Snapshot takenSnapshot) {
+    private void handlePruning(Snapshot takenSnapshot, LatestMilestoneTracker latestMilestoneTracker) {
+        // Recalculate inSync, as a snapshot can take place which takes a while
+        boolean isInSync = isInSync(latestMilestoneTracker);
         try {
             int snapshotIndex = takenSnapshot == null 
                     ? snapshotProvider.getInitialSnapshot().getIndex()
                     : takenSnapshot.getIndex();
-            int pruningMilestoneIndex = calculateLowestPruningIndex(snapshotIndex);
+            int pruningMilestoneIndex = calculateLowestPruningIndex(isInSync, snapshotIndex);
             log.debug("Attempting pruning at index " + pruningMilestoneIndex);
             if (canPrune(snapshotIndex, pruningMilestoneIndex)) {
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
@@ -205,14 +207,16 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * Calculates the oldest pruning milestone index allowed by all conditions.
      * If the lowest index violates our set minimum pruning depth, the minimum will be returned instead.
      * 
+     * @param isInSync If this node is considered in sync, to prevent recalculation.
      * @param newLowestMinestoneIndex The milestone of the newly generated Snapshot
      * @return The lowest allowed milestone we can prune according to the node, or -1 if we cannot
      * @throws SnapshotException if we could not obtain the requirements for determining the snapshot milestone
      */
-    private int calculateLowestPruningIndex(int newLowestMinestoneIndex) throws SnapshotException {
+    private int calculateLowestPruningIndex(boolean isInSync, int newLowestMinestoneIndex) throws SnapshotException {
         int lowestSnapshotIndex = -1;
         for (SnapshotCondition condition : conditions) {
-            if (lowestSnapshotIndex == -1 || condition.getSnapshotPruningMilestone() < lowestSnapshotIndex) {
+            if (condition.shouldTakeSnapshot(isInSync) && (
+                    lowestSnapshotIndex == -1 || condition.getSnapshotPruningMilestone() < lowestSnapshotIndex)) {
                 lowestSnapshotIndex = condition.getSnapshotPruningMilestone();
             }
         }

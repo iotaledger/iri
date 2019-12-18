@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.MapMaker;
 
@@ -64,7 +63,6 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public V lookup(K key) {
-        //TODO: do this for now
         return get(key);
     }
 

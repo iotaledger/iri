@@ -186,12 +186,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private void handlePruning(Snapshot takenSnapshot, LatestMilestoneTracker latestMilestoneTracker) {
         // Recalculate inSync, as a snapshot can take place which takes a while
         boolean isInSync = isInSync(latestMilestoneTracker);
-        try {
-            int snapshotIndex = takenSnapshot == null 
-                    ? snapshotProvider.getInitialSnapshot().getIndex()
-                    : takenSnapshot.getIndex();
-            int pruningMilestoneIndex = calculateLowestPruningIndex(isInSync, snapshotIndex);
-            if (canPrune(snapshotIndex, pruningMilestoneIndex)) {
+        try { 
+            int pruningMilestoneIndex = calculateLowestPruningIndex(isInSync);
+            if (canPrune(pruningMilestoneIndex)) {
                 log.debug("Pruning at index {}", pruningMilestoneIndex);
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
                 snapshotService.pruneSnapshotData(transactionPruner, takenSnapshot, pruningMilestoneIndex);
@@ -208,14 +205,13 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * If the lowest index violates our set minimum pruning depth, the minimum will be returned instead.
      * 
      * @param isInSync If this node is considered in sync, to prevent recalculation.
-     * @param newLowestMinestoneIndex The milestone of the newly generated Snapshot
      * @return The lowest allowed milestone we can prune according to the node, or -1 if we cannot
      * @throws SnapshotException if we could not obtain the requirements for determining the snapshot milestone
      */
-    private int calculateLowestPruningIndex(boolean isInSync, int newLowestMinestoneIndex) throws SnapshotException {
+    private int calculateLowestPruningIndex(boolean isInSync) throws SnapshotException {
         int lowestSnapshotIndex = -1;
         for (SnapshotCondition condition : conditions) {
-            if (condition.shouldTakeSnapshot(isInSync) && (
+            if ((
                     lowestSnapshotIndex == -1 || condition.getSnapshotPruningMilestone() < lowestSnapshotIndex)) {
                 lowestSnapshotIndex = condition.getSnapshotPruningMilestone();
             }
@@ -226,7 +222,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 ? lowestSnapshotIndex : lowestSnapshotIndex - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN;
     }
     
-    private boolean canPrune(int snapshotIndex, int pruningMilestoneIndex) {
+    private boolean canPrune(int pruningMilestoneIndex) {
+        int snapshotIndex = snapshotProvider.getInitialSnapshot().getIndex();
         // -1 means we can't prune, smaller than snapshotIndex because we prune until index + 1
         return pruningMilestoneIndex > 0 && pruningMilestoneIndex < snapshotIndex;
     }

@@ -201,7 +201,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     }
     
     /**
-     * Calculates the oldest pruning milestone index allowed by all conditions.
+     * Calculates the oldest pruning milestone index allowed by all conditions.(
      * If the lowest index violates our set minimum pruning depth, the minimum will be returned instead.
      * 
      * @param isInSync If this node is considered in sync, to prevent recalculation.
@@ -211,7 +211,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private int calculateLowestPruningIndex(boolean isInSync) throws SnapshotException {
         int lowestSnapshotIndex = -1;
         for (SnapshotCondition condition : conditions) {
-            if ((
+            if (condition.shouldTakeSnapshot(isInSync) && (
                     lowestSnapshotIndex == -1 || condition.getSnapshotPruningMilestone() < lowestSnapshotIndex)) {
                 lowestSnapshotIndex = condition.getSnapshotPruningMilestone();
             }

@@ -100,8 +100,6 @@ public class TransactionViewModel {
      */
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
-            //tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
-
             transactionViewModel.setAttachmentData();
             transactionViewModel.setMetadata();
         }
@@ -238,9 +236,6 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error determining if the transaction exists or not
      */
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {
-//        if (tangle.getCache(TransactionViewModel.class).lookup(hash) != null) {
-//            return true;
-//        }
         return tangle.exists(Transaction.class, hash);
     }
 
@@ -252,7 +247,6 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error getting the count of objects
      */
     public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
-        // TODO: should add freshly cached transactions?
         return tangle.getCount(Transaction.class).intValue();
     }
 
@@ -321,9 +315,6 @@ public class TransactionViewModel {
             this.isCacheEntryFresh = false;
         }
         cachePut(tangle, this, hash);
-
-        // Will be called when this dirty cache entry is to be evicted to DB
-        // tangle.update(transaction, hash, item);
     }
 
     private void updateDB(Tangle tangle, Transaction transaction, Hash hash, String item) throws Exception {

@@ -1,23 +1,23 @@
 package com.iota.iri.service.snapshot.conditions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 
- * 
+ * Conditions for snapshotting based on the size of the database on disk.
+ * This does not take into account the size kept in memory, and can be inaccurate if the node is inactive.
  *
  */
 public class SnapshotSizeCondition implements SnapshotCondition {
@@ -38,16 +38,16 @@ public class SnapshotSizeCondition implements SnapshotCondition {
      * The maximum size we want the DB to have, with margin due to DB delays for writing to disk
      */
     private final long maxSize;
+    
+    /**
+     * Database object we use to find the lowest milestone
+     */
     private final Tangle tangle;
-
-    private final SnapshotProvider snapshotProvider;
     
     /**
      * The cached size of the db, so we don't keep snapshotting when the size doesn't change after a snapshot 
      */
     private long lastSize = -1;
-
-    private SnapshotConfig config;
 
     /**
      * Implements a {@link SnapshotCondition} based on the total database size
@@ -56,9 +56,8 @@ public class SnapshotSizeCondition implements SnapshotCondition {
      * @param config configuration with snapshot specific settings.
      * @param snapshotProvider gives us access to the relevant snapshots.
      */
-    public SnapshotSizeCondition(Tangle tangle, SnapshotConfig config, SnapshotProvider snapshotProvider) {
+    public SnapshotSizeCondition(Tangle tangle, SnapshotConfig config) {
         this.tangle = tangle;
-        this.config = config;
         if (config.getLocalSnapshotsPruningEnabled()) {
             maxSize = (long) Math.floor(IotaUtils.parseFileSize(config.getLocalSnapshotsDbMaxSize()) / 100 * (100-MARGIN));
             
@@ -73,7 +72,6 @@ public class SnapshotSizeCondition implements SnapshotCondition {
             }
             maxSize = -1;
         }
-        this.snapshotProvider = snapshotProvider;
     }
 
     /**

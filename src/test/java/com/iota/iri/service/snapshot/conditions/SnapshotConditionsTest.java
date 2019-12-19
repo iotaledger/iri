@@ -54,7 +54,7 @@ public class SnapshotConditionsTest {
         
         when(config.getLocalSnapshotsDbMaxSize()).thenReturn("10GB");
 
-        condition = new SnapshotSizeCondition(tangle, config, snapshotProvider);
+        condition = new SnapshotSizeCondition(tangle, config);
     }
     
     @Test

@@ -1,34 +1,31 @@
 package com.iota.iri.service.snapshot.conditions;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.storage.Tangle;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * 
- *
+ * Conditions for snapshotting based on the distance between the current milestone and the amount we want to keep 
  *
  */
 public class SnapshotDepthCondition implements SnapshotCondition {
 
     private final SnapshotConfig config;
     private final SnapshotProvider snapshotProvider;
-    private final Tangle tangle;
 
     /**
      * Implements a {@link SnapshotCondition} based on the amount of milestones we have
-     *  
-     * @param tangle the database interface.
+     *
      * @param config configuration with snapshot specific settings.
      * @param snapshotProvider gives us access to the relevant snapshots.
      */
-    public SnapshotDepthCondition(Tangle tangle, SnapshotConfig config, SnapshotProvider snapshotProvider) {
+    public SnapshotDepthCondition(SnapshotConfig config, SnapshotProvider snapshotProvider) {
         this.config = config;
         this.snapshotProvider = snapshotProvider;
-        this.tangle = tangle;
     }
 
     @Override

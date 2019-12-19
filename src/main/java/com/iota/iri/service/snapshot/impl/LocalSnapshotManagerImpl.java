@@ -179,6 +179,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     
     private boolean canTakeSnapshot(int lowestSnapshotIndex, LatestMilestoneTracker latestMilestoneTracker) {
         return lowestSnapshotIndex != -1 
+                && latestMilestoneTracker.isInitialScanComplete()
                 && lowestSnapshotIndex > snapshotProvider.getInitialSnapshot().getIndex()
                 && lowestSnapshotIndex <= snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
     }

@@ -4,7 +4,6 @@ import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -26,9 +25,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 public class SnapshotConditionsTest {
-    
-    @Mock
-    private Snapshot snapshot;
     
     @Rule 
     public MockitoRule mockitoRule = MockitoJUnit.rule();

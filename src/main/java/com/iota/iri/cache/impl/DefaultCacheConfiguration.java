@@ -3,9 +3,9 @@ package com.iota.iri.cache.impl;
 import com.iota.iri.cache.CacheConfiguration;
 
 /**
- * Implementation of {@link CacheConfiguration}
+ * Default Implementation of {@link CacheConfiguration}
  */
-public class CacheConfigurationImpl implements CacheConfiguration {
+public class DefaultCacheConfiguration implements CacheConfiguration {
 
     @Override
     public long getMaxSize() {
@@ -15,5 +15,10 @@ public class CacheConfigurationImpl implements CacheConfiguration {
     @Override
     public int getEvictionCount() {
         return DEFAULT_EVICTION_COUNT;
+    }
+
+    @Override
+    public int getConcurrencyLevel() {
+        return DEFAULT_CONCURRENCY_LEVEL;
     }
 }

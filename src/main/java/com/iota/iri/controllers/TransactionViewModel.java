@@ -77,9 +77,9 @@ public class TransactionViewModel {
 
     /** Transaction Types */
     public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction
-                                       // value)
+    // value)
     public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only
-                                                // another tx references that hash
+    // another tx references that hash
     public final static int FILLED_SLOT = -1; // knows the hash only coz another tx references that hash
 
     private byte[] trits;
@@ -236,7 +236,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error determining if the transaction exists or not
      */
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {
-        return tangle.exists(Transaction.class, hash);
+        return tangle.getCache(TransactionViewModel.class).get(hash) != null || tangle.exists(Transaction.class, hash);
     }
 
     /**
@@ -252,7 +252,7 @@ public class TransactionViewModel {
 
     /**
      * Converts the given byte array to the a new trit array of length {@value TRINARY_SIZE}.
-     * 
+     *
      * @param transactionBytes The byte array to be converted to trits
      * @return The trit conversion of the byte array
      */
@@ -370,7 +370,7 @@ public class TransactionViewModel {
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Transaction.class, hash);
-        cacheEvict(tangle, hash);
+        cacheDelete(tangle, hash);
     }
 
     /**
@@ -774,7 +774,7 @@ public class TransactionViewModel {
      * @throws Exception Exception
      */
     public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot,
-            final Set<Hash> analyzedHashes) throws Exception {
+                                               final Set<Hash> analyzedHashes) throws Exception {
         Object[] hashes = analyzedHashes.toArray();
         TransactionViewModel transactionViewModel;
         for (int i = hashes.length - 1; i >= 0; i--) {
@@ -971,7 +971,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache
+     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache to DB
      * @param tangle Tangle
      * @throws Exception Exception
      */
@@ -979,9 +979,9 @@ public class TransactionViewModel {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
             Indexable hash = cache.nextEvictionKey();
-            if(hash != null){
-                TransactionViewModel tvm = cache.lookup(hash);
-                if(tvm != null){
+            if (hash != null) {
+                TransactionViewModel tvm = cache.get(hash);
+                if (tvm != null) {
                     if (!tvm.getIsCacheEntryFresh()) {
                         tvm.updateDB(tangle, tvm.getTransaction(), tvm.getHash(), "");
                     }
@@ -992,17 +992,17 @@ public class TransactionViewModel {
     }
 
     /**
-     * Evict the item with the specified hash from cache
+     * Deletes the item with the specified hash from cache
      * @param tangle Tangle
      * @param hash hash to evict
      */
-    private static void cacheEvict(Tangle tangle, Hash hash) {
+    private static void cacheDelete(Tangle tangle, Hash hash) {
         tangle.getCache(TransactionViewModel.class).evict(hash);
     }
 
     /**
      * The state of the cache entry
-     * 
+     *
      * @return True if fresh. False otherwise
      */
     public boolean getIsCacheEntryFresh() {

@@ -13,20 +13,12 @@ import java.util.Map;
 public interface Cache<K, V> {
 
     /**
-     * Get the value mapped to the specified key.
-     * If it's not found, it reads from DB and updates cache.
+     * Get the value mapped to the specified key. If it's not found, it reads from DB and updates cache.
      * 
      * @param key The keys whose value is to be returned
      * @return The mapped value of the specified key
      */
     V get(K key);
-
-    /**
-     * Gets the value if it is in cache. Does not read from DB if not found.
-     * @param key The key
-     * @return The cached value.
-     */
-    V lookup(K key);
 
     /**
      * Get all elements from the cache for the keys specified.
@@ -51,15 +43,6 @@ public interface Cache<K, V> {
      * @param value The value to associate the key with
      */
     void put(K key, V value);
-
-    /**
-     * Associates the specified value with the specified key if the key does not already exist in the cache If the key
-     * already exists, the existing value is returned.
-     * 
-     * @param key   The key to associate the specified value with
-     * @param value The value to associate the specified key with
-     */
-    void putIfAbsent(K key, V value);
 
     /**
      * Evict the specified key from the cache

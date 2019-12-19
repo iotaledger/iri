@@ -1,7 +1,7 @@
 package com.iota.iri.cache;
 
-import com.iota.iri.cache.impl.CacheConfigurationImpl;
 import com.iota.iri.cache.impl.CacheImpl;
+import com.iota.iri.cache.impl.DefaultCacheConfiguration;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
@@ -32,7 +32,7 @@ public class CacheTest {
 
     @Before
     public void setUp() {
-        cache = Mockito.spy(new CacheImpl<>(new CacheConfigurationImpl()));
+        cache = Mockito.spy(new CacheImpl<>(new DefaultCacheConfiguration()));
     }
 
     @After
@@ -81,12 +81,6 @@ public class CacheTest {
     @Test
     public void shouldPutKeyInCache() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
-        Assert.assertTrue("Cache should not be empty", cache.getSize() > 0);
-    }
-
-    @Test
-    public void shouldOnlyPutIfAbsent() {
-        cache.putIfAbsent(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
         Assert.assertTrue("Cache should not be empty", cache.getSize() > 0);
     }
 

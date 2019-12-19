@@ -22,8 +22,8 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     // Actual store
     private final ConcurrentMap<K, V> strongStore;
-    //weak store. Eligible for GC
-    private final ConcurrentMap<K,V> weakStore;
+    // weak store. Eligible for GC
+    private final ConcurrentMap<K, V> weakStore;
     private final ConcurrentLinkedQueue<K> evictionQueue;
 
     // stats
@@ -37,18 +37,19 @@ public class CacheImpl<K, V> implements Cache<K, V> {
      */
     public CacheImpl(CacheConfiguration cacheConfiguration) {
         this.cacheConfiguration = cacheConfiguration;
-        this.strongStore = new MapMaker().concurrencyLevel(5).makeMap();
-        this.weakStore = new MapMaker().concurrencyLevel(5).weakValues().makeMap();
+        this.strongStore = new MapMaker().concurrencyLevel(cacheConfiguration.getConcurrencyLevel()).makeMap();
+        this.weakStore = new MapMaker().concurrencyLevel(cacheConfiguration.getConcurrencyLevel()).weakValues()
+                .makeMap();
         this.evictionQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
     public V get(K key) {
-        if(key == null){
+        if (key == null) {
             return null;
         }
         V value = strongStore.get(key);
-        if(value == null && weakStore.containsKey(key)){
+        if (value == null && weakStore.containsKey(key)) {
             put(key, weakStore.get(key));
             value = strongStore.get(key);
             weakStore.remove(key);
@@ -62,17 +63,11 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public V lookup(K key) {
-        return get(key);
-    }
-
-    @Override
     public Map<K, V> getAll(Collection<K> keys) {
         Map result = new HashMap<K, V>();
         keys.stream().forEach(key -> result.put(key, get(key)));
         return result;
     }
-
 
     @Override
     public int getSize() {
@@ -91,19 +86,8 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void putIfAbsent(K key, V value) {
-        if (getSize() == cacheConfiguration.getMaxSize()) {
-            evict();
-        }
-        if (!strongStore.containsKey(key)) {
-            put(key, value);
-            evictionQueue.offer(key);
-        }
-    }
-
-    @Override
     public void evict(K key) {
-        if(key == null || !strongStore.containsKey(key)){
+        if (key == null || !strongStore.containsKey(key)) {
             return;
         }
         V value = strongStore.get(key);
@@ -115,7 +99,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     @Override
     public void evict() {
         for (int i = 0; i < cacheConfiguration.getEvictionCount(); i++) {
-           evict(evictionQueue.peek());
+            evict(evictionQueue.peek());
         }
     }
 

@@ -39,7 +39,7 @@ public class CacheManagerImpl implements CacheManager {
 
     @Override
     public <V> Cache add(Class<V> type) {
-        Cache<Indexable, V> cache = new CacheImpl<>(new CacheConfigurationImpl());
+        Cache<Indexable, V> cache = new CacheImpl<>(new DefaultCacheConfiguration());
         cacheMap.put(type, cache);
         return cache;
     }

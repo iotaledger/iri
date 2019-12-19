@@ -1,9 +1,15 @@
 package com.iota.iri.service.snapshot.conditions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
+import com.iota.iri.conf.BaseIotaConfig;
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.persistables.Milestone;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -14,12 +20,10 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.rocksdb.util.SizeUnit;
 
-import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.storage.Tangle;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 public class SnapshotConditionsTest {
     
@@ -62,9 +66,9 @@ public class SnapshotConditionsTest {
     }
     
     @Test
-    public void getMilestoneTest() throws SnapshotException {
-        when(snapshot.getIndex()).thenReturn(5);
-        when(snapshotProvider.getInitialSnapshot()).thenReturn(snapshot);
+    public void getMilestoneTest() throws Exception {
+        when(tangle.getFirst(Milestone.class, IntegerIndex.class)).thenReturn(
+                new Pair<Indexable, Persistable>(new IntegerIndex(5), new Milestone()));
         
         
         assertEquals("Starting milestoen should be 5 above the initial index", 10, condition.getSnapshotPruningMilestone());

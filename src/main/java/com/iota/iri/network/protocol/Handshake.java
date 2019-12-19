@@ -15,6 +15,13 @@ public class Handshake {
     public final static int BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH = 49;
 
     /**
+     *  The amount of bytes in the handshake payload is
+     *  <i>source port length + timestamp size + coo address size in bytes + mwm byte + supported version bytes
+     */
+    public static final short PAYLOAD_LENGTH_BYTES = (short) (Character.BYTES + Long.BYTES +
+                BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH + Byte.BYTES + Protocol.SUPPORTED_PROTOCOL_VERSIONS.length);
+
+    /**
      * The state of the handshaking.
      */
     public enum State {
@@ -36,15 +43,14 @@ public class Handshake {
      */
     public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress,
                                                    byte ownUsedMWM) {
-        short maxLength = ProtocolMessage.HANDSHAKE.getMaxLength();
-        final short payloadLengthBytes = (short) (maxLength - (maxLength - 60) + Protocol.SUPPORTED_PROTOCOL_VERSIONS.length);
-        ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
-        Protocol.addProtocolHeader(buf, ProtocolMessage.HANDSHAKE, payloadLengthBytes);
+        ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + PAYLOAD_LENGTH_BYTES);
+        Protocol.addProtocolHeader(buf, ProtocolMessage.HANDSHAKE, PAYLOAD_LENGTH_BYTES);
         buf.putChar(ownSourcePort);
         buf.putLong(System.currentTimeMillis());
         buf.put(ownByteEncodedCooAddress);
         buf.put(ownUsedMWM);
         buf.put(Protocol.SUPPORTED_PROTOCOL_VERSIONS);
+        //update PAYLOAD_LENGTH_BYTES if changed
         buf.flip();
         return buf;
     }

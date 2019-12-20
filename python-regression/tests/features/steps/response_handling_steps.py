@@ -84,7 +84,7 @@ def check_response_for_value(step, api_call):
             expected_value = expected_values[expected_value_key]
             response_value = response_values[expected_value_key]
 
-            if isinstance(response_value, list):
+            if isinstance(response_value, list) and api_call != 'getTrytes':
                 response_value = response_value[0]
 
             assert expected_value == response_value, "The expected value {} does not match""\

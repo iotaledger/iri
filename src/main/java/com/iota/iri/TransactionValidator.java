@@ -174,7 +174,7 @@ public class TransactionValidator {
 
         int weightMagnitude = transactionViewModel.weightMagnitude;
         if(weightMagnitude < minWeightMagnitude) {
-            throw new IllegalStateException("Invalid transaction hash");
+            throw new IllegalStateException("Invalid weight magnitude");
         }
 
         if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {

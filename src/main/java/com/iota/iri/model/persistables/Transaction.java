@@ -5,6 +5,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
+import com.iota.iri.utils.TransactionTruncator;
 
 import javax.naming.OperationNotSupportedException;
 import java.nio.ByteBuffer;
@@ -84,11 +85,11 @@ public class Transaction implements Persistable {
     public int snapshot;
 
     /**
-     * Returns the bytes of the transaction set
+     * Returns a truncated representation of the bytes of the transaction.
      */
     @Override
     public byte[] bytes() {
-        return bytes;
+        return bytes == null ? null : TransactionTruncator.truncateTransaction(bytes);
     }
 
     /**
@@ -99,8 +100,7 @@ public class Transaction implements Persistable {
     @Override
     public void read(byte[] bytes) {
         if(bytes != null) {
-            this.bytes = new byte[SIZE];
-            System.arraycopy(bytes, 0, this.bytes, 0, SIZE);
+            this.bytes = TransactionTruncator.expandTransaction(bytes);
             this.type = TransactionViewModel.FILLED_SLOT;
         }
     }
@@ -157,63 +157,64 @@ public class Transaction implements Persistable {
      */
     @Override
     public void readMetadata(byte[] bytes) {
-        int i = 0;
-        if(bytes != null) {
-            address = HashFactory.ADDRESS.create(bytes, i, Hash.SIZE_IN_BYTES);
-            i += Hash.SIZE_IN_BYTES;
-            bundle = HashFactory.BUNDLE.create(bytes, i, Hash.SIZE_IN_BYTES);
-            i += Hash.SIZE_IN_BYTES;
-            trunk = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
-            i += Hash.SIZE_IN_BYTES;
-            branch = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
-            i += Hash.SIZE_IN_BYTES;
-            obsoleteTag = HashFactory.OBSOLETETAG.create(bytes, i, Hash.SIZE_IN_BYTES);
-            i += Hash.SIZE_IN_BYTES;
-            value = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            currentIndex = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            lastIndex = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            timestamp = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-
-            tag = HashFactory.TAG.create(bytes, i, Hash.SIZE_IN_BYTES);
-            i += Hash.SIZE_IN_BYTES;
-            attachmentTimestamp = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            attachmentTimestampLowerBound = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            attachmentTimestampUpperBound = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-
-            validity = Serializer.getInteger(bytes, i);
-            i += Integer.BYTES;
-            type = Serializer.getInteger(bytes, i);
-            i += Integer.BYTES;
-            arrivalTime = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            height = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            /*
-            confirmed = bytes[i] == 1;
-            i++;
-            */
-
-            // decode the boolean byte by checking the bitmasks
-            solid = (bytes[i] & IS_SOLID_BITMASK) != 0;
-            milestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
-            i++;
-
-            snapshot = Serializer.getInteger(bytes, i);
-            i += Integer.BYTES;
-            byte[] senderBytes = new byte[bytes.length - i];
-            if (senderBytes.length != 0) {
-                System.arraycopy(bytes, i, senderBytes, 0, senderBytes.length);
-            }
-            sender = new String(senderBytes);
-            parsed = true;
+        if(bytes == null) {
+            return;
         }
+        int i = 0;
+        address = HashFactory.ADDRESS.create(bytes, i, Hash.SIZE_IN_BYTES);
+        i += Hash.SIZE_IN_BYTES;
+        bundle = HashFactory.BUNDLE.create(bytes, i, Hash.SIZE_IN_BYTES);
+        i += Hash.SIZE_IN_BYTES;
+        trunk = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
+        i += Hash.SIZE_IN_BYTES;
+        branch = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
+        i += Hash.SIZE_IN_BYTES;
+        obsoleteTag = HashFactory.OBSOLETETAG.create(bytes, i, Hash.SIZE_IN_BYTES);
+        i += Hash.SIZE_IN_BYTES;
+        value = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+        currentIndex = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+        lastIndex = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+        timestamp = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+
+        tag = HashFactory.TAG.create(bytes, i, Hash.SIZE_IN_BYTES);
+        i += Hash.SIZE_IN_BYTES;
+        attachmentTimestamp = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+        attachmentTimestampLowerBound = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+        attachmentTimestampUpperBound = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+
+        validity = Serializer.getInteger(bytes, i);
+        i += Integer.BYTES;
+        type = Serializer.getInteger(bytes, i);
+        i += Integer.BYTES;
+        arrivalTime = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+        height = Serializer.getLong(bytes, i);
+        i += Long.BYTES;
+        /*
+        confirmed = bytes[i] == 1;
+        i++;
+        */
+
+        // decode the boolean byte by checking the bitmasks
+        solid = (bytes[i] & IS_SOLID_BITMASK) != 0;
+        milestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
+        i++;
+
+        snapshot = Serializer.getInteger(bytes, i);
+        i += Integer.BYTES;
+        byte[] senderBytes = new byte[bytes.length - i];
+        if (senderBytes.length != 0) {
+            System.arraycopy(bytes, i, senderBytes, 0, senderBytes.length);
+        }
+        sender = new String(senderBytes);
+        parsed = true;
     }
 
 

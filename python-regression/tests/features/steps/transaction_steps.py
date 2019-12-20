@@ -5,6 +5,7 @@ from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions
 from util.threading_logic import pool_logic as pool
 from util.milestone_logic import milestones
+from time import sleep
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -149,7 +150,6 @@ def issue_multiple_transactions(step, num_transactions, node):
     world.responses['evaluate_and_send'][node] = transactions_to_store
     logger.info("Transactions generated and stored")
 
-
 @step(r'a milestone is issued with index (\d+) and references')
 def issue_a_milestone_with_reference(step, index):
     """
@@ -158,6 +158,7 @@ def issue_a_milestone_with_reference(step, index):
     a responseList for "findTransactions".
 
     :param index: The index of the milestone you are issuing
+    :param step.hashes: Contains a reference pointer for list of transactions to get a reference from
     """
     node = world.config['nodeId']
     address = static.TEST_BLOWBALL_COO
@@ -167,12 +168,23 @@ def issue_a_milestone_with_reference(step, index):
     logger.info('Issuing milestone {}'.format(index))
     milestone = milestones.issue_milestone(address, api, index, reference_transaction)
 
-    if 'latestMilestone' not in world.config:
-        world.config['latestMilestone'] = {}
+    milestones.update_latest_milestone(world.config, node, milestone)
 
-    milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
-    milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
-    world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
+
+@step(r'the next (\d+) milestones are issued')
+def issue_several_milestones(step, num_milestones):
+    node = world.config['nodeId']
+    api = api_utils.prepare_api_call(node)
+
+    latest_milestone_index = int(api.get_node_info()['latestSolidSubtangleMilestoneIndex'])
+    logger.info('Latest Milestone Index: {}'.format(latest_milestone_index))
+    start_index = latest_milestone_index + 1
+    end_index = start_index + int(num_milestones)
+
+    for index in range(start_index, end_index):
+        issue_a_milestone(step, index, node)
+        #Give node a moment to update solid milestone
+        wait_for_update(index, api)
 
 
 @step(r'milestone (\d+) is issued on "([^"]+)"')
@@ -196,3 +208,17 @@ def issue_a_milestone(step, index, node):
     milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
     milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
     world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
+
+
+def wait_for_update(index, api):
+    updated = False
+    i = 0
+    while i < 10:
+        node_info = api.get_node_info()
+        if node_info['latestSolidSubtangleMilestoneIndex'] == index:
+            updated = True
+            break
+        i += 1;
+        sleep(1)
+
+    assert updated is True, "The node was unable to update to index {}".format(index)

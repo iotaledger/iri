@@ -168,8 +168,8 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    TransactionSolidifier provideTransactionSolidifier(Tangle tangle, SnapshotProvider snapshotProvider, TransactionRequester transactionRequester){
-        return new TransactionSolidifierImpl(tangle, snapshotProvider, transactionRequester);
+    TransactionSolidifier provideTransactionSolidifier(Tangle tangle, SnapshotProvider snapshotProvider, TransactionRequester transactionRequester, TipsViewModel tipsViewModel){
+        return new TransactionSolidifierImpl(tangle, snapshotProvider, transactionRequester, tipsViewModel);
     }
 
     @Singleton

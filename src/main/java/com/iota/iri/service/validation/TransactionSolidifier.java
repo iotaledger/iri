@@ -1,7 +1,9 @@
 package com.iota.iri.service.validation;
 
+import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.validation.impl.TransactionSolidifierImpl;
 import com.iota.iri.network.TransactionRequester;
 
 import java.util.Set;
@@ -81,4 +83,44 @@ public interface TransactionSolidifier {
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
     boolean checkSolidity(Hash hash, int maxProcessedTransactions) throws Exception;
+
+    /**
+     * Updates a transaction after it was stored in the tangle. Tells the node to not request the transaction anymore,
+     * to update the live tips accordingly, and attempts to quickly solidify the transaction.
+     *
+     * <p/>
+     * Performs the following operations:
+     *
+     * <ol>
+     *     <li>Removes {@code transactionViewModel}'s hash from the the request queue since we already found it.</li>
+     *     <li>If {@code transactionViewModel} has no children (approvers), we add it to the node's active tip list.</li>
+     *     <li>Removes {@code transactionViewModel}'s parents (branch & trunk) from the node's tip list
+     *     (if they're present there).</li>
+     *     <li>Attempts to quickly solidify {@code transactionViewModel} by checking whether its direct parents
+     *     are solid. If solid we add it to the queue transaction solidification thread to help it propagate the
+     *     solidification to the approving child transactions.</li>
+     *     <li>Requests missing direct parent (trunk & branch) transactions that are needed to solidify
+     *     {@code transactionViewModel}.</li>
+     * </ol>
+     * @param transactionViewModel received transaction that is being updated
+     * @throws Exception if an error occurred while trying to solidify
+     * @see TipsViewModel
+     */
+    void updateStatus(TransactionViewModel transactionViewModel) throws Exception;
+
+    /**
+     * Tries to solidify the transactions quickly by performing {@link TransactionSolidifierImpl#checkApproovee} on
+     * both parents (trunk and branch). If the parents are solid, mark the transactions as solid.
+     * @param transactionViewModel transaction to solidify
+     * @return <tt>true</tt> if we made the transaction solid, else <tt>false</tt>.
+     * @throws Exception
+     */
+    boolean quickSetSolid(TransactionViewModel transactionViewModel) throws Exception;
+
+    /**
+     * Add to the propagation queue where it will be processed to help solidify approving transactions faster
+     * @param hash      The transaction hash to be removed
+     * @throws Exception
+     */
+    void addToPropagationQueue(Hash hash) throws Exception;
 }

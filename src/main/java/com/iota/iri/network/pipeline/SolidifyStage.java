@@ -67,8 +67,6 @@ public class SolidifyStage implements Stage {
                 return ctx;
             }
 
-            txSolidifier.addToSolidificationQueue(tvm.getHash());
-
             return broadcastTip(ctx, payload);
         }catch (Exception e){
             log.error("Failed to process transaction for solidification", e);

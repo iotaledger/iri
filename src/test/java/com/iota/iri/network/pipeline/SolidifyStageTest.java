@@ -38,15 +38,12 @@ public class SolidifyStageTest {
     @Mock
     private TransactionSolidifier transactionSolidifier;
 
-    @Mock
-    private TransactionValidator transactionValidator;
-
     @Test
     public void solidTransactionIsBroadcast() throws Exception{
         Mockito.when(tvm.isSolid()).thenReturn(true);
         Mockito.when(tvm.getHash()).thenReturn(originalHash);
 
-        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, transactionValidator, tipsViewModel, tangle);
+        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, tipsViewModel, tangle);
         SolidifyPayload solidifyPayload = new SolidifyPayload(null, tvm);
         ProcessingContext ctx = new ProcessingContext(solidifyPayload);
 
@@ -62,10 +59,10 @@ public class SolidifyStageTest {
 
     @Test
     public void quickSetSolidTransactionIsBroadcast() throws Exception{
-        Mockito.when(transactionValidator.quickSetSolid(tvm)).thenReturn(true);
+        Mockito.when(transactionSolidifier.quickSetSolid(tvm)).thenReturn(true);
         Mockito.when(tvm.getHash()).thenReturn(originalHash);
 
-        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, transactionValidator, tipsViewModel, tangle);
+        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, tipsViewModel, tangle);
         SolidifyPayload solidifyPayload = new SolidifyPayload(null, tvm);
         ProcessingContext ctx = new ProcessingContext(solidifyPayload);
 
@@ -82,10 +79,10 @@ public class SolidifyStageTest {
     @Test
     public void unsolidTransactionBroadcastsRandomSolidTip() throws Exception{
         Mockito.when(tvm.isSolid()).thenReturn(false);
-        Mockito.when(transactionValidator.quickSetSolid(tvm)).thenReturn(false);
+        Mockito.when(transactionSolidifier.quickSetSolid(tvm)).thenReturn(false);
         TransactionViewModel tip = new TransactionViewModel(new Transaction(), tipHash);
 
-        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, transactionValidator, tipsViewModel, tangle);
+        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, tipsViewModel, tangle);
         SolidifyPayload solidifyPayload = new SolidifyPayload(null, tvm);
         ProcessingContext ctx = new ProcessingContext(solidifyPayload);
 
@@ -103,10 +100,10 @@ public class SolidifyStageTest {
     @Test
     public void unsolidWithNoRandomTipsAborts() throws Exception{
         Mockito.when(tvm.isSolid()).thenReturn(false);
-        Mockito.when(transactionValidator.quickSetSolid(tvm)).thenReturn(false);
+        Mockito.when(transactionSolidifier.quickSetSolid(tvm)).thenReturn(false);
         Mockito.when(tipsViewModel.getRandomSolidTipHash()).thenReturn(null);
 
-        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, transactionValidator, tipsViewModel, tangle);
+        SolidifyStage solidifyStage = new SolidifyStage(transactionSolidifier, tipsViewModel, tangle);
         SolidifyPayload solidifyPayload = new SolidifyPayload(null, tvm);
         ProcessingContext ctx = new ProcessingContext(solidifyPayload);
 

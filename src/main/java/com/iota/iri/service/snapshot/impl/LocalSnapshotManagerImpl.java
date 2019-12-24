@@ -2,7 +2,7 @@ package com.iota.iri.service.snapshot.impl;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.SnapshotException;
@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * </p>
  * <p>
  * It incorporates a background worker that periodically checks if a new snapshot is due (see {@link
- * #start(LatestMilestoneTracker)} and {@link #shutdown()}).
+ * #start(MilestoneSolidifier)} and {@link #shutdown()}).
  * </p>
  */
 public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
@@ -72,7 +72,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * Holds a reference to the {@link ThreadIdentifier} for the monitor thread.
      *
      * Using a {@link ThreadIdentifier} for spawning the thread allows the {@link ThreadUtils} to spawn exactly one
-     * thread for this instance even when we call the {@link #start(LatestMilestoneTracker)} method multiple times.
+     * thread for this instance even when we call the {@link #start(MilestoneSolidifier)} method multiple times.
      */
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
@@ -95,8 +95,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * {@inheritDoc}
      */
     @Override
-    public void start(LatestMilestoneTracker latestMilestoneTracker) {
-        ThreadUtils.spawnThread(() -> monitorThread(latestMilestoneTracker), monitorThreadIdentifier);
+    public void start(MilestoneSolidifier milestoneSolidifier) {
+        ThreadUtils.spawnThread(() -> monitorThread(milestoneSolidifier), monitorThreadIdentifier);
     }
 
     /**
@@ -113,21 +113,21 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * It periodically checks if a new {@link com.iota.iri.service.snapshot.Snapshot} has to be taken until the
      * {@link Thread} is terminated. If it detects that a {@link com.iota.iri.service.snapshot.Snapshot} is due it
      * triggers the creation of the {@link com.iota.iri.service.snapshot.Snapshot} by calling
-     * {@link SnapshotService#takeLocalSnapshot(LatestMilestoneTracker, TransactionPruner)}.
+     * {@link SnapshotService#takeLocalSnapshot(MilestoneSolidifier, TransactionPruner)}.
      *
-     * @param latestMilestoneTracker tracker for the milestones to determine when a new local snapshot is due
+     * @param milestoneSolidifier tracker for the milestones to determine when a new local snapshot is due
      */
     @VisibleForTesting
-    void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
+    void monitorThread(MilestoneSolidifier milestoneSolidifier) {
         while (!Thread.currentThread().isInterrupted()) {
-            int localSnapshotInterval = getSnapshotInterval(isInSync(latestMilestoneTracker));
+            int localSnapshotInterval = getSnapshotInterval(isInSync(milestoneSolidifier));
 
             int latestSnapshotIndex = snapshotProvider.getLatestSnapshot().getIndex();
             int initialSnapshotIndex = snapshotProvider.getInitialSnapshot().getIndex();
 
             if (latestSnapshotIndex - initialSnapshotIndex > config.getLocalSnapshotsDepth() + localSnapshotInterval) {
                 try {
-                    snapshotService.takeLocalSnapshot(latestMilestoneTracker, transactionPruner);
+                    snapshotService.takeLocalSnapshot(milestoneSolidifier, transactionPruner);
                 } catch (SnapshotException e) {
                     log.error("error while taking local snapshot", e);
                 }
@@ -159,16 +159,16 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * This will always return false if we are not done scanning milestone
      * candidates during initialization.
      * 
-     * @param latestMilestoneTracker tracker we use to determine milestones
+     * @param milestoneSolidifier tracker we use to determine milestones
      * @return <code>true</code> if we are in sync, otherwise <code>false</code>
      */
     @VisibleForTesting
-    boolean isInSync(LatestMilestoneTracker latestMilestoneTracker) {
-        if (!latestMilestoneTracker.isInitialScanComplete()) {
+    boolean isInSync(MilestoneSolidifier milestoneSolidifier) {
+        if (!milestoneSolidifier.isInitialScanComplete()) {
             return false;
         }
 
-        int latestIndex = latestMilestoneTracker.getLatestMilestoneIndex();
+        int latestIndex = milestoneSolidifier.getLatestMilestoneIndex();
         int latestSnapshot = snapshotProvider.getLatestSnapshot().getIndex();
 
         // If we are out of sync, only a full sync will get us in

@@ -6,6 +6,8 @@ import com.google.gson.JsonSyntaxException;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
@@ -21,7 +23,6 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.restserver.RestConnector;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
@@ -108,7 +109,8 @@ public class API {
     private final TipSelector tipsSelector;
     private final TipsViewModel tipsViewModel;
     private final TransactionValidator transactionValidator;
-    private final LatestMilestoneTracker latestMilestoneTracker;
+    private final MilestoneSolidifier milestoneSolidifier;
+    private final TransactionSolidifier transactionSolidifier;
     
     private final int maxFindTxs;
     private final int maxRequestList;
@@ -148,13 +150,14 @@ public class API {
      * @param tipsSelector Handles logic for selecting tips based on other transactions
      * @param tipsViewModel Contains the current tips of this node
      * @param transactionValidator Validates transactions
-     * @param latestMilestoneTracker Service that tracks the latest milestone
+     * @param milestoneSolidifier Service that tracks the latest milestone
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
-            SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
-            SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
-            TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline) {
+               SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
+               SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
+               TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+               MilestoneSolidifier milestoneSolidifier, TransactionProcessingPipeline txPipeline,
+               TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
         this.ixi = ixi;
         
@@ -169,7 +172,8 @@ public class API {
         this.tipsSelector = tipsSelector;
         this.tipsViewModel = tipsViewModel;
         this.transactionValidator = transactionValidator;
-        this.latestMilestoneTracker = latestMilestoneTracker;
+        this.milestoneSolidifier = milestoneSolidifier;
+        this.transactionSolidifier = transactionSolidifier;
         
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
@@ -425,7 +429,7 @@ public class API {
      */
     private boolean isNodeSynchronized() {
         return (snapshotProvider.getLatestSnapshot().getIndex() != snapshotProvider.getInitialSnapshot().getIndex()) &&
-                snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex() -1;
+                snapshotProvider.getLatestSnapshot().getIndex() >= milestoneSolidifier.getLatestMilestoneIndex() -1;
     }
 
     /**
@@ -682,7 +686,7 @@ public class API {
             //store transactions
             if(transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot())) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis());
-                transactionValidator.updateStatus(transactionViewModel);
+                transactionSolidifier.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "sender");
             }
@@ -721,8 +725,8 @@ public class API {
 
                 Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().totalMemory(),
-                latestMilestoneTracker.getLatestMilestoneHash(),
-                latestMilestoneTracker.getLatestMilestoneIndex(),
+                milestoneSolidifier.getLatestMilestoneHash(),
+                milestoneSolidifier.getLatestMilestoneIndex(),
                 
                 snapshotProvider.getLatestSnapshot().getHash(),
                 snapshotProvider.getLatestSnapshot().getIndex(),

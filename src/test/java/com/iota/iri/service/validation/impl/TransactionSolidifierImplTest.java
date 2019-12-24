@@ -1,5 +1,8 @@
 package com.iota.iri.service.validation.impl;
 
+import com.iota.iri.conf.ConfigFactory;
+import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
@@ -29,6 +32,7 @@ public class TransactionSolidifierImplTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
+    private IotaConfig config = ConfigFactory.createIotaConfig(true);
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -38,6 +42,9 @@ public class TransactionSolidifierImplTest {
 
     @Mock
     private static TransactionSolidifierImpl txSolidifier;
+
+    @Mock
+    private static TipsViewModel tipsViewModel;
 
     @Mock
     private static TransactionRequester txRequester;
@@ -64,7 +71,7 @@ public class TransactionSolidifierImplTest {
     public void setUpEach() {
         when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
         txRequester = new TransactionRequester(tangle, snapshotProvider);
-        txSolidifier = new TransactionSolidifierImpl(tangle, snapshotProvider, txRequester);
+        txSolidifier = new TransactionSolidifierImpl(tangle, snapshotProvider, txRequester, tipsViewModel, config.getCoordinator());
         txSolidifier.start();
     }
 

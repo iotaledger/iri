@@ -760,9 +760,9 @@ public class TransactionViewModel {
     /**
      * This method sets the {@link Transaction#milestone} flag.
      *
-     * It gets automatically called by the {@link com.iota.iri.service.milestone.LatestMilestoneTracker} and marks transactions that represent a
-     * milestone accordingly. It first checks if the {@link Transaction#milestone} flag has changed and if so, it issues
-     * a database update.
+     * It gets automatically called by the {@link com.iota.iri.service.milestone.MilestoneSolidifier} and marks
+     * transactions that represent a milestone accordingly. It first checks if the {@link Transaction#milestone} flag
+     * has changed and if so, it issues a database update.
      *
      * @param tangle Tangle instance which acts as a database interface
      * @param initialSnapshot the snapshot representing the starting point of our ledger

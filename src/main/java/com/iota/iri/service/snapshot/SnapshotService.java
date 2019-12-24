@@ -2,7 +2,7 @@ package com.iota.iri.service.snapshot;
 
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 
 import java.util.Map;
@@ -71,11 +71,11 @@ public interface SnapshotService {
      * by the {@code snapshotProvider} to reflect the newly created {@link Snapshot}.
      * </p>
      * 
-     * @param latestMilestoneTracker milestone tracker that allows us to retrieve information about the known milestones
+     * @param milestoneSolidifier milestone tracker that allows us to retrieve information about the known milestones
      * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
      * @throws SnapshotException if anything goes wrong while creating the local snapshot
      */
-    void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner) throws
+    void takeLocalSnapshot(MilestoneSolidifier milestoneSolidifier, TransactionPruner transactionPruner) throws
             SnapshotException;
 
     /**
@@ -88,12 +88,12 @@ public interface SnapshotService {
      * local snapshot files.
      * </p>
      * 
-     * @param latestMilestoneTracker milestone tracker that allows us to retrieve information about the known milestones
+     * @param milestoneSolidifier milestone tracker that allows us to retrieve information about the known milestones
      * @param targetMilestone milestone that is used as a reference point for the snapshot
      * @return a local snapshot of the full ledger state at the given milestone
      * @throws SnapshotException if anything goes wrong while generating the local snapshot
      */
-    Snapshot generateSnapshot(LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone) throws
+    Snapshot generateSnapshot(MilestoneSolidifier milestoneSolidifier, MilestoneViewModel targetMilestone) throws
             SnapshotException;
 
     /**
@@ -122,11 +122,11 @@ public interface SnapshotService {
      * very first time.
      * </p>
      * 
-     * @param latestMilestoneTracker milestone tracker that allows us to retrieve information about the known milestones
+     * @param milestoneSolidifier milestone tracker that allows us to retrieve information about the known milestones
      * @param targetMilestone milestone that is used as a reference point for the snapshot
      * @return a map of solid entry points associating their hash to the milestone index that confirmed them
      * @throws SnapshotException if anything goes wrong while generating the solid entry points
      */
-    Map<Hash, Integer> generateSeenMilestones(LatestMilestoneTracker latestMilestoneTracker,
-            MilestoneViewModel targetMilestone) throws SnapshotException;
+    Map<Hash, Integer> generateSeenMilestones(MilestoneSolidifier milestoneSolidifier,
+                                              MilestoneViewModel targetMilestone) throws SnapshotException;
 }

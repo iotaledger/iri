@@ -1,7 +1,6 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.network.neighbor.Neighbor;
-import com.iota.iri.service.validation.TransactionSolidifier;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
@@ -15,7 +14,7 @@ public interface TransactionProcessingPipeline {
      * Defines the different stages of the {@link TransactionProcessingPipelineImpl}.
      */
     enum Stage {
-        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH, SOLIDIFY,
+        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH, SOLIDIFY, MILESTONE
     }
 
     /**
@@ -52,6 +51,13 @@ public interface TransactionProcessingPipeline {
     BlockingQueue<ProcessingContext> getValidationStageQueue();
 
     /**
+     * Gets the milestone stage queue.
+     *
+     * @return the milestone stage queue
+     */
+    BlockingQueue<ProcessingContext> getMilestoneStageQueue();
+
+    /**
      * Submits the given data from the given neighbor into the pre processing stage of the pipeline.
      *
      * @param neighbor the {@link Neighbor} from which the data originated from
@@ -65,12 +71,6 @@ public interface TransactionProcessingPipeline {
      * @param txTrits the transaction trits
      */
     void process(byte[] txTrits);
-
-    /**
-     * Fetches a set of transactions from the {@link TransactionSolidifier} and submits
-     * the object into the {@link BroadcastStage} queue.
-     */
-    void refillBroadcastQueue();
 
     /**
      * Shut downs the pipeline by shutting down all stages.
@@ -125,4 +125,12 @@ public interface TransactionProcessingPipeline {
      * @param solidifyStage the {@link SolidifyStage} to use
      */
     void setSolidifyStage(SolidifyStage solidifyStage);
+
+    /**
+     * Sets the milestone stage. This method should only be used for injecting mocked objects.
+     *
+     * @param milestoneStage the {@link MilestoneStage} to use
+     */
+    void setMilestoneStage(MilestoneStage milestoneStage);
+
 }

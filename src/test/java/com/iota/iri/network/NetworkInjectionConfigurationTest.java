@@ -3,12 +3,13 @@ package com.iota.iri.network;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import org.junit.Test;
 
@@ -53,10 +54,11 @@ public class NetworkInjectionConfigurationTest {
 
         @Override
         protected void configure() {
-            bind(LatestMilestoneTracker.class).toInstance(mock(LatestMilestoneTracker.class));
+            bind(MilestoneSolidifier.class).toInstance(mock(MilestoneSolidifier.class));
             bind(SnapshotProvider.class).toInstance(mock(SnapshotProvider.class));
             bind(TransactionValidator.class).toInstance(mock(TransactionValidator.class));
             bind(TransactionSolidifier.class).toInstance(mock(TransactionSolidifier.class));
+            bind(MilestoneService.class).toInstance(mock(MilestoneService.class));
         }
 
     }

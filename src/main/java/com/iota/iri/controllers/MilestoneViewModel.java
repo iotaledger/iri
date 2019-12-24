@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Acts as a controller interface for a {@link Milestone} hash object. This controller is used by the
- * {@link com.iota.iri.MilestoneTracker} to manipulate a {@link Milestone} object.
+ * {@link com.iota.iri.service.milestone.MilestoneSolidifier} to manipulate a {@link Milestone} object.
  */
 public class MilestoneViewModel {
     private final Milestone milestone;

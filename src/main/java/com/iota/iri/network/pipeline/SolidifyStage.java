@@ -4,6 +4,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
@@ -28,19 +31,17 @@ public class SolidifyStage implements Stage {
     private TipsViewModel tipsViewModel;
     private Tangle tangle;
     private TransactionViewModel tip;
+    private MilestoneService milestoneService;
 
     /**
      * Constructor for the {@link SolidifyStage}.
      *
      * @param txSolidifier      Transaction solidifier implementation for updating transaction's solidity status
-     * @param txValidator       Transaction validator implementation for determining the validity of a transaction
      * @param tipsViewModel     Used for broadcasting random solid tips if the subject transaction is unsolid
      * @param tangle            A reference to the nodes DB
      */
-    public SolidifyStage(TransactionSolidifier txSolidifier, TransactionValidator txValidator,
-                         TipsViewModel tipsViewModel, Tangle tangle){
+    public SolidifyStage(TransactionSolidifier txSolidifier, TipsViewModel tipsViewModel, Tangle tangle){
         this.txSolidifier = txSolidifier;
-        this.txValidator = txValidator;
         this.tipsViewModel = tipsViewModel;
         this.tangle = tangle;
     }
@@ -61,15 +62,11 @@ public class SolidifyStage implements Stage {
             SolidifyPayload payload = (SolidifyPayload) ctx.getPayload();
             TransactionViewModel tvm = payload.getTransaction();
 
-            if (tvm.isSolid() || txValidator.quickSetSolid(tvm)) {
-                ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-                ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), payload.getTransaction()));
-                return ctx;
+            if (tvm.isSolid() || txSolidifier.quickSetSolid(tvm)) {
+                return prepareBroadcast(ctx, payload.getOriginNeighbor(), tvm);
             }
 
-            txSolidifier.addToSolidificationQueue(tvm.getHash());
-
-            return broadcastTip(ctx, payload);
+            return broadcastTip(ctx, payload, tvm);
         }catch (Exception e){
             log.error("Failed to process transaction for solidification", e);
             ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
@@ -78,7 +75,8 @@ public class SolidifyStage implements Stage {
 
     }
 
-    private ProcessingContext broadcastTip(ProcessingContext ctx, SolidifyPayload payload) throws  Exception{
+    private ProcessingContext broadcastTip(ProcessingContext ctx, SolidifyPayload payload,
+                                           TransactionViewModel tvm) throws  Exception{
         if(tip == null) {
             Hash tipHash = tipsViewModel.getRandomSolidTipHash();
 
@@ -91,12 +89,16 @@ public class SolidifyStage implements Stage {
         }
 
         if(tip.isSolid()) {
-            ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-            ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), tip));
-            return ctx;
+            return prepareBroadcast(ctx, payload.getOriginNeighbor(), tip);
+        } else {
+            return prepareBroadcast(ctx, null, tvm);
         }
+    }
 
-        ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+    private ProcessingContext prepareBroadcast(ProcessingContext ctx, Neighbor originNeighbor, TransactionViewModel tx){
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
+        ctx.setPayload(new BroadcastPayload(originNeighbor, tx));
+        tip = null;
         return ctx;
     }
 

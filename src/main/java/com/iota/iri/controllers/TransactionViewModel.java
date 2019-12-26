@@ -2,8 +2,19 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
-import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.*;
+import com.iota.iri.model.AddressHash;
+import com.iota.iri.model.BundleHash;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.ObsoleteTagHash;
+import com.iota.iri.model.TagHash;
+import com.iota.iri.model.TransactionHash;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -11,7 +22,12 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Stack;
 
 /**
  * Controller class for {@link Transaction} sets. A {@link TransactionViewModel} stores a {@link HashesViewModel} for
@@ -449,6 +465,17 @@ public class TransactionViewModel {
             return false;
         }
         tangle.saveBatch(batch);
+
+        Cache<Indexable, ApproveeViewModel> approveeViewModelCache = tangle.getCache(ApproveeViewModel.class);
+        ApproveeViewModel branchViewModel = ApproveeViewModel.load(tangle, getBranchTransactionHash());
+        branchViewModel.addHash(hash);
+        approveeViewModelCache.put(getBranchTransactionHash(), branchViewModel);
+
+        ApproveeViewModel trunkViewModel = ApproveeViewModel.load(tangle, getTrunkTransactionHash());
+        trunkViewModel.addHash(hash);
+        approveeViewModelCache.put(getTrunkTransactionHash(), trunkViewModel);
+
+        ApproveeViewModel.load(tangle, hash);
 
         cachePut(tangle, this, hash);
         return true;

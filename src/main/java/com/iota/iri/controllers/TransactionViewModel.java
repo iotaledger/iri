@@ -465,7 +465,13 @@ public class TransactionViewModel {
             return false;
         }
         tangle.saveBatch(batch);
+        cacheApprovees(tangle);
 
+        cachePut(tangle, this, hash);
+        return true;
+    }
+
+    private void cacheApprovees(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> approveeViewModelCache = tangle.getCache(ApproveeViewModel.class);
         ApproveeViewModel branchViewModel = ApproveeViewModel.load(tangle, getBranchTransactionHash());
         branchViewModel.addHash(hash);
@@ -476,9 +482,6 @@ public class TransactionViewModel {
         approveeViewModelCache.put(getTrunkTransactionHash(), trunkViewModel);
 
         ApproveeViewModel.load(tangle, hash);
-
-        cachePut(tangle, this, hash);
-        return true;
     }
 
     /**

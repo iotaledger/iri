@@ -28,6 +28,11 @@ public class ApproveeViewModel implements HashesViewModel {
         this.hash = hash;
     }
 
+    /**
+     * Constructor for an {@link Approvee} set from an existing {@link ApproveeViewModel}
+     * 
+     * @param approveeViewModel ApproveeViewModel
+     */
     public ApproveeViewModel(ApproveeViewModel approveeViewModel) {
         this.hash = approveeViewModel.hash;
         this.self = new Approvee();

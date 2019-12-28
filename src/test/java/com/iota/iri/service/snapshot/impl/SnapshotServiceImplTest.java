@@ -10,6 +10,10 @@ import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -20,9 +24,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SnapshotServiceImplTest {
@@ -78,10 +79,10 @@ public class SnapshotServiceImplTest {
     private SnapshotServiceImpl snapshotService;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
-        MilestoneViewModel.clear();
+        MilestoneViewModel.cacheEvict(tangle);
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

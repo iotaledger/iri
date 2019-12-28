@@ -4,6 +4,7 @@ import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheManager;
 import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.controllers.ApproveeViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
@@ -89,6 +90,7 @@ public class Tangle {
         log.info("Evicting all caches...");
         TransactionViewModel.cacheEvict(this);
         ApproveeViewModel.cacheEvict(this);
+        MilestoneViewModel.cacheEvict(this);
         cacheManager.clearAllCaches();
         log.info("Shutting down Tangle Persistence Providers... ");
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);

@@ -18,6 +18,9 @@ import com.iota.iri.storage.Tangle;
 
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * <p>
  * Creates a service instance that allows us to perform ledger state specific operations.
@@ -27,6 +30,9 @@ import java.util.*;
  * </p>
  */
 public class LedgerServiceImpl implements LedgerService {
+
+    private static final Logger log = LoggerFactory.getLogger(LedgerServiceImpl.class);
+
     /**
      * Holds the tangle object which acts as a database interface.
      */
@@ -164,12 +170,11 @@ public class LedgerServiceImpl implements LedgerService {
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle,
                             transactionPointer);
-                    // only take transactions into account that have not been confirmed by the referenced milestone, yet
-                    if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
                         } else {
-                            if (transactionViewModel.getCurrentIndex() == 0) {
+                            if (transactionViewModel.getCurrentIndex() == 0
+                                    && !milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
 
                                 final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(
                                         tangle, snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
@@ -184,7 +189,10 @@ public class LedgerServiceImpl implements LedgerService {
                                         .persistValidatedSpentAddressesAsync(bundleTransactions);
 
                                 if (BundleValidator.isInconsistent(bundleTransactions)) {
-                                    break;
+                                    log.error("Encountered an inconsistent bundle with tail {} and bundle hash {}",
+                                            bundleTransactions.get(0).getHash(),
+                                            bundleTransactions.get(0).getBundleHash());
+                                    return null;
                                 }
 
 
@@ -203,7 +211,7 @@ public class LedgerServiceImpl implements LedgerService {
                             nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
                             nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
-                    }
+
                 } catch (Exception e) {
                     throw new LedgerException("unexpected error while generating the balance diff", e);
                 }

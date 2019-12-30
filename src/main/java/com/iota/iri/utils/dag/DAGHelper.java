@@ -212,5 +212,39 @@ public class DAGHelper {
         traverseApprovees(startingTransactionHash, condition, currentTransactionConsumer, new HashSet<>());
     }
 
+    /**
+     * Find all the tail hashes that can be traversed as you walk down the approvees from {@code startingTransaction}.
+     * When we reach a tail we must stop.
+     *
+     * @param startingTransaction starting point
+     * @return set of the transaction hashes of the tails
+     * @throws TraversalException if anything goes wrong while traversing the graph
+     */
+    public Set<? extends Hash> findTails(TransactionViewModel startingTransaction) throws TraversalException {
+        Set<Hash> tailTxs = new HashSet<>();
+        Queue<Hash> transactionsToExamine = new ArrayDeque<>();
+        transactionsToExamine.offer(startingTransaction.getTrunkTransactionHash());
+        transactionsToExamine.offer(startingTransaction.getBranchTransactionHash());
+        try {
+            Hash currentTransactionHash;
+            while ((currentTransactionHash = transactionsToExamine.poll()) != null) {
+                TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
+                if (currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                    // if tail
+                    if (currentTransaction.getCurrentIndex() == 0) {
+                        tailTxs.add(currentTransaction.getHash());
+                    } else {
+                        transactionsToExamine.add(currentTransaction.getBranchTransactionHash());
+                        transactionsToExamine.add(currentTransaction.getTrunkTransactionHash());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new TraversalException(
+                    "error while traversing the approvees of transaction " + startingTransaction.getHash(), e);
+        }
+        return tailTxs;
+    }
+
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

@@ -5,7 +5,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.validation.TransactionSolidifier;
-import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import org.junit.Rule;
 import org.junit.Test;

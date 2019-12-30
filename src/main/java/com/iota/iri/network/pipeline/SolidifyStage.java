@@ -8,7 +8,6 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.validation.TransactionSolidifier;
-import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +26,9 @@ public class SolidifyStage implements Stage {
     private static final Logger log = LoggerFactory.getLogger(SolidifyStage.class);
 
     private TransactionSolidifier txSolidifier;
-    private TransactionValidator txValidator;
     private TipsViewModel tipsViewModel;
     private Tangle tangle;
     private TransactionViewModel tip;
-    private MilestoneService milestoneService;
 
     /**
      * Constructor for the {@link SolidifyStage}.

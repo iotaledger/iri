@@ -2,7 +2,6 @@ package com.iota.iri.service.validation;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.ProtocolConfig;
-import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.Sponge;
@@ -10,16 +9,13 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.storage.Tangle;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
 
 public class TransactionValidator {
     private static final int  TESTNET_MWM_CAP = 13;
 
-    private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
-    private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
     private int minWeightMagnitude = 81;
     private static final long MAX_TIMESTAMP_FUTURE = 2L * 60L * 60L;
@@ -29,19 +25,15 @@ public class TransactionValidator {
     /**
      * Constructor for Tangle Validator
      *
-     * @param tangle relays tangle data to and from the persistence layer
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
-     * @param tipsViewModel container that gets updated with the latest tips (transactions with no children)
      * @param transactionRequester used to request missing transactions from neighbors
      * @param protocolConfig used for checking if we are in testnet and mwm. testnet <tt>true</tt> if we are in testnet
      *                       mode, this caps {@code mwm} to {@value #TESTNET_MWM_CAP} regardless of parameter input.
      *                       minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the
      *                       transaction hash
      */
-    public TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig) {
-        this.tangle = tangle;
+    public TransactionValidator(SnapshotProvider snapshotProvider, TransactionRequester transactionRequester, ProtocolConfig protocolConfig) {
         this.snapshotProvider = snapshotProvider;
-        this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
         setMwm(protocolConfig.isTestnet(), protocolConfig.getMwm());
     }

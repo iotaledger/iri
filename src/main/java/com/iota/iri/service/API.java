@@ -9,6 +9,7 @@ import com.iota.iri.IXI;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.*;
@@ -111,7 +112,7 @@ public class API {
     private final TransactionValidator transactionValidator;
     private final MilestoneSolidifier milestoneSolidifier;
     private final TransactionSolidifier transactionSolidifier;
-    
+
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
@@ -151,6 +152,7 @@ public class API {
      * @param tipsViewModel Contains the current tips of this node
      * @param transactionValidator Validates transactions
      * @param milestoneSolidifier Service that tracks the latest milestone
+     * @param transactionSolidifier Holds transaction pipeline, including broadcast transactions
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
                SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
@@ -174,7 +176,7 @@ public class API {
         this.transactionValidator = transactionValidator;
         this.milestoneSolidifier = milestoneSolidifier;
         this.transactionSolidifier = transactionSolidifier;
-        
+
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
         maxGetTrytes = configuration.getMaxGetTrytes();

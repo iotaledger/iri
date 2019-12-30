@@ -66,7 +66,7 @@ public class TransactionValidatorTest {
     when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     TipsViewModel tipsViewModel = new TipsViewModel();
     txRequester = new TransactionRequester(tangle, snapshotProvider);
-    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester, new MainnetConfig());
+    txValidator = new TransactionValidator(snapshotProvider, txRequester, new MainnetConfig());
     txValidator.setMwm(false, MAINNET_MWM);
   }
 
@@ -74,7 +74,7 @@ public class TransactionValidatorTest {
   public void testMinMwm() {
     ProtocolConfig protocolConfig = mock(ProtocolConfig.class);
     when(protocolConfig.getMwm()).thenReturn(5);
-    TransactionValidator transactionValidator = new TransactionValidator(null, null, null, null, protocolConfig);
+    TransactionValidator transactionValidator = new TransactionValidator(null, null, protocolConfig);
     assertEquals("Expected testnet minimum minWeightMagnitude", 13, transactionValidator.getMinWeightMagnitude());
   }
 

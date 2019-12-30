@@ -162,8 +162,8 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    TransactionValidator provideTransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
-        return new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester, configuration);
+    TransactionValidator provideTransactionValidator(SnapshotProvider snapshotProvider, TransactionRequester transactionRequester) {
+        return new TransactionValidator(snapshotProvider, transactionRequester, configuration);
     }
 
     @Singleton
@@ -203,8 +203,8 @@ public class MainInjectionConfiguration extends AbstractModule {
                           SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
                           SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
                           TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-                          LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline) {
-        return new API(configuration, ixi, transactionRequester, spentAddressesService, tangle, bundleValidator, snapshotProvider, ledgerService, neighborRouter, tipsSelector, tipsViewModel, transactionValidator, latestMilestoneTracker, txPipeline);
+                          LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline, TransactionSolidifier transactionSolidifier) {
+        return new API(configuration, ixi, transactionRequester, spentAddressesService, tangle, bundleValidator, snapshotProvider, ledgerService, neighborRouter, tipsSelector, tipsViewModel, transactionValidator, latestMilestoneTracker, txPipeline, transactionSolidifier);
     }
 
     @Override

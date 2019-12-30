@@ -7,6 +7,7 @@ import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
 import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.*;
@@ -108,6 +109,7 @@ public class API {
     private final TipSelector tipsSelector;
     private final TipsViewModel tipsViewModel;
     private final TransactionValidator transactionValidator;
+    private final TransactionSolidifier transactionSolidifier;
     private final LatestMilestoneTracker latestMilestoneTracker;
     
     private final int maxFindTxs;
@@ -149,12 +151,16 @@ public class API {
      * @param tipsViewModel Contains the current tips of this node
      * @param transactionValidator Validates transactions
      * @param latestMilestoneTracker Service that tracks the latest milestone
+     * @param transactionSolidifier Holds transaction pipeline, including broadcast transactions
+     * @param t Service that tracks the latest milestone
+     *
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
             SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
-            SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
-            TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline) {
+            SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter,
+            TipSelector tipsSelector, TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline,
+            TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
         this.ixi = ixi;
         
@@ -169,6 +175,7 @@ public class API {
         this.tipsSelector = tipsSelector;
         this.tipsViewModel = tipsViewModel;
         this.transactionValidator = transactionValidator;
+        this.transactionSolidifier = transactionSolidifier;
         this.latestMilestoneTracker = latestMilestoneTracker;
         
         maxFindTxs = configuration.getMaxFindTransactions();
@@ -682,7 +689,7 @@ public class API {
             //store transactions
             if(transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot())) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis());
-                transactionValidator.updateStatus(transactionViewModel);
+                transactionSolidifier.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "sender");
             }

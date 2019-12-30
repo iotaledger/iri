@@ -5,7 +5,6 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.validation.TransactionSolidifier;
-import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,7 @@ import static com.iota.iri.controllers.TransactionViewModel.fromHash;
 public class SolidifyStage implements Stage {
     private static final Logger log = LoggerFactory.getLogger(SolidifyStage.class);
 
-    private TransactionValidator txValidator;
+    private TransactionSolidifier txSolidifier;
     private TipsViewModel tipsViewModel;
     private Tangle tangle;
     private TransactionViewModel tip;
@@ -31,12 +30,12 @@ public class SolidifyStage implements Stage {
     /**
      * Constructor for the {@link SolidifyStage}.
      *
-     * @param txValidator       Transaction validator implementation for determining the validity of a transaction
+     * @param txSolidifier       Transaction validator implementation for determining the validity of a transaction
      * @param tipsViewModel     Used for broadcasting random solid tips if the subject transaction is unsolid
      * @param tangle            A reference to the nodes DB
      */
-    public SolidifyStage(TransactionValidator txValidator, TipsViewModel tipsViewModel, Tangle tangle){
-        this.txValidator = txValidator;
+    public SolidifyStage(TransactionSolidifier txSolidifier, TipsViewModel tipsViewModel, Tangle tangle){
+        this.txSolidifier = txSolidifier;
         this.tipsViewModel = tipsViewModel;
         this.tangle = tangle;
     }
@@ -56,7 +55,7 @@ public class SolidifyStage implements Stage {
             SolidifyPayload payload = (SolidifyPayload) ctx.getPayload();
             TransactionViewModel tvm = payload.getTransaction();
 
-            if (tvm.isSolid() || txValidator.quickSetSolid(tvm)) {
+            if (tvm.isSolid() || txSolidifier.quickSetSolid(tvm)) {
                 ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
                 ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), payload.getTransaction()));
                 return ctx;

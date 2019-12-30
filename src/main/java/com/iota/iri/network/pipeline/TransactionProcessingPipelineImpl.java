@@ -99,10 +99,10 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                 snapshotProvider, recentlySeenBytesCache);
         this.broadcastStage = new BroadcastStage(neighborRouter);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
-        this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider, transactionRequester);
+        this.receivedStage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester);
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
-        this.solidifyStage = new SolidifyStage(txSolidifier, txValidator, tipsViewModel, tangle);
+        this.solidifyStage = new SolidifyStage(txSolidifier, tipsViewModel, tangle);
         this.txSolidifier = txSolidifier;
     }
 

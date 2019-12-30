@@ -12,6 +12,9 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
 
+/**
+ * Tool for determining validity of a transaction via a {@link TransactionViewModel}, tryte array or byte array.
+ */
 public class TransactionValidator {
     private static final int  TESTNET_MWM_CAP = 13;
 

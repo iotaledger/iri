@@ -2,7 +2,6 @@ package com.iota.iri.service.validation;
 
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.ProtocolConfig;
-import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -64,7 +63,6 @@ public class TransactionValidatorTest {
   @Before
   public void setUpEach() {
     when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
-    TipsViewModel tipsViewModel = new TipsViewModel();
     txRequester = new TransactionRequester(tangle, snapshotProvider);
     txValidator = new TransactionValidator(snapshotProvider, txRequester, new MainnetConfig());
     txValidator.setMwm(false, MAINNET_MWM);

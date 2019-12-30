@@ -256,10 +256,8 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * Returns true if transaction is not solid and there are no solid entry points from the initial snapshot.
      */
     private boolean isUnsolidWithoutEntryPoint(TransactionViewModel transaction, Hash hashPointer) throws Exception{
-        if(!transaction.isSolid()){
-            if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)){
+        if(!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)){
                 return true;
-            }
         }
         addToPropagationQueue(hashPointer);
         return false;
@@ -300,6 +298,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         }
     }
 
+    @Override
     public void addToPropagationQueue(Hash hash) throws Exception{
         if(!solidTransactions.contains(hash)) {
             if (solidTransactions.size() >= MAX_SIZE) {

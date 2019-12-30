@@ -23,7 +23,6 @@ import static com.iota.iri.controllers.TransactionViewModel.fromHash;
 public class SolidifyStage implements Stage {
     private static final Logger log = LoggerFactory.getLogger(SolidifyStage.class);
 
-    private TransactionSolidifier txSolidifier;
     private TransactionValidator txValidator;
     private TipsViewModel tipsViewModel;
     private Tangle tangle;
@@ -32,14 +31,11 @@ public class SolidifyStage implements Stage {
     /**
      * Constructor for the {@link SolidifyStage}.
      *
-     * @param txSolidifier      Transaction solidifier implementation for updating transaction's solidity status
      * @param txValidator       Transaction validator implementation for determining the validity of a transaction
      * @param tipsViewModel     Used for broadcasting random solid tips if the subject transaction is unsolid
      * @param tangle            A reference to the nodes DB
      */
-    public SolidifyStage(TransactionSolidifier txSolidifier, TransactionValidator txValidator,
-                         TipsViewModel tipsViewModel, Tangle tangle){
-        this.txSolidifier = txSolidifier;
+    public SolidifyStage(TransactionValidator txValidator, TipsViewModel tipsViewModel, Tangle tangle){
         this.txValidator = txValidator;
         this.tipsViewModel = tipsViewModel;
         this.tangle = tangle;
@@ -48,9 +44,8 @@ public class SolidifyStage implements Stage {
     /**
      * Processes the payload of the {@link ProcessingContext} as a {@link SolidifyPayload}. First the transaction will
      * be checked for solidity and validity. If the transaction is already solid or can be set solid quickly by the
-     * transaction validator, the transaction is passed to the {@link BroadcastStage}. If not, the transaction is
-     * added to the solidification queue, and a random solid tip is pulled form the {@link TipsViewModel} to be
-     * broadcast instead.
+     * transaction validator, the transaction is passed to the {@link BroadcastStage}. If not, a random solid tip is
+     * pulled form the {@link TipsViewModel} to be broadcast instead.
      *
      * @param ctx       The context to process
      * @return          The output context, in most cases a {@link BroadcastPayload}.

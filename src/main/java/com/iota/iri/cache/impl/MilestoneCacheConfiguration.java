@@ -1,5 +1,8 @@
 package com.iota.iri.cache.impl;
 
+/**
+ * Cache Configuration for milestones
+ */
 public class MilestoneCacheConfiguration extends DefaultCacheConfiguration {
 
     private static final int MAX_SIZE = 30;

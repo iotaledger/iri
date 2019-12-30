@@ -173,36 +173,36 @@ public class LedgerServiceImpl implements LedgerService {
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         return null;
                     }
-                        if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
+                    if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
 
-                            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
-                                    snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
+                        final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
+                                snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
-                            if (bundleTransactions.isEmpty()) {
-                                return null;
-                            }
-
-                            // ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
-                            // concerns
-                            spentAddressesService.persistValidatedSpentAddressesAsync(bundleTransactions);
-
-                            if (BundleValidator.isInconsistent(bundleTransactions)) {
-                                log.error("Encountered an inconsistent bundle with tail {} and bundle hash {}",
-                                        bundleTransactions.get(0).getHash(), bundleTransactions.get(0).getBundleHash());
-                                return null;
-                            }
-
-                            for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
-                                if (bundleTransactionViewModel.value() != 0) {
-
-                                    final Hash address = bundleTransactionViewModel.getAddressHash();
-                                    final Long value = state.get(address);
-                                    state.put(address, value == null ? bundleTransactionViewModel.value()
-                                            : Math.addExact(value, bundleTransactionViewModel.value()));
-                                }
-                            }
-                            nonAnalyzedTransactions.addAll(DAGHelper.get(tangle).findTails(transactionViewModel));
+                        if (bundleTransactions.isEmpty()) {
+                            return null;
                         }
+
+                        // ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
+                        // concerns
+                        spentAddressesService.persistValidatedSpentAddressesAsync(bundleTransactions);
+
+                        if (BundleValidator.isInconsistent(bundleTransactions)) {
+                            log.error("Encountered an inconsistent bundle with tail {} and bundle hash {}",
+                                    bundleTransactions.get(0).getHash(), bundleTransactions.get(0).getBundleHash());
+                            return null;
+                        }
+
+                        for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
+                            if (bundleTransactionViewModel.value() != 0) {
+
+                                final Hash address = bundleTransactionViewModel.getAddressHash();
+                                final Long value = state.get(address);
+                                state.put(address, value == null ? bundleTransactionViewModel.value()
+                                        : Math.addExact(value, bundleTransactionViewModel.value()));
+                            }
+                        }
+                        nonAnalyzedTransactions.addAll(DAGHelper.get(tangle).findTails(transactionViewModel));
+                    }
 
                 }
 

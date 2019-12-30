@@ -15,7 +15,9 @@ import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.security.SecureRandom;
@@ -782,8 +784,7 @@ public class NeighborRouterImpl implements NeighborRouter {
         }
 
         // remove the neighbor from connection attempts
-        boolean isSeen = reconnectPool.contains(neighborURI);
-        reconnectPool.remove(neighborURI);
+        boolean isSeen = reconnectPool.remove(neighborURI);
         URI rawURI = URI.create(String.format("%s%s:%d", PROTOCOL_PREFIX, inetAddr.getAddress().getHostAddress(),
                 neighborURI.getPort()));
         reconnectPool.remove(rawURI);
@@ -792,7 +793,7 @@ public class NeighborRouterImpl implements NeighborRouter {
         Neighbor neighbor = connectedNeighbors.get(identity);
 
         if (neighbor == null) {
-            if(isSeen){
+            if (isSeen) {
                 return NeighborMutOp.OK;
             }
             return NeighborMutOp.UNKNOWN_NEIGHBOR;

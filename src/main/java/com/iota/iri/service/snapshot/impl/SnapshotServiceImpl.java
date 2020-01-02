@@ -575,7 +575,8 @@ public class SnapshotServiceImpl implements SnapshotService {
      * @param targetMilestone milestone that is used as an anchor for our checks
      * @return true if the transaction is a solid entry point and false otherwise
      */
-    private boolean isSolidEntryPoint(Tangle tangle, Hash transactionHash, MilestoneViewModel targetMilestone) {
+    private boolean shouldTailsBeSolidEntryPoint(Tangle tangle, Hash transactionHash,
+            MilestoneViewModel targetMilestone) {
         Set<TransactionViewModel> unconfirmedApprovers = new HashSet<>();
 
         try {
@@ -620,24 +621,33 @@ public class SnapshotServiceImpl implements SnapshotService {
      * @param solidEntryPoints map that is used to collect the solid entry points
      */
     private void processOldSolidEntryPoints(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneViewModel targetMilestone, Map<Hash, Integer> solidEntryPoints) {
+            MilestoneViewModel targetMilestone, Map<Hash, Integer> solidEntryPoints) throws SnapshotException {
 
         ProgressLogger progressLogger = new IntervalProgressLogger(
                 "Taking local snapshot [analyzing old solid entry points]", log)
                 .start(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().size());
+        try {
+            Snapshot initialSnapshot = snapshotProvider.getInitialSnapshot();
+            Map<Hash, Integer> orgSolidEntryPoints = initialSnapshot.getSolidEntryPoints();
+            for (Map.Entry<Hash, Integer> solidPoint : orgSolidEntryPoints.entrySet()) {
+                Hash hash = solidPoint.getKey();
+                int milestoneIndex = solidPoint.getValue();
+                if (!Hash.NULL_HASH.equals(hash)
+                        && targetMilestone.index() - milestoneIndex <= SOLID_ENTRY_POINT_LIFETIME
+                        && shouldTailsBeSolidEntryPoint(tangle, hash, targetMilestone)) {
+                    TransactionViewModel tvm = TransactionViewModel.fromHash(tangle, hash);
+                    addTailsToSolidEntryPoints(milestoneIndex, solidEntryPoints, tvm);
+                    solidEntryPoints.put(hash, milestoneIndex);
+                }
 
-        Snapshot initialSnapshot = snapshotProvider.getInitialSnapshot();
-        initialSnapshot.getSolidEntryPoints().forEach((hash, milestoneIndex) -> {
-            if (!Hash.NULL_HASH.equals(hash) && targetMilestone.index() - milestoneIndex <= SOLID_ENTRY_POINT_LIFETIME
-                    && isSolidEntryPoint(tangle, hash, targetMilestone)) {
-
-                solidEntryPoints.put(hash, milestoneIndex);
+                progressLogger.progress();
             }
-
-            progressLogger.progress();
-        });
-
-        progressLogger.finish();
+        } catch (Exception e) {
+            throw new SnapshotException(
+                    "Couldn't process old solid entry point for target milestone " + targetMilestone.index(), e);
+        } finally {
+            progressLogger.finish();
+        }
     }
 
     /**
@@ -675,8 +685,9 @@ public class SnapshotServiceImpl implements SnapshotService {
                         currentMilestone.getHash(),
                         currentTransaction -> currentTransaction.snapshotIndex() >= currentMilestone.index(),
                         currentTransaction -> {
-                            if (isSolidEntryPoint(tangle, currentTransaction.getHash(), targetMilestone)) {
-                                solidEntryPoints.put(currentTransaction.getHash(), targetMilestone.index());
+                            if (shouldTailsBeSolidEntryPoint(tangle, currentTransaction.getHash(), targetMilestone)) {
+                                addTailsToSolidEntryPoints(targetMilestone.index(), solidEntryPoints,
+                                        currentTransaction);
                             }
                         }
                 );
@@ -694,6 +705,17 @@ public class SnapshotServiceImpl implements SnapshotService {
             progressLogger.abort(e);
 
             throw new SnapshotException("could not generate the solid entry points for " + targetMilestone, e);
+        }
+    }
+
+    private void addTailsToSolidEntryPoints(int milestoneIndex, Map<Hash, Integer> solidEntryPoints,
+            TransactionViewModel currentTransaction) throws TraversalException {
+        // if tail
+        if (currentTransaction.getCurrentIndex() == 0) {
+            solidEntryPoints.put(currentTransaction.getHash(), milestoneIndex);
+        } else {
+            Set<? extends Hash> tails = DAGHelper.get(tangle).findTails(currentTransaction);
+            tails.forEach(tail -> solidEntryPoints.put(tail, milestoneIndex));
         }
     }
 }

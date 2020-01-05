@@ -1,13 +1,13 @@
 package com.iota.iri.conf;
 
+import java.util.Objects;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-
-import java.util.Objects;
 
 public class TestnetConfig extends BaseIotaConfig {
 

@@ -389,7 +389,7 @@ public class API {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
-            } else if (bundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), txVM.getHash()).size() == 0) {
+            } else if (bundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), txVM.getHash()).isEmpty()) {
                 state = false;
                 info = "tails are not consistent (bundle is invalid): " + transaction;
                 break;
@@ -495,6 +495,7 @@ public class API {
                 case OK:
                     log.info("Removed neighbor: {}", uriString);
                     numberOfRemovedNeighbors++;
+                    break;
                 case URI_INVALID:
                     log.info("Can't remove neighbor {}: URI is invalid", uriString);
                     break;
@@ -1676,7 +1677,7 @@ public class API {
                 storeTransactionsStatement(trytes);
             } catch (Exception e) {
                 //transaction not valid
-                return ErrorResponse.create("Invalid trytes input");
+                return ErrorResponse.create("Error: " + e.getMessage());
             }
             return AbstractResponse.createEmptyResponse();
         };

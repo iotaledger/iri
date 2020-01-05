@@ -1,7 +1,5 @@
 package com.iota.iri;
 
-import java.security.SecureRandom;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,40 +8,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.NeighborRouter;
+import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.network.impl.TipsRequesterImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
-import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
-import com.iota.iri.service.milestone.impl.LatestMilestoneTrackerImpl;
-import com.iota.iri.service.milestone.impl.LatestSolidMilestoneTrackerImpl;
-import com.iota.iri.service.milestone.impl.MilestoneServiceImpl;
-import com.iota.iri.service.milestone.impl.MilestoneSolidifierImpl;
-import com.iota.iri.service.milestone.impl.SeenMilestonesRetrieverImpl;
+import com.iota.iri.service.ledger.LedgerService;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.milestone.SeenMilestonesRetriever;
+import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
-import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
-import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
-import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
-import com.iota.iri.service.tipselection.EntryPointSelector;
-import com.iota.iri.service.tipselection.RatingCalculator;
-import com.iota.iri.service.tipselection.TailFinder;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
-import com.iota.iri.service.tipselection.Walker;
-import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
-import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
-import com.iota.iri.service.tipselection.impl.TailFinderImpl;
-import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
-import com.iota.iri.service.tipselection.impl.WalkerAlpha;
-import com.iota.iri.service.transactionpruning.TransactionPruningException;
-import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
+import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
@@ -87,38 +72,40 @@ public class Iota {
 
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
-    public final SpentAddressesProviderImpl spentAddressesProvider;
+    //Fields must be public in order to be used by IXI
 
-    public final SpentAddressesServiceImpl spentAddressesService;
+    public final SpentAddressesProvider spentAddressesProvider;
 
-    public final SnapshotProviderImpl snapshotProvider;
+    public final SpentAddressesService spentAddressesService;
 
-    public final SnapshotServiceImpl snapshotService;
+    public final SnapshotProvider snapshotProvider;
 
-    public final LocalSnapshotManagerImpl localSnapshotManager;
+    public final SnapshotService snapshotService;
 
-    public final MilestoneServiceImpl milestoneService;
+    public final LocalSnapshotManager localSnapshotManager;
 
-    public final LatestMilestoneTrackerImpl latestMilestoneTracker;
+    public final MilestoneService milestoneService;
 
-    public final LatestSolidMilestoneTrackerImpl latestSolidMilestoneTracker;
+    public final LatestMilestoneTracker latestMilestoneTracker;
 
-    public final SeenMilestonesRetrieverImpl seenMilestonesRetriever;
+    public final LatestSolidMilestoneTracker latestSolidMilestoneTracker;
 
-    public final LedgerServiceImpl ledgerService = new LedgerServiceImpl();
+    public final SeenMilestonesRetriever seenMilestonesRetriever;
 
-    public final AsyncTransactionPruner transactionPruner;
+    public final LedgerService ledgerService;
 
-    public final MilestoneSolidifierImpl milestoneSolidifier;
+    public final TransactionPruner transactionPruner;
+
+    public final MilestoneSolidifier milestoneSolidifier;
 
     public final BundleValidator bundleValidator;
 
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
     public final TransactionRequester transactionRequester;
-    public final TipsRequesterImpl tipRequester;
+    public final TipsRequester tipsRequester;
     public final TransactionProcessingPipeline txPipeline;
-    public final NeighborRouter neighborRouter;
+    public final NeighborRouter neighborRouter; // used in test
     public final IotaConfig configuration;
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
@@ -127,42 +114,49 @@ public class Iota {
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
      *
      * @param configuration Information about how this node will be configured.
-     * @throws TransactionPruningException If the TransactionPruner could not restore its state.
-     * @throws SnapshotException           If the Snapshot fails to initialize. This can happen if the snapshot
-     *                                     signature is invalid or the file cannot be read.
+     *
      */
-    public Iota(IotaConfig configuration)
-            throws TransactionPruningException, SnapshotException, SpentAddressesException {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector) {
         this.configuration = configuration;
 
-        // new refactored instances
-        spentAddressesProvider = new SpentAddressesProviderImpl();
-        spentAddressesService = new SpentAddressesServiceImpl();
-        snapshotProvider = new SnapshotProviderImpl();
-        snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = configuration.getLocalSnapshotsEnabled() ? new LocalSnapshotManagerImpl() : null;
-        milestoneService = new MilestoneServiceImpl();
-        latestMilestoneTracker = new LatestMilestoneTrackerImpl();
-        latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
-        seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
-        milestoneSolidifier = new MilestoneSolidifierImpl();
-        transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
-                ? new AsyncTransactionPruner()
-                : null;
-        neighborRouter = new NeighborRouter();
-        txPipeline = new TransactionProcessingPipelineImpl();
-        tipRequester = new TipsRequesterImpl();
+        this.ledgerService = ledgerService;
+        this.spentAddressesProvider = spentAddressesProvider;
+        this.spentAddressesService = spentAddressesService;
+        this.snapshotProvider = snapshotProvider;
+        this.snapshotService = snapshotService;
+        this.localSnapshotManager = localSnapshotManager;
+        this.milestoneService = milestoneService;
+        this.latestMilestoneTracker = latestMilestoneTracker;
+        this.latestSolidMilestoneTracker = latestSolidMilestoneTracker;
+        this.seenMilestonesRetriever = seenMilestonesRetriever;
+        this.milestoneSolidifier = milestoneSolidifier;
+        this.transactionPruner = transactionPruner;
+        this.neighborRouter = neighborRouter;
+        this.txPipeline = transactionProcessingPipeline;
+        this.tipsRequester = tipsRequester;
 
-        // legacy code
-        bundleValidator = new BundleValidator();
-        tangle = new Tangle();
-        tipsViewModel = new TipsViewModel();
-        transactionRequester = new TransactionRequester(tangle, snapshotProvider);
-        transactionValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester);
+        // legacy classes
+        this.bundleValidator = bundleValidator;
+        this.tangle = tangle;
+        this.tipsViewModel = tipsViewModel;
+        this.transactionRequester = transactionRequester;
+        this.transactionValidator = transactionValidator;
 
-        tipsSelector = createTipSelector(configuration);
+        this.tipsSelector = tipsSelector;
+    }
 
-        injectDependencies();
+    private void initDependencies() throws SnapshotException, SpentAddressesException {
+        //snapshot provider must be initialized first
+        //because we check whether spent addresses data exists
+        snapshotProvider.init();
+        boolean assertSpentAddressesExistence = !configuration.isTestnet()
+                && snapshotProvider.getInitialSnapshot().getIndex() != configuration.getMilestoneStartIndex();
+        spentAddressesProvider.init(assertSpentAddressesExistence);
+        latestMilestoneTracker.init();
+        seenMilestonesRetriever.init();
+        if (transactionPruner != null) {
+            transactionPruner.init();
+        }
     }
 
     /**
@@ -176,6 +170,8 @@ public class Iota {
      *                   error.
      */
     public void init() throws Exception {
+        initDependencies(); // remainder of injectDependencies method (contained init code)
+
         initializeTangle();
         tangle.init();
 
@@ -189,11 +185,11 @@ public class Iota {
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
 
-        transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
+        transactionValidator.init();
 
         txPipeline.start();
         neighborRouter.start();
-        tipRequester.start();
+        tipsRequester.start();
 
         latestMilestoneTracker.start();
         latestSolidMilestoneTracker.start();
@@ -206,49 +202,6 @@ public class Iota {
         if (transactionPruner != null) {
             transactionPruner.start();
         }
-    }
-
-    private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
-        // snapshot provider must be initialized first
-        // because we check whether spent addresses data exists
-        snapshotProvider.init(configuration);
-        initSpentAddressesProvider();
-
-        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, configuration);
-        snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
-        if (localSnapshotManager != null) {
-            localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
-        }
-
-        milestoneService.init(tangle, snapshotProvider, snapshotService, bundleValidator, configuration);
-        latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
-                configuration);
-        latestSolidMilestoneTracker.init(tangle, snapshotProvider, milestoneService, ledgerService,
-                latestMilestoneTracker, transactionRequester);
-        seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
-        milestoneSolidifier.init(snapshotProvider, transactionValidator);
-        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
-                bundleValidator);
-        if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, tipsViewModel, configuration);
-        }
-        neighborRouter.init(configuration, configuration, transactionRequester, txPipeline);
-        txPipeline.init(neighborRouter, configuration, transactionValidator, tangle, snapshotProvider, tipsViewModel,
-                latestMilestoneTracker, transactionRequester);
-        tipRequester.init(neighborRouter, tangle, latestMilestoneTracker, transactionRequester);
-    }
-
-    private void initSpentAddressesProvider() throws SpentAddressesException {
-        PersistenceProvider spentAddressesDbProvider = createRocksDbProvider(
-                configuration.getSpentAddressesDbPath(),
-                configuration.getSpentAddressesDbLogPath(),
-                1000,
-                new HashMap<String, Class<? extends Persistable>>(1) {{
-                    put("spent-addresses", SpentAddress.class);
-                }}, null);
-        boolean assertSpentAddressesExistence = !configuration.isTestnet()
-                && snapshotProvider.getInitialSnapshot().getIndex() != configuration.getMilestoneStartIndex();
-        spentAddressesProvider.init(configuration, spentAddressesDbProvider, assertSpentAddressesExistence);
     }
 
     private void rescanDb() throws Exception {
@@ -270,7 +223,8 @@ public class Iota {
                 log.info("Rescanned {} Transactions", counter);
             }
             List<Pair<Indexable, Persistable>> saveBatch = tx.getSaveBatch();
-            saveBatch.remove(5);
+            //don't re-save the tx itself
+            saveBatch.remove(saveBatch.size() - 1);
             tangle.saveBatch(saveBatch);
             tx = tx.next(tangle);
         }
@@ -294,7 +248,7 @@ public class Iota {
             localSnapshotManager.shutdown();
         }
 
-        tipRequester.shutdown();
+        tipsRequester.shutdown();
         txPipeline.shutdown();
         neighborRouter.shutdown();
         transactionValidator.shutdown();
@@ -310,6 +264,7 @@ public class Iota {
                 tangle.addPersistenceProvider(createRocksDbProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
+                        configuration.getDbConfigFile(),
                         configuration.getDbCacheSize(),
                         Tangle.COLUMN_FAMILIES,
                         Tangle.METADATA_COLUMN_FAMILY)
@@ -324,31 +279,23 @@ public class Iota {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
     }
-    
+
     /**
      * Creates a new Persistable provider with the supplied settings
-     * 
+     *
      * @param path The location where the database will be stored
      * @param log The location where the log files will be stored
+     * @param configFile The location where the RocksDB config is read from
      * @param cacheSize the size of the cache used by the database implementation
      * @param columnFamily A map of the names related to their Persistable class
      * @param metadata Map of metadata used by the Persistable class, can be <code>null</code>
      * @return A new Persistance provider
      */
-    private PersistenceProvider createRocksDbProvider(String path, String log, int cacheSize, 
+    private PersistenceProvider createRocksDbProvider(String path, String log, String configFile, int cacheSize,
             Map<String, Class<? extends Persistable>> columnFamily,
             Map.Entry<String, Class<? extends Persistable>> metadata) {
         return new RocksDBPersistenceProvider(
-                path, log, cacheSize, columnFamily, metadata);
+                path, log, configFile, cacheSize, columnFamily, metadata);
     }
 
-    private TipSelector createTipSelector(TipSelConfig config) {
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
-                latestMilestoneTracker);
-        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
-        TailFinder tailFinder = new TailFinderImpl(tangle);
-        Walker walker = new WalkerAlpha(tailFinder, tangle, new SecureRandom(), config);
-        return new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
-                walker, config);
-    }
 }

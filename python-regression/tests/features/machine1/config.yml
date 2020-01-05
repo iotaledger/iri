@@ -19,8 +19,8 @@ seeds: # For internal use by the regression system.
     - SIID
 
 nodes:
-  nodeA: #name
+  nodeA-m1: #name
     <<: *api_tests_config_files
   
-  nodeB:
+  nodeB-m1:
     <<: *api_tests_config_files

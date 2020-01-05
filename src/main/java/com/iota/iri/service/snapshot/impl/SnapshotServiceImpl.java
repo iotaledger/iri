@@ -8,8 +8,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.*;
-import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
-import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
@@ -77,53 +75,28 @@ public class SnapshotServiceImpl implements SnapshotService {
     /**
      * Holds the tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds the config with important snapshot specific settings.
      */
-    private SnapshotConfig config;
-
-    private SpentAddressesService spentAddressesService;
-
-    private SpentAddressesProvider spentAddressesProvider;
+    private final SnapshotConfig config;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code snapshotService = new SnapshotServiceImpl().init(...);}
-     *
-     * @param tangle Tangle object which acts as a database interface
-     * @param snapshotProvider data provider for the snapshots that are relevant for the node
-     * @param config important snapshot related configuration parameters
-     * @return the initialized instance itself to allow chaining
+     * Implements the snapshot service. See interface for more information.
+     * @param tangle acts as a database interface.
+     * @param snapshotProvider gives us access to the relevant snapshots.
+     * @param config configuration with snapshot specific settings.
      */
-    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-            SpentAddressesService spentAddressesService, SpentAddressesProvider spentAddressesProvider,
-            SnapshotConfig config) {
-
+    public SnapshotServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.spentAddressesService = spentAddressesService;
-        this.spentAddressesProvider = spentAddressesProvider;
         this.config = config;
-
-        return this;
     }
 
     /**
@@ -537,7 +510,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     /**
      * <p>
-     * This method determines if a transaction is orphaned.
+     * This method determines if a transaction is orphaned when none of its approvers is confirmed by a milestone.
      * </p>
      * <p>
      * Since there is no hard definition for when a transaction can be considered to be orphaned, we define orphaned in
@@ -549,14 +522,14 @@ public class SnapshotServiceImpl implements SnapshotService {
      * a relatively safe way to determine if a subtangle "above" a transaction got orphaned.
      * </p>
      * 
-     * @param tangle Tangle object which acts as a database interface
-     * @param transaction transaction that shall be checked
-     * @param referenceTransaction transaction that acts as a judge to the other transaction
+     * @param tangle                Tangle object which acts as a database interface
+     * @param transaction           transaction that shall be checked
+     * @param referenceTransaction  transaction that acts as a judge to the other transaction
      * @param processedTransactions transactions that were visited already while trying to determine the orphaned status
      * @return true if the transaction got orphaned and false otherwise
      * @throws SnapshotException if anything goes wrong while determining the orphaned status
      */
-    private boolean isOrphaned(Tangle tangle, TransactionViewModel transaction,
+    private boolean isProbablyOrphaned(Tangle tangle, TransactionViewModel transaction,
             TransactionViewModel referenceTransaction, Set<Hash> processedTransactions) throws SnapshotException {
 
         AtomicBoolean nonOrphanedTransactionFound = new AtomicBoolean(false);
@@ -580,29 +553,27 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     /**
      * <p>
-     * This method checks if a transaction is a solid entry point for the targetMilestone.
-     * </p>
-     * <p>
-     * A transaction is considered a solid entry point if it has non-orphaned approvers.
+     * We determine whether future milestones will approve {@param transactionHash}. This should aid in determining
+     * solid entry points.
      * </p>
      * <p>
      * To check if the transaction has non-orphaned approvers we first check if any of its approvers got confirmed by a
      * future milestone, since this is very cheap. If none of them got confirmed by another milestone we do the more
-     * expensive check from {@link #isOrphaned(Tangle, TransactionViewModel, TransactionViewModel, Set)}.
+     * expensive check from {@link #isProbablyOrphaned(Tangle, TransactionViewModel, TransactionViewModel, Set)}.
      * </p>
      * <p>
      * Since solid entry points have a limited life time and to prevent potential problems due to temporary errors in
-     * the database, we assume that the checked transaction is a solid entry point if any error occurs while determining
-     * its status. This is a storage <=> reliability trade off, since the only bad effect of having too many solid entry
-     * points) is a bigger snapshot file.
+     * the database, we assume that the checked transaction is not orphaned if any error occurs while determining its
+     * status, thus adding solid entry points. This is a storage <=> reliability trade off, since the only bad effect of
+     * having too many solid entry points) is a bigger snapshot file.
      * </p>
      * 
-     * @param tangle Tangle object which acts as a database interface
+     * @param tangle          Tangle object which acts as a database interface
      * @param transactionHash hash of the transaction that shall be checked
      * @param targetMilestone milestone that is used as an anchor for our checks
      * @return true if the transaction is a solid entry point and false otherwise
      */
-    private boolean isSolidEntryPoint(Tangle tangle, Hash transactionHash, MilestoneViewModel targetMilestone) {
+    private boolean isNotOrphaned(Tangle tangle, Hash transactionHash, MilestoneViewModel targetMilestone) {
         Set<TransactionViewModel> unconfirmedApprovers = new HashSet<>();
 
         try {
@@ -619,7 +590,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             Set<Hash> processedTransactions = new HashSet<>();
             TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle, targetMilestone.getHash());
             for (TransactionViewModel unconfirmedApprover : unconfirmedApprovers) {
-                if (!isOrphaned(tangle, unconfirmedApprover, milestoneTransaction, processedTransactions)) {
+                if (!isProbablyOrphaned(tangle, unconfirmedApprover, milestoneTransaction, processedTransactions)) {
                     return true;
                 }
             }
@@ -637,34 +608,44 @@ public class SnapshotServiceImpl implements SnapshotService {
      * This method analyzes the old solid entry points and determines if they are still not orphaned.
      * </p>
      * <p>
-     * It simply iterates through the old solid entry points and checks them one by one. If an old solid entry point
-     * is found to still be relevant it is added to the passed in map.
+     * It simply iterates through the old solid entry points and checks them one by one. If an old solid entry point is
+     * found to still be relevant it is added to the passed in map.
      * </p>
-     * 
-     * @param tangle Tangle object which acts as a database interface
+     *
+     * @see #processNewSolidEntryPoints to understand the definition for solid entry points
+     * @param tangle           Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
-     * @param targetMilestone milestone that is used to generate the solid entry points
+     * @param targetMilestone  milestone that is used to generate the solid entry points
      * @param solidEntryPoints map that is used to collect the solid entry points
      */
     private void processOldSolidEntryPoints(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneViewModel targetMilestone, Map<Hash, Integer> solidEntryPoints) {
+            MilestoneViewModel targetMilestone, Map<Hash, Integer> solidEntryPoints) throws SnapshotException {
 
         ProgressLogger progressLogger = new IntervalProgressLogger(
                 "Taking local snapshot [analyzing old solid entry points]", log)
                 .start(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().size());
+        try {
+            Snapshot initialSnapshot = snapshotProvider.getInitialSnapshot();
+            Map<Hash, Integer> orgSolidEntryPoints = initialSnapshot.getSolidEntryPoints();
+            for (Map.Entry<Hash, Integer> solidPoint : orgSolidEntryPoints.entrySet()) {
+                Hash hash = solidPoint.getKey();
+                int milestoneIndex = solidPoint.getValue();
+                if (!Hash.NULL_HASH.equals(hash)
+                        && targetMilestone.index() - milestoneIndex <= SOLID_ENTRY_POINT_LIFETIME
+                        && isNotOrphaned(tangle, hash, targetMilestone)) {
+                    TransactionViewModel tvm = TransactionViewModel.fromHash(tangle, hash);
+                    addTailsToSolidEntryPoints(milestoneIndex, solidEntryPoints, tvm);
+                    solidEntryPoints.put(hash, milestoneIndex);
+                }
 
-        Snapshot initialSnapshot = snapshotProvider.getInitialSnapshot();
-        initialSnapshot.getSolidEntryPoints().forEach((hash, milestoneIndex) -> {
-            if (!Hash.NULL_HASH.equals(hash) && targetMilestone.index() - milestoneIndex <= SOLID_ENTRY_POINT_LIFETIME
-                    && isSolidEntryPoint(tangle, hash, targetMilestone)) {
-
-                solidEntryPoints.put(hash, milestoneIndex);
+                progressLogger.progress();
             }
-
-            progressLogger.progress();
-        });
-
-        progressLogger.finish();
+        } catch (Exception e) {
+            throw new SnapshotException(
+                    "Couldn't process old solid entry point for target milestone " + targetMilestone.index(), e);
+        } finally {
+            progressLogger.finish();
+        }
     }
 
     /**
@@ -672,16 +653,21 @@ public class SnapshotServiceImpl implements SnapshotService {
      * This method retrieves the new solid entry points of the snapshot reference given by the target milestone.
      * </p>
      * <p>
+     * A transaction is considered a solid entry point if it is a bundle tail that can be traversed down from a
+     * non-orphaned transaction that was approved by a milestone that is above the last local snapshot. Or if it is a
+     * bundle tail of a non-orphaned transaction that was approved by a milestone that is above the last local snapshot.
+     *
      * It iterates over all unprocessed milestones and analyzes their directly and indirectly approved transactions.
-     * Every transaction is checked for being a solid entry point and added to the passed in map (if it was found to be
-     * one).
+     * Every transaction is checked for being not orphaned and the appropriate SEP is added to {@param SolidEntryPoints}
      * </p>
-     * 
-     * @param tangle Tangle object which acts as a database interface
+     *
+     *
+     * @param tangle           Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
-     * @param targetMilestone milestone that is used to generate the solid entry points
+     * @param targetMilestone  milestone that is used to generate the solid entry points
      * @param solidEntryPoints map that is used to collect the solid entry points
      * @throws SnapshotException if anything goes wrong while determining the solid entry points
+     * @see #isNotOrphaned(Tangle, Hash, MilestoneViewModel)
      */
     private void processNewSolidEntryPoints(Tangle tangle, SnapshotProvider snapshotProvider,
             MilestoneViewModel targetMilestone, Map<Hash, Integer> solidEntryPoints) throws SnapshotException {
@@ -702,8 +688,9 @@ public class SnapshotServiceImpl implements SnapshotService {
                         currentMilestone.getHash(),
                         currentTransaction -> currentTransaction.snapshotIndex() >= currentMilestone.index(),
                         currentTransaction -> {
-                            if (isSolidEntryPoint(tangle, currentTransaction.getHash(), targetMilestone)) {
-                                solidEntryPoints.put(currentTransaction.getHash(), targetMilestone.index());
+                            if (isNotOrphaned(tangle, currentTransaction.getHash(), targetMilestone)) {
+                                addTailsToSolidEntryPoints(targetMilestone.index(), solidEntryPoints,
+                                        currentTransaction);
                             }
                         }
                 );
@@ -721,6 +708,17 @@ public class SnapshotServiceImpl implements SnapshotService {
             progressLogger.abort(e);
 
             throw new SnapshotException("could not generate the solid entry points for " + targetMilestone, e);
+        }
+    }
+
+    private void addTailsToSolidEntryPoints(int milestoneIndex, Map<Hash, Integer> solidEntryPoints,
+            TransactionViewModel currentTransaction) throws TraversalException {
+        // if tail
+        if (currentTransaction.getCurrentIndex() == 0) {
+            solidEntryPoints.put(currentTransaction.getHash(), milestoneIndex);
+        } else {
+            Set<? extends Hash> tails = DAGHelper.get(tangle).findTails(currentTransaction);
+            tails.forEach(tail -> solidEntryPoints.put(tail, milestoneIndex));
         }
     }
 }

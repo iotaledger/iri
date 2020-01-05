@@ -1,5 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -123,37 +124,41 @@ public class WalkerAlpha implements Walker {
     }
 
     private Optional<Hash> select(Map<Hash, Integer> ratings, Set<Hash> approversSet) {
+        List<Hash> approvers;         
+        int approverIndex;
 
         //filter based on tangle state when starting the walk
-        List<Hash> approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
-
+        approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
         //After filtering, if no approvers are available, it's a tip.
         if (approvers.size() == 0) {
             return Optional.empty();
         }
 
-        //calculate the probabilities
-        List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());
+        //Check if alpha was set to 0. If so, weight calculations are skipped and a random approver will be selected.
+        if(alpha != 0) {
+            //calculate the probabilities
+            List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());
 
-        Integer maxRating = walkRatings.stream().max(Integer::compareTo).orElse(0);
-        //walkRatings.stream().reduce(0, Integer::max);
+            Integer maxRating = walkRatings.stream().max(Integer::compareTo).orElse(0);
+            //walkRatings.stream().reduce(0, Integer::max);
 
-        //transition probability function (normalize ratings based on Hmax)
-        List<Integer> normalizedWalkRatings = walkRatings.stream().map(w -> w - maxRating).collect(Collectors.toList());
-        List<Double> weights = normalizedWalkRatings.stream().map(w -> Math.exp(alpha * w)).collect(Collectors.toList());
+            //transition probability function (normalize ratings based on Hmax)
+            List<Integer> normalizedWalkRatings = walkRatings.stream().map(w -> w - maxRating).collect(Collectors.toList());
+            List<Double> weights = normalizedWalkRatings.stream().map(w -> Math.exp(alpha * w)).collect(Collectors.toList());
 
-        //select the next transaction
-        Double weightsSum = weights.stream().reduce(0.0, Double::sum);
-        double target = random.nextDouble() * weightsSum;
+            //select the next transaction
+            Double weightsSum = weights.stream().reduce(0.0, Double::sum);
+            double target = random.nextDouble() * weightsSum;
 
-        int approverIndex;
-        for (approverIndex = 0; approverIndex < weights.size() - 1; approverIndex++) {
-            target -= weights.get(approverIndex);
-            if (target <= 0) {
-                break;
+            for (approverIndex = 0; approverIndex < weights.size() - 1; approverIndex++) {
+                target -= weights.get(approverIndex);
+                if (target <= 0) {
+                    break;
+                }
             }
+        } else {
+            approverIndex = random.nextInt(approvers.size());
         }
-
         return Optional.of(approvers.get(approverIndex));
     }
 

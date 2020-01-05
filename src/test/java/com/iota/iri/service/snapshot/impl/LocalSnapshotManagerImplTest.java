@@ -55,9 +55,7 @@ public class LocalSnapshotManagerImplTest {
 
     @Before
     public void setUp() throws Exception {
-        this.lsManager = new LocalSnapshotManagerImpl();
-        
-        lsManager.init(snapshotProvider, snapshotService, transactionPruner, config);
+        this.lsManager = new LocalSnapshotManagerImpl(snapshotProvider, snapshotService, transactionPruner, config);
         when(snapshotProvider.getLatestSnapshot().getIndex()).thenReturn(-5, -1, 10, 998, 999, 1999, 2000);
         
         when(config.getLocalSnapshotsIntervalSynced()).thenReturn(DELAY_SYNC);

@@ -492,244 +492,6 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     //region PRIVATE UTILITY METHODS AND MEMBERS ///////////////////////////////////////////////////////////////////////
 
     /**
-     * This interface is used to generically describe the lambda that is used to create the unwrapped future from the
-     * delegated {@link ScheduledExecutorService} by passing in the wrapped command.
-     *
-     * @param <RESULT> the kind of future returned by this factory ({@link ScheduledFuture} vs {@link Future})
-     * @param <ARGUMENT> type of the wrapped command that is passed in ({@link Runnable} vs {@link Callable})
-     */
-    @FunctionalInterface
-    private interface FutureFactory<RESULT, ARGUMENT> {
-        /**
-         * This method creates the unwrapped future from the wrapped task by passing it on to the delegated
-         * {@link ScheduledExecutorService}.
-         *
-         * @param task the wrapped task that shall be scheduled
-         * @return the unwrapped "original" {@link Future} of the delegated {@link ScheduledExecutorService}
-         */
-        RESULT create(ARGUMENT task);
-    }
-
-    /**
-     * This is a wrapper for the {@link Future}s returned by the {@link ScheduledExecutorService} that allows us to
-     * override the behaviour of the {@link #cancel(boolean)} method (to be able to free the resources of a task that
-     * gets cancelled without being executed).
-     *
-     * @param <V> the type of the result returned by the task that is the origin of this {@link Future}.
-     */
-    private class WrappedFuture<V> implements Future<V> {
-        /**
-         * Holds the metadata of the task that this {@link Future} belongs to.
-         */
-        protected final TaskDetails taskDetails;
-
-        /**
-         * <p>
-         * "Original" unwrapped {@link Future} that is returned by the delegated {@link ScheduledExecutorService}.
-         * </p>
-         * <p>
-         * Note: All methods except the {@link #cancel(boolean)} are getting passed through without any
-         *       modifications.
-         * </p>
-         */
-        private Future<V> delegate;
-
-        /**
-         * <p>
-         * This creates a {@link WrappedFuture} that cleans up the reserved resources when it is cancelled while the
-         * task is still pending.
-         * </p>
-         * <p>
-         * We do not hand in the {@link #delegate} in the constructor because we need to populate this instance to the
-         * wrapped task before we "launch" the processing of the task (see {@link #delegate(Future)}).
-         * </p>
-         *
-         * @param taskDetails metadata holding the relevant information of the task
-         */
-        public WrappedFuture(TaskDetails taskDetails) {
-            this.taskDetails = taskDetails;
-        }
-
-        /**
-         * <p>
-         * This method stores the delegated {@link Future} in its internal property.
-         * </p>
-         * <p>
-         * After the delegated {@link Future} is created, the underlying {@link ScheduledExecutorService} starts
-         * processing the task. To be able to "address" this wrapped future before we start processing the task (the
-         * wrapped task needs to access it), we populate this lazy (see
-         * {@link #wrapFuture(FutureFactory, Runnable, TaskDetails)} and
-         * {@link #wrapFuture(FutureFactory, Callable, TaskDetails)}).
-         * </p>
-         *
-         * @param delegatedFuture the "original" future that handles the logic in the background
-         * @return the instance itself (since we want to return the {@link WrappedFuture} after launching the underlying
-         *         processing).
-         */
-        public Future<V> delegate(Future<V> delegatedFuture) {
-            this.delegate = delegatedFuture;
-
-            return this;
-        }
-
-        /**
-         * <p>
-         * This method returns the delegated future.
-         * </p>
-         * <p>
-         * We define a getter for this property to be able to override it in the extending class and achieve a
-         * polymorphic behavior.
-         * </p>
-         *
-         * @return the original "unwrapped" {@link Future} that is used as a delegate for the methods of this class
-         */
-        public Future<V> delegate() {
-            return delegate;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * <p>
-         * This method fires the {@link #onCancelTask(TaskDetails)} if the future has not been cancelled before.
-         * Afterwards it also fires the {@link #onCompleteTask(TaskDetails, Throwable)} callback if the task is not
-         * running right now (otherwise this will be fired inside the wrapped task).
-         * </p>
-         */
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            if (!delegate().isCancelled() && !delegate().isDone()) {
-                onCancelTask(taskDetails);
-            }
-
-            if (taskDetails.getScheduledForExecution().compareAndSet(true, false)) {
-                onCompleteTask(taskDetails, null);
-            }
-
-            return delegate().cancel(mayInterruptIfRunning);
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return delegate().isCancelled();
-        }
-
-        @Override
-        public boolean isDone() {
-            return delegate().isDone();
-        }
-
-        @Override
-        public V get() throws InterruptedException, ExecutionException {
-            return delegate().get();
-        }
-
-        @Override
-        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return delegate().get(timeout, unit);
-        }
-    }
-
-    /**
-     * This is a wrapper for the {@link ScheduledFuture}s returned by the {@link ScheduledExecutorService} that allows
-     * us to override the behaviour of the {@link #cancel(boolean)} method (to be able to free the resources of a task
-     * that gets cancelled without being executed).
-     *
-     * @param <V> the type of the result returned by the task that is the origin of this {@link ScheduledFuture}.
-     */
-    private class WrappedScheduledFuture<V> extends WrappedFuture<V> implements ScheduledFuture<V> {
-        /**
-         * <p>
-         * "Original" unwrapped {@link ScheduledFuture} that is returned by the delegated
-         * {@link ScheduledExecutorService}.
-         * </p>
-         * <p>
-         * Note: All methods except the {@link #cancel(boolean)} are getting passed through without any modifications.
-         * </p>
-         */
-        private ScheduledFuture<V> delegate;
-
-        /**
-         * <p>
-         * This creates a {@link ScheduledFuture} that cleans up the reserved resources when it is cancelled while the
-         * task is still pending.
-         * </p>
-         * <p>
-         * We do not hand in the {@link #delegate} in the constructor because we need to populate this instance to the
-         * wrapped task before we "launch" the processing of the task (see {@link #delegate(Future)}).
-         * </p>
-         * 
-         * @param taskDetails metadata holding the relevant information of the task
-         */
-        private WrappedScheduledFuture(TaskDetails taskDetails) {
-            super(taskDetails);
-        }
-
-        /**
-         * <p>
-         * This method stores the delegated {@link ScheduledFuture} in its internal property.
-         * </p>
-         * <p>
-         * After the delegated {@link ScheduledFuture} is created, the underlying {@link ScheduledExecutorService}
-         * starts processing the task. To be able to "address" this wrapped future before we start processing the task
-         * (the wrapped task needs to access it), we populate this lazy (see
-         * {@link #wrapScheduledFuture(FutureFactory, Runnable, TaskDetails)}).
-         * </p>
-         *
-         * @param delegatedFuture the "original" future that handles the logic in the background
-         * @return the instance itself (since we want to return the {@link WrappedFuture} immediately after launching
-         *         the underlying processing).
-         */
-        public ScheduledFuture<V> delegate(ScheduledFuture<V> delegatedFuture) {
-            this.delegate = delegatedFuture;
-
-            return this;
-        }
-
-        @Override
-        public ScheduledFuture<V> delegate() {
-            return delegate;
-        }
-
-        @Override
-        public long getDelay(TimeUnit unit) {
-            return delegate().getDelay(unit);
-        }
-
-        @Override
-        public int compareTo(Delayed o) {
-            return delegate().compareTo(o);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * <p>
-         * This method fires the {@link #onCancelTask(TaskDetails)} if the future has not been cancelled before.
-         * Afterwards it also fires the {@link #onCompleteTask(TaskDetails, Throwable)} callback if the task is not
-         * running right now (otherwise this will be fired inside the wrapped task).
-         * </p>
-         */
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            if (!delegate().isCancelled() && !delegate().isDone()) {
-                onCancelTask(taskDetails);
-            }
-
-            if (taskDetails.getScheduledForExecution().compareAndSet(true, false)) {
-                onCompleteTask(taskDetails, null);
-            }
-
-            return delegate().cancel(mayInterruptIfRunning);
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return delegate().isCancelled();
-        }
-    }
-
-    /**
      * <p>
      * This method wraps the passed in task to automatically call the callbacks for its lifecycle.
      * </p>
@@ -1025,5 +787,246 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
         return result;
     }
 
+    //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //region INNER CLASSES AND INTERFACES ///////////////////////////////////////////////////////////////////////
+
+    /**
+     * This interface is used to generically describe the lambda that is used to create the unwrapped future from the
+     * delegated {@link ScheduledExecutorService} by passing in the wrapped command.
+     *
+     * @param <RESULT> the kind of future returned by this factory ({@link ScheduledFuture} vs {@link Future})
+     * @param <ARGUMENT> type of the wrapped command that is passed in ({@link Runnable} vs {@link Callable})
+     */
+    @FunctionalInterface
+    private interface FutureFactory<RESULT, ARGUMENT> {
+        /**
+         * This method creates the unwrapped future from the wrapped task by passing it on to the delegated
+         * {@link ScheduledExecutorService}.
+         *
+         * @param task the wrapped task that shall be scheduled
+         * @return the unwrapped "original" {@link Future} of the delegated {@link ScheduledExecutorService}
+         */
+        RESULT create(ARGUMENT task);
+    }
+
+    /**
+     * This is a wrapper for the {@link Future}s returned by the {@link ScheduledExecutorService} that allows us to
+     * override the behaviour of the {@link #cancel(boolean)} method (to be able to free the resources of a task that
+     * gets cancelled without being executed).
+     *
+     * @param <V> the type of the result returned by the task that is the origin of this {@link Future}.
+     */
+    private class WrappedFuture<V> implements Future<V> {
+        /**
+         * Holds the metadata of the task that this {@link Future} belongs to.
+         */
+        protected final TaskDetails taskDetails;
+
+        /**
+         * <p>
+         * "Original" unwrapped {@link Future} that is returned by the delegated {@link ScheduledExecutorService}.
+         * </p>
+         * <p>
+         * Note: All methods except the {@link #cancel(boolean)} are getting passed through without any
+         *       modifications.
+         * </p>
+         */
+        private Future<V> delegate;
+
+        /**
+         * <p>
+         * This creates a {@link WrappedFuture} that cleans up the reserved resources when it is cancelled while the
+         * task is still pending.
+         * </p>
+         * <p>
+         * We do not hand in the {@link #delegate} in the constructor because we need to populate this instance to the
+         * wrapped task before we "launch" the processing of the task (see {@link #delegate(Future)}).
+         * </p>
+         *
+         * @param taskDetails metadata holding the relevant information of the task
+         */
+        public WrappedFuture(TaskDetails taskDetails) {
+            this.taskDetails = taskDetails;
+        }
+
+        /**
+         * <p>
+         * This method stores the delegated {@link Future} in its internal property.
+         * </p>
+         * <p>
+         * After the delegated {@link Future} is created, the underlying {@link ScheduledExecutorService} starts
+         * processing the task. To be able to "address" this wrapped future before we start processing the task (the
+         * wrapped task needs to access it), we populate this lazy (see
+         * {@link #wrapFuture(FutureFactory, Runnable, TaskDetails)} and
+         * {@link #wrapFuture(FutureFactory, Callable, TaskDetails)}).
+         * </p>
+         *
+         * @param delegatedFuture the "original" future that handles the logic in the background
+         * @return the instance itself (since we want to return the {@link WrappedFuture} after launching the underlying
+         *         processing).
+         */
+        public Future<V> delegate(Future<V> delegatedFuture) {
+            this.delegate = delegatedFuture;
+
+            return this;
+        }
+
+        /**
+         * <p>
+         * This method returns the delegated future.
+         * </p>
+         * <p>
+         * We define a getter for this property to be able to override it in the extending class and achieve a
+         * polymorphic behavior.
+         * </p>
+         *
+         * @return the original "unwrapped" {@link Future} that is used as a delegate for the methods of this class
+         */
+        public Future<V> delegate() {
+            return delegate;
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * <p>
+         * This method fires the {@link #onCancelTask(TaskDetails)} if the future has not been cancelled before.
+         * Afterwards it also fires the {@link #onCompleteTask(TaskDetails, Throwable)} callback if the task is not
+         * running right now (otherwise this will be fired inside the wrapped task).
+         * </p>
+         */
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            if (!delegate().isCancelled() && !delegate().isDone()) {
+                onCancelTask(taskDetails);
+            }
+
+            if (taskDetails.getScheduledForExecution().compareAndSet(true, false)) {
+                onCompleteTask(taskDetails, null);
+            }
+
+            return delegate().cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return delegate().isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return delegate().isDone();
+        }
+
+        @Override
+        public V get() throws InterruptedException, ExecutionException {
+            return delegate().get();
+        }
+
+        @Override
+        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return delegate().get(timeout, unit);
+        }
+    }
+
+    /**
+     * This is a wrapper for the {@link ScheduledFuture}s returned by the {@link ScheduledExecutorService} that allows
+     * us to override the behaviour of the {@link #cancel(boolean)} method (to be able to free the resources of a task
+     * that gets cancelled without being executed).
+     *
+     * @param <V> the type of the result returned by the task that is the origin of this {@link ScheduledFuture}.
+     */
+    private class WrappedScheduledFuture<V> extends WrappedFuture<V> implements ScheduledFuture<V> {
+        /**
+         * <p>
+         * "Original" unwrapped {@link ScheduledFuture} that is returned by the delegated
+         * {@link ScheduledExecutorService}.
+         * </p>
+         * <p>
+         * Note: All methods except the {@link #cancel(boolean)} are getting passed through without any modifications.
+         * </p>
+         */
+        private ScheduledFuture<V> delegate;
+
+        /**
+         * <p>
+         * This creates a {@link ScheduledFuture} that cleans up the reserved resources when it is cancelled while the
+         * task is still pending.
+         * </p>
+         * <p>
+         * We do not hand in the {@link #delegate} in the constructor because we need to populate this instance to the
+         * wrapped task before we "launch" the processing of the task (see {@link #delegate(Future)}).
+         * </p>
+         *
+         * @param taskDetails metadata holding the relevant information of the task
+         */
+        private WrappedScheduledFuture(TaskDetails taskDetails) {
+            super(taskDetails);
+        }
+
+        /**
+         * <p>
+         * This method stores the delegated {@link ScheduledFuture} in its internal property.
+         * </p>
+         * <p>
+         * After the delegated {@link ScheduledFuture} is created, the underlying {@link ScheduledExecutorService}
+         * starts processing the task. To be able to "address" this wrapped future before we start processing the task
+         * (the wrapped task needs to access it), we populate this lazy (see
+         * {@link #wrapScheduledFuture(FutureFactory, Runnable, TaskDetails)}).
+         * </p>
+         *
+         * @param delegatedFuture the "original" future that handles the logic in the background
+         * @return the instance itself (since we want to return the {@link WrappedFuture} immediately after launching
+         *         the underlying processing).
+         */
+        public ScheduledFuture<V> delegate(ScheduledFuture<V> delegatedFuture) {
+            this.delegate = delegatedFuture;
+
+            return this;
+        }
+
+        @Override
+        public ScheduledFuture<V> delegate() {
+            return delegate;
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return delegate().getDelay(unit);
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            return delegate().compareTo(o);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * <p>
+         * This method fires the {@link #onCancelTask(TaskDetails)} if the future has not been cancelled before.
+         * Afterwards it also fires the {@link #onCompleteTask(TaskDetails, Throwable)} callback if the task is not
+         * running right now (otherwise this will be fired inside the wrapped task).
+         * </p>
+         */
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            if (!delegate().isCancelled() && !delegate().isDone()) {
+                onCancelTask(taskDetails);
+            }
+
+            if (taskDetails.getScheduledForExecution().compareAndSet(true, false)) {
+                onCompleteTask(taskDetails, null);
+            }
+
+            return delegate().cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return delegate().isCancelled();
+        }
+    }
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

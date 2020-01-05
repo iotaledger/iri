@@ -14,12 +14,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
   **/
 public abstract class AbstractResponse {
 
-    /**
-     * An 'empty' Response class.
-     * Will only contain values which are included in {@link AbstractResponse} itself.
-     * This is used when an API command does not need to return data.
-     */
-	private static class Emptyness extends AbstractResponse {}
 
 	/**
 	 * Number of milliseconds it took to complete the request
@@ -73,4 +67,10 @@ public abstract class AbstractResponse {
     	return new Emptyness();
     }
 
+    /**
+     * An 'empty' Response class.
+     * Will only contain values which are included in {@link AbstractResponse} itself.
+     * This is used when an API command does not need to return data.
+     */
+    private static class Emptyness extends AbstractResponse {}
 }

@@ -47,18 +47,18 @@ public class SeenMilestonesRetrieverImpl implements SeenMilestonesRetriever {
     /**
      * Tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots to calculate our range.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the {@link TransactionRequester} that allows us to issue requests for the missing
      * milestones.
      */
-    private TransactionRequester transactionRequester;
+    private final TransactionRequester transactionRequester;
 
     /**
      * Holds a reference to the manager of the background worker.
@@ -72,36 +72,20 @@ public class SeenMilestonesRetrieverImpl implements SeenMilestonesRetriever {
     private Map<Hash, Integer> seenMilestones;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It stores the passed in values in their corresponding private properties and creates a working copy of the
-     * seen milestones (which will get processed by the background worker).
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code seenMilestonesRetriever = new SeenMilestonesRetrieverImpl().init(...);}
-     *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots to calculate our range
      * @param transactionRequester allows us to issue requests for the missing milestones
-     * @return the initialized instance itself to allow chaining
      */
-    public SeenMilestonesRetrieverImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-            TransactionRequester transactionRequester) {
-
+    public SeenMilestonesRetrieverImpl(Tangle tangle, SnapshotProvider snapshotProvider,
+                                            TransactionRequester transactionRequester) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.transactionRequester = transactionRequester;
+    }
 
+    @Override
+    public void init() {
         seenMilestones = new ConcurrentHashMap<>(snapshotProvider.getInitialSnapshot().getSeenMilestones());
-
-        return this;
     }
 
     /**

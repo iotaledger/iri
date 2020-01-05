@@ -6,6 +6,7 @@ import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
+import javax.naming.OperationNotSupportedException;
 
 /**
  * This stores a hash identifier for a <tt>Milestone</tt> transaction, indexed by a unique <tt>IntegerIndex</tt>
@@ -54,8 +55,18 @@ public class Milestone implements Persistable {
 
     }
 
+
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
+    }
+    @Override
+    public Persistable mergeInto(Persistable source) throws OperationNotSupportedException{
+        throw new OperationNotSupportedException("This object is not mergeable");
+    }
+
+    @Override
+    public boolean exists() {
+        return !(hash == null || index == null);
     }
 }

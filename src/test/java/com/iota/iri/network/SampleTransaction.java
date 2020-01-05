@@ -8,6 +8,7 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.network.protocol.ProtocolMessage;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.TransactionTruncator;
 import net.openhft.hashing.LongHashFunction;
 
 import java.nio.ByteBuffer;
@@ -40,7 +41,7 @@ public class SampleTransaction {
         for (int i = 0; i < SIG_FILLED_COUNT; i++) {
             raw[i] = SIG_FILL;
         }
-        TRUNCATED_SAMPLE_TX_BYTES = Protocol.truncateTx(raw);
+        TRUNCATED_SAMPLE_TX_BYTES = TransactionTruncator.truncateTransaction(raw);
 
         SAMPLE_TRANSACTION = new Transaction();
         SAMPLE_TRANSACTION.bytes = BYTES_OF_SAMPLE_TX;

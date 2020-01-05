@@ -1,6 +1,5 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
@@ -8,11 +7,11 @@ import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.storage.Tangle;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,7 +24,7 @@ import org.mockito.junit.MockitoRule;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class EntryPointSelectorImplTest {
 
-    @Rule 
+    @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
     
     @Mock
@@ -33,13 +32,16 @@ public class EntryPointSelectorImplTest {
     
     @Mock
     private Tangle tangle;
-    
-    private static SnapshotProvider snapshotProvider;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
+
+    @Mock
+    private SnapshotProvider snapshotProvider;
+
+    @Before
+    public void setUp() throws Exception {
         MilestoneViewModel.clear();
+        Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
+        Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     }
 
     @Test

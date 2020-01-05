@@ -27,5 +27,14 @@ IOTA checkstyle draft
         <module name="PackageName"/>
         <module name="ParameterName"/>
         <module name="TypeName"/>
+        <module name="ConstantName">
+            <!-- Sometimes private/protected are not really constant values -->
+            <property name="applyToPrivate" value="false"/>
+            <property name="applyToProtected" value="false"/>
+            <!-- log is always fine -->
+            <property name="format"
+                      value="^log(ger)?$|^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+        <module name="InnerTypeLast"/>
     </module>
 </module>

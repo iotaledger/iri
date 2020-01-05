@@ -1,23 +1,22 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.apache.commons.lang3.ArrayUtils;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
 
 /**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -63,6 +62,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //DB
     protected String dbPath = Defaults.DB_PATH;
     protected String dbLogPath = Defaults.DB_LOG_PATH;
+    protected String dbConfigFile = Defaults.DB_CONFIG_FILE;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
@@ -92,9 +92,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int tipSelectionTimeoutSec = Defaults.TIP_SELECTION_TIMEOUT_SEC;
     private int maxAnalyzedTransactions = Defaults.BELOW_MAX_DEPTH_TRANSACTION_LIMIT;
 
-    //Tip Solidification
-    protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
-
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
 
@@ -108,6 +105,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
     protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
     protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
+
+    //Solidification
+    protected boolean printSyncProgressEnabled = Defaults.PRINT_SYNC_PROGRESS_ENABLED;
 
     public BaseIotaConfig() {
         //empty constructor
@@ -404,6 +404,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db-log-path"}, description = DbConfig.Descriptions.DB_LOG_PATH)
     protected void setDbLogPath(String dbLogPath) {
         this.dbLogPath = dbLogPath;
+    }
+    
+    @Override
+    public String getDbConfigFile() {
+        return dbConfigFile;
+    }
+    
+    @JsonProperty
+    @Parameter(names = {"--db-config-file"}, description = DbConfig.Descriptions.DB_CONFIG_FILE)
+    protected void setDbConfigFile(String dbConfigFile) {
+        this.dbConfigFile = dbConfigFile;
     }
 
     @Override
@@ -799,18 +810,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public boolean isTipSolidifierEnabled() {
-        return tipSolidifierEnabled;
-    }
-
-    @JsonProperty
-    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER,
-        arity = 1)
-    protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
-        this.tipSolidifierEnabled = tipSolidifierEnabled;
-    }
-
-    @Override
     public int getBelowMaxDepthTransactionLimit() {
         return maxAnalyzedTransactions;
     }
@@ -831,6 +830,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--pow-threads", description = PearlDiverConfig.Descriptions.POW_THREADS)
     protected void setPowThreads(int powThreads) {
         this.powThreads = powThreads;
+    }
+
+    @Override
+    public boolean isPrintSyncProgressEnabled() {
+        return printSyncProgressEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--print-sync-progress"}, description = SolidificationConfig.Descriptions.PRINT_SYNC_PROGRESS_ENABLED, arity = 1)
+    protected void setPrintSyncProgressEnabled(boolean printSyncProgressEnabled) {
+        this.printSyncProgressEnabled = printSyncProgressEnabled;
     }
 
     /**
@@ -865,6 +875,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //DB
         String DB_PATH = "mainnetdb";
         String DB_LOG_PATH = "mainnet.log";
+        String DB_CONFIG_FILE = "rocksdb-config.properties";
         int DB_CACHE_SIZE = 100_000;
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
@@ -888,11 +899,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //TipSel
         int MAX_DEPTH = 15;
-        double ALPHA = 0.001d;
+        double ALPHA = 0d;
         int TIP_SELECTION_TIMEOUT_SEC = 60;
-
-        //Tip solidification
-        boolean TIP_SOLIDIFIER_ENABLED = false;
 
         //PearlDiver
         int POW_THREADS = 0;
@@ -927,6 +935,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         long SNAPSHOT_TIME = 1554904800;
         int MILESTONE_START_INDEX = 1050000;
         int BELOW_MAX_DEPTH_TRANSACTION_LIMIT = 20_000;
+
+        //Solidification
+        boolean PRINT_SYNC_PROGRESS_ENABLED = true;
 
     }
 }

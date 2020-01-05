@@ -1,18 +1,22 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.conf.TipSelConfig;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
-import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.tipselection.*;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.iota.iri.conf.TipSelConfig;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.ledger.LedgerService;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.tipselection.EntryPointSelector;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.WalkValidator;
+import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.storage.Tangle;
 
 /**
  * Implementation of <tt>TipSelector</tt> that selects 2 tips,
@@ -23,6 +27,7 @@ public class TipSelectorImpl implements TipSelector {
 
     private static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final String TIPS_NOT_CONSISTENT = "inconsistent tips pair selected";
+    private static final String REFERENCE_TRANSACTION_IS_INVALID = "reference transaction is invalid";
 
     private final EntryPointSelector entryPointSelector;
     private final RatingCalculator ratingCalculator;
@@ -89,16 +94,22 @@ public class TipSelectorImpl implements TipSelector {
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
-            UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(entryPoint);
+            Map<Hash, Integer> rating;
+            if(config.getAlpha() == 0) {
+                rating = new RatingOne(tangle).calculate(entryPoint);
+            } else {
+                rating = ratingCalculator.calculate(entryPoint);
+            }
 
             //random walk
             List<Hash> tips = new LinkedList<>();
+            //ISSUE #786: walkValidator should become a stateless dependency
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 
             if (reference.isPresent()) {
-                checkReference(reference.get(), rating);
+                checkReference(reference.get(), rating, walkValidator);
                 entryPoint = reference.get();
             }
 
@@ -117,10 +128,15 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(HashId reference, UnIterableMap<HashId, Integer> rating)
-            throws InvalidAlgorithmParameterException {
-        if (!rating.containsKey(reference)) {
+    //Because walkValidator currently can't be mocked, it is easier to test this private method directly
+    @VisibleForTesting
+    void checkReference(Hash reference, Map<Hash, Integer> rating, WalkValidator walkValidator)
+            throws Exception {
+        if (config.getAlpha() != 0 && !rating.containsKey(reference)) {
             throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_TOO_OLD);
+        }
+        else if (config.getAlpha() == 0 && !walkValidator.isValid(reference)) {
+            throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_IS_INVALID);
         }
     }
 }

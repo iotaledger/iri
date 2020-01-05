@@ -61,9 +61,9 @@ public interface Neighbor {
     void setDomain(String domain);
 
     /**
-     * Gets the domain name.
+     * Gets the domain name or if not available, the IP address.
      * 
-     * @return the domain name
+     * @return the domain name or IP address
      */
     String getDomain();
 

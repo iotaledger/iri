@@ -18,7 +18,11 @@ Before creating a PR make sure you have read the entire contributing guideline. 
 
 #### **Do you intend to add a new feature or change an existing one?**
 
-* Suggest your change as a [new issues](https://github.com/iotaledger/iri/issues/new). Use the second part of the issue template, dedicated to new feature requests and delete the first part. If you plan on implementing the change yourself, start writing the code and submit a PR. Note that the fact that the feature is "code ready" doesn't mean it will get merged. It is advisable to gather feedback for the change first. You are encouraged to start and drive a discussion on [Discord](https://discordapp.com/invite/fNGZXvh). The IRI team also monitors the repo and will provide feedback where relevant. 
+* Suggest your change as a [new issues](https://github.com/iotaledger/iri/issues/new). Use the second part of the issue template, dedicated to new feature requests and delete the first part. If you plan on implementing the change yourself, start writing the code and submit a PR. Note that the fact that the feature is "code ready" doesn't mean it will get merged. It is advisable to gather feedback for the change first. You are encouraged to start and drive a discussion on [Discord](https://discord.iota.org/). The IRI team also monitors the repo and will provide feedback where relevant.
+
+#### **Want to write a regression test for your feature? Or to any other feature that needs a test?**
+
+* Please refer to our current [regression tests](https://github.com/iotaledger/iri/tree/dev/python-regression).
 
 
 #### **Do you have questions about the functioning of IRI nodes, the network or anything IOTA related?**

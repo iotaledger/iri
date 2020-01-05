@@ -7,11 +7,12 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,16 +36,17 @@ public class WalkValidatorImplTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
-    private static SnapshotProvider snapshotProvider;
     private TipSelConfig config = new MainnetConfig();
-    
+
+    @Mock
+    private static SnapshotProvider snapshotProvider;
+
     @Mock
     private static LedgerService ledgerService;
 
     @AfterClass
     public static void tearDown() throws Exception {
         tangle.shutdown();
-        snapshotProvider.shutdown();
         dbFolder.delete();
         logFolder.delete();
     }
@@ -52,13 +54,18 @@ public class WalkValidatorImplTest {
     @BeforeClass
     public static void setUp() throws Exception {
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider( new RocksDBPersistenceProvider(
                 dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
                 Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
+    }
+
+    @Before
+    public void setUpEach() {
+        Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
+        Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     }
 
     @Test

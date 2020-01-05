@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The {@link TipsRequesterImpl} requests tips from all neighbors in a given interval.
@@ -27,24 +26,24 @@ public class TipsRequesterImpl implements TipsRequester {
     private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
             "Tips Requester", log);
 
-    private NeighborRouter neighborRouter;
-    private Tangle tangle;
-    private TransactionRequester txRequester;
-    private LatestMilestoneTracker latestMilestoneTracker;
+    private final NeighborRouter neighborRouter;
+    private final Tangle tangle;
+    private final TransactionRequester txRequester;
+    private final LatestMilestoneTracker latestMilestoneTracker;
 
     private long lastIterationTime = 0;
 
     /**
-     * Initializes the dependencies.
-     * 
+     * Creates a tips requester.
+     *
      * @param neighborRouter         the {@link NeighborRouter} to use
      * @param tangle                 the {@link Tangle} database to load the latest milestone from
      * @param latestMilestoneTracker the {@link LatestMilestoneTracker} to gets the latest milestone hash from
      * @param txRequester            the {@link TransactionRequester} to get the currently number of requested
      *                               transactions from
      */
-    public void init(NeighborRouter neighborRouter, Tangle tangle, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester txRequester) {
+    public TipsRequesterImpl(NeighborRouter neighborRouter, Tangle tangle, LatestMilestoneTracker latestMilestoneTracker,
+                             TransactionRequester txRequester) {
         this.neighborRouter = neighborRouter;
         this.tangle = tangle;
         this.latestMilestoneTracker = latestMilestoneTracker;
@@ -87,7 +86,9 @@ public class TipsRequesterImpl implements TipsRequester {
                 log.info(
                         "toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}",
                         txPipeline.getReceivedStageQueue().size(), txPipeline.getBroadcastStageQueue().size(),
-                        txRequester.numberOfTransactionsToRequest(), txPipeline.getReplyStageQueue().size(),
+                        txRequester.numberOfTransactionsToRequest() +
+                                txRequester.numberOfRecentlyRequestedTransactions(),
+                        txPipeline.getReplyStageQueue().size(),
                         TransactionViewModel.getNumberOfStoredTransactions(tangle));
             }
         } catch (final Exception e) {

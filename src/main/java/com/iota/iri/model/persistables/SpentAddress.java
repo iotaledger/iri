@@ -2,6 +2,8 @@ package com.iota.iri.model.persistables;
 
 import com.iota.iri.storage.Persistable;
 
+import javax.naming.OperationNotSupportedException;
+
 public class SpentAddress implements Persistable {
     private boolean exists = false;
 
@@ -25,10 +27,18 @@ public class SpentAddress implements Persistable {
     }
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
 
+
+    @Override
+    public Persistable mergeInto(Persistable source)  throws OperationNotSupportedException {
+        throw new OperationNotSupportedException("This object is not mergeable");
+    }
+
+
+    @Override
     public boolean exists() {
         return exists;
     }

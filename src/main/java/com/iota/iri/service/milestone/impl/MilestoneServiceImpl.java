@@ -49,57 +49,39 @@ public class MilestoneServiceImpl implements MilestoneService {
     /**
      * Holds the tangle object which acts as a database interface.
      */
-    private Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.
      */
-    private SnapshotProvider snapshotProvider;
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the service instance of the snapshot package that allows us to roll back ledger states.
      */
-    private SnapshotService snapshotService;
+    private final SnapshotService snapshotService;
 
     /**
      * Configurations for milestone
      */
-    private MilestoneConfig config;
+    private final MilestoneConfig config;
 
-    private BundleValidator bundleValidator;
+    private final BundleValidator bundleValidator;
 
     /**
-     * <p>
-     * This method initializes the instance and registers its dependencies.
-     * </p>
-     * <p>
-     * It stores the passed in values in their corresponding private properties.
-     * </p>
-     * <p>
-     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
-     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
-     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
-     *       allows us to still instantiate, initialize and assign in one line - see Example:
-     * </p>
-     *       {@code milestoneService = new MilestoneServiceImpl().init(...);}
-     *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param snapshotService service for modifying and generating snapshots
      * @param bundleValidator Validator to use when checking milestones
      * @param config config with important milestone specific settings
-     * @return the initialized instance itself to allow chaining
      */
-    public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+    public MilestoneServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
             BundleValidator bundleValidator, MilestoneConfig config) {
-
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.bundleValidator = bundleValidator;
         this.config = config;
-
-        return this;
     }
 
     //region {PUBLIC METHODS] //////////////////////////////////////////////////////////////////////////////////////////
@@ -180,65 +162,63 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return existingMilestone.getHash().equals(transactionViewModel.getHash()) ? VALID : INVALID;
             }
 
-            final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(tangle,
+            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
             if (bundleTransactions.isEmpty()) {
                 return INCOMPLETE;
             } else {
-                for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
-                    final TransactionViewModel tail = bundleTransactionViewModels.get(0);
-                    if (tail.getHash().equals(transactionViewModel.getHash())) {
-                        //the signed transaction - which references the confirmed transactions and contains
-                        // the Merkle tree siblings.
-                        int coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
+                final TransactionViewModel tail = bundleTransactions.get(0);
+                if (tail.getHash().equals(transactionViewModel.getHash())) {
+                    //the signed transaction - which references the confirmed transactions and contains
+                    // the Merkle tree siblings.
+                    int coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
 
-                        if (isMilestoneBundleStructureValid(bundleTransactionViewModels, coordinatorSecurityLevel)) {
-                            final TransactionViewModel siblingsTx = bundleTransactionViewModels
-                                    .get(coordinatorSecurityLevel);
+                    if (isMilestoneBundleStructureValid(bundleTransactions, coordinatorSecurityLevel)) {
+                        final TransactionViewModel siblingsTx = bundleTransactions
+                                .get(coordinatorSecurityLevel);
 
-                            //milestones sign the normalized hash of the sibling transaction.
-                            byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
+                        //milestones sign the normalized hash of the sibling transaction.
+                        byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
 
-                            //validate leaf signature
-                            ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * coordinatorSecurityLevel);
-                            byte[] digest = new byte[Curl.HASH_LENGTH];
+                        //validate leaf signature
+                        ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * coordinatorSecurityLevel);
+                        byte[] digest = new byte[Curl.HASH_LENGTH];
 
-                            SpongeFactory.Mode coordinatorSignatureMode = config.getCoordinatorSignatureMode();
-                            for (int i = 0; i < coordinatorSecurityLevel; i++) {
-                                ISSInPlace.digest(coordinatorSignatureMode, signedHash,
-                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
-                                        bundleTransactionViewModels.get(i).getSignature(), 0, digest);
-                                bb.put(digest);
+                        SpongeFactory.Mode coordinatorSignatureMode = config.getCoordinatorSignatureMode();
+                        for (int i = 0; i < coordinatorSecurityLevel; i++) {
+                            ISSInPlace.digest(coordinatorSignatureMode, signedHash,
+                                    ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
+                                    bundleTransactions.get(i).getSignature(), 0, digest);
+                            bb.put(digest);
+                        }
+
+                        byte[] digests = bb.array();
+                        byte[] address = ISS.address(coordinatorSignatureMode, digests);
+
+                        //validate Merkle path
+                        byte[] merkleRoot = ISS.getMerkleRoot(coordinatorSignatureMode, address,
+                                siblingsTx.trits(), 0, milestoneIndex, config.getNumberOfKeysInMilestone());
+                        boolean skipValidation = config.isTestnet() && config.isDontValidateTestnetMilestoneSig();
+                        if (skipValidation || config.getCoordinator().equals(HashFactory.ADDRESS.create(merkleRoot))) {
+                            MilestoneViewModel newMilestoneViewModel = new MilestoneViewModel(milestoneIndex,
+                                    transactionViewModel.getHash());
+                            newMilestoneViewModel.store(tangle);
+
+                            // if we find a NEW milestone that should have been processed before our latest solid
+                            // milestone -> reset the ledger state and check the milestones again
+                            //
+                            // NOTE: this can happen if a new subtangle becomes solid before a previous one while
+                            //       syncing
+                            if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() &&
+                                    milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
+
+                                 resetCorruptedMilestone(milestoneIndex);
                             }
 
-                            byte[] digests = bb.array();
-                            byte[] address = ISS.address(coordinatorSignatureMode, digests);
-
-                            //validate Merkle path
-                            byte[] merkleRoot = ISS.getMerkleRoot(coordinatorSignatureMode, address,
-                                    siblingsTx.trits(), 0, milestoneIndex, config.getNumberOfKeysInMilestone());
-                            boolean skipValidation = config.isTestnet() && config.isDontValidateTestnetMilestoneSig();
-                            if (skipValidation || config.getCoordinator().equals(HashFactory.ADDRESS.create(merkleRoot))) {
-                                MilestoneViewModel newMilestoneViewModel = new MilestoneViewModel(milestoneIndex,
-                                        transactionViewModel.getHash());
-                                newMilestoneViewModel.store(tangle);
-
-                                // if we find a NEW milestone that should have been processed before our latest solid
-                                // milestone -> reset the ledger state and check the milestones again
-                                //
-                                // NOTE: this can happen if a new subtangle becomes solid before a previous one while
-                                //       syncing
-                                if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() &&
-                                        milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
-
-                                     resetCorruptedMilestone(milestoneIndex);
-                                }
-
-                                return VALID;
-                            } else {
-                                return INVALID;
-                            }
+                            return VALID;
+                        } else {
+                            return INVALID;
                         }
                     }
                 }

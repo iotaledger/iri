@@ -1,13 +1,6 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
-import com.iota.iri.conf.NodeConfig;
-import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.neighbor.Neighbor;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.storage.Tangle;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
@@ -23,22 +16,6 @@ public interface TransactionProcessingPipeline {
     enum Stage {
         PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH,
     }
-
-    /**
-     * Initializes the dependencies of the {@link TransactionProcessingPipeline}.
-     *
-     * @param neighborRouter         The {@link NeighborRouter} to use for broadcasting transactions
-     * @param config                 The config to set cache sizes and other options
-     * @param txValidator            The transaction validator to validate incoming transactions with
-     * @param tangle                 The {@link Tangle} database to use to store and load transactions.
-     * @param snapshotProvider       The {@link SnapshotProvider} to use to store transactions with.
-     * @param tipsViewModel          The {@link TipsViewModel} to load tips from in the reply stage
-     * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
-     *                               reply stage
-     */
-    void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
-            SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
-            LatestMilestoneTracker latestMilestoneTracker);
 
     /**
      * Kicks of the pipeline by assembling the pipeline and starting all threads.

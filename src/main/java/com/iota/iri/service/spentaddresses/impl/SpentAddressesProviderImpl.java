@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.SpentAddress;
@@ -21,6 +22,9 @@ import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * Implementation of <tt>SpentAddressesProvider</tt>.
@@ -30,29 +34,43 @@ import com.iota.iri.utils.Pair;
  */
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {
 
-    private SnapshotConfig config;
+    private static final Logger log = LoggerFactory.getLogger(SpentAddressesProvider.class);
 
-    private PersistenceProvider provider;
+    private final SnapshotConfig config;
+    private final PersistenceProvider provider;
+
+    /**
+     * Implements the spent addresses provider interface.
+     * @param configuration The snapshot configuration used for file location
+     * @param persistenceProvider A persistence provider for load/save the spent addresses
+     */
+    public SpentAddressesProviderImpl(SnapshotConfig configuration, PersistenceProvider persistenceProvider) {
+        this.config = configuration;
+        this.provider = persistenceProvider;
+    }
 
     /**
      * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
-     *
-     * @param config The snapshot configuration used for file location
-     * @param provider A persistence provider for load/save the spent addresses
-     * @return the current instance
      * @throws SpentAddressesException if we failed to create a file at the designated location
      */
-    public SpentAddressesProviderImpl init(SnapshotConfig config, PersistenceProvider provider)
-            throws SpentAddressesException {
-        this.config = config;
+    public void init(boolean assertSpentAddressesExistence) throws SpentAddressesException {
         try {
-            this.provider = provider;
             this.provider.init();
+            if (assertSpentAddressesExistence && !doSpentAddressesExist(provider)) {
+                log.error("Expecting to start with a populated spent-addresses-db when initializing from a " +
+                        "local snapshot. Shutting down now");
+                //explicitly exiting rather than throwing an exception
+                System.exit(1);
+            }
             readPreviousEpochsSpentAddresses();
         } catch (Exception e) {
             throw new SpentAddressesException("There is a problem with accessing stored spent addresses", e);
         }
-        return this;
+    }
+
+    private boolean doSpentAddressesExist(PersistenceProvider provider) throws Exception {
+        Pair<Indexable, Persistable> first = provider.first(SpentAddress.class, AddressHash.class);
+        return first.hi != null && ((SpentAddress) first.hi).exists();
     }
 
     private void readPreviousEpochsSpentAddresses() throws SpentAddressesException {

@@ -1,3 +1,34 @@
+1.8.4
+
+Hotfix: Ensure proper creation of solid entrypoints (#1702)
+
+1.8.3
+
+There is an edge case where IRI didn't account for a transaction that was shared between two distinct bundles.
+Once it marked it as "counted" in one bundle, it was ignored for the next bundle. This lead to a corrupt ledger state.
+
+Hotfix: Gyros - take transaction reattachments into account (#1699)
+
+1.8.2
+
+Change: The alpha value is now 0 by default, streamlining the tip selection process which will reduce memory and cpu load. This is done by skipping cumulative weight calculations. (Issue #1567)
+
+Fix: correct data setting into Hash object (#1589)
+Fix: Persistables merge and load functionality
+Documentation: Fix broken link of online documentation (#1623)
+Documentation: Update README.md (#1617)
+Fix: always set the domain field of a neighbor (#1604)
+Change: Use mocked SnapshotProvider (#1531)
+Fix: Fixes regression introduced through the bundle validator refactor (#1588)
+Documentation: Document Persistable and Indexable (#1169)
+Feature: Adds progress bar and estimated time until the node is synced (#1575)
+Change: Curl improvement
+Change: Bundle validator refactor
+Change: Use maven assembly plugin to create one jar with all dependencies (#1573)
+Documentation: Document Persistence Provider (#1157)
+Documentation: Updated links to official documentation (#1560)
+
+
 1.8.1
 
 - Feature: Improved CW Calculation (#1451)

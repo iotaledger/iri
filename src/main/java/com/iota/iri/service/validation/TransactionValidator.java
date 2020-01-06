@@ -10,8 +10,6 @@ import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 
-import static com.iota.iri.controllers.TransactionViewModel.*;
-
 /**
  * Tool for determining validity of a transaction via a {@link TransactionViewModel}, tryte array or byte array.
  */
@@ -108,22 +106,27 @@ public class TransactionValidator {
     public void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
         transactionViewModel.setAttachmentData();
-        if(hasInvalidTimestamp(transactionViewModel)) {
+        if (hasInvalidTimestamp(transactionViewModel)) {
             throw new StaleTimestampException("Invalid transaction timestamp.");
         }
-        for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
-            if (transactionViewModel.trits()[i] != 0) {
-                throw new IllegalStateException("Invalid transaction value");
-            }
-        }
 
+        confirmValidTransactionValues(transactionViewModel);
         int weightMagnitude = transactionViewModel.weightMagnitude;
-        if(weightMagnitude < minWeightMagnitude) {
+        if (weightMagnitude < minWeightMagnitude) {
             throw new IllegalStateException("Invalid transaction hash");
         }
 
         if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
             throw new IllegalStateException("Invalid transaction address");
+        }
+    }
+
+    private void confirmValidTransactionValues(TransactionViewModel transactionViewModel) throws IllegalStateException {
+        for (int i = TransactionViewModel.VALUE_TRINARY_OFFSET + TransactionViewModel.VALUE_USABLE_TRINARY_SIZE;
+             i < TransactionViewModel.VALUE_TRINARY_OFFSET + TransactionViewModel.VALUE_TRINARY_SIZE; i++) {
+            if (transactionViewModel.trits()[i] != 0) {
+                throw new IllegalStateException("Invalid transaction value");
+            }
         }
     }
 
@@ -150,7 +153,8 @@ public class TransactionValidator {
      * @throws RuntimeException if validation fails
      */
     public TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, TransactionHash.calculate(bytes, TRINARY_SIZE, curl));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, TransactionHash.calculate(bytes,
+                TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }

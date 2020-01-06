@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.iota.iri.utils.IotaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,11 +59,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     /**
      * List of stages that will be ignored when determining thread count
      */
-    private static List<Stage> IGNORED_STAGES = new LinkedList<Stage>(){{
-        add(Stage.MULTIPLE);
-        add(Stage.ABORT);
-        add(Stage.FINISH);
-    }};
+    private static final List IGNORED_STAGES = IotaUtils.createImmutableList(Stage.MULTIPLE, Stage.ABORT, Stage.FINISH);
 
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;

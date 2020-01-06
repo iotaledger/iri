@@ -445,10 +445,10 @@ public class TransactionViewModel {
         // We need to save approvees, tags, and other metadata that is used by
         // non-cached operations.
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
-        cachePut(tangle, this, hash);
         cacheApprovees(tangle);
+        cachePut(tangle, this, hash);
 
-        if (exists(tangle, hash)) {
+        if (tangle.exists(Transaction.class, hash)) {
             return false;
         }
         tangle.saveBatch(batch);

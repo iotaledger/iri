@@ -1,5 +1,7 @@
 package com.iota.iri.service.snapshot;
 
+import com.iota.iri.service.spentaddresses.SpentAddressesException;
+
 /**
  * The data provider that allows to retrieve the {@link Snapshot} instances that are relevant for the node.
  */
@@ -44,4 +46,11 @@ public interface SnapshotProvider {
      * particularly important for unit tests, that create a separate instance of the {@link SnapshotProvider}.
      */
     void shutdown();
+
+    /**
+     * This method initializes the instance by loading the snapshots.
+     *
+     * @throws SnapshotException if anything goes wrong while trying to read the snapshots
+     */
+    void init() throws SnapshotException, SpentAddressesException;
 }

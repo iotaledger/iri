@@ -4,9 +4,11 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
+import javax.naming.OperationNotSupportedException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Creates a persistable State object, used to map addresses with values in the DB and snapshots.
@@ -21,11 +23,24 @@ public class StateDiff implements Persistable {
      * a new empty byte array is returned instead.
      */
     @Override
-    public byte[] bytes() {
-        return state.entrySet().parallelStream()
-                .map(entry -> ArrayUtils.addAll(entry.getKey().bytes(), Serializer.serialize(entry.getValue())))
-                .reduce(ArrayUtils::addAll)
-                .orElse(new byte[0]);
+    public byte[] bytes(){
+        int size = state.size();
+        if (size == 0) {
+            return new byte[0];
+        }
+
+        byte[] temp = new byte[size * (Hash.SIZE_IN_BYTES + Long.BYTES)];
+        int index = 0;
+        for (Entry<Hash,Long> entry : state.entrySet()){
+            byte[] key = entry.getKey().bytes();
+            System.arraycopy(key, 0, temp, index, key.length);
+            index += key.length;
+
+            byte[] value = Serializer.serialize(entry.getValue());
+            System.arraycopy(value, 0, temp, index, value.length);
+            index += value.length;
+        }
+        return temp;
     }
 
     /**
@@ -55,7 +70,18 @@ public class StateDiff implements Persistable {
     }
 
     @Override
-    public boolean merge() {
+    public boolean canMerge() {
         return false;
     }
+
+    @Override
+    public Persistable mergeInto(Persistable source) throws OperationNotSupportedException {
+            throw new OperationNotSupportedException("This object is not mergeable");
+    }
+
+    @Override
+    public boolean exists() {
+        return !(this.state == null || this.state.isEmpty());
+    }
+
 }

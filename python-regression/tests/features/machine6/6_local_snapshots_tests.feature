@@ -86,6 +86,58 @@ Feature: Test Bootstrapping With LS
 
     Then the response for "checkConsistency" should return null
 
+  Scenario: Check unconfirmed transaction is spent from
+  Issues a value transaction that will be unconfirmed, and check that the address was spent from.
+
+    Given a transaction is generated and attached on "nodeE-m6" with:
+      |keys                       |values                   |type                   |
+      |address                    |TEST_ADDRESS             |staticValue            |
+      |value                      |10                       |int                    |
+      |seed                       |UNCONFIRMED_TEST_SEED    |staticValue            |
+
+    When "wereAddressesSpentFrom" is called on "nodeE-m6" with:
+      |keys                       |values                   |type                   |
+      |addresses                  |UNCONFIRMED_TEST_ADDRESS |staticValue            |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type                   |
+      |addresses                  |True                     |boolList               |
+
+
+  Scenario: Check addresses spent from after pruning
+  Ensures that a node with a spent address registers that the address is spent from both before and after the
+  transaction has been pruned from the DB.
+
+    # Check that addresses were spent from before pruning
+    Given "wereAddressesSpentFrom" is called on "nodeE-m6" with:
+      |keys                       |values                   |type                   |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue            |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type                   |
+      |addresses                  |True                     |boolList               |
+
+    #Drop the spend transactions below the pruning depth
+    When the next 30 milestones are issued
+
+    # Check that addresses were spent after transaction have been pruned
+    And "wereAddressesSpentFrom" is called on "nodeE-m6" with:
+      |keys                       |values                   |type                   |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue            |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type                   |
+      |addresses                  |True                     |boolList               |
+
+    # Check that transactions from those addresses were pruned
+    And "getTrytes" is called on "nodeE-m6" with:
+      |keys                       |values                   |type                   |
+      |hashes                     |LS_SPENT_TRANSACTIONS    |staticValue            |
+
+    Then the response for "getTrytes" should return with:
+      |keys                       |values                   |type                   |
+      |trytes                     |NULL_TRANSACTION_LIST    |staticValue            |
+
 
   Scenario: Spent Addresses are exported and imported correctly
     Using the export-spent tool in the iri-extensions library, the spent addresses of the db will be exported to a file.
@@ -139,4 +191,3 @@ Feature: Test Bootstrapping With LS
       Then the response for "wereAddressesSpentFrom" should return with:
         |keys                       |values                   |type                 |
         |states                     |True                     |bool                 |
-

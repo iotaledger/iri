@@ -14,7 +14,11 @@ default_args: &args
    '--local-snapshots-pruning-enabled',
    'true',
    '--local-snapshots-pruning-delay',
-   '10000'
+   '10000',
+   '--remote',
+   'true',
+   '--remote-limit-api',
+   '""'
   ]
 
 args_empty: &args_empty
@@ -65,6 +69,11 @@ db_for_pruning: &db_for_pruning
 db_empty: &db_empty
   iri_args: *args_empty
 
+db_for_spent_addresses: &db_for_spent_addresses
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/SpentAddressesTestDB.tar
+  db_checksum: 7e15b2cbc76585d6483668cb1709201daa71314e7d488d9e7d71d7052479e73e
+  iri_args: *args
+
 nodes:
   nodeA-m6: #name
     <<: *db_full
@@ -77,6 +86,9 @@ nodes:
 
   nodeD-m6:
     <<: *db_for_pruning
+
+  nodeE-m6:
+    <<: *db_for_spent_addresses
 
   nodeF-m6:
     <<: *db_empty

@@ -10,6 +10,7 @@ import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -110,9 +111,10 @@ public class TransactionProcessingPipelineTest {
 
     @Test
     public void processingAValidNewTransactionFlowsThroughTheEntirePipeline() throws InterruptedException {
-        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
-                latestMilestoneTracker, transactionRequester);
+
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
+                transactionRequester);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -155,9 +157,9 @@ public class TransactionProcessingPipelineTest {
 
     @Test
     public void processingAKnownTransactionOnlyFlowsToTheReplyStage() throws InterruptedException {
-        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
-                latestMilestoneTracker, transactionRequester);
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
+                transactionRequester);
 
         // inject mocks
         pipeline.setPreProcessStage(preProcessStage);
@@ -189,10 +191,9 @@ public class TransactionProcessingPipelineTest {
     @Test
     public void processingAValidNewTransactionNotOriginatingFromANeighborFlowsThroughTheCorrectStages()
             throws InterruptedException {
-        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
-                latestMilestoneTracker, transactionRequester);
-
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
+                transactionRequester);
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
 
@@ -235,9 +236,9 @@ public class TransactionProcessingPipelineTest {
 
     @Test
     public void anInvalidNewTransactionStopsBeingProcessedAfterTheValidationStage() throws InterruptedException {
-        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl();
-        pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, tipsViewModel,
-                latestMilestoneTracker, transactionRequester);
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
+                transactionRequester);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);

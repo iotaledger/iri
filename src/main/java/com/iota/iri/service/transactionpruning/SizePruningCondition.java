@@ -36,6 +36,11 @@ public class SizePruningCondition implements PruningCondition {
      */
     private final Tangle tangle;
 
+    /**
+     * The cached size of the db, so we don't keep pruning when the size doesn't change before a DB compaction
+     */
+    private long lastSize = -1;
+
 
     /**
      * A condition to prune based on DB size
@@ -66,8 +71,10 @@ public class SizePruningCondition implements PruningCondition {
         if (maxSize <= 0) {
             return false;
         }
-
         long size = tangle.getPersistanceSize();
+        if (size == lastSize) {
+            return false;
+        }
         return size > maxSize;
     }
 

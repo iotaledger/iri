@@ -3,13 +3,10 @@ package com.iota.iri.service.snapshot.impl;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.snapshot.LocalSnapshotManager;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.service.snapshot.conditions.SnapshotCondition;
+import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.transactionpruning.PruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
 
@@ -81,7 +78,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      */
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
-    private SnapshotCondition[] conditions;
+    private SnapshotCondition[] snapshotConditions;
+    private PruningCondition[] pruningConditions;
 
     /**
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
@@ -128,11 +126,11 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     void monitorThread(LatestMilestoneTracker latestMilestoneTracker) {
         while (!Thread.currentThread().isInterrupted()) {
             // Possibly takes a snapshot if we can
-            Snapshot takenSnapshot = handleSnapshot(latestMilestoneTracker);
+            handleSnapshot(latestMilestoneTracker);
             
             // Prunes data separate of a snapshot if we made a snapshot of the pruned data now or previously
             if (config.getLocalSnapshotsPruningEnabled()) {
-                handlePruning(latestMilestoneTracker);
+                handlePruning();
             }
             ThreadUtils.sleep(LOCAL_SNAPSHOT_RESCAN_INTERVAL);
         }
@@ -156,14 +154,14 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     }
     
     /**
-     * Calculates the oldest milestone index allowed by all conditions.
+     * Calculates the oldest milestone index allowed by all snapshotConditions.
      * 
      * @param isInSync If this node is considered in sync, to prevent recalculation.
      * @return The lowest allowed milestone we can snapshot according to the node
      */
     private int calculateLowestSnapshotIndex(boolean isInSync) {
         int lowestSnapshotIndex = -1;
-        for (SnapshotCondition condition : conditions) {
+        for (SnapshotCondition condition : snapshotConditions) {
             try {
                 if (condition.shouldTakeSnapshot(isInSync) && (lowestSnapshotIndex == -1 
                         || condition.getSnapshotStartingMilestone() < lowestSnapshotIndex)) {
@@ -184,11 +182,10 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 && lowestSnapshotIndex <= snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
     }
     
-    private void handlePruning(LatestMilestoneTracker latestMilestoneTracker) {
+    private void handlePruning() {
         // Recalculate inSync, as a snapshot can take place which takes a while
-        boolean isInSync = isInSync(latestMilestoneTracker);
-        try { 
-            int pruningMilestoneIndex = calculateLowestPruningIndex(isInSync);
+        try {
+            int pruningMilestoneIndex = calculateLowestPruningIndex();
             if (canPrune(pruningMilestoneIndex)) {
                 log.info("Pruning at index {}", pruningMilestoneIndex);
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
@@ -208,22 +205,22 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * Calculates the oldest pruning milestone index allowed by all conditions.(
      * If the lowest index violates our set minimum pruning depth, the minimum will be returned instead.
      * 
-     * @param isInSync If this node is considered in sync, to prevent recalculation.
      * @return The lowest allowed milestone we can prune according to the node, or -1 if we cannot
      * @throws SnapshotException if we could not obtain the requirements for determining the snapshot milestone
      */
-    private int calculateLowestPruningIndex(boolean isInSync) throws SnapshotException {
+    private int calculateLowestPruningIndex() throws TransactionPruningException {
         int lowestPruningIndex = -1;
 
-        for (SnapshotCondition condition : conditions) {
-            if (condition.shouldTakeSnapshot(isInSync) && (
-            lowestPruningIndex == -1 || condition.getSnapshotPruningMilestone() < lowestPruningIndex)) {
-                lowestPruningIndex = condition.getSnapshotPruningMilestone();
+        for (PruningCondition condition : pruningConditions) {
+            int snapshotPruningMilestone = condition.getSnapshotPruningMilestone();
+            if (condition.shouldPrune()
+                    && (lowestPruningIndex == -1 || snapshotPruningMilestone < lowestPruningIndex)) {
+                lowestPruningIndex = snapshotPruningMilestone;
             }
         }
 
         int localSnapshotIndex = this.snapshotProvider.getInitialSnapshot().getIndex();
-        // since depth condition may be skipped we must make sure that other conditions
+        // since depth condition may be skipped we must make sure that we don't prune too shallow
         int maxPruningIndex = localSnapshotIndex - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN;
         if (lowestPruningIndex != -1 && lowestPruningIndex > maxPruningIndex) {
             log.warn("Attempting to prune at milestone index {}. But it is not at least {} milestones below "
@@ -275,10 +272,19 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
 
     @Override
     public void addSnapshotCondition(SnapshotCondition... conditions) {
-        if (this.conditions == null) {
-            this.conditions = conditions.clone();
+        if (this.snapshotConditions == null) {
+            this.snapshotConditions = conditions.clone();
         } else {
-            this.conditions = ArrayUtils.addAll(this.conditions, conditions);
+            this.snapshotConditions = ArrayUtils.addAll(this.snapshotConditions, conditions);
+        }
+    }
+
+    @Override
+    public void addPruningConditions(PruningCondition... conditions) {
+        if (this.pruningConditions == null) {
+            this.pruningConditions = conditions.clone();
+        } else {
+            this.pruningConditions = ArrayUtils.addAll(this.pruningConditions, conditions);
         }
     }
 }

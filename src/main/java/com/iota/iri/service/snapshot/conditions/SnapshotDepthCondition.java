@@ -1,6 +1,7 @@
 package com.iota.iri.service.snapshot.conditions;
 
 import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.service.snapshot.SnapshotCondition;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 
 import com.google.common.annotations.VisibleForTesting;

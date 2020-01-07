@@ -8,17 +8,12 @@ import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
-import com.iota.iri.service.milestone.MilestoneService;
-import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.milestone.SeenMilestonesRetriever;
+import com.iota.iri.service.milestone.*;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.conditions.SnapshotDepthCondition;
-import com.iota.iri.service.snapshot.conditions.SnapshotSizeCondition;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
@@ -200,8 +195,7 @@ public class Iota {
 
         if (localSnapshotManager != null) {
             localSnapshotManager.addSnapshotCondition(
-                    new SnapshotDepthCondition(configuration, snapshotProvider),
-                    new SnapshotSizeCondition(tangle, configuration));
+                    new SnapshotDepthCondition(configuration, snapshotProvider));
             localSnapshotManager.start(latestMilestoneTracker);
         }
         if (transactionPruner != null) {

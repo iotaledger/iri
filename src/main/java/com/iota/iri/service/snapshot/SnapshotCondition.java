@@ -1,7 +1,4 @@
-package com.iota.iri.service.snapshot.conditions;
-
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
+package com.iota.iri.service.snapshot;
 
 /**
  * 

@@ -2,6 +2,7 @@ from aloe import step, world
 from util.test_logic import api_test_logic as api_utils
 from kubernetes import client, config
 from kubernetes.stream import stream
+import os
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -117,6 +118,8 @@ def export_spent_addresses(step, node):
         while response.is_open():
             response.update(timeout=1)
             if response.peek_stdout():
+                logger.info("Current directory: " + os.getcwd())
+                logger.info(os.listdir(os.getcwd()))
                 f = open("/tmp/spentAddresses.txt", "w+")
                 f.write(response.read_stdout())
 

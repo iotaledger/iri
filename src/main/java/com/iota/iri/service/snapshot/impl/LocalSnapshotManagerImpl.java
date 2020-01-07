@@ -2,7 +2,6 @@ package com.iota.iri.service.snapshot.impl;
 
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.Snapshot;
@@ -132,8 +131,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
             Snapshot takenSnapshot = handleSnapshot(latestMilestoneTracker);
             
             // Prunes data separate of a snapshot if we made a snapshot of the pruned data now or previously
-            handlePruning(takenSnapshot, latestMilestoneTracker);
-            
+            if (config.getLocalSnapshotsPruningEnabled()) {
+                handlePruning(latestMilestoneTracker);
+            }
             ThreadUtils.sleep(LOCAL_SNAPSHOT_RESCAN_INTERVAL);
         }
     }
@@ -184,7 +184,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 && lowestSnapshotIndex <= snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
     }
     
-    private void handlePruning(Snapshot takenSnapshot, LatestMilestoneTracker latestMilestoneTracker) {
+    private void handlePruning(LatestMilestoneTracker latestMilestoneTracker) {
         // Recalculate inSync, as a snapshot can take place which takes a while
         boolean isInSync = isInSync(latestMilestoneTracker);
         try { 
@@ -192,7 +192,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
             if (canPrune(pruningMilestoneIndex)) {
                 log.info("Pruning at index {}", pruningMilestoneIndex);
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
-                snapshotService.pruneSnapshotData(transactionPruner, takenSnapshot, pruningMilestoneIndex);
+                snapshotService.pruneSnapshotData(transactionPruner, pruningMilestoneIndex);
             }
             else {
                 log.debug("Can't prune at index {}", pruningMilestoneIndex);

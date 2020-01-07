@@ -90,11 +90,10 @@ public interface SnapshotService {
      * <p>
      * 
      * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
-     * @param newSnapshot The newest snapshot we made, used to clean up old entrypoints
      * @param pruningMilestoneIndex The index of the milestone we will prune until (excluding)
      * @throws SnapshotException if anything goes wrong while pruning
      */
-    void pruneSnapshotData(TransactionPruner transactionPruner, Snapshot newSnapshot, int pruningMilestoneIndex)
+    void pruneSnapshotData(TransactionPruner transactionPruner, int pruningMilestoneIndex)
             throws SnapshotException;
     
     /**

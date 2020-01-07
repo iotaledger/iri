@@ -220,7 +220,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void pruneSnapshotData(TransactionPruner transactionPruner, Snapshot newSnapshot, int pruningMilestoneIndex) throws SnapshotException {
+    public void pruneSnapshotData(TransactionPruner transactionPruner, int pruningMilestoneIndex) throws SnapshotException {
         if (transactionPruner != null) {
             cleanupOldData(config, transactionPruner, pruningMilestoneIndex);
         }

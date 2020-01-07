@@ -495,6 +495,7 @@ public class API {
                 case OK:
                     log.info("Removed neighbor: {}", uriString);
                     numberOfRemovedNeighbors++;
+                    break;
                 case URI_INVALID:
                     log.info("Can't remove neighbor {}: URI is invalid", uriString);
                     break;

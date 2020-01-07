@@ -221,12 +221,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
             }
         }
 
-        int difference = this.snapshotProvider.getLatestSnapshot().getIndex() - lowestPruningIndex;
-        return lowestPruningIndex == -1 || difference > BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN
-                ? lowestPruningIndex
-                : lowestPruningIndex - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN;
+        return lowestPruningIndex;
     }
-    
+
     private boolean canPrune(int pruningMilestoneIndex) {
         int snapshotIndex = snapshotProvider.getInitialSnapshot().getIndex();
         // -1 means we can't prune, smaller than snapshotIndex because we prune until index + 1

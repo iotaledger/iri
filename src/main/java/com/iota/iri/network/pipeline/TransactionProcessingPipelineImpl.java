@@ -19,7 +19,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;

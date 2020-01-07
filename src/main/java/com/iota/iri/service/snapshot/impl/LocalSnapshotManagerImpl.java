@@ -214,10 +214,13 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      */
     private int calculateLowestPruningIndex(boolean isInSync) throws SnapshotException {
         int lowestPruningIndex = -1;
+        int localSnapshotIndex = this.snapshotProvider.getInitialSnapshot().getIndex();
+        // since depth condition may be skipped we must make sure that other conditions
+        int maxPruningIndex = localSnapshotIndex - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN;
         for (SnapshotCondition condition : conditions) {
             if (condition.shouldTakeSnapshot(isInSync) && (
             lowestPruningIndex == -1 || condition.getSnapshotPruningMilestone() < lowestPruningIndex)) {
-                lowestPruningIndex = condition.getSnapshotPruningMilestone();
+                lowestPruningIndex = Math.min(condition.getSnapshotPruningMilestone(), maxPruningIndex);
             }
         }
 

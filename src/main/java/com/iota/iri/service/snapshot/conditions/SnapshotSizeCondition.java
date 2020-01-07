@@ -30,7 +30,7 @@ public class SnapshotSizeCondition implements SnapshotCondition {
     private static final double MARGIN = 1;
     
     /**
-     * Amount of milestones we snapshot when the DB is too large
+     * Amount of milestones we prune when the DB is too large
      */
     private static final int MILESTONES = 5;
     
@@ -54,7 +54,6 @@ public class SnapshotSizeCondition implements SnapshotCondition {
      * 
      * @param tangle the database interface.
      * @param config configuration with snapshot specific settings.
-     * @param snapshotProvider gives us access to the relevant snapshots.
      */
     public SnapshotSizeCondition(Tangle tangle, SnapshotConfig config) {
         this.tangle = tangle;

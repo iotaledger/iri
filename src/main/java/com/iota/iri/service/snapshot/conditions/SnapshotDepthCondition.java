@@ -39,18 +39,12 @@ public class SnapshotDepthCondition implements SnapshotCondition {
     }
 
     /**
-     * <p>
-     * This method determines the milestone that shall be used for the local snapshot.
-     * </p>
+     * {@inheritDoc}
+     *
      * <p>
      * It determines the milestone by subtracting the {@link SnapshotConfig#getLocalSnapshotsDepth()} from the latest
      * solid milestone index and retrieving the next milestone before this point.
      * </p>
-     * 
-     * @param tangle Tangle object which acts as a database interface
-     * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
-     * @param config important snapshot related configuration parameters
-     * @return the target milestone for the local snapshot
      */
     @Override
     public int getSnapshotStartingMilestone() {

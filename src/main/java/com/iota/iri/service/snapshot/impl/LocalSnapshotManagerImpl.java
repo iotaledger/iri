@@ -121,7 +121,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * It periodically checks if a new {@link com.iota.iri.service.snapshot.Snapshot} has to be taken until the
      * {@link Thread} is terminated. If it detects that a {@link com.iota.iri.service.snapshot.Snapshot} is due it
      * triggers the creation of the {@link com.iota.iri.service.snapshot.Snapshot} by calling
-     * {@link SnapshotService#takeLocalSnapshot(LatestMilestoneTracker, TransactionPruner, MilestoneViewModel)}.
+     * {@link SnapshotService#takeLocalSnapshot}.
      *
      * @param latestMilestoneTracker tracker for the milestones to determine when a new local snapshot is due
      */
@@ -213,17 +213,18 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @throws SnapshotException if we could not obtain the requirements for determining the snapshot milestone
      */
     private int calculateLowestPruningIndex(boolean isInSync) throws SnapshotException {
-        int lowestSnapshotIndex = -1;
+        int lowestPruningIndex = -1;
         for (SnapshotCondition condition : conditions) {
             if (condition.shouldTakeSnapshot(isInSync) && (
-                    lowestSnapshotIndex == -1 || condition.getSnapshotPruningMilestone() < lowestSnapshotIndex)) {
-                lowestSnapshotIndex = condition.getSnapshotPruningMilestone();
+            lowestPruningIndex == -1 || condition.getSnapshotPruningMilestone() < lowestPruningIndex)) {
+                lowestPruningIndex = condition.getSnapshotPruningMilestone();
             }
         }
-        
-        int difference = this.snapshotProvider.getLatestSnapshot().getIndex() - lowestSnapshotIndex; 
-        return lowestSnapshotIndex == -1 || difference > BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
-                ? lowestSnapshotIndex : lowestSnapshotIndex - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN;
+
+        int difference = this.snapshotProvider.getLatestSnapshot().getIndex() - lowestPruningIndex;
+        return lowestPruningIndex == -1 || difference > BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN
+                ? lowestPruningIndex
+                : lowestPruningIndex - BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN;
     }
     
     private boolean canPrune(int pruningMilestoneIndex) {

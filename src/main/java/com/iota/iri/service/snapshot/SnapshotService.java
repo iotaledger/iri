@@ -78,7 +78,8 @@ public interface SnapshotService {
      * @return The Snapshot we ended up making
      * @throws SnapshotException if anything goes wrong while creating the local snapshot
      */
-    Snapshot takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int snapshotUntillIndex) throws
+    Snapshot takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner,
+            int snapshotUntillIndex) throws
             SnapshotException;
 
     /**

@@ -54,12 +54,13 @@ import org.slf4j.LoggerFactory;
 public class TransactionProcessingPipelineImpl implements TransactionProcessingPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionProcessingPipelineImpl.class);
-    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(getNumberOfThreads());
+    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
     /**
      * List of stages that will be ignored when determining thread count
      */
     private static final List IGNORED_STAGES = IotaUtils.createImmutableList(Stage.MULTIPLE, Stage.ABORT, Stage.FINISH);
+    private static final int NUMBER_OF_THREADS = Stage.values().length - IGNORED_STAGES.size();
 
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;
@@ -75,10 +76,6 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
-
-    private int getNumberOfThreads() {
-        return Stage.values().length - IGNORED_STAGES.size();
-    }
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.

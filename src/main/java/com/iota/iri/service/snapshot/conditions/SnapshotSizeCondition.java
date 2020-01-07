@@ -74,11 +74,15 @@ public class SnapshotSizeCondition implements SnapshotCondition {
     }
 
     /**
-     * We only take a snapshot if the db size updated since last check and the new size is bigger than the maximum allowed.
-     * A margin of 1% is taken, based on the min amount of milestones, resulting in ~10GB DB, 100MB margin.
+     * <p>
+     * {@inheritDoc}
+     * </p>
+     * <br>
+     * <p>
+     * We only take a snapshot if the db size updated since last check and the new size is bigger than the maximum
+     * allowed. A margin of 1% is taken, based on the min amount of milestones, resulting in ~10GB DB, 100MB margin.
      * This corresponds to the, default, 64MB buffer for writing to disk, which is at most 128 of size.
-     * 
-      * {@inheritDoc}
+     * </p>
      */
     @Override
     public boolean shouldTakeSnapshot(boolean isInSync) {
@@ -94,15 +98,15 @@ public class SnapshotSizeCondition implements SnapshotCondition {
     }
 
     @Override
-    public int getSnapshotStartingMilestone() throws SnapshotException {
+    public int getSnapshotStartingMilestone() {
         // Snapshot by size doesn't need a recent snapshot, we calculate here so we can reuse it when we call getSnapshotPruningMilestone.
         // This will not go below the allowed snapshot depth due to the other conditions
         return -1;
     }
 
     @Override
-    public int getSnapshotPruningMilestone() throws SnapshotException {
-        int initialIndex = -1;
+    public int getSnapshotPruningMilestone() {
+        int initialIndex;
         try {
             Pair<Indexable, Persistable> ms = tangle.getFirst(Milestone.class, IntegerIndex.class);
             initialIndex = ((IntegerIndex)ms.low).getValue();

@@ -1,8 +1,6 @@
 package com.iota.iri.service.snapshot.conditions;
 
 import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -66,7 +64,7 @@ public class SnapshotDepthCondition implements SnapshotCondition {
     }
 
     @Override
-    public int getSnapshotPruningMilestone() throws SnapshotException {
+    public int getSnapshotPruningMilestone() {
         return snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsPruningDelay();
     }
 }

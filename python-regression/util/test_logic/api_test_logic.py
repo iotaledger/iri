@@ -1,10 +1,11 @@
+import json
+import logging
+import urllib3
 from aloe import world
 from iota import Iota, Address, Tag, TryteString
-import json
-import urllib3
+
 from . import value_fetch_logic as value_fetch
 
-import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,8 @@ def fetch_call(api_call, api, options):
 
     try:
         response = call_list[api_call](**options)
-    except ValueError:
+    except ValueError, e:
+        logger.info(str(e))
         response = None
 
     return response

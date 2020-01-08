@@ -68,6 +68,7 @@ db_for_pruning: &db_for_pruning
 
 db_empty: &db_empty
   iri_args: *args_empty
+  ixis: *ixi
 
 db_for_spent_addresses: &db_for_spent_addresses
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/SpentAddressesTestDB.tar

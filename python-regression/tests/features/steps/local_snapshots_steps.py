@@ -2,7 +2,6 @@ from aloe import step, world
 from util.test_logic import api_test_logic as api_utils
 from kubernetes import client, config
 from kubernetes.stream import stream
-import os
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -110,10 +109,10 @@ def export_spent_addresses(step, node):
         config.load_kube_config()
         v1 = client.CoreV1Api()
         response = stream(v1.connect_get_namespaced_pod_exec,
-                          podname, 'default',
-                          command=['cat', '/iri/data/spentAddresses.txt'],
-                          stderr=True, stdin=True, stdout=True, tty=False,
-                          _preload_content=False)
+                      podname, 'default',
+                      command=['cat', '/iri/data/spentAddresses.txt'],
+                      stderr=True, stdin=True, stdout=True, tty=False,
+                      _preload_content=False)
 
         while response.is_open():
             response.update(timeout=1)
@@ -121,8 +120,8 @@ def export_spent_addresses(step, node):
                 f = open("/tmp/spentAddresses.txt", "w+")
                 f.write(response.read_stdout())
 
-    except:
-        logger.info("No pod name found, skipping file transfer from k8s pod")
+    except Exception as err:
+        logger.info("There was an error reading the spent addresses file " + str(err))
 
 
 @step(r'the spent addresses are imported on "([^"]+)" from:')
@@ -166,11 +165,7 @@ def read_spent_addresses_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    file_name = 'spentAddresses.txt'
-
-    for root, dirs, files in os.walk('/'):
-        if file_name in files:
-            file_name = os.path.join(root, file_name)
+    file_name = '/tmp/spentAddresses.txt'
 
     lines = [line.rstrip() for line in open(file_name)]
 

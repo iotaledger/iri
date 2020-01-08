@@ -166,9 +166,12 @@ def read_spent_addresses_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    logger.info("###Current directory: ".join(os.listdir("./")))
-    logger.info("###Tmp: ".join(os.listdir("/tmp/")))
-    file_name = '/tmp/spentAddresses.txt'
+    file_name = 'spentAddresses.txt'
+
+    for root, dirs, files in os.walk('/'):
+        if file_name in files:
+            file_name = os.path.join(root, file_name)
+
     lines = [line.rstrip() for line in open(file_name)]
 
     for x in options['addresses']:

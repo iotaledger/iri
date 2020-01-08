@@ -166,8 +166,8 @@ def read_spent_addresses_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    logger.info("Current directory: " + os.listdir("./"))
-    logger.info("tmp: " + os.listdir("/tmp/"))
+    logger.info("###Current directory: ".join(os.listdir("./")))
+    logger.info("###Tmp: ".join(os.listdir("/tmp/")))
     file_name = '/tmp/spentAddresses.txt'
     lines = [line.rstrip() for line in open(file_name)]
 

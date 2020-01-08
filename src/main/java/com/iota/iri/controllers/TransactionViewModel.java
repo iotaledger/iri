@@ -331,9 +331,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if no branch is found when creating the branch {@link TransactionViewModel}
      */
     public TransactionViewModel getBranchTransaction(Tangle tangle) throws Exception {
-        if (branch == null) {
-            branch = TransactionViewModel.fromHash(tangle, getBranchTransactionHash());
-        }
+        branch = TransactionViewModel.fromHash(tangle, getBranchTransactionHash());
         return branch;
     }
 
@@ -347,9 +345,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if no trunk is found when creating the trunk {@link TransactionViewModel}
      */
     public TransactionViewModel getTrunkTransaction(Tangle tangle) throws Exception {
-        if (trunk == null) {
-            trunk = TransactionViewModel.fromHash(tangle, getTrunkTransactionHash());
-        }
+        trunk = TransactionViewModel.fromHash(tangle, getTrunkTransactionHash());
         return trunk;
     }
 
@@ -446,7 +442,9 @@ public class TransactionViewModel {
         // non-cached operations.
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
         cacheApprovees(tangle);
-        cachePut(tangle, this, hash);
+        if (tangle.getCache(TransactionViewModel.class).get(hash) == null) {
+            cachePut(tangle, this, hash);
+        }
 
         if (tangle.exists(Transaction.class, hash)) {
             return false;

@@ -91,9 +91,11 @@ public class CacheImpl<K, V> implements Cache<K, V> {
             return;
         }
         V value = strongStore.get(key);
-        weakStore.put(key, value);
         strongStore.remove(key);
         evictionQueue.remove(key);
+        if (value != null) {
+            weakStore.put(key, value);
+        }
     }
 
     @Override

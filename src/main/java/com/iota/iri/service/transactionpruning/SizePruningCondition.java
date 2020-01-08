@@ -75,6 +75,8 @@ public class SizePruningCondition implements PruningCondition {
         if (size == lastSize) {
             return false;
         }
+
+        lastSize = size;
         return size > maxSize;
     }
 

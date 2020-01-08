@@ -118,8 +118,6 @@ def export_spent_addresses(step, node):
         while response.is_open():
             response.update(timeout=1)
             if response.peek_stdout():
-                logger.info("Current directory: " + os.getcwd())
-                logger.info(os.listdir(os.getcwd()))
                 f = open("/tmp/spentAddresses.txt", "w+")
                 f.write(response.read_stdout())
 
@@ -168,6 +166,8 @@ def read_spent_addresses_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
+    logger.info("Current directory: " + os.listdir("./"))
+    logger.info("tmp: " + os.listdir("/tmp/"))
     file_name = '/tmp/spentAddresses.txt'
     lines = [line.rstrip() for line in open(file_name)]
 

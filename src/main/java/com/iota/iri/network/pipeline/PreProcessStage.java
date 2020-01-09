@@ -6,7 +6,9 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.TransactionCacheDigester;
 import com.iota.iri.network.protocol.Protocol;
+import com.iota.iri.network.protocol.ProtocolMessage;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.TransactionTruncator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +48,7 @@ public class PreProcessStage implements Stage {
         byte[] data = packetData.array();
 
         // expand received tx data
-        byte[] txDataBytes = Protocol.expandTx(data);
+        byte[] txDataBytes = TransactionTruncator.expandTransaction(data, ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength());
         // copy requested tx hash
         byte[] reqHashBytes = Protocol.extractRequestedTxHash(data);
 

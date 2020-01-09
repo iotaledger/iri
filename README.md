@@ -95,32 +95,35 @@ command line arguments.
 `docker run -d --net=host --name iota-node -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
 ### Command Line Options 
+A complete list can be found [here](https://docs.iota.org/docs/node-software/0.1/iri/references/iri-configuration-options). The following table are the most frequently used arguments: 
 
 Option | Shortened version | Description | Example Input
 --- | --- | --- | --- 
 `--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14265`
-`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
+`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "tcp://148.148.148.148:15600 tcp://[2001:db8:a0b:12f0::1]:15600"`
 `--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
-`--udp-receiver-port` | `-u` | UDP receiver port | `-u 14600`
-`--tcp-receiver-port` | `-t` | TCP receiver port | `-t 15600`
-`--testnet` | | Makes it possible to run IRI with the IOTA testnet | `--testnet`
-`--remote` | | Remotely access your node and send API commands | `--remote`
+`--neighboring-socket-port` | `-t` | TCP receiver port | `-t 15600`
+`--testnet` | | Makes it possible to run IRI with the IOTA testnet | `--testnet true`
+`--remote` | | Remotely access your node and send API commands | `--remote true`
 `--remote-auth` | | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `--remote-auth iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO`
 `--remote-limit-api` | | Exclude certain API calls from being able to be accessed remotely | `--remote-limit-api "attachToTangle, addNeighbors"`
 `--send-limit`| | Limit the outbound bandwidth consumption. Limit is set to mbit/s | `--send-limit 1.0`
 `--max-peers` | | Limit the number of max accepted peers. Default is set to 0 (mutual tethering) | `--max-peers 8`
-`--dns-resolution-false` | | Ignores DNS resolution refreshing  | `--dns-resolution-false`	
+`--dns-resolution` | | Toggle DNS resolution refreshing  | `--dns-resolution false`	
 ### INI File
 
-You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` flag. Here is an example INI file:
+You can also provide a .ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` or the `-c` flag. If no flag is supplied, IRI attempts to load from  the `iota.ini` file.
+Every command line option can be used as a configuration field by replacing the `-` with a `_` (Snake case) and removing the initial `--`. They are case insensitive but it is good habit to make the fields upper case to prevent mixing configuration and command line.
+
+Here is an example INI file:
 ```
 [IRI]
 PORT = 14265
-UDP_RECEIVER_PORT = 14600
-NEIGHBORS = udp://my.favorite.com:14600
+NEIGHBORING_SOCKET_PORT = 15600
+NEIGHBORS = tcp://my.favorite.com:15600 tcp://my.other.favorite.com:15600 
 IXI_DIR = ixi
 DEBUG = false
-DB_PATH = db
+DB_PATH = mainnetdb
 ```
 
 ### Special Thanks To

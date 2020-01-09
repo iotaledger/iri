@@ -35,12 +35,12 @@ Feature: Test Bootstrapping With LS
     And A local snapshot was taken on "nodeB-m6" at index 10220
 
     When reading the local snapshot state on "nodeB-m6" returns with:
-      |keys                       |values                   |type             |
-      |address                    |LS_TEST_STATE_ADDRESSES  |staticValue      |
+      |keys                       |values                   |type                   |
+      |address                    |LS_TEST_STATE_ADDRESSES  |staticValue            |
 
     And reading the local snapshot metadata on "nodeB-m6" returns with:
-      |keys                       |values                   |type             |
-      |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
+      |keys                       |values                   |type                   |
+      |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue            |
 
 
   Scenario: LS File node is synced
@@ -68,12 +68,12 @@ Feature: Test Bootstrapping With LS
     And we wait "30" second/seconds
 
     Then "checkConsistency" is called on "nodeC-m6" with:
-      |keys                       |values                   |type             |
-      |tails                      |LS_TEST_MILESTONE_HASHES |staticValue      |
+      |keys                       |values                   |type                   |
+      |tails                      |LS_TEST_MILESTONE_HASHES |staticValue            |
 
     And the response for "checkConsistency" should return with:
-      |keys                       |values                   |type             |
-      |state                      |True                     |bool             |
+      |keys                       |values                   |type                   |
+      |state                      |True                     |bool                   |
 
 
   Scenario: Old transactions are pruned
@@ -81,60 +81,113 @@ Feature: Test Bootstrapping With LS
     the pruning depth are no longer present.
 
     Given "checkConsistency" is called on "nodeD-m6" with:
-      |keys                       |values                   |type             |
-      |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue      |
+      |keys                       |values                   |type                   |
+      |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue            |
 
     Then the response for "checkConsistency" should return null
 
-
   Scenario: Check unconfirmed transaction is spent from
-    Issues a value transaction that will be unconfirmed, and check that the address was spent from.
+  Issues a value transaction that will be unconfirmed, and check that the address was spent from.
 
     Given a transaction is generated and attached on "nodeE-m6" with:
-      |keys                       |values                   |type           |
-      |address                    |TEST_ADDRESS             |staticValue    |
-      |value                      |10                       |int            |
-      |seed                       |UNCONFIRMED_TEST_SEED    |staticValue    |
+      |keys                       |values                   |type                   |
+      |address                    |TEST_ADDRESS             |staticValue            |
+      |value                      |10                       |int                    |
+      |seed                       |UNCONFIRMED_TEST_SEED    |staticValue            |
 
     When "wereAddressesSpentFrom" is called on "nodeE-m6" with:
-      |keys                       |values                   |type             |
-      |addresses                  |UNCONFIRMED_TEST_ADDRESS |staticValue      |
+      |keys                       |values                   |type                   |
+      |addresses                  |UNCONFIRMED_TEST_ADDRESS |staticValue            |
 
     Then the response for "wereAddressesSpentFrom" should return with:
-      |keys                       |values                   |type             |
-      |addresses                  |True                     |boolList         |
+      |keys                       |values                   |type                   |
+      |addresses                  |True                     |boolList               |
 
 
   Scenario: Check addresses spent from after pruning
-    Ensures that a node with a spent address registers that the address is spent from both before and after the
-    transaction has been pruned from the DB.
+  Ensures that a node with a spent address registers that the address is spent from both before and after the
+  transaction has been pruned from the DB.
 
     # Check that addresses were spent from before pruning
     Given "wereAddressesSpentFrom" is called on "nodeE-m6" with:
-      |keys                       |values                   |type             |
-      |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
+      |keys                       |values                   |type                   |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue            |
 
     Then the response for "wereAddressesSpentFrom" should return with:
-      |keys                       |values                   |type             |
-      |addresses                  |True                     |boolList         |
+      |keys                       |values                   |type                   |
+      |addresses                  |True                     |boolList               |
 
     #Drop the spend transactions below the pruning depth
     When the next 30 milestones are issued
 
     # Check that addresses were spent after transaction have been pruned
     And "wereAddressesSpentFrom" is called on "nodeE-m6" with:
-      |keys                       |values                   |type             |
-      |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
+      |keys                       |values                   |type                   |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue            |
 
     Then the response for "wereAddressesSpentFrom" should return with:
-      |keys                       |values                   |type             |
-      |addresses                  |True                     |boolList         |
+      |keys                       |values                   |type                   |
+      |addresses                  |True                     |boolList               |
 
     # Check that transactions from those addresses were pruned
     And "getTrytes" is called on "nodeE-m6" with:
-      |keys                       |values                   |type             |
-      |hashes                     |LS_SPENT_TRANSACTIONS    |staticValue      |
+      |keys                       |values                   |type                   |
+      |hashes                     |LS_SPENT_TRANSACTIONS    |staticValue            |
 
     Then the response for "getTrytes" should return with:
-      |keys                       |values                   |type             |
-      |trytes                     |NULL_TRANSACTION_LIST    |staticValue      |
+      |keys                       |values                   |type                   |
+      |trytes                     |NULL_TRANSACTION_LIST    |staticValue            |
+
+
+  Scenario: Spent Addresses are exported and imported correctly
+    Using the export-spent tool in the iri-extensions library, the spent addresses of the db will be exported to a file.
+    This file will then be checked to make sure the correct values have been exported to it. It will then merge these
+    spent addresses into an empty node
+
+    Given the spent addresses are exported from "nodeA-m6"
+    When reading the exported spent addresses file on "nodeA-m6" returns with:
+      |keys                       |values                   |type                   |
+      |addresses                  |SPENT_ADDRESSES          |staticValue            |
+
+    # This part uses a default provided spentAddresses.txt file to import
+    And the spent addresses are imported on "nodeF-m6" from:
+      |keys                       |values                   |
+      |basePath                   |/tmp/                    |
+      |file                       |spentAddresses.txt       |
+
+    When "wereAddressesSpentFrom" is called on "nodeF-m6" with:
+      |keys                       |values                   |type                   |
+      |addresses                  |SPENT_ADDRESSES          |staticValue            |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type                   |
+      |states                     |True                     |bool                   |
+
+
+
+    Scenario: Spent addresses merged from several inputs
+      Using the merge-spent tool in the iri-extensions library, several spent address text files will be merged into
+      an empty node
+
+      Given the spent addresses are imported on "nodeG-m6" from:
+        |keys                       |values                                         |
+        |basePath                   |/cache/iri/python-regression/IXI/merge-spent/  |
+        |file                       |MultiSpentAddresses.txt                        |
+
+      And the spent addresses are imported on "nodeG-m6" from:
+        |keys                       |values                                         |
+        |basePath                   |/cache/iri/python-regression/IXI/merge-spent/  |
+        |file                       |MultiSpentAddresses2.txt                       |
+
+      And the spent addresses are imported on "nodeG-m6" from:
+        |keys                       |values                                         |
+        |basePath                   |/cache/iri/python-regression/IXI/merge-spent/  |
+        |file                       |MultiSpentAddresses3.txt                       |
+
+      When "wereAddressesSpentFrom" is called on "nodeG-m6" with:
+        |keys                       |values                   |type                 |
+        |addresses                  |LATER_SPENT_ADDRESSES    |staticValue          |
+
+      Then the response for "wereAddressesSpentFrom" should return with:
+        |keys                       |values                   |type                 |
+        |states                     |True                     |bool                 |

@@ -21,8 +21,25 @@ default_args: &args
    '""'
   ]
 
+args_empty: &args_empty
+  ['--testnet-coordinator',
+   'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
+   '--mwm',
+   '1',
+   '--milestone-start',
+   '0',
+   '--testnet-no-coo-validation',
+   'true',
+   '--testnet',
+   'true',
+   '--local-snapshots-pruning-enabled',
+   'true',
+   '--local-snapshots-pruning-delay',
+   '10000'
+  ]
+
 default_ixi: &ixi
-  ['IXI/LocalSnapshots.ixi']
+  ['IXI/LocalSnapshots.ixi', 'IXI/merge-spent', 'IXI/export-spent']
 
 java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
 
@@ -49,6 +66,10 @@ db_for_pruning: &db_for_pruning
   db_checksum: 15122ba80c0a03dc5b6b4186e5d880d0a1a15b5a6de48bafe4002c4c9b682221
   iri_args: *args
 
+db_empty: &db_empty
+  iri_args: *args_empty
+  ixis: *ixi
+
 db_for_spent_addresses: &db_for_spent_addresses
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/SpentAddressesTestDB.tar
   db_checksum: 7e15b2cbc76585d6483668cb1709201daa71314e7d488d9e7d71d7052479e73e
@@ -69,3 +90,9 @@ nodes:
 
   nodeE-m6:
     <<: *db_for_spent_addresses
+
+  nodeF-m6:
+    <<: *db_empty
+
+  nodeG-m6:
+    <<: *db_empty

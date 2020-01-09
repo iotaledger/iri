@@ -128,7 +128,6 @@ def fetch_bool_list(value):
         return [True] * len(response)
 
 
-
 def fetch_response_value(value):
     """
     Retrieves the response object referenced by the input value from the aloe.world variable.

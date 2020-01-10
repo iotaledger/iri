@@ -2,8 +2,19 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
-import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.*;
+import com.iota.iri.model.AddressHash;
+import com.iota.iri.model.BundleHash;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.ObsoleteTagHash;
+import com.iota.iri.model.TagHash;
+import com.iota.iri.model.TransactionHash;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -11,7 +22,12 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Stack;
 
 /**
  * Controller class for {@link Transaction} sets. A {@link TransactionViewModel} stores a {@link HashesViewModel} for
@@ -331,7 +347,9 @@ public class TransactionViewModel {
      * @throws Exception Thrown if no branch is found when creating the branch {@link TransactionViewModel}
      */
     public TransactionViewModel getBranchTransaction(Tangle tangle) throws Exception {
-        branch = TransactionViewModel.fromHash(tangle, getBranchTransactionHash());
+        if (branch == null) {
+            branch = TransactionViewModel.fromHash(tangle, getBranchTransactionHash());
+        }
         return branch;
     }
 
@@ -345,7 +363,9 @@ public class TransactionViewModel {
      * @throws Exception Thrown if no trunk is found when creating the trunk {@link TransactionViewModel}
      */
     public TransactionViewModel getTrunkTransaction(Tangle tangle) throws Exception {
-        trunk = TransactionViewModel.fromHash(tangle, getTrunkTransactionHash());
+        if (trunk == null) {
+            trunk = TransactionViewModel.fromHash(tangle, getTrunkTransactionHash());
+        }
         return trunk;
     }
 
@@ -441,15 +461,13 @@ public class TransactionViewModel {
         // We need to save approvees, tags, and other metadata that is used by
         // non-cached operations.
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
-        cacheApprovees(tangle);
-        if (tangle.getCache(TransactionViewModel.class).get(hash) == null) {
-            cachePut(tangle, this, hash);
-        }
-
-        if (tangle.exists(Transaction.class, hash)) {
+        if (exists(tangle, hash)) {
             return false;
         }
         tangle.saveBatch(batch);
+        cacheApprovees(tangle);
+
+        cachePut(tangle, this, hash);
         return true;
     }
 

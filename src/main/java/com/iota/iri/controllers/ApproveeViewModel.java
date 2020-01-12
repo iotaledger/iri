@@ -97,6 +97,9 @@ public class ApproveeViewModel implements HashesViewModel {
     @Override
     public boolean store(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache == null) {
+            return true;
+        }
         ApproveeViewModel approveeViewModel = cache.get(hash);
         if (approveeViewModel != null) {
             return true;
@@ -151,10 +154,12 @@ public class ApproveeViewModel implements HashesViewModel {
      */
     public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
+        if (cache != null) {
+            if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
+                cacheEvict(tangle);
+            }
+            cache.put(hash, approveeViewModel);
         }
-        cache.put(hash, approveeViewModel);
     }
 
     /**
@@ -164,7 +169,10 @@ public class ApproveeViewModel implements HashesViewModel {
      * @param hash   Hash of item to evict
      */
     public static void cacheDelete(Tangle tangle, Indexable hash) {
-        tangle.getCache(ApproveeViewModel.class).evict(hash);
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache != null) {
+            cache.evict(hash);
+        }
     }
 
     /**
@@ -175,6 +183,9 @@ public class ApproveeViewModel implements HashesViewModel {
      */
     public static void cacheEvict(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache == null) {
+            return;
+        }
         for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
             Indexable hash = cache.nextEvictionKey();
             if (hash != null) {

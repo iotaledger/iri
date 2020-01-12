@@ -45,6 +45,7 @@ public class Tangle {
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
     private CacheManager cacheManager;
+    private boolean isCacheEnabled = true;
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -385,7 +386,28 @@ public class Tangle {
      * @return The cache with the specified type
      */
     public <T> Cache<Indexable, T> getCache(Class<T> type){
-       return getCacheManager().getCache(type);
+        if (!isCacheEnabled) {
+            return null;
+        }
+        return getCacheManager().getCache(type);
+    }
+
+    /**
+     * Gets if caching is enabled or not.
+     * 
+     * @return True if caching is enabled. Else, returns false.
+     */
+    public boolean isCacheEnabled() {
+        return isCacheEnabled;
+    }
+
+    /**
+     * Sets caching on or off.
+     * 
+     * @param cacheEnabled The value to set.
+     */
+    public void setCacheEnabled(boolean cacheEnabled) {
+        isCacheEnabled = cacheEnabled;
     }
 
     /**

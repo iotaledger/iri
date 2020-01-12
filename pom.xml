@@ -482,6 +482,7 @@
                     <excludes>
                         <exclude>integration/*.java</exclude>
                         <exclude>benchmarks/**/*</exclude>
+                        <exclude>profiling/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>

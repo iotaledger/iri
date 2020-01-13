@@ -135,6 +135,7 @@ public class RocksDbSizeProfiling {
             log.info(String.format("stateDiffBytes: %.2f", sizes.get(i++) / sum * 100));
             log.info(String.format("Total (uncompressed): %.2f GB", sum / 1073741824 /* GB */));
         } finally {
+            log.info("----------------------------");
             localTangle.shutdown();
         }
     }

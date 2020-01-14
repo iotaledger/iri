@@ -76,7 +76,7 @@ def fetch_node_address(value):
     host = world.machine['nodes'][value]['host']
     port = world.machine['nodes'][value]['ports']['gossip-tcp']
     address = "tcp://" + host + ":" + str(port)
-    return [address.decode()]
+    return [address]
 
 
 def fetch_static_value(value):

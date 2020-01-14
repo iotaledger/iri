@@ -120,11 +120,11 @@ def compare_thread_return(step, api_call):
             del response_list['duration']
         if 'info' in response_list:
             del response_list['info']
-        response_keys = response_list.keys()
+        response_keys = list(response_list.keys())
 
         expected_values = {}
         api_utils.prepare_options(step.hashes,expected_values)
-        keys = expected_values.keys()
+        keys = list(expected_values.keys())
 
         # Confirm that the lists are of equal length before comparing
         assert len(keys) == len(response_keys), \

@@ -3,15 +3,14 @@ package com.iota.iri.controllers;
 import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
 import java.util.Comparator;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -43,26 +42,30 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     /**
-     * Constructor for an {@link Address} set controller from an existing {@link Address} set.
-     * The resulting hash list is sorted
+     * Loads all transaction that mutate a certain address. It sorts them by the attachment timestamp. Sorting by
+     * attachmentTimeStamp is an arbitrary choice.
+     * 
      *
      * @param tangle The tangle reference for the database to find the {@link Address} set in
-     * @param hash The hash identifier for the {@link Address} set that needs to be found
-     * @return The {@link AddressViewModel} controller generated
+     * @param hash   hash The address we are loading the transactions for
+     * @return The list of {@link AddressViewModel} controllers generated
      * @throws Exception Thrown if the database cannot load an {@link Address} set from the reference {@link Hash}
      */
     public static List<TransactionViewModel> loadAsSortedList(Tangle tangle, Indexable hash) throws Exception {
         Address hashes = (Address) tangle.load(Address.class, hash);
-        return hashes.set.stream().map(item -> {
+        return hashes.set.stream().filter(hash1 -> {
             try {
-                if (tangle.exists(Transaction.class, item)) {
-                    return TransactionViewModel.fromHash(tangle, item);
-                }
-                return null;
+                return TransactionViewModel.exists(tangle, hash1);
             } catch (Exception e) {
-                return null;
+                throw new RuntimeException(e);
             }
-        }).sorted(Comparator.comparing(tvm -> tvm != null ? tvm.getTransaction().attachmentTimestamp : 0))
+        }).map(item -> {
+            try {
+                return TransactionViewModel.fromHash(tangle, item);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).sorted(Comparator.comparing(TransactionViewModel::getAttachmentTimestamp))
                 .collect(Collectors.toList());
     }
 

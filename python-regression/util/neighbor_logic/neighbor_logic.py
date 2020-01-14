@@ -26,5 +26,5 @@ def check_if_neighbors(api, neighbors, expected_neighbor):
 
     if is_neighbor is False:
         tcp_address = "tcp://" + expected_neighbor
-        api.add_neighbors([tcp_address.decode()])
+        api.add_neighbors([tcp_address])
         logger.info('{} added as neighbor'.format(tcp_address))

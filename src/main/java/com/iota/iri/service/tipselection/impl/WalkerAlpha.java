@@ -127,15 +127,15 @@ public class WalkerAlpha implements Walker {
         List<Hash> approvers;         
         int approverIndex;
 
-        //Check if ratings map is empty. If so, alpha was set to 0 and a random approver will be selected.
-        if(!Collections.EMPTY_MAP.equals(ratings)) {
-            //filter based on tangle state when starting the walk            
-            approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
-            //After filtering, if no approvers are available, it's a tip.
-            if (approvers.size() == 0) {
-                return Optional.empty();
-            }
+        //filter based on tangle state when starting the walk
+        approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
+        //After filtering, if no approvers are available, it's a tip.
+        if (approvers.size() == 0) {
+            return Optional.empty();
+        }
 
+        //Check if alpha was set to 0. If so, weight calculations are skipped and a random approver will be selected.
+        if(alpha != 0) {
             //calculate the probabilities
             List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());
 
@@ -157,11 +157,7 @@ public class WalkerAlpha implements Walker {
                 }
             }
         } else {
-            approvers = approversSet.stream().filter(ratings::containsKey).collect(Collectors.toList());
-            if (approvers.size() == 0) {
-                return Optional.empty();
-            }
-            approverIndex = random.nextInt(approversSet.size());
+            approverIndex = random.nextInt(approvers.size());
         }
         return Optional.of(approvers.get(approverIndex));
     }

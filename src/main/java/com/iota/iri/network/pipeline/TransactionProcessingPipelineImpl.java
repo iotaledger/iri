@@ -25,6 +25,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.iota.iri.utils.IotaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,13 @@ import org.slf4j.LoggerFactory;
 public class TransactionProcessingPipelineImpl implements TransactionProcessingPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionProcessingPipelineImpl.class);
-    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(6);
+    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+
+    /**
+     * List of stages that will be ignored when determining thread count
+     */
+    private static final List IGNORED_STAGES = IotaUtils.createImmutableList(Stage.MULTIPLE, Stage.ABORT, Stage.FINISH);
+    private static final int NUMBER_OF_THREADS = Stage.values().length - IGNORED_STAGES.size();
 
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;

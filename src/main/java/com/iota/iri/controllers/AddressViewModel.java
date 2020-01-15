@@ -7,6 +7,8 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
+import pl.touk.throwing.ThrowingFunction;
+import pl.touk.throwing.ThrowingPredicate;
 
 import java.util.Comparator;
 import java.util.List;
@@ -53,19 +55,10 @@ public class AddressViewModel implements HashesViewModel {
      */
     public static List<TransactionViewModel> loadAsSortedList(Tangle tangle, Indexable hash) throws Exception {
         Address hashes = (Address) tangle.load(Address.class, hash);
-        return hashes.set.stream().filter(hash1 -> {
-            try {
-                return TransactionViewModel.exists(tangle, hash1);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }).map(item -> {
-            try {
-                return TransactionViewModel.fromHash(tangle, item);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }).sorted(Comparator.comparing(TransactionViewModel::getAttachmentTimestamp))
+        return hashes.set.stream()
+                .filter(ThrowingPredicate.unchecked(hash1 -> TransactionViewModel.exists(tangle, hash1)))
+                .map(ThrowingFunction.unchecked(item -> TransactionViewModel.fromHash(tangle, item)))
+                .sorted(Comparator.comparing(TransactionViewModel::getAttachmentTimestamp))
                 .collect(Collectors.toList());
     }
 

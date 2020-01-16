@@ -26,9 +26,7 @@ Feature: Test transaction confirmation
 
         And the response for "getInclusionStates" should return with:
         |keys                   |values                     |type           |
-        |states                 |True                       |bool           |
-
-
+        | states | True True True True True True True True True True | boolListMixed |
 
     Scenario: Value Transactions are confirmed
         In this test, a number of value transactions will be made to a specified node.
@@ -57,5 +55,5 @@ Feature: Test transaction confirmation
 
         And the response for "getInclusionStates" should return with:
         |keys                   |values                     |type           |
-        |states                 |True                       |bool           |
+        | states | True True True True True True True True True False | boolListMixed |
 

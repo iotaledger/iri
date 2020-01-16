@@ -135,8 +135,8 @@ def fetch_bool_list_mixed(value):
     :return: The list of bool values
     """
 
-    list = value.split()
-    return [True if x == "True" else False for x in list]
+    bool_list = value.split()
+    return [True if x == "True" else False for x in bool_list]
 
 
 def fetch_response_value(value):

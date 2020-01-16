@@ -154,7 +154,7 @@ Feature: Test API calls on Machine 1
 
 		Then the response for "getInclusionStates" should return with:
 		|keys			|values			|type               |
-		| states | True   | boolList |
+		| states | True   | boolListMixed |
 
 	#Values can be found in util/static_vals.py
     Scenario: GetInclusionStates is called with transaction list

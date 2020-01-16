@@ -510,7 +510,7 @@ public class NeighborRouterImpl implements NeighborRouter {
                 return false;
             case FAILED:
                 // faulty handshaking
-                log.error("dropping connection to neighbor {} as handshaking was faulty", identity);
+                log.warn("dropping connection to neighbor {} as handshaking was faulty", identity);
                 closeNeighborConnection(channel, identity, selector);
                 return false;
             default:

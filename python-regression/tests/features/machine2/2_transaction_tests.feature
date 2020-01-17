@@ -28,6 +28,22 @@ Feature: Test transaction confirmation
         |keys                   |values                     |type           |
         | states | True True True True True True True True True True | boolListMixed |
 
+
+        When a transaction is generated and attached on "nodeA-m2" with:
+            | keys    | values       | type        |
+            | address | TEST_ADDRESS | staticValue |
+            | value   | 0            | int         |
+
+        And "getInclusionStates" is called on "nodeA-m2" with:
+            | keys         | values             | type        |
+            | transactions | TEST_STORE_ADDRESS | staticList  |
+            | tips         | latestMilestone    | configValue |
+
+        Then the response for "getInclusionStates" should return with:
+            | keys   | values | type          |
+            | states | False  | boolListMixed |
+
+
     Scenario: Value Transactions are confirmed
         In this test, a number of value transactions will be made to a specified node.
         A milestone will be issued that references these transactions, and this should
@@ -56,4 +72,18 @@ Feature: Test transaction confirmation
         And the response for "getInclusionStates" should return with:
         |keys                   |values                     |type           |
         | states | True True True True True True True True True False | boolListMixed |
+
+        When a transaction is generated and attached on "nodeA-m2" with:
+            | keys    | values       | type        |
+            | address | TEST_ADDRESS | staticValue |
+            | value   | 0            | int         |
+
+        And "getInclusionStates" is called on "nodeA-m2" with:
+            | keys         | values             | type        |
+            | transactions | TEST_STORE_ADDRESS | staticList  |
+            | tips         | latestMilestone    | configValue |
+
+        Then the response for "getInclusionStates" should return with:
+            | keys   | values | type          |
+            | states | False  | boolListMixed |
 

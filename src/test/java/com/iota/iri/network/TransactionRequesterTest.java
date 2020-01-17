@@ -4,6 +4,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

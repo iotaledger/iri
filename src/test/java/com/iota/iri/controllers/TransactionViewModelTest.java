@@ -18,10 +18,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
 import static com.iota.iri.TransactionTestUtils.getTransactionHash;

@@ -207,7 +207,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
-        persistLocalSnapshot(snapshotProvider, newSnapshot, config);
+        persistLocalSnapshot(snapshotProvider, newSnapshot);
         if (transactionPruner != null) {
             cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
                 newSnapshot.getSolidEntryPoints(), transactionPruner);
@@ -498,13 +498,12 @@ public class SnapshotServiceImpl implements SnapshotService {
      * 
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param newSnapshot Snapshot that shall be persisted
-     * @param config important snapshot related configuration parameters
      * @throws SnapshotException if anything goes wrong while persisting the snapshot
      */
-    private void persistLocalSnapshot(SnapshotProvider snapshotProvider, Snapshot newSnapshot, SnapshotConfig config)
+    private void persistLocalSnapshot(SnapshotProvider snapshotProvider, Snapshot newSnapshot)
             throws SnapshotException {
 
-        snapshotProvider.writeSnapshotToDisk(newSnapshot, config.getLocalSnapshotsBasePath());
+        snapshotProvider.persistSnapshot(newSnapshot);
 
         snapshotProvider.getLatestSnapshot().lockWrite();
         snapshotProvider.getLatestSnapshot().setInitialHash(newSnapshot.getHash());

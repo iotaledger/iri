@@ -3,19 +3,26 @@ package com.iota.iri.service.snapshot.impl;
 import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.controllers.LocalSnapshotViewModel;
+
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.LocalSnapshot;
 import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,12 +91,15 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      */
     private Snapshot latestSnapshot;
 
+    private LocalSnapshotsPersistenceProvider localSnapshotsDb;
+
     /**
      * Implements the snapshot provider interface.
      * @param configuration Snapshot configuration properties.
      */
-    public SnapshotProviderImpl(SnapshotConfig configuration) {
+    public SnapshotProviderImpl(SnapshotConfig configuration, LocalSnapshotsPersistenceProvider localSnapshotsDb) {
         this.config = configuration;
+        this.localSnapshotsDb = localSnapshotsDb;
     }
 
     /**
@@ -118,42 +128,23 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
     /**
      * {@inheritDoc}
-     * 
-     * <p>
-     * It first writes two temporary files, then renames the current files by appending them with a ".bkp" extension and
-     * finally renames the temporary files. This mechanism reduces the chances of the files getting corrupted if IRI
-     * crashes during the snapshot creation and always leaves the node operator with a set of backup files that can be
-     * renamed to resume node operation prior to the failed snapshot.
-     * </p>
-     * <p>
-     * Note: We create the temporary files in the same folder as the "real" files to allow the operating system to
-     *       perform a "rename" instead of a "copy" operation.
-     * </p>
      */
     @Override
-    public void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException {
+    public void persistSnapshot(Snapshot snapshot) throws SnapshotException {
         snapshot.lockRead();
-
         try {
-            // write new temp files
-            writeSnapshotStateToDisk(snapshot, basePath + ".snapshot.state.tmp");
-            writeSnapshotMetaDataToDisk(snapshot, basePath + ".snapshot.meta.tmp");
-
-            // rename current files by appending ".bkp"
-            if (new File(basePath + ".snapshot.state").exists()) {
-                Files.move(Paths.get(basePath + ".snapshot.state"), Paths.get(basePath + ".snapshot.state.bkp"),
-                        StandardCopyOption.REPLACE_EXISTING);
-            }
-            if (new File(basePath + ".snapshot.meta").exists()) {
-                Files.move(Paths.get(basePath + ".snapshot.meta"), Paths.get(basePath + ".snapshot.meta.bkp"),
-                        StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            // rename temp files to their final name
-            Files.move(Paths.get(basePath + ".snapshot.state.tmp"), Paths.get(basePath + ".snapshot.state"));
-            Files.move(Paths.get(basePath + ".snapshot.meta.tmp"), Paths.get(basePath + ".snapshot.meta"));
-        } catch (IOException e) {
-            throw new SnapshotException("failed to write snapshot files", e);
+            log.info("persisting local snapshot; ms hash/index: {}/{}, solid entry points: {}, seen milestones: {}, " +
+                            "ledger entries: {}", snapshot.getHash().toString(), snapshot.getIndex(),
+                    snapshot.getSolidEntryPoints().size(), snapshot.getSeenMilestones().size(),
+                    snapshot.getBalances().size());
+            // persist new one
+            new LocalSnapshotViewModel(snapshot.getHash(), snapshot.getIndex(), snapshot.getTimestamp(),
+                    snapshot.getSolidEntryPoints(), snapshot.getSeenMilestones(), snapshot.getBalances())
+                            .store(localSnapshotsDb);
+            log.info("persisted local snapshot; ms hash/index: {}/{}", snapshot.getHash().toString(),
+                    snapshot.getIndex());
+        } catch (Exception e) {
+            throw new SnapshotException("failed to persist local snapshot", e);
         } finally {
             snapshot.unlockRead();
         }
@@ -164,8 +155,10 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      */
     @Override
     public void shutdown() {
+        log.info("Shutting down local snapshots Persistence Providers... ");
         initialSnapshot = null;
         latestSnapshot = null;
+        localSnapshotsDb.shutdown();
     }
 
     //region SNAPSHOT RELATED UTILITY METHODS //////////////////////////////////////////////////////////////////////////
@@ -196,41 +189,46 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
     /**
      * <p>
-     * Loads the last local snapshot from the disk.
+     * Loads the last local snapshot from the database.
      * </p>
      * <p>
-     * This method checks if local snapshot files are available on the hard disk of the node and tries to load them. If
-     * no local snapshot files exist or local snapshots are not enabled we simply return null.
+     * This method returns null if no previous local snapshot was persisted.
      * </p>
      * 
      * @return local snapshot of the node
      * @throws SnapshotException if local snapshot files exist but are malformed
      */
-    private Snapshot loadLocalSnapshot() throws SnapshotException, SpentAddressesException {
-        if (config.getLocalSnapshotsEnabled()) {
-            File localSnapshotFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.state");
-            File localSnapshotMetadDataFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.meta");
-
-            if (localSnapshotFile.exists() && localSnapshotFile.isFile() && localSnapshotMetadDataFile.exists() &&
-                    localSnapshotMetadDataFile.isFile()) {
-
-                SnapshotState snapshotState = readSnapshotStatefromFile(localSnapshotFile.getAbsolutePath());
-                if (!snapshotState.hasCorrectSupply()) {
-                    throw new SnapshotException("the snapshot state file has an invalid supply");
-                }
-                if (!snapshotState.isConsistent()) {
-                    throw new SnapshotException("the snapshot state file is not consistent");
-                }
-
-                SnapshotMetaData snapshotMetaData = readSnapshotMetaDatafromFile(localSnapshotMetadDataFile);
-
-                log.info("resumed from local snapshot #" + snapshotMetaData.getIndex() + " ...");
-
-                return new SnapshotImpl(snapshotState, snapshotMetaData);
-            }
+    private Snapshot loadLocalSnapshot() throws SnapshotException {
+        if (!config.getLocalSnapshotsEnabled()) {
+            return null;
         }
+        try {
+            Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, IntegerIndex.class);
+            if (pair.hi == null) {
+                log.info("no local snapshot persisted in the database");
+                return null;
+            }
 
-        return null;
+            LocalSnapshot ls = (LocalSnapshot) pair.hi;
+            log.info("loading local snapshot; ms hash/index: {}/{}, solid entry points: {}, seen milestones: {}, " +
+                            "ledger entries: {}", ls.milestoneHash, ls.milestoneIndex,
+                    ls.solidEntryPoints.size(), ls.seenMilestones.size(), ls.ledgerState.size());
+
+            SnapshotState snapshotState = new SnapshotStateImpl(ls.ledgerState);
+            if (!snapshotState.hasCorrectSupply()) {
+                throw new SnapshotException("the snapshot state file has an invalid supply");
+            }
+            if (!snapshotState.isConsistent()) {
+                throw new SnapshotException("the snapshot state file is not consistent");
+            }
+            SnapshotMetaData snapshotMetaData = new SnapshotMetaDataImpl(ls.milestoneHash, ls.milestoneIndex,
+                    ls.milestoneTimestamp, ls.solidEntryPoints, ls.seenMilestones);
+
+            log.info("resumed from local snapshot #" + snapshotMetaData.getIndex() + " ...");
+            return new SnapshotImpl(snapshotState, snapshotMetaData);
+        } catch (Exception e) {
+            throw new SnapshotException("failed to load existing local snapshot data", e);
+        }
     }
 
     /**
@@ -249,49 +247,49 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @throws SnapshotException if anything goes wrong while loading the builtin {@link Snapshot}
      */
     private Snapshot loadBuiltInSnapshot() throws SnapshotException {
-        if (builtinSnapshot == null) {
-            try {
-                if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(
-                        config.getSnapshotFile(),
-                        config.getSnapshotSignatureFile(),
-                        SNAPSHOT_PUBKEY,
-                        SNAPSHOT_PUBKEY_DEPTH,
-                        SNAPSHOT_INDEX
-                )) {
-                    throw new SnapshotException("the snapshot signature is invalid");
-                }
-            } catch (IOException e) {
-                throw new SnapshotException("failed to validate the signature of the builtin snapshot file", e);
+        if (builtinSnapshot != null) {
+            return builtinSnapshot.clone();
+        }
+        try {
+            if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(
+                    config.getSnapshotFile(),
+                    config.getSnapshotSignatureFile(),
+                    SNAPSHOT_PUBKEY,
+                    SNAPSHOT_PUBKEY_DEPTH,
+                    SNAPSHOT_INDEX
+            )) {
+                throw new SnapshotException("the snapshot signature is invalid");
             }
-
-            SnapshotState snapshotState;
-            try {
-                snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
-            } catch (SnapshotException e) {
-                snapshotState = readSnapshotStatefromFile(config.getSnapshotFile());
-            }
-            if (!snapshotState.hasCorrectSupply()) {
-                throw new SnapshotException("the snapshot state file has an invalid supply");
-            }
-            if (!snapshotState.isConsistent()) {
-                throw new SnapshotException("the snapshot state file is not consistent");
-            }
-
-            HashMap<Hash, Integer> solidEntryPoints = new HashMap<>();
-            solidEntryPoints.put(Hash.NULL_HASH, config.getMilestoneStartIndex());
-
-            builtinSnapshot = new SnapshotImpl(
-                    snapshotState,
-                    new SnapshotMetaDataImpl(
-                            Hash.NULL_HASH,
-                            config.getMilestoneStartIndex(),
-                            config.getSnapshotTime(),
-                            solidEntryPoints,
-                            new HashMap<>()
-                    )
-            );
+        } catch (IOException e) {
+            throw new SnapshotException("failed to validate the signature of the builtin snapshot file", e);
         }
 
+        SnapshotState snapshotState;
+        try {
+            snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
+        } catch (SnapshotException e) {
+            snapshotState = readSnapshotStatefromFile(config.getSnapshotFile());
+        }
+        if (!snapshotState.hasCorrectSupply()) {
+            throw new SnapshotException("the snapshot state file has an invalid supply");
+        }
+        if (!snapshotState.isConsistent()) {
+            throw new SnapshotException("the snapshot state file is not consistent");
+        }
+
+        HashMap<Hash, Integer> solidEntryPoints = new HashMap<>();
+        solidEntryPoints.put(Hash.NULL_HASH, config.getMilestoneStartIndex());
+
+        builtinSnapshot = new SnapshotImpl(
+                snapshotState,
+                new SnapshotMetaDataImpl(
+                        Hash.NULL_HASH,
+                        config.getMilestoneStartIndex(),
+                        config.getSnapshotTime(),
+                        solidEntryPoints,
+                        new HashMap<>()
+                )
+        );
         return builtinSnapshot.clone();
     }
 

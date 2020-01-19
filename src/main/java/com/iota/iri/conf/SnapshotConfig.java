@@ -83,13 +83,6 @@ public interface SnapshotConfig extends Config {
     int getMilestoneStartIndex();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_BASE_PATH}
-     *
-     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_BASE_PATH}
-     */
-    String getLocalSnapshotsBasePath();
-
-    /**
      * Default Value: {@value BaseIotaConfig.Defaults#PREVIOUS_EPOCHS_SPENT_ADDRESSES_FILE}
      *
      * @return {@value SnapshotConfig.Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
@@ -97,18 +90,18 @@ public interface SnapshotConfig extends Config {
     String getPreviousEpochSpentAddressesFiles();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#SPENT_ADDRESSES_DB_PATH}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_DB_PATH}
      *
-     * @return {@value SnapshotConfig.Descriptions#SPENT_ADDRESSES_DB_PATH}
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_DB_PATH}
      */
-    String getSpentAddressesDbPath();
+    String getLocalSnapshotsDbPath();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#SPENT_ADDRESSES_DB_LOG_PATH}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_DB_LOG_PATH}
      *
-     * @return {@value SnapshotConfig.Descriptions#SPENT_ADDRESSES_DB_LOG_PATH}
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_DB_LOG_PATH}
      */
-    String getSpentAddressesDbLogPath();
+    String getLocalSnapshotsDbLogPath();
 
     interface Descriptions {
 
@@ -119,7 +112,6 @@ public interface SnapshotConfig extends Config {
         String LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = "Take local snapshots every n milestones if the node is syncing.";
         String LOCAL_SNAPSHOTS_DEPTH = "Number of milestones to keep.";
         String LOCAL_SNAPSHOTS_DB_MAX_SIZE = "The maximum size this database should be on disk. Human readable format (GB, GiB, MB, MiB)";
-        String LOCAL_SNAPSHOTS_BASE_PATH = "Path to the snapshot files (without file extensions).";
         String SNAPSHOT_TIME = "Epoch time of the last snapshot.";
         String SNAPSHOT_FILE = "Path of the file that contains the state of the ledger at the last snapshot.";
         String SNAPSHOT_SIGNATURE_FILE = "Path to the file that contains a signature for the snapshot file.";
@@ -127,7 +119,7 @@ public interface SnapshotConfig extends Config {
                 "transaction by the coordinator.";
         String PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE = "The file that contains the list of all used addresses " +
                 "from previous epochs";
-        String SPENT_ADDRESSES_DB_PATH = "The folder where the spent addresses DB saves its data.";
-        String SPENT_ADDRESSES_DB_LOG_PATH = "The folder where the spent addresses DB saves its logs.";
+        String LOCAL_SNAPSHOTS_DB_PATH = "The folder where the local snapshots DB saves its data.";
+        String LOCAL_SNAPSHOTS_DB_LOG_PATH = "The folder where the local snapshots DB saves its logs.";
     }
 }

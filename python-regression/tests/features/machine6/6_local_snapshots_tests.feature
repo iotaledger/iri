@@ -1,10 +1,10 @@
 Feature: Test Bootstrapping With LS
-  A test to determine whether or not nodes can bootstrap and sync correctly from Local Snapshot Files and DB's. One
+  A test to determine whether or not nodes can bootstrap and sync correctly from Local Snapshot DBs and data DBs. One
   permanode will be started containing all the relevant files/folders for a full sync upon start. Two more nodes will
-  be started, connected to this node and one another: One will have only a DB and snapshot file, while the other will
-  have only the snapshot meta and state file, along with the spent addresses DB and the snapshot file. All three nodes
-  should sync with one another. And a snapshot should be taken on the node started with just a DB.
-  [NodeA-m6: Permanode, NodeB-m6: Just DB, NodeC-m6: Just LS Files]
+  be started, connected to this node and one another: One will only have a DB and local snapshot DB, while the other will
+  only have the local snapshot DB and the snapshot file. All three nodes should sync with one another.
+  And a snapshot should be taken on the node started with just a DB.
+  [NodeA: Permanode, NodeB: Just DB, NodeC: Just LS DB]
 
   Scenario: PermaNode is synced
     Check that the permanode has been started correctly and is synced.
@@ -43,8 +43,8 @@ Feature: Test Bootstrapping With LS
       |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
 
 
-  Scenario: LS File node is synced
-    Check that the node started with just LS Files is synced correctly.
+  Scenario: LS DB node is synced
+    Check that the node started with just a LS DB is synced correctly.
 
     #First make sure nodes are neighbored
     Given "nodeC-m6" and "nodeA-m6" are neighbors

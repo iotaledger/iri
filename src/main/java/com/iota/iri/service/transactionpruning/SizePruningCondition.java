@@ -13,6 +13,9 @@ import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Initiates pruning based on how much space the DB takes on the file system
+ */
 public class SizePruningCondition implements PruningCondition {
     private static final Logger log = LoggerFactory.getLogger(SizePruningCondition.class);
 

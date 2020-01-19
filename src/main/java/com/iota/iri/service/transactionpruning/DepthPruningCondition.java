@@ -6,6 +6,9 @@ import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 
+/**
+ * Initiates pruning based on the number of milestones in the DB
+ */
 public class DepthPruningCondition implements PruningCondition {
 
     private final SnapshotConfig config;

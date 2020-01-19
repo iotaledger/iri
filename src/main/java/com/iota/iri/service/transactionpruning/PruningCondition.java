@@ -1,5 +1,8 @@
 package com.iota.iri.service.transactionpruning;
 
+/**
+ * Condition that specifies if and on what milestone pruning happens.
+ */
 public interface PruningCondition {
 
     /**

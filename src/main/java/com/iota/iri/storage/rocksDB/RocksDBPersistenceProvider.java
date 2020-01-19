@@ -632,9 +632,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         //Defaults we always need to set
         options.setSstFileManager(sstFileManager);
         
-        if (!(BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) || 
-                TestnetConfig.Defaults.DB_LOG_PATH.equals(logPath) ||
-                BaseIotaConfig.Defaults.SPENT_ADDRESSES_DB_LOG_PATH.equals(logPath)) 
+        if (!(BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) || TestnetConfig.Defaults.DB_LOG_PATH.equals(logPath))
                 && logPath != null) {
             
             if (!options.dbLogDir().equals("")) {

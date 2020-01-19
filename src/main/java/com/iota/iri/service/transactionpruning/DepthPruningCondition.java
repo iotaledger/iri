@@ -15,6 +15,14 @@ public class DepthPruningCondition implements PruningCondition {
     private final SnapshotProvider snapshotProvider;
     private final Tangle tangle;
 
+
+    /**
+     * Initialize a condition to prune based on the number of milestones
+     *
+     * @param config Snapshot configuration
+     * @param snapshotProvider persistence connector to snapshot data
+     * @param tangle persistence connector to tangle data
+     */
     public DepthPruningCondition(SnapshotConfig config, SnapshotProvider snapshotProvider, Tangle tangle) {
         this.config = config;
         this.snapshotProvider = snapshotProvider;

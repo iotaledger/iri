@@ -1012,8 +1012,11 @@ public class TransactionViewModel {
      * @param tangle Tangle
      * @param hash hash to evict
      */
-    private static void cacheDelete(Tangle tangle, Hash hash) {
-        tangle.getCache(TransactionViewModel.class).evict(hash);
+    public static void cacheDelete(Tangle tangle, Hash hash) {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            cache.evict(hash);
+        }
     }
 
     /**

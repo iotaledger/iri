@@ -1,6 +1,7 @@
 package com.iota.iri.service.transactionpruning.jobs;
 
 import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
@@ -234,6 +235,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                             throw new RuntimeException(e);
                         }
                     }
+                    TransactionViewModel.cacheDelete(getTangle(), (Hash) element.low);
                 } else if(Milestone.class.equals(element.hi)) {
                     MilestoneViewModel.cacheDelete(getTangle(), ((IntegerIndex) element.low));
                 }

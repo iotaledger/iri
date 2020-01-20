@@ -423,6 +423,8 @@ public class MilestoneServiceImpl implements MilestoneService {
         tangle.publish("sn %d %s %s %s %s %s", index, transaction.getHash(), transaction.getAddressHash(),
                 transaction.getTrunkTransactionHash(), transaction.getBranchTransactionHash(),
                 transaction.getBundleHash());
+        tangle.publish("sn_trytes %s %s %d", Converter.trytes(transaction.trits()), transaction.getHash(),
+                transaction.getTransaction().snapshot);
     }
 
     /**

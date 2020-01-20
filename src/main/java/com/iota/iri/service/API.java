@@ -566,6 +566,7 @@ public class API {
                 case OK:
                     log.info("Removed neighbor: {}", uriString);
                     numberOfRemovedNeighbors++;
+                    break;
                 case URI_INVALID:
                     log.info("Can't remove neighbor {}: URI is invalid", uriString);
                     break;
@@ -1747,7 +1748,7 @@ public class API {
                 storeTransactionsStatement(trytes);
             } catch (Exception e) {
                 //transaction not valid
-                return ErrorResponse.create("Invalid trytes input");
+                return ErrorResponse.create("Error: " + e.getMessage());
             }
             return AbstractResponse.createEmptyResponse();
         };

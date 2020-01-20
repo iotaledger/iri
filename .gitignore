@@ -8,6 +8,8 @@
 /mainnetdb
 /spent-addresses-db
 /spent-addresses-log
+/localsnapshots-db
+/localsnapshots-log
 /mainnet.log
 /*.iml
 .classpath

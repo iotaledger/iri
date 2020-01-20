@@ -566,16 +566,25 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         if (configFile != null) {
             File config = Paths.get(configFile).toFile();
             if (config.exists() && config.isFile() && config.canRead()) {
-                Properties configProperties = new Properties();
-                
                 try (InputStream stream = new FileInputStream(config)){
-                    configProperties.load(stream);
-                    options = DBOptions.getDBOptionsFromProps(configProperties);
+                    // Map will contain DBOptions, TableOptions/BlockBasedTable, CFOptions
+                    // Currently we only use DBOptions
+                    Map<String, Properties> map = IotaIOUtils.parseINI(stream);
+                    if (map.containsKey("DBOptions")) {
+                        options = DBOptions.getDBOptionsFromProps(map.get("DBOptions"));
+                    } else if (map.containsKey("default")) {
+                        options = DBOptions.getDBOptionsFromProps(map.get("default"));
+                    }
+                    
+                    if (options == null) {
+                        log.warn("Options failed to parse, check the OPTIONS-00X in the db folder");
+                    }
                 } catch (IllegalArgumentException e) {
-                    log.warn("RocksDB configuration file is empty, falling back to default values");
+                    log.warn("Options failed to parse, check the OPTIONS-00X in the db folder", e);
                 }
             }
         }
+        
         if (options == null) {
             options = new DBOptions()
                 .setCreateIfMissing(true)

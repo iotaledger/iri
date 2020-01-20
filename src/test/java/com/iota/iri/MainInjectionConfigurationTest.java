@@ -23,6 +23,7 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import org.junit.Test;
 
@@ -135,6 +136,11 @@ public class MainInjectionConfigurationTest {
     @Test
     public void provideApi() {
         assertNotNull("instance creation did not work", testInjector().getInstance(API.class));
+    }
+
+    @Test
+    public void provideLocalSnapshotsPersistenceProvider(){
+        assertNotNull("instance creation did not work", testInjector().getInstance(LocalSnapshotsPersistenceProvider.class));
     }
 
     @Test

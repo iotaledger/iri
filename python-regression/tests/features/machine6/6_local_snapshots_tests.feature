@@ -1,10 +1,10 @@
 Feature: Test Bootstrapping With LS
-  A test to determine whether or not nodes can bootstrap and sync correctly from Local Snapshot Files and DB's. One
+  A test to determine whether or not nodes can bootstrap and sync correctly from Local Snapshot DBs and data DBs. One
   permanode will be started containing all the relevant files/folders for a full sync upon start. Two more nodes will
-  be started, connected to this node and one another: One will have only a DB and snapshot file, while the other will
-  have only the snapshot meta and state file, along with the spent addresses DB and the snapshot file. All three nodes
-  should sync with one another. And a snapshot should be taken on the node started with just a DB.
-  [NodeA-m6: Permanode, NodeB-m6: Just DB, NodeC-m6: Just LS Files]
+  be started, connected to this node and one another: One will only have a DB and local snapshot DB, while the other will
+  only have the local snapshot DB and the snapshot file. All three nodes should sync with one another.
+  And a snapshot should be taken on the node started with just a DB.
+  [NodeA: Permanode, NodeB: Just DB, NodeC: Just LS DB]
 
   Scenario: PermaNode is synced
     Check that the permanode has been started correctly and is synced.
@@ -43,8 +43,8 @@ Feature: Test Bootstrapping With LS
       |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
 
 
-  Scenario: LS File node is synced
-    Check that the node started with just LS Files is synced correctly.
+  Scenario: LS DB node is synced
+    Check that the node started with just a LS DB is synced correctly.
 
     #First make sure nodes are neighbored
     Given "nodeC-m6" and "nodeA-m6" are neighbors
@@ -85,3 +85,56 @@ Feature: Test Bootstrapping With LS
       |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue      |
 
     Then the response for "checkConsistency" should return null
+
+
+  Scenario: Check unconfirmed transaction is spent from
+    Issues a value transaction that will be unconfirmed, and check that the address was spent from.
+
+    Given a transaction is generated and attached on "nodeE-m6" with:
+      |keys                       |values                   |type           |
+      |address                    |TEST_ADDRESS             |staticValue    |
+      |value                      |10                       |int            |
+      |seed                       |UNCONFIRMED_TEST_SEED    |staticValue    |
+
+    When "wereAddressesSpentFrom" is called on "nodeE-m6" with:
+      |keys                       |values                   |type             |
+      |addresses                  |UNCONFIRMED_TEST_ADDRESS |staticValue      |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type             |
+      |addresses                  |True                     |boolList         |
+
+
+  Scenario: Check addresses spent from after pruning
+    Ensures that a node with a spent address registers that the address is spent from both before and after the
+    transaction has been pruned from the DB.
+
+    # Check that addresses were spent from before pruning
+    Given "wereAddressesSpentFrom" is called on "nodeE-m6" with:
+      |keys                       |values                   |type             |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type             |
+      |addresses                  |True                     |boolList         |
+
+    #Drop the spend transactions below the pruning depth
+    When the next 30 milestones are issued
+
+    # Check that addresses were spent after transaction have been pruned
+    And "wereAddressesSpentFrom" is called on "nodeE-m6" with:
+      |keys                       |values                   |type             |
+      |addresses                  |LS_SPENT_ADDRESSES       |staticValue      |
+
+    Then the response for "wereAddressesSpentFrom" should return with:
+      |keys                       |values                   |type             |
+      |addresses                  |True                     |boolList         |
+
+    # Check that transactions from those addresses were pruned
+    And "getTrytes" is called on "nodeE-m6" with:
+      |keys                       |values                   |type             |
+      |hashes                     |LS_SPENT_TRANSACTIONS    |staticValue      |
+
+    Then the response for "getTrytes" should return with:
+      |keys                       |values                   |type             |
+      |trytes                     |NULL_TRANSACTION_LIST    |staticValue      |

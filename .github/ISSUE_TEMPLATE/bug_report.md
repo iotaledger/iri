@@ -1,6 +1,7 @@
 ---
 name: Report a bug in IRI
 about: Report a bug
+labels: T-Bug
 
 ---
 

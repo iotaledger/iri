@@ -403,7 +403,7 @@ public class Tangle {
      */
     public boolean pinTransaction(Hash hash)  throws Exception {
         Transaction tx = (Transaction)load(Transaction.class, hash);
-        if(!tx.exists()) {
+        if(tx.exists()) {
             TransactionViewModel tvm = new TransactionViewModel(tx, hash);
             return pinTransaction(tvm);
         }

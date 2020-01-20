@@ -30,7 +30,6 @@ public class TestnetConfig extends BaseIotaConfig {
         super();
         dbPath = Defaults.DB_PATH;
         dbLogPath = Defaults.DB_LOG_PATH;
-        localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
     }
 
     @Override
@@ -193,7 +192,6 @@ public class TestnetConfig extends BaseIotaConfig {
         int KEYS_IN_MILESTONE = 22;
         int MAX_MILESTONE_INDEX = 1 << KEYS_IN_MILESTONE;
 
-        String LOCAL_SNAPSHOTS_BASE_PATH = "testnet";
         String SNAPSHOT_FILE = "/snapshotTestnet.txt";
         int REQUEST_HASH_SIZE = 49;
         String SNAPSHOT_SIG = "/snapshotTestnet.sig";

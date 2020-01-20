@@ -7,8 +7,13 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
+import pl.touk.throwing.ThrowingFunction;
+import pl.touk.throwing.ThrowingPredicate;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Acts as a controller interface for an {@link Address} set. This controller is used within a
@@ -36,6 +41,25 @@ public class AddressViewModel implements HashesViewModel {
     private AddressViewModel(Address hashes, Indexable hash) {
         self = hashes == null || hashes.set == null ? new Address(): hashes;
         this.hash = hash;
+    }
+
+    /**
+     * Loads all transaction that mutate a certain address. It sorts them by the attachment timestamp. Sorting by
+     * attachmentTimeStamp is an arbitrary choice.
+     * 
+     *
+     * @param tangle The tangle reference for the database to find the {@link Address} set in
+     * @param hash   hash The address we are loading the transactions for
+     * @return The list of {@link AddressViewModel} controllers generated
+     * @throws Exception Thrown if the database cannot load an {@link Address} set from the reference {@link Hash}
+     */
+    public static List<TransactionViewModel> loadAsSortedList(Tangle tangle, Indexable hash) throws Exception {
+        Address hashes = (Address) tangle.load(Address.class, hash);
+        return hashes.set.stream()
+                .filter(ThrowingPredicate.unchecked(hash1 -> TransactionViewModel.exists(tangle, hash1)))
+                .map(ThrowingFunction.unchecked(item -> TransactionViewModel.fromHash(tangle, item)))
+                .sorted(Comparator.comparing(TransactionViewModel::getAttachmentTimestamp))
+                .collect(Collectors.toList());
     }
 
     /**

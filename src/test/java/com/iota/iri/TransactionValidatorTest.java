@@ -2,12 +2,14 @@ package com.iota.iri;
 
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.ProtocolConfig;
+
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;

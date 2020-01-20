@@ -76,9 +76,6 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void put(K key, V value) {
-        if (getSize() == cacheConfiguration.getMaxSize()) {
-            evict();
-        }
         // new entry
         if (strongStore.put(key, value) == null) {
             evictionQueue.offer(key);

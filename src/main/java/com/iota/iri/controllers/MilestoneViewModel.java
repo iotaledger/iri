@@ -239,7 +239,7 @@ public class MilestoneViewModel {
             return;
         }
 
-        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
+        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
             cacheEvict(tangle);
         }
         cache.put(index, milestoneViewModel);

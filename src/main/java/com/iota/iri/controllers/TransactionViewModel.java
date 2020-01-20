@@ -978,7 +978,7 @@ public class TransactionViewModel {
      */
     private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
+        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
             cacheEvict(tangle);
         }
         cache.put(hash, transactionViewModel);
@@ -991,18 +991,20 @@ public class TransactionViewModel {
      */
     public static void cacheEvict(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
         for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
             Indexable hash = cache.nextEvictionKey();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
                 if (tvm != null) {
                     if (!tvm.getIsCacheEntryFresh()) {
-                        tvm.updateDB(tangle, tvm.getTransaction(), tvm.getHash(), "");
+                        batch.addAll(tvm.getSaveBatch());
+                        cache.evict(tvm.getHash());
                     }
-                    cache.evict(tvm.getHash());
                 }
             }
         }
+        tangle.saveBatch(batch);
     }
 
     /**

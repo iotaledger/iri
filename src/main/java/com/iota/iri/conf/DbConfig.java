@@ -54,6 +54,34 @@ public interface DbConfig extends Config {
      */
     boolean isRescanDb();
 
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#TX_BATCH_WRITE}
+     *
+     * @return {@value DbConfig.Descriptions#TX_BATCH_WRITE}
+     */
+    long getTxBatchWrite();
+
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_BATCH_WRITE}
+     *
+     * @return {@value DbConfig.Descriptions#MILESTONE_BATCH_WRITE}
+     */
+    int getMilestoneBatchWrite();
+
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#TX_BATCH_EVICTION_COUNT}
+     *
+     * @return {@value DbConfig.Descriptions#TX_BATCH_EVICTION_COUNT}
+     */
+    int getTxBatchEvictionCount();
+
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_BATCH_EVICTION_COUNT}
+     *
+     * @return {@value DbConfig.Descriptions#MILESTONE_BATCH_EVICTION_COUNT}
+     */
+    int getMilestoneBatchEvictionCount();
+
     interface Descriptions {
 
         String DB_PATH = "The folder where the DB saves its data.";
@@ -64,5 +92,9 @@ public interface DbConfig extends Config {
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
         String DB_CONFIG_FILE = "The location of the RocksDB configuration file";
+        String TX_BATCH_WRITE = "The size of the tangle cache for transactions";
+        String MILESTONE_BATCH_WRITE = "The size of the tangle cache for milestones";
+        String TX_BATCH_EVICTION_COUNT = "The number of transactions to evict from cache";
+        String MILESTONE_BATCH_EVICTION_COUNT = "The number of milestones to evict from cache";
     }
 }

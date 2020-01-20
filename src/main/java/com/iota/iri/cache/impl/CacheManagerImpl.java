@@ -3,6 +3,7 @@ package com.iota.iri.cache.impl;
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.cache.CacheManager;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.storage.Indexable;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +29,8 @@ public class CacheManagerImpl implements CacheManager {
     public <V> Cache<Indexable, V> getCache(Class<V> type) {
         Cache<Indexable, V> cache = cacheMap.get(type);
         if (cache == null) {
-            cache = add(type);
+            return add(type, new CacheConfigurationImpl(BaseIotaConfig.Defaults.TX_BATCH_WRITE,
+                    BaseIotaConfig.Defaults.TX_BATCH_EVICTION_COUNT));
         }
         return cache;
     }
@@ -36,13 +38,6 @@ public class CacheManagerImpl implements CacheManager {
     @Override
     public <V> Cache<Indexable, V> lookup(Class<V> type) {
         return cacheMap.get(type);
-    }
-
-    @Override
-    public <V> Cache add(Class<V> type) {
-        Cache<Indexable, V> cache = new CacheImpl<>(new DefaultCacheConfiguration());
-        cacheMap.put(type, cache);
-        return cache;
     }
 
     @Override

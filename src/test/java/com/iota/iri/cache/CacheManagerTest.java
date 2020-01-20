@@ -41,9 +41,4 @@ public class CacheManagerTest {
         Assert.assertNull("Cache should be null", cacheManager.lookup(TransactionViewModel.class));
     }
 
-    @Test
-    public void shouldAddCache() {
-        cacheManager.add(TransactionViewModel.class);
-        Assert.assertNotNull("Cache should be null", cacheManager.lookup(TransactionViewModel.class));
-    }
 }

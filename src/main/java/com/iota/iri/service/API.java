@@ -196,6 +196,13 @@ public class API {
         commandRoute.put(ApiCommand.GET_MISSING_TRANSACTIONS, getMissingTransactions());
         commandRoute.put(ApiCommand.CHECK_CONSISTENCY, checkConsistency());
         commandRoute.put(ApiCommand.WERE_ADDRESSES_SPENT_FROM, wereAddressesSpentFrom());
+
+        commandRoute.put(ApiCommand.PIN_TRANSACTION_HASHES, pinTransactionHashes());
+        commandRoute.put(ApiCommand.PIN_TRANSACTIONS_TRYTES, pinTransactionTrytes());
+        commandRoute.put(ApiCommand.IS_PINNED_TRANSACTIONS_COUNT, isPinned());
+        commandRoute.put(ApiCommand.UNPIN_TRANSACTIONS, unpinTransactionHashes());
+
+
     }
 
     /**
@@ -314,6 +321,70 @@ public class API {
         }
         return WereAddressesSpentFrom.create(states);
     }
+
+    // ----------- permanent storage --------
+
+    /**
+     * Pins transactions based on transaction trytes. It will store the transaction trytes in permanent storage.
+     * @param trytes list of transaction trytes.
+     * @return list of booleans if it the pinning was successful or not.
+     * @throws Exception
+     */
+    @Document(name="pinTransactionTrytes")
+    public AbstractResponse pinTransactionTrytesStatement(List<String> trytes) throws Exception {
+        final List<TransactionViewModel> elements = convertTrytes(trytes);
+        boolean[] result = new boolean[elements.size()];
+        for(int i = 0; i < elements.size(); i++){
+            result[i] = tangle.pinTransaction(elements.get(i));
+        }
+        return BooleanValuesResponse.create(result);
+    }
+
+    /**
+     * Pins transactions that are already in the current database. It will move those transactions to permanent storage.
+     * @param transactionsList
+     * @return List of booleans that represent of the transaction transfer was successful.
+     * @throws Exception
+     */
+    @Document(name="pinTransactionHashes")
+    private AbstractResponse pinTransactionHashesStatement(List<String> transactionsList) throws Exception {
+        final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
+        boolean[] result = new boolean[transactions.size()];
+        for(int i = 0; i < transactions.size(); i++){
+            result[i] = tangle.pinTransaction(transactions.get(i));
+        }
+        return BooleanValuesResponse.create(result);
+    }
+
+    /**
+     * Checks if transactions are pinned
+     * @param transactionsList list of transaction hashes to check.
+     * @return List of booleans, true equals it is pinned and false for not pinned.
+     * @throws Exception
+     */
+    @Document(name="isPinned")
+    private AbstractResponse isPinnedStatement(List<String> transactionsList) throws Exception {
+        final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
+        return BooleanValuesResponse.create(tangle.isPinned(transactions));
+    }
+
+    /**
+     * Unpins a transaction, it will be removed from permanent storage.
+     * @param transactionsList List of transaction ID's to be unpinned.
+     * @return An empty response with the time it took to unpin.
+     * @throws Exception
+     */
+    @Document(name="unpinTransactionHashes")
+    private AbstractResponse unpinTransactionHashesStatement(List<String> transactionsList) throws Exception {
+        for(String txHash: transactionsList){
+            tangle.unpinTransaction(HashFactory.TRANSACTION.create(txHash));
+        }
+        return AbstractResponse.createEmptyResponse();
+    }
+
+    // --------------------------------------
+
+
 
     /**
      * Walks back from the hash until a tail transaction has been found or transaction aprovee is not found.
@@ -1730,5 +1801,54 @@ public class API {
         }
         return elements;
     }
+
+    // ------ permanode ----------
+
+    private Function<Map<String, Object>, AbstractResponse> pinTransactionTrytes() {
+        return request -> {
+            List<String> transactionTrytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+            try {
+                return pinTransactionTrytesStatement(transactionTrytes);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> pinTransactionHashes() {
+        return request -> {
+            List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            try {
+                return pinTransactionHashesStatement(txids);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> isPinned() {
+        return request -> {
+            List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            try {
+                return isPinnedStatement(txids);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> unpinTransactionHashes() {
+        return request -> {
+            List<String> txids = getParameterAsList(request,"hashes", HASH_SIZE);
+            try {
+                return unpinTransactionHashesStatement(txids);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+
+    // ---------------------------
 
 }

@@ -3,16 +3,16 @@ package com.iota.iri;
 import java.util.List;
 import java.util.Map;
 
+import com.iota.iri.storage.rocksDB.RocksDBPPPImpl;
+import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
-
-import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
@@ -286,6 +286,24 @@ public class Iota {
         }
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
+        }
+
+        if(configuration.isSelectivePermaEnabled()){
+            switch (configuration.getPermaMainDb()) {
+                case "rocksdb": {
+                    RocksDBPPPImpl ppp = new RocksDBPPPImpl(
+                            configuration.getPermaDbPath(),
+                            configuration.getPermaDbLogPath(),
+                            configuration.getPermaDbCacheSize());
+
+                    tangle.addPersistenceProvider(ppp);
+                    tangle.addPermanentPersistenceProvider(ppp);
+                    break;
+                }
+                default: {
+                    throw new NotImplementedException("No such database type.");
+                }
+            }
         }
     }
 

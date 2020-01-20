@@ -81,7 +81,7 @@ public enum ApiCommand {
      * Stop attaching to the tangle
      */
     INTERRUPT_ATTACHING_TO_TANGLE("interruptAttachingToTangle"),
-    
+
     /**
      * Temporary remove a neighbor from this node
      */
@@ -91,11 +91,34 @@ public enum ApiCommand {
      * Store a transaction on this node, without broadcasting
      */
     STORE_TRANSACTIONS("storeTransactions"),
-    
+
     /**
      * Check if an address has been spent from
      */
-    WERE_ADDRESSES_SPENT_FROM("wereAddressesSpentFrom");
+    WERE_ADDRESSES_SPENT_FROM("wereAddressesSpentFrom"),
+
+
+    /**
+     * Pins a transaction from normal storage identified by their hash
+     */
+    PIN_TRANSACTION_HASHES("pinTransactionHashes"),
+
+    /**
+     * Pins a transaction based on sent trytes
+     */
+    PIN_TRANSACTIONS_TRYTES("pinTransactionsTrytes"),
+
+    /**
+     * Unpins a transaction
+     */
+    UNPIN_TRANSACTIONS("unpinTransactionHashes"),
+
+    /**
+     * Checks if a transaction is pinned or not
+     */
+    IS_PINNED_TRANSACTIONS_COUNT("isPinned");
+
+
     
     private String name;
 

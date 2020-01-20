@@ -55,7 +55,6 @@ public class Milestone implements Persistable {
 
     }
 
-
     @Override
     public boolean canMerge() {
         return false;

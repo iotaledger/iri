@@ -39,7 +39,12 @@ public enum Feature {
     /**
      * This node has the zero message queue enabled for fetching/reading "activities" on the node
      */
-    ZMQ("zeroMessageQueue");
+    ZMQ("zeroMessageQueue"),
+
+    /**
+     * This node can do transaction pinning
+     */
+    TRANSACTION_PINNING("transactionPinning");
     
     private String name;
 
@@ -72,16 +77,26 @@ public enum Feature {
         if (configuration.isZmqEnabled()) {
             features.add(ZMQ);
         }
+        if (configuration.isSelectivePermaEnabled()) {
+            features.add(TRANSACTION_PINNING);
+        }
         
         List<Feature> apiFeatures = new ArrayList<Feature>(Arrays.asList(new Feature[] {
                 PROOF_OF_WORK
         }));
-        
+
         for (String disabled : configuration.getRemoteLimitApi()) {
+
             switch (disabled) {
-            case "attachToTangle":
-                apiFeatures.remove(PROOF_OF_WORK);
-                break;
+                case "attachToTangle":
+                    apiFeatures.remove(PROOF_OF_WORK);
+                    break;
+                case "pinTransactionHashes":
+                    apiFeatures.remove(TRANSACTION_PINNING);
+                    break;
+                case "pinTransactionsTrytes":
+                    apiFeatures.remove(TRANSACTION_PINNING);
+                    break;
 
             default:
                 break;

@@ -217,8 +217,6 @@ public class Transaction implements Persistable {
         parsed = true;
     }
 
-
-
     @Override
     public boolean canMerge() {
         return false;

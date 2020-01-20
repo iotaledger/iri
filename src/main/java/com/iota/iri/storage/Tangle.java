@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.Address;
@@ -42,10 +43,23 @@ public class Tangle {
             new AbstractMap.SimpleImmutableEntry<>("transaction-metadata", Transaction.class);
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
+    private final List<PermanentPersistenceProvider> permanentPersistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
 
+    /**
+     * Adds a persistence provider
+     * @param provider
+     */
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
+    }
+
+    /**
+     * Adds a perment persistence provider
+     * @param provider
+     */
+    public void addPermanentPersistenceProvider(PermanentPersistenceProvider provider) {
+        this.permanentPersistenceProviders.add(provider);
     }
 
     /**
@@ -369,4 +383,60 @@ public class Tangle {
             provider.clearMetadata(column);
         }
     }
+
+    // ---------- Permanent storage capabilities --------
+
+
+    /**
+     * @see PermanentPersistenceProvider#pinTransaction(TransactionViewModel, Hash)
+     */
+    public boolean pinTransaction(TransactionViewModel tvm)  throws Exception {
+        boolean success = false;
+        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
+            success = provider.pinTransaction(tvm, tvm.getHash()) || success ;
+        }
+        return success ;
+    }
+
+    /**
+     * Retrieves transaction from persistence providers and then calls pinTransaction(TransactionViewModel, Hash)
+     */
+    public boolean pinTransaction(Hash hash)  throws Exception {
+        Transaction tx = (Transaction)load(Transaction.class, hash);
+        if(tx.exists()) {
+            TransactionViewModel tvm = new TransactionViewModel(tx, hash);
+            return pinTransaction(tvm);
+        }
+        return false;
+    }
+    /**
+     * @see PermanentPersistenceProvider#unpinTransaction(Hash)
+     */
+    public boolean unpinTransaction(Hash hash)  throws Exception {
+        boolean success = false;
+        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
+            success = provider.unpinTransaction(hash) || success;
+        }
+        return success;
+    }
+    /**
+     * @see PermanentPersistenceProvider#isPinned(List)
+     */
+    public boolean[] isPinned(List<Hash> transactionHashes)  throws Exception {
+        boolean[] mergedResult = new boolean[transactionHashes.size()];
+        for(PermanentPersistenceProvider provider: permanentPersistenceProviders) {
+            boolean[] providerResult = provider.isPinned(transactionHashes);
+            for(int i = 0; i < mergedResult.length; i++){
+                mergedResult[i] =  (mergedResult[i] || providerResult[i]);
+            }
+        }
+
+        return mergedResult;
+    }
+
+
+
+    // -------------------------------------------------
+
+
 }

@@ -27,8 +27,8 @@ default_ixi: &ixi
 java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
 
 defaults: &db_full
-  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_All_Files.tar
-  db_checksum: 4628789811b4ccbcc3cd898debff0e1b256a1cfdd636c7b5e1beb43fed461091
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_Db_With_LS_Db.tar.gz
+  db_checksum: 2055406bf312136d7cd0efa21248bd8cc9c407ab14ef0d18b921cf18c72c5270
   iri_args: *args
   ixis: *ixi
 
@@ -38,9 +38,9 @@ db_with_snapshot: &db_with_snapshot
   iri_args: *args
   ixis: *ixi
 
-db_with_ls_files: &db_with_LS_files
-  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_LS_Files_and_Snapshot.tar
-  db_checksum: 87fdc9c37a6b98ec8623a5b07c49737681b7b7ac36252ab2e18cc75999f766b6
+db_with_ls_db: &db_with_ls_db
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_LS_Db.tar.gz
+  db_checksum: d217729fd5efb0432d179ec59472f283cd61e8ad4ca9aab32e5c1f82632a1a29
   iri_args: *args
   ixis: *ixi
 
@@ -62,7 +62,7 @@ nodes:
     <<: *db_with_snapshot
 
   nodeC-m6:
-    <<: *db_with_LS_files
+    <<: *db_with_ls_db
 
   nodeD-m6:
     <<: *db_for_pruning

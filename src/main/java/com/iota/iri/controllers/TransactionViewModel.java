@@ -366,7 +366,7 @@ public class TransactionViewModel {
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Transaction.class, hash);
-        cacheDelete(tangle, hash);
+        cacheRelease(tangle, hash);
     }
 
     /**
@@ -1008,11 +1008,12 @@ public class TransactionViewModel {
     }
 
     /**
-     * Deletes the item with the specified hash from cache
+     * Releases the item with the specified hash from cache Delegates to {@link Cache#release(Object)}
+     *
      * @param tangle Tangle
-     * @param hash hash to evict
+     * @param hash   hash to release
      */
-    public static void cacheDelete(Tangle tangle, Hash hash) {
+    private static void cacheRelease(Tangle tangle, Hash hash) {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         if (cache != null) {
             cache.release(hash);
@@ -1020,15 +1021,28 @@ public class TransactionViewModel {
     }
 
     /**
-     * Deletes the list of items from cache
-     * 
+     * Deletes the item from cache. Delegates to {@link Cache#delete(Object)}
+     *
+     * @param tangle Tangle,
+     * @param hash   Hash to delete
+     */
+    public static void cacheDelete(Tangle tangle, Hash hash) {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            cache.delete(hash);
+        }
+    }
+
+    /**
+     * Deletes the list of items from cache. Delegates to {@link Cache#delete(List)}
+     *
      * @param tangle Tangle
      * @param hashes Hashes to delete
      */
     public static void cacheDelete(Tangle tangle, List<Indexable> hashes) {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         if (cache != null) {
-            cache.release(hashes);
+            cache.delete(hashes);
         }
     }
 

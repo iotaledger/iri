@@ -264,13 +264,13 @@ public class MilestoneViewModel {
     }
 
     /**
-     * Deletes the item with the specified index from cache
-     * 
+     * Deletes the item with the specified index from cache. Delegates to {@link Cache#delete(Object)}
+     *
      * @param tangle Tangle
-     * @param index  index of milestone to evict
+     * @param index  Index of milestone to delete
      */
     public static void cacheDelete(Tangle tangle, IntegerIndex index) {
-        getCache(tangle).release(index);
+        getCache(tangle).delete(index);
     }
 
     /**

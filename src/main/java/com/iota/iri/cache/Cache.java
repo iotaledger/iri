@@ -102,9 +102,9 @@ public interface Cache<K, V> {
     CacheConfiguration getConfiguration();
 
     /**
-     * Poll and return the next key to evict
+     * Poll and return the next key to release from cache
      * 
-     * @return The key to evict
+     * @return The key to release
      */
-    K nextEvictionKey();
+    K nextReleaseKey();
 }

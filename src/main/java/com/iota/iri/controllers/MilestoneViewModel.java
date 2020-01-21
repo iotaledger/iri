@@ -240,7 +240,7 @@ public class MilestoneViewModel {
         }
 
         if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
+            cacheRelease(tangle);
         }
         cache.put(index, milestoneViewModel);
     }
@@ -274,18 +274,18 @@ public class MilestoneViewModel {
     }
 
     /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache to DB
+     * Release {@link CacheConfiguration#getReleaseCount()} items from the cache
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheEvict(Tangle tangle) throws Exception {
+    public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
         if (cache == null) {
             return;
         }
-        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
-            Indexable index = cache.nextEvictionKey();
+        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
+            Indexable index = cache.nextReleaseKey();
             if (index != null) {
                 MilestoneViewModel milestoneViewModel = cache.get(index);
                 if (milestoneViewModel != null) {

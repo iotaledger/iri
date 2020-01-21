@@ -152,7 +152,7 @@ public class ApproveeViewModel implements HashesViewModel {
     public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
         if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
+            cacheRelease(tangle);
         }
         cache.put(hash, approveeViewModel);
     }
@@ -161,22 +161,22 @@ public class ApproveeViewModel implements HashesViewModel {
      * Releases the item with the specified hash from cache. Delegates to {@link Cache#release(Object)}
      * 
      * @param tangle Tangle
-     * @param hash   Hash of item to evict
+     * @param hash   Hash of item to release
      */
     public static void cacheRelease(Tangle tangle, Indexable hash) {
         tangle.getCache(ApproveeViewModel.class).release(hash);
     }
 
     /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from cache
+     * Release {@link CacheConfiguration#getReleaseCount()} items from cache
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheEvict(Tangle tangle) throws Exception {
+    public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
-            Indexable hash = cache.nextEvictionKey();
+        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
+            Indexable hash = cache.nextReleaseKey();
             if (hash != null) {
                 ApproveeViewModel approveeViewModel = cache.get(hash);
                 if (approveeViewModel != null) {

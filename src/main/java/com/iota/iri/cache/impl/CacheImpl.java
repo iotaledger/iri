@@ -24,7 +24,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     private final ConcurrentMap<K, V> strongStore;
     // weak store. Eligible for GC
     private final ConcurrentMap<K, V> weakStore;
-    private final ConcurrentLinkedQueue<K> evictionQueue;
+    private final ConcurrentLinkedQueue<K> releaseQueue;
 
     // stats
     private int cacheHits = 0;
@@ -40,7 +40,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         this.strongStore = new MapMaker().concurrencyLevel(cacheConfiguration.getConcurrencyLevel()).makeMap();
         this.weakStore = new MapMaker().concurrencyLevel(cacheConfiguration.getConcurrencyLevel()).weakValues()
                 .makeMap();
-        this.evictionQueue = new ConcurrentLinkedQueue<>();
+        this.releaseQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -79,7 +79,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     public void put(K key, V value) {
         // new entry
         if (strongStore.put(key, value) == null) {
-            evictionQueue.offer(key);
+            releaseQueue.offer(key);
         }
     }
 
@@ -90,7 +90,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         }
         V value = strongStore.get(key);
         strongStore.remove(key);
-        evictionQueue.remove(key);
+        releaseQueue.remove(key);
         if (value != null) {
             weakStore.put(key, value);
         }
@@ -98,8 +98,8 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void release() {
-        for (int i = 0; i < cacheConfiguration.getEvictionCount(); i++) {
-            release(evictionQueue.peek());
+        for (int i = 0; i < cacheConfiguration.getReleaseCount(); i++) {
+            release(releaseQueue.peek());
         }
     }
 
@@ -116,7 +116,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
             return;
         }
         strongStore.remove(key);
-        evictionQueue.remove(key);
+        releaseQueue.remove(key);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     public void clear() {
         strongStore.clear();
         weakStore.clear();
-        evictionQueue.clear();
+        releaseQueue.clear();
     }
 
     private void cacheHit() {
@@ -155,7 +155,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public K nextEvictionKey() {
-        return evictionQueue.peek();
+    public K nextReleaseKey() {
+        return releaseQueue.peek();
     }
 }

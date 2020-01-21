@@ -979,21 +979,22 @@ public class TransactionViewModel {
     private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
+            cacheRelease(tangle);
         }
         cache.put(hash, transactionViewModel);
     }
 
     /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache to DB
+     * Release {@link CacheConfiguration#getReleaseCount()} items from the cache
+     * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheEvict(Tangle tangle) throws Exception {
+    public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
-        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
-            Indexable hash = cache.nextEvictionKey();
+        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
+            Indexable hash = cache.nextReleaseKey();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
                 if (tvm != null) {

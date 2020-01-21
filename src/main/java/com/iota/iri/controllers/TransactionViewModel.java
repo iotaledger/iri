@@ -1020,6 +1020,19 @@ public class TransactionViewModel {
     }
 
     /**
+     * Deletes the list of items from cache
+     * 
+     * @param tangle Tangle
+     * @param hashes Hashes to delete
+     */
+    public static void cacheDelete(Tangle tangle, List<Indexable> hashes) {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            cache.release(hashes);
+        }
+    }
+
+    /**
      * The state of the cache entry
      *
      * @return True if fresh. False otherwise

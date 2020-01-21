@@ -1,21 +1,5 @@
 package com.iota.iri.storage;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import javax.naming.OperationNotSupportedException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.Address;
@@ -26,7 +10,15 @@ import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Pair;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.iota.iri.zmq.MessageQueueProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import javax.naming.OperationNotSupportedException;
 
 /**
  * Delegates methods from {@link PersistenceProvider}
@@ -376,16 +368,5 @@ public class Tangle {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.clearMetadata(column);
         }
-    }
-    
-    /**
-     * @see PersistenceProvider#getPersistanceSize()
-     */
-    public long getPersistanceSize() {
-        long size = 0;
-        for(PersistenceProvider provider: persistenceProviders) {
-            size += provider.getPersistanceSize();
-        }
-        return size;
     }
 }

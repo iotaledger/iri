@@ -1,5 +1,19 @@
 package com.iota.iri.conf;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.core.IsCollectionContaining;
+import org.junit.*;
+import org.junit.runners.MethodSorters;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,25 +26,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.core.IsCollectionContaining;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ConfigTest {

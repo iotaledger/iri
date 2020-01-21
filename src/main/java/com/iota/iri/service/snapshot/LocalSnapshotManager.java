@@ -1,7 +1,6 @@
 package com.iota.iri.service.snapshot;
 
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.transactionpruning.PruningCondition;
 
 /**
  * Represents the manager for local {@link Snapshot}s that takes care of periodically creating a new {@link Snapshot}
@@ -27,18 +26,4 @@ public interface LocalSnapshotManager {
      * {@link #start(LatestMilestoneTracker)} method.
      */
     void shutdown();
-    
-    /**
-     * Add a conditional check which will be queried every cycle of the manager.
-     * 
-     * @param conditions conditions on which we check to make a snapshot
-     */
-    void addSnapshotCondition(SnapshotCondition... conditions);
-
-    /**
-     * Add a conditional check for pruning which will be queried every cycle of the manager.
-     *
-     * @param conditions conditions on which we check to make a snapshot
-     */
-    void addPruningConditions(PruningCondition... conditions);
 }

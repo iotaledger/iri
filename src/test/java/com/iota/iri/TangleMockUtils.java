@@ -1,13 +1,5 @@
 package com.iota.iri;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import org.mockito.Mockito;
-
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
@@ -16,7 +8,13 @@ import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
+
+import org.mockito.Mockito;
+
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * Contains utilities that help to mock the retrieval of database entries from the tangle.

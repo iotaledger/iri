@@ -1,11 +1,11 @@
 package com.iota.iri.service.snapshot;
 
-import java.util.Map;
-
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+
+import java.util.Map;
 
 /**
  * <p>
@@ -62,7 +62,7 @@ public interface SnapshotService {
      * This method takes a "full" local snapshot according to the configuration of the node.
      * </p>
      * <p>
-     * It first determines the necessary configuration parameters and which milestone to use as a reference. It then
+     * It first determines the necessary configuration parameters and which milestone to us as a reference. It then
      * generates the local {@link Snapshot}, issues the the required {@link TransactionPruner} jobs and writes the
      * resulting {@link Snapshot} to the disk.
      * </p>
@@ -73,29 +73,11 @@ public interface SnapshotService {
      * 
      * @param latestMilestoneTracker milestone tracker that allows us to retrieve information about the known milestones
      * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
-     * @param snapshotUntillIndex The last milestone we keep, everything before gets snapshotted. 
-     *                            If we can't find the milestone of this index, we attempt to look back further until we do
-     * @return The Snapshot we ended up making
      * @throws SnapshotException if anything goes wrong while creating the local snapshot
      */
-    Snapshot takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner,
-            int snapshotUntillIndex) throws
+    void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner) throws
             SnapshotException;
 
-    /**
-     * <p>
-     * This method is called when the node is cleaning up data. 
-     * The newSnapshot is obtained from taking a successful local snapshot.
-     * No data should be pruned if pruning is disabled on this node.
-     * <p>
-     * 
-     * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
-     * @param pruningMilestoneIndex The index of the milestone we will prune until (excluding)
-     * @throws SnapshotException if anything goes wrong while pruning
-     */
-    void pruneSnapshotData(TransactionPruner transactionPruner, int pruningMilestoneIndex)
-            throws SnapshotException;
-    
     /**
      * <p>
      * This method generates a local snapshot of the full ledger state at the given milestone.

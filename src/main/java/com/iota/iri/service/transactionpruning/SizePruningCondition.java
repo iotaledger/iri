@@ -88,6 +88,10 @@ public class SizePruningCondition implements PruningCondition {
         int initialIndex;
         try {
             Pair<Indexable, Persistable> ms = tangle.getFirst(Milestone.class, IntegerIndex.class);
+            if (ms == null) {
+                return -1;
+            }
+            
             initialIndex = ((IntegerIndex)ms.low).getValue();
         } catch (Exception e) {
             throw new TransactionPruningException("failed to find oldest milestone", e);

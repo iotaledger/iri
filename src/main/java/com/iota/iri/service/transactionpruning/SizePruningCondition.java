@@ -27,7 +27,7 @@ public class SizePruningCondition implements PruningCondition {
     /**
      * Amount of milestones we prune when the DB is too large
      */
-    private static final int MILESTONES = 5;
+    private static final int MILESTONES = 25;
 
     /**
      * The maximum size we want the DB to have, with margin due to DB delays for writing to disk

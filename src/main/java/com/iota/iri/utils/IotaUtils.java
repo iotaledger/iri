@@ -1,5 +1,8 @@
 package com.iota.iri.utils;
 
+import com.iota.iri.IRI;
+import com.iota.iri.model.Hash;
+
 import java.io.FileReader;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -18,9 +21,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.iota.iri.IRI;
-import com.iota.iri.model.Hash;
 
 public class IotaUtils {
     
@@ -121,7 +121,7 @@ public class IotaUtils {
     public static long parseFileSize(String humanReadableSize) {
         humanReadableSize = humanReadableSize.replaceAll(",", "").toLowerCase();
         int spaceNdx = humanReadableSize.indexOf(" ");
-        double ret;
+        double amount;
         //If we forgot a space,check until we find it
         if (spaceNdx == -1) {
             spaceNdx = 0;
@@ -134,27 +134,27 @@ public class IotaUtils {
             if (spaceNdx == 0) {
                 return -1;
             }
-            ret = Double.parseDouble(humanReadableSize.substring(0, spaceNdx));
+            amount = Double.parseDouble(humanReadableSize.substring(0, spaceNdx));
         } else {
             // ++ to skip the space
-            ret = Double.parseDouble(humanReadableSize.substring(0, spaceNdx++));
+            amount = Double.parseDouble(humanReadableSize.substring(0, spaceNdx++));
         }
 
         //Default to GB
-        String sub = ret == humanReadableSize.length() ? "GB" : humanReadableSize.substring(spaceNdx);
+        String sub = amount == humanReadableSize.length() ? "GB" : humanReadableSize.substring(spaceNdx);
         switch (sub) {
             case "tb":
-                return (long) (ret * TB_FACTOR);
+                return (long) (amount * TB_FACTOR);
             case "tib":
-                return (long) (ret * TIB_FACTOR);
+                return (long) (amount * TIB_FACTOR);
             case "gb":
-                return (long) (ret * GB_FACTOR);
+                return (long) (amount * GB_FACTOR);
             case "gib":
-                return (long) (ret * GIB_FACTOR);
+                return (long) (amount * GIB_FACTOR);
             case "mb":
-                return (long) (ret * MB_FACTOR);
+                return (long) (amount * MB_FACTOR);
             case "mib":
-                return (long) (ret * MIB_FACTOR);
+                return (long) (amount * MIB_FACTOR);
             default: 
                 return -1;
         }

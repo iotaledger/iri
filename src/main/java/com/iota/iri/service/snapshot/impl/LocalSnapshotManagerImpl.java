@@ -196,7 +196,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
                 snapshotService.pruneSnapshotData(transactionPruner, pruningMilestoneIndex);
             } else {
-                log.debug("Can't prune at index {}", pruningMilestoneIndex);
+                if (pruningMilestoneIndex > 0) {
+                    log.debug("Can't prune at index {}", pruningMilestoneIndex);
+                }
             }
         } catch (SnapshotException e) {
             log.error("error while pruning", e);

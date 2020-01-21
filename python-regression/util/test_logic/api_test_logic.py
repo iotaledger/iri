@@ -1,7 +1,8 @@
-from aloe import world
-from iota import Iota, Address, Tag, TryteString
 import json
 import urllib3
+from aloe import world
+from iota import Iota, Address, Tag, TryteString
+
 from . import value_fetch_logic as value_fetch
 from util import logger as log
 
@@ -88,6 +89,7 @@ def prepare_options(args, option_list):
                 'configValue': value_fetch.fetch_config_value,
                 'configList': value_fetch.fetch_config_list,
                 'boolList': value_fetch.fetch_bool_list,
+                'boolListMixed': value_fetch.fetch_bool_list_mixed,
                 # TODO: remove the need for this logic
                 'ignore': value_fetch.fetch_string
             }

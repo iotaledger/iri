@@ -128,6 +128,16 @@ def fetch_bool_list(value):
         return [True] * len(response)
 
 
+def fetch_bool_list_mixed(value):
+    """
+    Returns a list filled with bool conversions of the input string separated by space".
+    :param value: The input value
+    :return: The list of bool values
+    """
+
+    bool_list = value.split()
+    return [True if x == "True" else False for x in bool_list]
+
 
 def fetch_response_value(value):
     """

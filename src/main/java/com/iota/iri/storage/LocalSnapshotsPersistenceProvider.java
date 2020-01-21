@@ -140,7 +140,7 @@ public class LocalSnapshotsPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public long getPersistanceSize() {
+    public long getPersistenceSize() {
         throw new UnsupportedOperationException(
                 "Local Snapshots Persistance Provider can't know the size of SST files");
     }

@@ -202,5 +202,5 @@ public interface PersistenceProvider {
      * 
      * @return the size in bytes
      */
-    long getPersistanceSize();
+    long getPersistenceSize();
 }

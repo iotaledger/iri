@@ -646,7 +646,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
     
     @Override
-    public long getPersistanceSize() {
+    public long getPersistenceSize() {
         return sstFileManager.getTotalSize();
     }
 }

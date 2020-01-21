@@ -379,12 +379,12 @@ public class Tangle {
     }
     
     /**
-     * @see PersistenceProvider#getPersistanceSize()
+     * @see PersistenceProvider#getPersistenceSize()
      */
     public long getPersistanceSize() {
         long size = 0;
         for(PersistenceProvider provider: persistenceProviders) {
-            size += provider.getPersistanceSize();
+            size += provider.getPersistenceSize();
         }
         return size;
     }

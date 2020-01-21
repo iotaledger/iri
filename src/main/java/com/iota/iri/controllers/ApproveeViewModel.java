@@ -164,7 +164,7 @@ public class ApproveeViewModel implements HashesViewModel {
      * @param hash   Hash of item to evict
      */
     public static void cacheDelete(Tangle tangle, Indexable hash) {
-        tangle.getCache(ApproveeViewModel.class).evict(hash);
+        tangle.getCache(ApproveeViewModel.class).release(hash);
     }
 
     /**
@@ -181,7 +181,7 @@ public class ApproveeViewModel implements HashesViewModel {
                 ApproveeViewModel approveeViewModel = cache.get(hash);
                 if (approveeViewModel != null) {
                     approveeViewModel.store(tangle);
-                    cache.evict(approveeViewModel.hash);
+                    cache.release(approveeViewModel.hash);
                 }
             }
         }

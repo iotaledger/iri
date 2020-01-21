@@ -84,7 +84,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void evict(K key) {
+    public void release(K key) {
         if (key == null || !strongStore.containsKey(key)) {
             return;
         }
@@ -97,16 +97,16 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void evict() {
+    public void release() {
         for (int i = 0; i < cacheConfiguration.getEvictionCount(); i++) {
-            evict(evictionQueue.peek());
+            release(evictionQueue.peek());
         }
     }
 
     @Override
-    public void evict(List<K> keys) {
+    public void release(List<K> keys) {
         keys.forEach(key -> {
-            evict(key);
+            release(key);
         });
     }
 

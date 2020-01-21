@@ -45,21 +45,21 @@ public interface Cache<K, V> {
     void put(K key, V value);
 
     /**
-     * Evict the specified key from the cache
+     * Release the specified key from the cache
      * 
      * @param key
      */
-    void evict(K key);
+    void release(K key);
 
     /**
-     * Evict expired items from the cache according to its {@link CacheConfiguration}.
+     * Release expired items from the cache according to its {@link CacheConfiguration}.
      */
-    void evict();
+    void release();
 
     /**
-     * Evict all items specified in the given collection
+     * Release all items specified in the given collection
      */
-    void evict(List<K> keys);
+    void release(List<K> keys);
 
     /**
      * Clear the cache by removing all mappings

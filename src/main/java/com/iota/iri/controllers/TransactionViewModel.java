@@ -999,7 +999,7 @@ public class TransactionViewModel {
                 if (tvm != null) {
                     if (!tvm.getIsCacheEntryFresh()) {
                         batch.addAll(tvm.getSaveBatch());
-                        cache.evict(tvm.getHash());
+                        cache.release(tvm.getHash());
                     }
                 }
             }
@@ -1015,7 +1015,7 @@ public class TransactionViewModel {
     public static void cacheDelete(Tangle tangle, Hash hash) {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         if (cache != null) {
-            cache.evict(hash);
+            cache.release(hash);
         }
     }
 

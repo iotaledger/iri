@@ -270,7 +270,7 @@ public class MilestoneViewModel {
      * @param index  index of milestone to evict
      */
     public static void cacheDelete(Tangle tangle, IntegerIndex index) {
-        getCache(tangle).evict(index);
+        getCache(tangle).release(index);
     }
 
     /**
@@ -289,7 +289,7 @@ public class MilestoneViewModel {
             if (index != null) {
                 MilestoneViewModel milestoneViewModel = cache.get(index);
                 if (milestoneViewModel != null) {
-                    cache.evict(index);
+                    cache.release(index);
                 }
             }
         }

@@ -1,14 +1,13 @@
 from aloe import *
 from util import static_vals
+from util import logger as log
 from util.test_logic import api_test_logic as api_utils
 from util.threading_logic import pool_logic as pool
 from util.neighbor_logic import neighbor_logic as neighbors
 from util.response_logic import response_handling as responses
 from time import sleep, time
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = log.getLogger(__name__)
 
 testAddress = static_vals.TEST_ADDRESS
 

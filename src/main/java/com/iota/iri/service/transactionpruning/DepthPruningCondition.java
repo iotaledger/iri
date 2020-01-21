@@ -32,7 +32,8 @@ public class DepthPruningCondition implements PruningCondition {
     @Override
     public boolean shouldPrune() throws TransactionPruningException {
         try {
-            return getSnapshotPruningMilestone() > MilestoneViewModel.first(tangle).index();
+            MilestoneViewModel milestonevm = MilestoneViewModel.first(tangle);
+            return milestonevm != null && getSnapshotPruningMilestone() > milestonevm.index();
         } catch (Exception e) {
             throw new TransactionPruningException("Unable to determine start milestone", e);
         }

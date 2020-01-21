@@ -3,7 +3,12 @@ package com.iota.iri.service.snapshot.impl;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.snapshot.LocalSnapshotManager;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotCondition;
+import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.transactionpruning.PruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
@@ -190,8 +195,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 log.info("Pruning at index {}", pruningMilestoneIndex);
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
                 snapshotService.pruneSnapshotData(transactionPruner, pruningMilestoneIndex);
-            }
-            else {
+            } else {
                 log.debug("Can't prune at index {}", pruningMilestoneIndex);
             }
         } catch (SnapshotException e) {

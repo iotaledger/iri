@@ -1,15 +1,5 @@
 package com.iota.iri.service.snapshot.impl;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
@@ -31,6 +21,16 @@ import com.iota.iri.utils.dag.DAGHelper;
 import com.iota.iri.utils.dag.TraversalException;
 import com.iota.iri.utils.log.ProgressLogger;
 import com.iota.iri.utils.log.interval.IntervalProgressLogger;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -207,12 +207,12 @@ public class SnapshotServiceImpl implements SnapshotService {
         
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
-        persistLocalSnapshot(snapshotProvider, newSnapshot);
         if (transactionPruner != null) {
             cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
                 newSnapshot.getSolidEntryPoints(), transactionPruner);
         }
-        
+
+        persistLocalSnapshot(snapshotProvider, newSnapshot);
         return newSnapshot;
     }
 

@@ -1,5 +1,4 @@
 from aloe import world, step
-from util.response_logic import response_handling as response_handling
 from util.test_logic import api_test_logic as api_utils
 from util.test_logic import value_fetch_logic
 from util.response_logic import response_handling as response_handling

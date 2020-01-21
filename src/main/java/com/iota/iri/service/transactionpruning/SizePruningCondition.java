@@ -88,7 +88,7 @@ public class SizePruningCondition implements PruningCondition {
         int initialIndex;
         try {
             Pair<Indexable, Persistable> ms = tangle.getFirst(Milestone.class, IntegerIndex.class);
-            if (ms == null) {
+            if (ms == null || ms.low == null) {
                 return -1;
             }
             

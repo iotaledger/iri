@@ -396,12 +396,12 @@ public class SnapshotServiceImpl implements SnapshotService {
      * This method determines the milestone that shall be used for the local snapshot.
      * </p>
      * <p>
-     * It determines the milestone by subtracting the {@link SnapshotConfig#getLocalSnapshotsDepth()} from the latest
-     * solid milestone index and retrieving the next milestone before this point.
+     * It determines the milestone by finding the closest previous milestone in the database
      * </p>
      * 
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
+     * @param lowestIndex the determined index of the lowest milestone we can snapshot
      * @return the target milestone for the local snapshot
      * @throws SnapshotException if anything goes wrong while determining the target milestone for the local snapshot
      */

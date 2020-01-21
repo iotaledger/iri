@@ -45,21 +45,35 @@ public interface Cache<K, V> {
     void put(K key, V value);
 
     /**
-     * Release the specified key from the cache
+     * Release the specified key from the cache and puts it in the weak store.
      * 
      * @param key
      */
     void release(K key);
 
     /**
-     * Release expired items from the cache according to its {@link CacheConfiguration}.
+     * Release expired items from the cache according to its {@link CacheConfiguration} and puts it in the weak store.
      */
     void release();
 
     /**
-     * Release all items specified in the given collection
+     * Release all items specified in the given collection and puts them in the weak store.
      */
     void release(List<K> keys);
+
+    /**
+     * Permanently deletes an item from cache. It does not put it in the weak store.
+     * 
+     * @param key The key to delete
+     */
+    void delete(K key);
+
+    /**
+     * Permanently deltes a list of items from cache. It does not put them in the weak store.
+     * 
+     * @param keys The keys to delete
+     */
+    void delete(List<K> keys);
 
     /**
      * Clear the cache by removing all mappings

@@ -50,11 +50,11 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         }
         V value = strongStore.get(key);
 
-        // if (value == null && weakStore.containsKey(key)) {
-        // put(key, weakStore.get(key));
-        // value = strongStore.get(key);
-        // weakStore.remove(key);
-        // }
+        if (value == null && weakStore.containsKey(key)) {
+            put(key, weakStore.get(key));
+            value = strongStore.get(key);
+            weakStore.remove(key);
+        }
         if (value != null) {
             cacheHit();
         } else {
@@ -108,6 +108,20 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         keys.forEach(key -> {
             release(key);
         });
+    }
+
+    @Override
+    public void delete(K key) {
+        if (key == null || !strongStore.containsKey(key)) {
+            return;
+        }
+        strongStore.remove(key);
+        evictionQueue.remove(key);
+    }
+
+    @Override
+    public void delete(List<K> keys) {
+        keys.forEach(key -> delete(key));
     }
 
     @Override

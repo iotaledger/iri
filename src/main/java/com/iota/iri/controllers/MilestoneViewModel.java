@@ -211,6 +211,7 @@ public class MilestoneViewModel {
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Milestone.class, milestone.index);
+        cacheDelete(tangle, milestone.index);
     }
 
     /**

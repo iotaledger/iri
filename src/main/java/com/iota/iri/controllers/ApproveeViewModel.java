@@ -129,7 +129,7 @@ public class ApproveeViewModel implements HashesViewModel {
     @Override
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Approvee.class,hash);
-        cacheRelease(tangle, hash);
+        cacheDelete(tangle, hash);
     }
 
     @Override
@@ -158,13 +158,16 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     /**
-     * Releases the item with the specified hash from cache. Delegates to {@link Cache#release(Object)}
-     * 
+     * Deletes the item with the specified hash fro the cache. Delegates to {@link Cache#delete(Object)}
+     *
      * @param tangle Tangle
-     * @param hash   Hash of item to release
+     * @param hash   Hash of the item to delete
      */
-    public static void cacheRelease(Tangle tangle, Indexable hash) {
-        tangle.getCache(ApproveeViewModel.class).release(hash);
+    private static void cacheDelete(Tangle tangle, Indexable hash) {
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache != null) {
+            cache.delete(hash);
+        }
     }
 
     /**

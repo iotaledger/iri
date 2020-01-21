@@ -61,7 +61,7 @@ public class SizePruningConditionTest {
                 new Pair<>(new IntegerIndex(5), new Milestone()));
         
         
-        assertEquals("Starting milestone should be 5 above the initial index", 10,
+        assertEquals("Starting milestone should be " + SizePruningCondition.MILESTONES + " above the initial index", 5 + SizePruningCondition.MILESTONES,
                 condition.getSnapshotPruningMilestone());
     }
 }

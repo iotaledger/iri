@@ -85,9 +85,6 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
-    // true if entry is fresh. False if dirty
-    private boolean isCacheEntryFresh = true;
-
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
      * it will return with no response. If the {@link Transaction} object has not been parsed, and the
@@ -310,15 +307,7 @@ public class TransactionViewModel {
             return;
         }
 
-        TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
-        if (cachedTvm != null) {
-            this.isCacheEntryFresh = false;
-        }
         cachePut(tangle, this, hash);
-    }
-
-    private void updateDB(Tangle tangle, Transaction transaction, Hash hash, String item) throws Exception {
-        tangle.update(transaction, hash, item);
     }
 
     /**
@@ -993,19 +982,21 @@ public class TransactionViewModel {
     public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
+        List<Indexable> hashesToRelease = new ArrayList<>();
+
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable hash = cache.nextReleaseKey();
+            Indexable hash = releaseQueue.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
                 if (tvm != null) {
-                    if (!tvm.getIsCacheEntryFresh()) {
-                        batch.addAll(tvm.getSaveBatch());
-                        cache.release(tvm.getHash());
-                    }
+                    batch.addAll(tvm.getSaveBatch());
+                    hashesToRelease.add(hash);
                 }
             }
         }
         tangle.saveBatch(batch);
+        cache.release(hashesToRelease);
     }
 
     /**
@@ -1034,12 +1025,4 @@ public class TransactionViewModel {
         }
     }
 
-    /**
-     * The state of the cache entry
-     *
-     * @return True if fresh. False otherwise
-     */
-    public boolean getIsCacheEntryFresh() {
-        return isCacheEntryFresh;
-    }
 }

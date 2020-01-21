@@ -3,10 +3,7 @@ package com.iota.iri.cache.impl;
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
@@ -155,7 +152,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public K nextReleaseKey() {
-        return releaseQueue.peek();
+    public Queue<K> getReleaseQueue() {
+        return new ConcurrentLinkedQueue<>(releaseQueue);
     }
 }

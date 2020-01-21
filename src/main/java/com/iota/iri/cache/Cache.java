@@ -3,6 +3,7 @@ package com.iota.iri.cache;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 /**
  * Cache operations
@@ -102,9 +103,9 @@ public interface Cache<K, V> {
     CacheConfiguration getConfiguration();
 
     /**
-     * Poll and return the next key to release from cache
+     * Gets the release queue
      * 
-     * @return The key to release
+     * @return The release queue
      */
-    K nextReleaseKey();
+    Queue<K> getReleaseQueue();
 }

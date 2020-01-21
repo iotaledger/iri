@@ -12,6 +12,10 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+
 /**
  * Acts as a controller interface for a {@link Milestone} hash object. This controller is used by the
  * {@link com.iota.iri.MilestoneTracker} to manipulate a {@link Milestone} object.
@@ -285,14 +289,22 @@ public class MilestoneViewModel {
         if (cache == null) {
             return;
         }
+        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+        List<Indexable> indicesToRelease = new ArrayList<>();
+
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable index = cache.nextReleaseKey();
+            Indexable index = releaseQueue.poll();
             if (index != null) {
                 MilestoneViewModel milestoneViewModel = cache.get(index);
                 if (milestoneViewModel != null) {
-                    cache.release(index);
+                    batch.add(new Pair<>(index, milestoneViewModel.milestone));
+                    indicesToRelease.add(index);
                 }
             }
         }
+
+        tangle.saveBatch(batch);
+        cache.release(indicesToRelease);
     }
 }

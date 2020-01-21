@@ -10,6 +10,9 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -178,16 +181,22 @@ public class ApproveeViewModel implements HashesViewModel {
      */
     public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
+        List<Indexable> hashesToRelease = new ArrayList<>();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable hash = cache.nextReleaseKey();
+            Indexable hash = releaseQueue.poll();
             if (hash != null) {
                 ApproveeViewModel approveeViewModel = cache.get(hash);
                 if (approveeViewModel != null) {
-                    approveeViewModel.store(tangle);
-                    cache.release(approveeViewModel.hash);
+                    batch.add(new Pair<>(approveeViewModel.hash, approveeViewModel.self));
+                    hashesToRelease.add(hash);
                 }
             }
         }
-    }
 
+        tangle.saveBatch(batch);
+        cache.release(hashesToRelease);
+    }
 }

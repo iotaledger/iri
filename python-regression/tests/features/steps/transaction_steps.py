@@ -218,5 +218,6 @@ def wait_for_update(index, api):
             break
         i += 1
         sleep(1)
+        logger.info("Waiting... {}".format(i))
 
     assert updated is True, "The node was unable to update to index {}".format(index)

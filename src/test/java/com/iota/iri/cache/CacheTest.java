@@ -17,8 +17,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.Spy;
 
 public class CacheTest {
 
@@ -27,15 +26,15 @@ public class CacheTest {
     private static final Hash hash = HashFactory.TRANSACTION.create(TEST_TRANSACTION_HASH);
     private static final Hash hash1 = HashFactory.TRANSACTION.create(TEST_TRANSACTION_HASH1);
 
-    @Mock
+    @Spy
     private Cache<Indexable, TransactionViewModel> cache;
-    @Mock
+    @Spy
     private CacheConfiguration cacheConfiguration;
 
     @Before
     public void setUp() {
-        cacheConfiguration = Mockito.spy(new CacheConfigurationImpl(100, 10));
-        cache = Mockito.spy(new CacheImpl<>(cacheConfiguration));
+        cacheConfiguration = new CacheConfigurationImpl(100, 10);
+        cache = new CacheImpl<>(cacheConfiguration);
     }
 
     @After

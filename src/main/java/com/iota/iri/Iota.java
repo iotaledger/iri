@@ -1,10 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.cache.CacheManager;
-import com.iota.iri.cache.impl.CacheConfigurationImpl;
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.controllers.ApproveeViewModel;
-import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.NeighborRouter;
@@ -108,6 +105,7 @@ public class Iota {
     public final TipSelector tipsSelector;
 
     public LocalSnapshotsPersistenceProvider localSnapshotsDb;
+    public final CacheManager cacheManager;
 
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
@@ -115,7 +113,17 @@ public class Iota {
      * @param configuration Information about how this node will be configured.
      *
      */
-    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb) {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider,
+            SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
+            SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
+            MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
+            LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
+            LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+            CacheManager cacheManager) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -144,6 +152,7 @@ public class Iota {
         this.transactionValidator = transactionValidator;
 
         this.tipsSelector = tipsSelector;
+        this.cacheManager = cacheManager;
     }
 
     private void initDependencies() throws SnapshotException, SpentAddressesException {
@@ -279,21 +288,10 @@ public class Iota {
                 throw new NotImplementedException("No such database type.");
             }
         }
-        initializeCaches(tangle);
+        tangle.setCacheManager(cacheManager);
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
-    }
-
-    private void initializeCaches(Tangle tangle) {
-        log.info("initializing caches");
-        CacheManager cacheManager = tangle.getCacheManager();
-        cacheManager.add(TransactionViewModel.class,
-                new CacheConfigurationImpl(configuration.getTxBatchWrite(), configuration.getTxBatchEvictionCount()));
-        cacheManager.add(ApproveeViewModel.class,
-                new CacheConfigurationImpl(configuration.getTxBatchWrite(), configuration.getTxBatchEvictionCount()));
-        cacheManager.add(MilestoneViewModel.class, new CacheConfigurationImpl(configuration.getMilestoneBatchWrite(),
-                configuration.getMilestoneBatchEvictionCount()));
     }
 
     /**

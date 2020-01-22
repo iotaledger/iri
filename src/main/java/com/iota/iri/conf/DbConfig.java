@@ -55,32 +55,32 @@ public interface DbConfig extends Config {
     boolean isRescanDb();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#TX_BATCH_WRITE}
+     * Default Value: {@value BaseIotaConfig.Defaults#TX_CACHE_SIZE}
      *
-     * @return {@value DbConfig.Descriptions#TX_BATCH_WRITE}
+     * @return {@value DbConfig.Descriptions#TX_CACHE_SIZE}
      */
-    long getTxBatchWrite();
+    long getTxCacheSize();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_BATCH_WRITE}
+     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_CACHE_SIZE}
      *
-     * @return {@value DbConfig.Descriptions#MILESTONE_BATCH_WRITE}
+     * @return {@value DbConfig.Descriptions#MILESTONE_CACHE_SIZE}
      */
     int getMilestoneBatchWrite();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#TX_BATCH_EVICTION_COUNT}
+     * Default Value: {@value BaseIotaConfig.Defaults#TX_CACHE_RELEASE_COUNT}
      *
-     * @return {@value DbConfig.Descriptions#TX_BATCH_EVICTION_COUNT}
+     * @return {@value DbConfig.Descriptions#TX_BATCH_RELEASE_COUNT}
      */
-    int getTxBatchEvictionCount();
+    int getTxCacheReleaseCount();
 
     /**
-     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_BATCH_EVICTION_COUNT}
+     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_CACHE_RELEASE_COUNT}
      *
-     * @return {@value DbConfig.Descriptions#MILESTONE_BATCH_EVICTION_COUNT}
+     * @return {@value DbConfig.Descriptions#MILESTONE_BATCH_RELEASE_COUNT}
      */
-    int getMilestoneBatchEvictionCount();
+    int getMilestoneCacheReleaseCount();
 
     interface Descriptions {
 
@@ -92,9 +92,9 @@ public interface DbConfig extends Config {
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
         String DB_CONFIG_FILE = "The location of the RocksDB configuration file";
-        String TX_BATCH_WRITE = "The size of the tangle cache for transactions";
-        String MILESTONE_BATCH_WRITE = "The size of the tangle cache for milestones";
-        String TX_BATCH_EVICTION_COUNT = "The number of transactions to evict from cache";
-        String MILESTONE_BATCH_EVICTION_COUNT = "The number of milestones to evict from cache";
+        String TX_CACHE_SIZE = "The size of the tangle cache for transactions";
+        String MILESTONE_CACHE_SIZE = "The size of the tangle cache for milestones";
+        String TX_BATCH_RELEASE_COUNT = "The number of transactions to release from cache";
+        String MILESTONE_BATCH_RELEASE_COUNT = "The number of milestones to release from cache";
     }
 }

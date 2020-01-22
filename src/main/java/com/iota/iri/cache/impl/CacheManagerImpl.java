@@ -34,19 +34,19 @@ public class CacheManagerImpl implements CacheManager {
 
     private void initializeCaches() {
         add(TransactionViewModel.class,
-                new CacheConfigurationImpl(dbConfig.getTxBatchWrite(), dbConfig.getTxBatchEvictionCount()));
+                new CacheConfigurationImpl(dbConfig.getTxCacheSize(), dbConfig.getTxCacheReleaseCount()));
         add(ApproveeViewModel.class,
-                new CacheConfigurationImpl(dbConfig.getTxBatchWrite(), dbConfig.getTxBatchEvictionCount()));
+                new CacheConfigurationImpl(dbConfig.getTxCacheSize(), dbConfig.getTxCacheReleaseCount()));
         add(MilestoneViewModel.class, new CacheConfigurationImpl(dbConfig.getMilestoneBatchWrite(),
-                dbConfig.getMilestoneBatchEvictionCount()));
+                dbConfig.getMilestoneCacheReleaseCount()));
     }
 
     @Override
     public <V> Cache<Indexable, V> getCache(Class<V> type) {
         Cache<Indexable, V> cache = cacheMap.get(type);
         if (cache == null) {
-            return add(type, new CacheConfigurationImpl(BaseIotaConfig.Defaults.TX_BATCH_WRITE,
-                    BaseIotaConfig.Defaults.TX_BATCH_EVICTION_COUNT));
+            return add(type, new CacheConfigurationImpl(BaseIotaConfig.Defaults.TX_CACHE_SIZE,
+                    BaseIotaConfig.Defaults.TX_CACHE_RELEASE_COUNT));
         }
         return cache;
     }

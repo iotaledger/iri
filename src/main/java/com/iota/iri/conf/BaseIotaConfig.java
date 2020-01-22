@@ -70,10 +70,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
     // Cache
-    protected long txBatchWrite = Defaults.TX_BATCH_WRITE;
-    protected int milestoneBatchWrite = Defaults.MILESTONE_BATCH_WRITE;
-    protected int txBatchEvictionCount = Defaults.TX_BATCH_EVICTION_COUNT;
-    protected int milestoneBatchEvictionCount = Defaults.MILESTONE_BATCH_EVICTION_COUNT;
+    protected long txCacheSize = Defaults.TX_CACHE_SIZE;
+    protected int milestoneBatchWrite = Defaults.MILESTONE_CACHE_SIZE;
+    protected int txCacheReleaseCount = Defaults.TX_CACHE_RELEASE_COUNT;
+    protected int milestoneCacheReleaseCount = Defaults.MILESTONE_CACHE_RELEASE_COUNT;
 
     //Protocol
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
@@ -446,18 +446,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public long getTxBatchWrite() {
-        return txBatchWrite;
+    public long getTxCacheSize() {
+        return txCacheSize;
     }
 
     @JsonProperty
-    @Parameter(names = { "--tx-batch-write" }, description = DbConfig.Descriptions.TX_BATCH_WRITE)
-    protected void setTxBatchWrite(long txBatchWrite) {
-        if (txBatchWrite < 1 || txBatchWrite > Defaults.MAX_TX_BATCH_WRITE) {
-            throw new ParameterException("TX_BATCH_WRITE should be between 1 and " + Defaults.MAX_TX_BATCH_WRITE
-                    + ". (found " + txBatchWrite + ")");
+    @Parameter(names = { "--tx-cache-size" }, description = DbConfig.Descriptions.TX_CACHE_SIZE)
+    protected void setTxCacheSize(long txCacheSize) {
+        if (txCacheSize < 1 || txCacheSize > Defaults.MAX_TX_CACHE_SIZE) {
+            throw new ParameterException("TX_CACHE_SIZE should be between 1 and " + Defaults.MAX_TX_CACHE_SIZE
+                    + ". (found " + txCacheSize + ")");
         }
-        this.txBatchWrite = txBatchWrite;
+        this.txCacheSize = txCacheSize;
     }
 
     @Override
@@ -466,45 +466,44 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = { "--milestone-batch-write" }, description = DbConfig.Descriptions.MILESTONE_BATCH_WRITE)
+    @Parameter(names = { "--milestone-cache-size" }, description = DbConfig.Descriptions.MILESTONE_CACHE_SIZE)
     protected void setMilestoneBatchWrite(int milestoneBatchWrite) {
-        if (milestoneBatchWrite < 1 || milestoneBatchWrite > Defaults.MAX_MILESTONE_BATCH_WRITE) {
-            throw new ParameterException("MILESTONE_BATCH_WRITE should be between 1 and "
-                    + Defaults.MAX_MILESTONE_BATCH_WRITE + ". (found " + milestoneBatchWrite + ")");
+        if (milestoneBatchWrite < 1 || milestoneBatchWrite > Defaults.MAX_MILESTONE_CACHE_SIZE) {
+            throw new ParameterException("MILESTONE_CACHE_SIZE should be between 1 and "
+                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneBatchWrite + ")");
         }
         this.milestoneBatchWrite = milestoneBatchWrite;
     }
 
     @Override
-    public int getTxBatchEvictionCount() {
-        return txBatchEvictionCount;
+    public int getTxCacheReleaseCount() {
+        return txCacheReleaseCount;
     }
 
     @JsonProperty
-    @Parameter(names = { "--tx-batch-eviction-count" }, description = DbConfig.Descriptions.TX_BATCH_EVICTION_COUNT)
-    protected void setTxBatchEvictionCount(int txBatchEvictionCount) {
-        if (txBatchEvictionCount < 1 || txBatchEvictionCount > Defaults.MAX_TX_BATCH_EVICTION_COUNT) {
-            throw new ParameterException("TX_BATCH_EVICTION_COUNT should be between 1 and "
-                    + Defaults.MAX_TX_BATCH_EVICTION_COUNT + " .(found " + txBatchEvictionCount + ")");
+    @Parameter(names = { "--tx-cache-release-count" }, description = DbConfig.Descriptions.TX_BATCH_RELEASE_COUNT)
+    protected void setTxCacheReleaseCount(int txCacheReleaseCount) {
+        if (txCacheReleaseCount < 1 || txCacheReleaseCount > Defaults.MAX_TX_CACHE_RELEASE_COUNT) {
+            throw new ParameterException("TX_CACHE_RELEASE_COUNT should be between 1 and "
+                    + Defaults.MAX_TX_CACHE_RELEASE_COUNT + " .(found " + txCacheReleaseCount + ")");
         }
-        this.txBatchEvictionCount = txBatchEvictionCount;
+        this.txCacheReleaseCount = txCacheReleaseCount;
     }
 
     @Override
-    public int getMilestoneBatchEvictionCount() {
-        return milestoneBatchEvictionCount;
+    public int getMilestoneCacheReleaseCount() {
+        return milestoneCacheReleaseCount;
     }
 
     @JsonProperty
-    @Parameter(names = { "--milestone-batch-eviction-count" },
-            description = DbConfig.Descriptions.MILESTONE_BATCH_EVICTION_COUNT)
-    protected void setMilestoneBatchEvictionCount(int milestoneBatchEvictionCount) {
-        if (milestoneBatchEvictionCount < 1
-                || milestoneBatchEvictionCount > Defaults.MAX_MILESTONE_BATCH_EVICTION_COUNT) {
-            throw new ParameterException("MILESTONE_BATCH_EVICTION_COUNT should be between 1 and "
-                    + Defaults.MAX_MILESTONE_BATCH_EVICTION_COUNT + " .(found " + milestoneBatchEvictionCount + ")");
+    @Parameter(names = { "--milestone-cache-release-count" },
+            description = DbConfig.Descriptions.MILESTONE_BATCH_RELEASE_COUNT)
+    protected void setMilestoneCacheReleaseCount(int milestoneCacheReleaseCount) {
+        if (milestoneCacheReleaseCount < 1 || milestoneCacheReleaseCount > Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT) {
+            throw new ParameterException("MILESTONE_CACHE_RELEASE_COUNT should be between 1 and "
+                    + Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT + " .(found " + milestoneCacheReleaseCount + ")");
         }
-        this.milestoneBatchEvictionCount = milestoneBatchEvictionCount;
+        this.milestoneCacheReleaseCount = milestoneCacheReleaseCount;
     }
 
     @Override
@@ -938,14 +937,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean RESCAN_DB = false;
 
         // Cache
-        long MAX_TX_BATCH_WRITE = 1000;
-        int MAX_MILESTONE_BATCH_WRITE = 30;
-        int MAX_TX_BATCH_EVICTION_COUNT = 10;
-        int MAX_MILESTONE_BATCH_EVICTION_COUNT = 10;
-        long TX_BATCH_WRITE = MAX_TX_BATCH_WRITE;
-        int MILESTONE_BATCH_WRITE = MAX_MILESTONE_BATCH_WRITE;
-        int TX_BATCH_EVICTION_COUNT = MAX_TX_BATCH_EVICTION_COUNT;
-        int MILESTONE_BATCH_EVICTION_COUNT = MAX_MILESTONE_BATCH_EVICTION_COUNT;
+        long MAX_TX_CACHE_SIZE = 1000;
+        int MAX_MILESTONE_CACHE_SIZE = 30;
+        int MAX_TX_CACHE_RELEASE_COUNT = 10;
+        int MAX_MILESTONE_CACHE_RELEASE_COUNT = 10;
+        long TX_CACHE_SIZE = MAX_TX_CACHE_SIZE;
+        int MILESTONE_CACHE_SIZE = MAX_MILESTONE_CACHE_SIZE;
+        int TX_CACHE_RELEASE_COUNT = MAX_TX_CACHE_RELEASE_COUNT;
+        int MILESTONE_CACHE_RELEASE_COUNT = MAX_MILESTONE_CACHE_RELEASE_COUNT;
 
         //Protocol
         double P_SEND_MILESTONE = 0.02d;

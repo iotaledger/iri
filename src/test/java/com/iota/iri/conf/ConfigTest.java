@@ -81,8 +81,8 @@ public class ConfigTest {
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--test-no-coo-validation", "true",
-                "--tx-batch-write", "100", "--tx-batch-eviction-count", "5", "--milestone-batch-write", "20",
-                "--milestone-batch-eviction-count", "2",
+                "--tx-cache-size", "100", "--tx-cache-release-count", "5", "--milestone-cache-size", "20",
+                "--milestone-cache-release-count", "2",
                 //this should be ignored everywhere
                 "--fake-config"
         };
@@ -121,10 +121,10 @@ public class ConfigTest {
         Assert.assertEquals("--testnet-no-coo-validation", false, iotaConfig.isDontValidateTestnetMilestoneSig());
         //Test default value
         Assert.assertEquals("--local-snapshots-pruning-delay", 40000, iotaConfig.getLocalSnapshotsPruningDelay());
-        Assert.assertEquals("--tx-batch-write", 100, iotaConfig.getTxBatchWrite());
-        Assert.assertEquals("--tx-batch-eviction-count", 5, iotaConfig.getTxBatchEvictionCount());
-        Assert.assertEquals("--milestone-batch-write", 20, iotaConfig.getMilestoneBatchWrite());
-        Assert.assertEquals("--milestone-batch-eviction-count", 2, iotaConfig.getMilestoneBatchEvictionCount());
+        Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
+        Assert.assertEquals("--tx-cache-release-count", 5, iotaConfig.getTxCacheReleaseCount());
+        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneBatchWrite());
+        Assert.assertEquals("--milestone-cache-release-count", 2, iotaConfig.getMilestoneCacheReleaseCount());
     }
 
     @Test
@@ -161,8 +161,8 @@ public class ConfigTest {
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--testnet-no-coo-validation", "true",
-                "--tx-batch-write", "100", "--tx-batch-eviction-count", "5", "--milestone-batch-write", "20",
-                "--milestone-batch-eviction-count", "2",
+                "--tx-cache-size", "100", "--tx-cache-release-count", "5", "--milestone-cache-size", "20",
+                "--milestone-cache-release-count", "2",
                 //this should be ignored everywhere
                 "--fake-config"
         };
@@ -193,10 +193,10 @@ public class ConfigTest {
         Assert.assertEquals("coo", HashFactory.ADDRESS.create("TTTTTTTTT"), iotaConfig.getCoordinator());
         Assert.assertEquals("--testnet-no-coo-validation", true,
                 iotaConfig.isDontValidateTestnetMilestoneSig());
-        Assert.assertEquals("--tx-batch-write", 100, iotaConfig.getTxBatchWrite());
-        Assert.assertEquals("--tx-batch-eviction-count", 5, iotaConfig.getTxBatchEvictionCount());
-        Assert.assertEquals("--milestone-batch-write", 20, iotaConfig.getMilestoneBatchWrite());
-        Assert.assertEquals("--milestone-batch-eviction-count", 2, iotaConfig.getMilestoneBatchEvictionCount());
+        Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
+        Assert.assertEquals("--tx-cache-release-count", 5, iotaConfig.getTxCacheReleaseCount());
+        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneBatchWrite());
+        Assert.assertEquals("--milestone-cache-release-count", 2, iotaConfig.getMilestoneCacheReleaseCount());
     }
 
     @Test

@@ -7,7 +7,11 @@ import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotMetaData;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
@@ -196,21 +200,30 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner)
+    public Snapshot takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int targetMilestoneIndex)
             throws SnapshotException {
 
-        MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config);
-
+        MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, targetMilestoneIndex);
+        
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
         if (transactionPruner != null) {
             cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
-                    newSnapshot.getSolidEntryPoints(), transactionPruner);
-
-            cleanupOldData(config, transactionPruner, targetMilestone);
+                newSnapshot.getSolidEntryPoints(), transactionPruner);
         }
 
         persistLocalSnapshot(snapshotProvider, newSnapshot);
+        return newSnapshot;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void pruneSnapshotData(TransactionPruner transactionPruner, int pruningMilestoneIndex) throws SnapshotException {
+        if (transactionPruner != null) {
+            cleanupOldData(config, transactionPruner, pruningMilestoneIndex);
+        }
     }
 
     /**
@@ -377,36 +390,32 @@ public class SnapshotServiceImpl implements SnapshotService {
             snapshot.unlockWrite();
         }
     }
-
+    
     /**
      * <p>
      * This method determines the milestone that shall be used for the local snapshot.
      * </p>
      * <p>
-     * It determines the milestone by subtracting the {@link SnapshotConfig#getLocalSnapshotsDepth()} from the latest
-     * solid milestone index and retrieving the next milestone before this point.
+     * It determines the milestone by finding the closest previous milestone in the database
      * </p>
      * 
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
-     * @param config important snapshot related configuration parameters
+     * @param lowestIndex the determined index of the lowest milestone we can snapshot
      * @return the target milestone for the local snapshot
      * @throws SnapshotException if anything goes wrong while determining the target milestone for the local snapshot
      */
     private MilestoneViewModel determineMilestoneForLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider,
-            SnapshotConfig config) throws SnapshotException {
-
-        int targetMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
-
+            int lowestIndex) throws SnapshotException {
         MilestoneViewModel targetMilestone;
         try {
-            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, targetMilestoneIndex,
+            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, lowestIndex,
                     snapshotProvider.getInitialSnapshot().getIndex());
         } catch (Exception e) {
             throw new SnapshotException("could not load the target milestone", e);
         }
         if (targetMilestone == null) {
-            throw new SnapshotException("missing milestone with an index of " + targetMilestoneIndex + " or lower");
+            throw new SnapshotException("missing milestone with an index of " + lowestIndex + " or lower");
         }
 
         return targetMilestone;
@@ -462,13 +471,11 @@ public class SnapshotServiceImpl implements SnapshotService {
      * 
      * @param config important snapshot related configuration parameters
      * @param transactionPruner  manager for the pruning jobs that takes care of cleaning up the old data that
-     * @param targetMilestone milestone that was used as a reference point for the local snapshot
+     * @param targetIndex target milestone we use to prune anything older
      * @throws SnapshotException if anything goes wrong while issuing the cleanup jobs
      */
     private void cleanupOldData(SnapshotConfig config, TransactionPruner transactionPruner,
-            MilestoneViewModel targetMilestone) throws SnapshotException {
-
-        int targetIndex = targetMilestone.index() - config.getLocalSnapshotsPruningDelay();
+            int targetIndex) throws SnapshotException {
         int startingIndex = config.getMilestoneStartIndex() + 1;
 
         try {

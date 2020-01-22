@@ -85,6 +85,9 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
+    // true if entry is fresh. False if dirty
+    private boolean cacheEntryFresh = true;
+
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
      * it will return with no response. If the {@link Transaction} object has not been parsed, and the
@@ -307,6 +310,10 @@ public class TransactionViewModel {
             return;
         }
 
+        TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
+        if (cachedTvm != null) {
+            this.cacheEntryFresh = false;
+        }
         cachePut(tangle, this, hash);
     }
 
@@ -989,7 +996,7 @@ public class TransactionViewModel {
             Indexable hash = releaseQueue.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
-                if (tvm != null) {
+                if (tvm != null && !tvm.isCacheEntryFresh()) {
                     batch.addAll(tvm.getSaveBatch());
                     hashesToRelease.add(hash);
                 }
@@ -1023,6 +1030,15 @@ public class TransactionViewModel {
         if (cache != null) {
             cache.delete(hashes);
         }
+    }
+
+    /**
+     * The state of the cache entry. A fresh entry is one that has not been updated before.
+     *
+     * @return True if fresh. False otherwise
+     */
+    public boolean isCacheEntryFresh() {
+        return cacheEntryFresh;
     }
 
 }

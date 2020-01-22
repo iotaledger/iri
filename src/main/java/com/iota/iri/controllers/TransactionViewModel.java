@@ -236,7 +236,11 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error determining if the transaction exists or not
      */
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {
-        return tangle.getCache(TransactionViewModel.class).get(hash) != null || tangle.exists(Transaction.class, hash);
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            return cache.get(hash) != null || tangle.exists(Transaction.class, hash);
+        }
+        return tangle.exists(Transaction.class, hash);
     }
 
     /**
@@ -310,7 +314,13 @@ public class TransactionViewModel {
             return;
         }
 
-        TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache == null) {
+            updateDB(tangle, transaction, hash, item);
+            return;
+        }
+
+        TransactionViewModel cachedTvm = cache.get(hash);
         if (cachedTvm != null) {
             this.isCacheEntryFresh = false;
         }
@@ -444,8 +454,12 @@ public class TransactionViewModel {
         // non-cached operations.
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
         cacheApprovees(tangle);
-        if (tangle.getCache(TransactionViewModel.class).get(hash) == null) {
-            cachePut(tangle, this, hash);
+
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            if (cache.get(hash) == null) {
+                cachePut(tangle, this, hash);
+            }
         }
 
         if (tangle.exists(Transaction.class, hash)) {
@@ -457,6 +471,9 @@ public class TransactionViewModel {
 
     private void cacheApprovees(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> approveeViewModelCache = tangle.getCache(ApproveeViewModel.class);
+        if (approveeViewModelCache == null) {
+            return;
+        }
         ApproveeViewModel branchViewModel = ApproveeViewModel.load(tangle, getBranchTransactionHash());
         branchViewModel.addHash(hash);
         approveeViewModelCache.put(getBranchTransactionHash(), branchViewModel);
@@ -978,6 +995,9 @@ public class TransactionViewModel {
      */
     private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache == null) {
+            return;
+        }
         if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
             cacheEvict(tangle);
         }
@@ -991,6 +1011,9 @@ public class TransactionViewModel {
      */
     public static void cacheEvict(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache == null) {
+            return;
+        }
         for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
             Indexable hash = cache.nextEvictionKey();
             if (hash != null) {
@@ -1011,7 +1034,10 @@ public class TransactionViewModel {
      * @param hash hash to evict
      */
     private static void cacheDelete(Tangle tangle, Hash hash) {
-        tangle.getCache(TransactionViewModel.class).evict(hash);
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            cache.evict(hash);
+        }
     }
 
     /**

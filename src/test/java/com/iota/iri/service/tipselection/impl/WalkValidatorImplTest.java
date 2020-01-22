@@ -1,6 +1,7 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.TransactionTestUtils;
+import com.iota.iri.cache.Cache;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -8,26 +9,22 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
+import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.HashSet;
+
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
 import static com.iota.iri.TransactionTestUtils.getTransactionHash;
-
-import java.util.HashMap;
-import java.util.HashSet;
+import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
 
 public class WalkValidatorImplTest {
     
@@ -54,7 +51,10 @@ public class WalkValidatorImplTest {
 
     @After
     public void clearCache(){
-        tangle.getCache(TransactionViewModel.class).clear();
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            cache.clear();
+        }
     }
 
     @BeforeClass

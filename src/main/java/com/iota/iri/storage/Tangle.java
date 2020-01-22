@@ -8,26 +8,13 @@ import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQueueProvider;
 
 import javax.naming.OperationNotSupportedException;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -58,6 +45,7 @@ public class Tangle {
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
     private CacheManager cacheManager;
+    private boolean isCacheEnabled = true;
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -398,7 +386,28 @@ public class Tangle {
      * @return The cache with the specified type
      */
     public <T> Cache<Indexable, T> getCache(Class<T> type){
-       return getCacheManager().getCache(type);
+        if (!isCacheEnabled) {
+            return null;
+        }
+        return getCacheManager().getCache(type);
+    }
+
+    /**
+     * Gets if caching is enabled or not.
+     * 
+     * @return True if caching is enabled. Else, returns false.
+     */
+    public boolean isCacheEnabled() {
+        return isCacheEnabled;
+    }
+
+    /**
+     * Sets caching on or off.
+     * 
+     * @param cacheEnabled The value to set.
+     */
+    public void setCacheEnabled(boolean cacheEnabled) {
+        isCacheEnabled = cacheEnabled;
     }
 
     /**

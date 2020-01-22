@@ -996,9 +996,9 @@ public class TransactionViewModel {
             Indexable hash = releaseQueue.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
+                hashesToRelease.add(hash);
                 if (tvm != null && !tvm.isCacheEntryFresh()) {
                     batch.addAll(tvm.getSaveBatch());
-                    hashesToRelease.add(hash);
                 }
             }
         }

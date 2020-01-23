@@ -98,11 +98,13 @@ public class TransactionViewModel {
      * @param transactionViewModel The {@link TransactionViewModel} whose Metadata is to be filled.
      * @throws Exception Thrown if the database fails to save the batch of data.
      */
-    public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
+    public static boolean fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
             transactionViewModel.setAttachmentData();
             transactionViewModel.setMetadata();
+            return true;
         }
+        return false;
     }
 
     /**
@@ -124,8 +126,9 @@ public class TransactionViewModel {
         if (cache != null) {
             transactionViewModel = cache.get(hashIdentifier);
             if (transactionViewModel != null) {
-                fillMetadata(tangle, transactionViewModel);
-                cachePut(tangle, transactionViewModel, hashIdentifier);
+                if (fillMetadata(tangle, transactionViewModel)) {
+                    cachePut(tangle, transactionViewModel, hashIdentifier);
+                }
                 return transactionViewModel;
             }
         }
@@ -156,8 +159,9 @@ public class TransactionViewModel {
         if (cache != null) {
             transactionViewModel = cache.get(hash);
             if (transactionViewModel != null) {
-                fillMetadata(tangle, transactionViewModel);
-                cachePut(tangle, transactionViewModel, hash);
+                if (fillMetadata(tangle, transactionViewModel)) {
+                    cachePut(tangle, transactionViewModel, hash);
+                }
                 return transactionViewModel;
             }
         }

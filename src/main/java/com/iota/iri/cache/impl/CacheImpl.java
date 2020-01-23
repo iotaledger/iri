@@ -82,11 +82,10 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void release(K key) {
-        if (key == null || !strongStore.containsKey(key)) {
+        if (key == null) {
             return;
         }
-        V value = strongStore.get(key);
-        strongStore.remove(key);
+        V value = strongStore.remove(key);
         releaseQueue.remove(key);
         if (value != null) {
             weakStore.put(key, value);
@@ -109,10 +108,11 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void delete(K key) {
-        if (key == null || !strongStore.containsKey(key)) {
+        if (key == null) {
             return;
         }
         strongStore.remove(key);
+        weakStore.remove(key);
         releaseQueue.remove(key);
     }
 

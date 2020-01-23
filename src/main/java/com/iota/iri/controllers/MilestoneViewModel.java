@@ -237,15 +237,10 @@ public class MilestoneViewModel {
      * @param milestoneViewModel milestoneViewModel to cache
      * @param index              index of milestone
      */
-    private static void cachePut(Tangle tangle, MilestoneViewModel milestoneViewModel, Indexable index)
-            throws Exception {
+    private static void cachePut(Tangle tangle, MilestoneViewModel milestoneViewModel, Indexable index) {
         Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
         if (cache == null) {
             return;
-        }
-
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(tangle);
         }
         cache.put(index, milestoneViewModel);
     }

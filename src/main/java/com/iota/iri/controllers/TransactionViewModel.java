@@ -98,13 +98,11 @@ public class TransactionViewModel {
      * @param transactionViewModel The {@link TransactionViewModel} whose Metadata is to be filled.
      * @throws Exception Thrown if the database fails to save the batch of data.
      */
-    public static boolean fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
+    public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
             transactionViewModel.setAttachmentData();
             transactionViewModel.setMetadata();
-            return true;
         }
-        return false;
     }
 
     /**
@@ -126,9 +124,9 @@ public class TransactionViewModel {
         if (cache != null) {
             transactionViewModel = cache.get(hashIdentifier);
             if (transactionViewModel != null) {
-                if (fillMetadata(tangle, transactionViewModel)) {
-                    cachePut(tangle, transactionViewModel, hashIdentifier);
-                }
+                fillMetadata(tangle, transactionViewModel);
+                cachePut(tangle, transactionViewModel, hashIdentifier);
+
                 return transactionViewModel;
             }
         }
@@ -159,9 +157,9 @@ public class TransactionViewModel {
         if (cache != null) {
             transactionViewModel = cache.get(hash);
             if (transactionViewModel != null) {
-                if (fillMetadata(tangle, transactionViewModel)) {
-                    cachePut(tangle, transactionViewModel, hash);
-                }
+                fillMetadata(tangle, transactionViewModel);
+                cachePut(tangle, transactionViewModel, hash);
+
                 return transactionViewModel;
             }
         }
@@ -974,13 +972,9 @@ public class TransactionViewModel {
      * @param tangle Tangle
      * @param transactionViewModel The tvm to cache
      * @param hash the hash of the tvm
-     * @throws Exception Exception
      */
-    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
+    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(tangle);
-        }
         cache.put(hash, transactionViewModel);
     }
 
@@ -1000,8 +994,8 @@ public class TransactionViewModel {
             Indexable hash = releaseQueue.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
-                hashesToRelease.add(hash);
                 if (tvm != null && !tvm.isCacheEntryFresh()) {
+                    hashesToRelease.add(hash);
                     batch.addAll(tvm.getSaveBatch());
                 }
             }

@@ -150,13 +150,9 @@ public class ApproveeViewModel implements HashesViewModel {
      * @param tangle            Tangle
      * @param approveeViewModel The approveeViewModel to cache
      * @param hash              The hash of this viewmodel
-     * @throws Exception Exception
      */
-    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
+    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(tangle);
-        }
         cache.put(hash, approveeViewModel);
     }
 

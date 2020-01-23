@@ -10,17 +10,43 @@ import java.util.concurrent.ConcurrentMap;
 import com.google.common.collect.MapMaker;
 
 /**
- * Cache operations
+ * Implementation of {@link Cache} interface. The cache is mapping from keys to values.
+ * 
+ * Cache entries are added by calling {@link Cache#put(Object, Object)} which adds the mapping to a strong store until
+ * released either manually or when the cache is full according to its {@link CacheConfiguration}. An entry is released
+ * by removing it from the strong store and putting in the weak store.
+ * 
+ * This cache uses a FIFO strategy with the help of a release queue.
+ * 
+ * This cache does not store null keys or null values.
+ * 
+ * A value is gotten by calling {@link Cache#get(Object)} with the specified key.
+ * 
+ * The stores ues a {@link java.util.concurrent.ConcurrentMap} which are thread safe.
+ * 
  */
 public class CacheImpl<K, V> implements Cache<K, V> {
 
-    // Config
+    /**
+     * Configuration used to initialize the stores.
+     */
+
     private final CacheConfiguration cacheConfiguration;
 
-    // Actual store
+    /**
+     * The map to store key-value pairs.
+     */
     private final ConcurrentMap<K, V> strongStore;
-    // weak store. Eligible for GC
+
+    /**
+     * Values in this map are weak and are eligible for garbage collection. If a value is still in this store during a
+     * cache get, it'll be brought back to the strong store.
+     */
     private final ConcurrentMap<K, V> weakStore;
+
+    /**
+     * Cache entries will be released in the order in which they are enqueued.
+     */
     private final ConcurrentLinkedQueue<K> releaseQueue;
 
     // stats
@@ -48,8 +74,8 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         V value = strongStore.get(key);
 
         if (value == null && weakStore.containsKey(key)) {
-            put(key, weakStore.get(key));
-            value = strongStore.get(key);
+            value = weakStore.get(key);
+            put(key, value);
             weakStore.remove(key);
         }
         if (value != null) {
@@ -62,7 +88,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public Map<K, V> getAll(Collection<K> keys) {
-        Map result = new HashMap<K, V>();
+        Map<K, V> result = new HashMap<>();
         keys.stream().forEach(key -> result.put(key, get(key)));
         return result;
     }

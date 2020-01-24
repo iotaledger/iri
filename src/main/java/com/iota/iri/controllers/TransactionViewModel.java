@@ -987,11 +987,11 @@ public class TransactionViewModel {
     public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
-        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
         List<Indexable> hashesToRelease = new ArrayList<>();
 
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable hash = releaseQueue.poll();
+            Indexable hash = releaseQueueCopy.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
                 if (tvm != null && !tvm.isCacheEntryFresh()) {

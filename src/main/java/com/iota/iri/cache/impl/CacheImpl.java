@@ -181,7 +181,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public Queue<K> getReleaseQueue() {
+    public Queue<K> getReleaseQueueCopy() {
         return new ConcurrentLinkedQueue<>(releaseQueue);
     }
 }

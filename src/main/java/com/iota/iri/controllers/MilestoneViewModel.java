@@ -284,12 +284,12 @@ public class MilestoneViewModel {
         if (cache == null) {
             return;
         }
-        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
         List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
         List<Indexable> indicesToRelease = new ArrayList<>();
 
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable index = releaseQueue.poll();
+            Indexable index = releaseQueueCopy.poll();
             if (index != null) {
                 MilestoneViewModel milestoneViewModel = cache.get(index);
                 if (milestoneViewModel != null) {

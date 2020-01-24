@@ -107,5 +107,5 @@ public interface Cache<K, V> {
      * 
      * @return The release queue
      */
-    Queue<K> getReleaseQueue();
+    Queue<K> getReleaseQueueCopy();
 }

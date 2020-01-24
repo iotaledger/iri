@@ -177,12 +177,12 @@ public class ApproveeViewModel implements HashesViewModel {
      */
     public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
         List<Indexable> hashesToRelease = new ArrayList<>();
         List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
 
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable hash = releaseQueue.poll();
+            Indexable hash = releaseQueueCopy.poll();
             if (hash != null) {
                 ApproveeViewModel approveeViewModel = cache.get(hash);
                 if (approveeViewModel != null) {

@@ -14,11 +14,7 @@ import com.iota.iri.storage.Tangle;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -82,7 +78,7 @@ public class SnapshotServiceImplTest {
     public void setUp() throws Exception {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
-        MilestoneViewModel.cacheEvict(tangle);
+        MilestoneViewModel.cacheRelease(tangle);
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

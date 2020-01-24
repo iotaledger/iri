@@ -86,7 +86,7 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     // true if entry is fresh. False if dirty
-    private boolean isCacheEntryFresh = true;
+    private boolean cacheEntryFresh = true;
 
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
@@ -126,6 +126,7 @@ public class TransactionViewModel {
             if (transactionViewModel != null) {
                 fillMetadata(tangle, transactionViewModel);
                 cachePut(tangle, transactionViewModel, hashIdentifier);
+
                 return transactionViewModel;
             }
         }
@@ -158,6 +159,7 @@ public class TransactionViewModel {
             if (transactionViewModel != null) {
                 fillMetadata(tangle, transactionViewModel);
                 cachePut(tangle, transactionViewModel, hash);
+
                 return transactionViewModel;
             }
         }
@@ -312,13 +314,9 @@ public class TransactionViewModel {
 
         TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
         if (cachedTvm != null) {
-            this.isCacheEntryFresh = false;
+            this.cacheEntryFresh = false;
         }
         cachePut(tangle, this, hash);
-    }
-
-    private void updateDB(Tangle tangle, Transaction transaction, Hash hash, String item) throws Exception {
-        tangle.update(transaction, hash, item);
     }
 
     /**
@@ -974,52 +972,71 @@ public class TransactionViewModel {
      * @param tangle Tangle
      * @param transactionViewModel The tvm to cache
      * @param hash the hash of the tvm
-     * @throws Exception Exception
      */
-    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
+    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
-        }
         cache.put(hash, transactionViewModel);
     }
 
     /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache to DB
+     * Release {@link CacheConfiguration#getReleaseCount()} items from the cache
+     * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheEvict(Tangle tangle) throws Exception {
+    public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
-            Indexable hash = cache.nextEvictionKey();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+        List<Indexable> hashesToRelease = new ArrayList<>();
+
+        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
+            Indexable hash = releaseQueueCopy.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
-                if (tvm != null) {
-                    if (!tvm.getIsCacheEntryFresh()) {
-                        tvm.updateDB(tangle, tvm.getTransaction(), tvm.getHash(), "");
-                    }
-                    cache.evict(tvm.getHash());
+                if (tvm != null && !tvm.isCacheEntryFresh()) {
+                    hashesToRelease.add(hash);
+                    batch.addAll(tvm.getSaveBatch());
                 }
             }
+        }
+        tangle.saveBatch(batch);
+        cache.release(hashesToRelease);
+    }
+
+    /**
+     * Deletes the item from cache. Delegates to {@link Cache#delete(Object)}
+     *
+     * @param tangle Tangle,
+     * @param hash   Hash to delete
+     */
+    public static void cacheDelete(Tangle tangle, Hash hash) {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            cache.delete(hash);
         }
     }
 
     /**
-     * Deletes the item with the specified hash from cache
+     * Deletes the list of items from cache. Delegates to {@link Cache#delete(List)}
+     *
      * @param tangle Tangle
-     * @param hash hash to evict
+     * @param hashes Hashes to delete
      */
-    private static void cacheDelete(Tangle tangle, Hash hash) {
-        tangle.getCache(TransactionViewModel.class).evict(hash);
+    public static void cacheDelete(Tangle tangle, List<Indexable> hashes) {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache != null) {
+            cache.delete(hashes);
+        }
     }
 
     /**
-     * The state of the cache entry
+     * The state of the cache entry. A fresh entry is one that has not been updated before.
      *
      * @return True if fresh. False otherwise
      */
-    public boolean getIsCacheEntryFresh() {
-        return isCacheEntryFresh;
+    public boolean isCacheEntryFresh() {
+        return cacheEntryFresh;
     }
+
 }

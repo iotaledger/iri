@@ -70,7 +70,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
     // Cache
-    protected long txCacheSize = Defaults.TX_CACHE_SIZE;
+    protected int txCacheSize = Defaults.TX_CACHE_SIZE;
     protected int milestoneBatchWrite = Defaults.MILESTONE_CACHE_SIZE;
     protected int txCacheReleaseCount = Defaults.TX_CACHE_RELEASE_COUNT;
     protected int milestoneCacheReleaseCount = Defaults.MILESTONE_CACHE_RELEASE_COUNT;
@@ -446,13 +446,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public long getTxCacheSize() {
+    public int getTxCacheSize() {
         return txCacheSize;
     }
 
     @JsonProperty
     @Parameter(names = { "--tx-cache-size" }, description = DbConfig.Descriptions.TX_CACHE_SIZE)
-    protected void setTxCacheSize(long txCacheSize) {
+    protected void setTxCacheSize(int txCacheSize) {
         if (txCacheSize < 1 || txCacheSize > Defaults.MAX_TX_CACHE_SIZE) {
             throw new ParameterException("TX_CACHE_SIZE should be between 1 and " + Defaults.MAX_TX_CACHE_SIZE
                     + ". (found " + txCacheSize + ")");
@@ -937,11 +937,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean RESCAN_DB = false;
 
         // Cache
-        long MAX_TX_CACHE_SIZE = 1000;
+        int MAX_TX_CACHE_SIZE = 1000;
         int MAX_MILESTONE_CACHE_SIZE = 30;
         int MAX_TX_CACHE_RELEASE_COUNT = 10;
         int MAX_MILESTONE_CACHE_RELEASE_COUNT = 10;
-        long TX_CACHE_SIZE = MAX_TX_CACHE_SIZE;
+        int TX_CACHE_SIZE = MAX_TX_CACHE_SIZE;
         int MILESTONE_CACHE_SIZE = MAX_MILESTONE_CACHE_SIZE;
         int TX_CACHE_RELEASE_COUNT = MAX_TX_CACHE_RELEASE_COUNT;
         int MILESTONE_CACHE_RELEASE_COUNT = MAX_MILESTONE_CACHE_RELEASE_COUNT;

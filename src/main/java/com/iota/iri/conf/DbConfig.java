@@ -59,7 +59,7 @@ public interface DbConfig extends Config {
      *
      * @return {@value DbConfig.Descriptions#TX_CACHE_SIZE}
      */
-    long getTxCacheSize();
+    int getTxCacheSize();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_CACHE_SIZE}

@@ -8,7 +8,7 @@ import com.iota.iri.cache.CacheConfiguration;
 public class CacheConfigurationImpl implements CacheConfiguration {
 
     private long maxSize;
-    private int evictionCount;
+    private int releaseCount;
 
     @Override
     public long getMaxSize() {
@@ -16,8 +16,8 @@ public class CacheConfigurationImpl implements CacheConfiguration {
     }
 
     @Override
-    public int getEvictionCount() {
-        return evictionCount;
+    public int getReleaseCount() {
+        return releaseCount;
     }
 
     @Override
@@ -28,11 +28,11 @@ public class CacheConfigurationImpl implements CacheConfiguration {
     /**
      * Constructor for a cache Implementation.
      *
-     * @param maxSize       The max size of the cache
-     * @param evictionCount The number of items to evict
+     * @param maxSize      The max size of the cache
+     * @param releaseCount The number of items to release
      */
-    public CacheConfigurationImpl(long maxSize, int evictionCount) {
+    public CacheConfigurationImpl(long maxSize, int releaseCount) {
         this.maxSize = maxSize;
-        this.evictionCount = evictionCount;
+        this.releaseCount = releaseCount;
     }
 }

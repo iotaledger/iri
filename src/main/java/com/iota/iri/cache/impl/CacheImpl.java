@@ -3,28 +3,51 @@ package com.iota.iri.cache.impl;
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.collect.MapMaker;
 
 /**
- * Cache operations
+ * Implementation of {@link Cache} interface. The cache is mapping from keys to values.
+ * 
+ * Cache entries are added by calling {@link Cache#put(Object, Object)} which adds the mapping to a strong store until
+ * released either manually or when the cache is full according to its {@link CacheConfiguration}. An entry is released
+ * by removing it from the strong store and putting in the weak store.
+ * 
+ * This cache uses a FIFO strategy with the help of a release queue.
+ * 
+ * This cache does not store null keys or null values.
+ * 
+ * A value is gotten by calling {@link Cache#get(Object)} with the specified key.
+ * 
+ * The stores ues a {@link java.util.concurrent.ConcurrentMap} which are thread safe.
+ * 
  */
 public class CacheImpl<K, V> implements Cache<K, V> {
 
-    // Config
+    /**
+     * Configuration used to initialize the stores.
+     */
+
     private final CacheConfiguration cacheConfiguration;
 
-    // Actual store
+    /**
+     * The map to store key-value pairs.
+     */
     private final ConcurrentMap<K, V> strongStore;
-    // weak store. Eligible for GC
+
+    /**
+     * Values in this map are weak and are eligible for garbage collection. If a value is still in this store during a
+     * cache get, it'll be brought back to the strong store.
+     */
     private final ConcurrentMap<K, V> weakStore;
-    private final ConcurrentLinkedQueue<K> evictionQueue;
+
+    /**
+     * Cache entries will be released in the order in which they are enqueued.
+     */
+    private final ConcurrentLinkedQueue<K> releaseQueue;
 
     // stats
     private int cacheHits = 0;
@@ -40,7 +63,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         this.strongStore = new MapMaker().concurrencyLevel(cacheConfiguration.getConcurrencyLevel()).makeMap();
         this.weakStore = new MapMaker().concurrencyLevel(cacheConfiguration.getConcurrencyLevel()).weakValues()
                 .makeMap();
-        this.evictionQueue = new ConcurrentLinkedQueue<>();
+        this.releaseQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -49,9 +72,10 @@ public class CacheImpl<K, V> implements Cache<K, V> {
             return null;
         }
         V value = strongStore.get(key);
+
         if (value == null && weakStore.containsKey(key)) {
-            put(key, weakStore.get(key));
-            value = strongStore.get(key);
+            value = weakStore.get(key);
+            put(key, value);
             weakStore.remove(key);
         }
         if (value != null) {
@@ -64,7 +88,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public Map<K, V> getAll(Collection<K> keys) {
-        Map result = new HashMap<K, V>();
+        Map<K, V> result = new HashMap<>();
         keys.stream().forEach(key -> result.put(key, get(key)));
         return result;
     }
@@ -76,47 +100,61 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void put(K key, V value) {
-        if (getSize() == cacheConfiguration.getMaxSize()) {
-            evict();
+        if (getSize() >= cacheConfiguration.getMaxSize()) {
+            release();
         }
         // new entry
         if (strongStore.put(key, value) == null) {
-            evictionQueue.offer(key);
+            releaseQueue.offer(key);
         }
     }
 
     @Override
-    public void evict(K key) {
-        if (key == null || !strongStore.containsKey(key)) {
+    public void release(K key) {
+        if (key == null) {
             return;
         }
-        V value = strongStore.get(key);
-        strongStore.remove(key);
-        evictionQueue.remove(key);
+        V value = strongStore.remove(key);
+        releaseQueue.remove(key);
         if (value != null) {
             weakStore.put(key, value);
         }
     }
 
     @Override
-    public void evict() {
-        for (int i = 0; i < cacheConfiguration.getEvictionCount(); i++) {
-            evict(evictionQueue.peek());
+    public void release() {
+        for (int i = 0; i < cacheConfiguration.getReleaseCount(); i++) {
+            release(releaseQueue.peek());
         }
     }
 
     @Override
-    public void evict(List<K> keys) {
+    public void release(List<K> keys) {
         keys.forEach(key -> {
-            evict(key);
+            release(key);
         });
+    }
+
+    @Override
+    public void delete(K key) {
+        if (key == null) {
+            return;
+        }
+        strongStore.remove(key);
+        weakStore.remove(key);
+        releaseQueue.remove(key);
+    }
+
+    @Override
+    public void delete(List<K> keys) {
+        keys.forEach(key -> delete(key));
     }
 
     @Override
     public void clear() {
         strongStore.clear();
         weakStore.clear();
-        evictionQueue.clear();
+        releaseQueue.clear();
     }
 
     private void cacheHit() {
@@ -143,7 +181,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public K nextEvictionKey() {
-        return evictionQueue.peek();
+    public Queue<K> getReleaseQueueCopy() {
+        return new ConcurrentLinkedQueue<>(releaseQueue);
     }
 }

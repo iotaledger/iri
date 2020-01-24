@@ -10,6 +10,10 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+
 /**
  * Acts as a controller interface for a {@link Milestone} hash object. This controller is used by the
  * {@link com.iota.iri.MilestoneTracker} to manipulate a {@link Milestone} object.
@@ -209,6 +213,7 @@ public class MilestoneViewModel {
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Milestone.class, milestone.index);
+        cacheDelete(tangle, milestone.index);
     }
 
     /**
@@ -230,15 +235,10 @@ public class MilestoneViewModel {
      * @param milestoneViewModel milestoneViewModel to cache
      * @param index              index of milestone
      */
-    private static void cachePut(Tangle tangle, MilestoneViewModel milestoneViewModel, Indexable index)
-            throws Exception {
+    private static void cachePut(Tangle tangle, MilestoneViewModel milestoneViewModel, Indexable index) {
         Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
         if (cache == null) {
             return;
-        }
-
-        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
         }
         cache.put(index, milestoneViewModel);
     }
@@ -254,34 +254,42 @@ public class MilestoneViewModel {
     }
 
     /**
-     * Deletes the item with the specified index from cache
-     * 
+     * Deletes the item with the specified index from cache. Delegates to {@link Cache#delete(Object)}
+     *
      * @param tangle Tangle
-     * @param index  index of milestone to evict
+     * @param index  Index of milestone to delete
      */
     public static void cacheDelete(Tangle tangle, IntegerIndex index) {
-        getCache(tangle).evict(index);
+        getCache(tangle).delete(index);
     }
 
     /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache to DB
+     * Release {@link CacheConfiguration#getReleaseCount()} items from the cache
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheEvict(Tangle tangle) throws Exception {
+    public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
         if (cache == null) {
             return;
         }
-        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
-            Indexable index = cache.nextEvictionKey();
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+        List<Indexable> indicesToRelease = new ArrayList<>();
+
+        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
+            Indexable index = releaseQueueCopy.poll();
             if (index != null) {
                 MilestoneViewModel milestoneViewModel = cache.get(index);
                 if (milestoneViewModel != null) {
-                    cache.evict(index);
+                    batch.add(new Pair<>(index, milestoneViewModel.milestone));
+                    indicesToRelease.add(index);
                 }
             }
         }
+
+        tangle.saveBatch(batch);
+        cache.release(indicesToRelease);
     }
 }

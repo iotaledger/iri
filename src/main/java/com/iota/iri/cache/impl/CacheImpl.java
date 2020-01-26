@@ -73,10 +73,12 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         }
         V value = strongStore.get(key);
 
-        if (value == null && weakStore.containsKey(key)) {
+        if (value == null) {
             value = weakStore.get(key);
-            put(key, value);
-            weakStore.remove(key);
+            if (value != null) {
+                put(key, value);
+                weakStore.remove(key);
+            }
         }
         if (value != null) {
             cacheHit();

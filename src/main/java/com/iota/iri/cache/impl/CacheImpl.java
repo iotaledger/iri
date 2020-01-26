@@ -100,6 +100,9 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void put(K key, V value) {
+        if (key == null || value == null) {
+            return;
+        }
         if (getSize() >= cacheConfiguration.getMaxSize()) {
             release();
         }

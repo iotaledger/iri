@@ -974,8 +974,11 @@ public class TransactionViewModel {
      * @param transactionViewModel The tvm to cache
      * @param hash the hash of the tvm
      */
-    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) {
+    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
+            cacheRelease(tangle);
+        }
         cache.put(hash, transactionViewModel);
     }
 
@@ -995,8 +998,10 @@ public class TransactionViewModel {
             Indexable hash = releaseQueueCopy.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
+                hashesToRelease.add(hash);
                 if (tvm != null && !tvm.isCacheEntryFresh()) {
-                    hashesToRelease.add(hash);
+                    tvm.setCacheEntryFresh(true);
+                    cache.put(hash, tvm);
                     batch.addAll(tvm.getSaveBatch());
                 }
             }
@@ -1038,6 +1043,15 @@ public class TransactionViewModel {
      */
     public boolean isCacheEntryFresh() {
         return cacheEntryFresh;
+    }
+
+    /**
+     * Sets the state of the cache entry.
+     * 
+     * @param cacheEntryFresh cache entry
+     */
+    public void setCacheEntryFresh(boolean cacheEntryFresh) {
+        this.cacheEntryFresh = cacheEntryFresh;
     }
 
 }

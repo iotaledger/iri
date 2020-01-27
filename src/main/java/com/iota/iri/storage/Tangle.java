@@ -209,7 +209,7 @@ public class Tangle {
         }
     }
 
-    private void updateMessageQueueProvider(Persistable model, Indexable index, String item) {
+    public void updateMessageQueueProvider(Persistable model, Indexable index, String item) {
         for(MessageQueueProvider provider: this.messageQueueProviders) {
             provider.publishTransaction(model, index, item);
         }

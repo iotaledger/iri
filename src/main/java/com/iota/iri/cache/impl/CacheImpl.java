@@ -102,9 +102,9 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void put(K key, V value) {
-        if (key == null || value == null) {
-            return;
-        }
+        Objects.requireNonNull(key, "Cache key cannot be null");
+        Objects.requireNonNull(value, "Cache value cannot be null");
+
         if (getSize() >= cacheConfiguration.getMaxSize()) {
             release();
         }

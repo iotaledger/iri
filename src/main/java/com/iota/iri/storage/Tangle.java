@@ -3,6 +3,7 @@ package com.iota.iri.storage;
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheManager;
 import com.iota.iri.cache.impl.CacheManagerImpl;
+import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -58,7 +59,9 @@ public class Tangle {
         for(PersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
-        cacheManager = new CacheManagerImpl();
+        if (cacheManager == null) {
+            cacheManager = new CacheManagerImpl(new MainnetConfig());
+        }
     }
 
     /**
@@ -385,17 +388,18 @@ public class Tangle {
      * @return The cache with the specified type
      */
     public <T> Cache<Indexable, T> getCache(Class<T> type){
-       return getCacheManager().getCache(type);
+        if (cacheManager != null) {
+            return cacheManager.getCache(type);
+        }
+        return null;
     }
 
     /**
-     * Gets the cache manager
-     * @return Cache Manager
+     * Sets the cache manager used by the Tangle
+     * 
+     * @param cacheManager The cache manager
      */
-    public CacheManager getCacheManager(){
-        if(cacheManager == null){
-            cacheManager = new CacheManagerImpl();
-        }
-        return cacheManager;
+    public void setCacheManager(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
     }
 }

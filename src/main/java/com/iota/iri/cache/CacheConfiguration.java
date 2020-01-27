@@ -5,8 +5,6 @@ package com.iota.iri.cache;
  */
 public interface CacheConfiguration {
 
-    long DEFAULT_MAX_SIZE = 1000;
-    int DEFAULT_RELEASE_COUNT = 10;
     int DEFAULT_CONCURRENCY_LEVEL = 5;
 
     /**

@@ -1,19 +1,6 @@
 package com.iota.iri;
 
-import java.util.List;
-import java.util.Map;
-
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-
-import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.iota.iri.cache.CacheManager;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -22,11 +9,7 @@ import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
-import com.iota.iri.service.milestone.MilestoneService;
-import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.milestone.SeenMilestonesRetriever;
+import com.iota.iri.service.milestone.*;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -36,8 +19,17 @@ import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.storage.*;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -113,6 +105,7 @@ public class Iota {
     public final TipSelector tipsSelector;
 
     public LocalSnapshotsPersistenceProvider localSnapshotsDb;
+    public final CacheManager cacheManager;
 
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
@@ -120,7 +113,17 @@ public class Iota {
      * @param configuration Information about how this node will be configured.
      *
      */
-    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb) {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider,
+            SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
+            SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
+            MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
+            LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
+            LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+            CacheManager cacheManager) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -149,6 +152,7 @@ public class Iota {
         this.transactionValidator = transactionValidator;
 
         this.tipsSelector = tipsSelector;
+        this.cacheManager = cacheManager;
     }
 
     private void initDependencies() throws SnapshotException, SpentAddressesException {
@@ -284,6 +288,7 @@ public class Iota {
                 throw new NotImplementedException("No such database type.");
             }
         }
+        tangle.setCacheManager(cacheManager);
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }

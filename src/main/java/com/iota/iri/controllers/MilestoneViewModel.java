@@ -2,8 +2,6 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
-import com.iota.iri.cache.CacheManager;
-import com.iota.iri.cache.impl.MilestoneCacheConfiguration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
@@ -252,15 +250,7 @@ public class MilestoneViewModel {
      * @return Cache found.
      */
     private static Cache<Indexable, MilestoneViewModel> getCache(Tangle tangle) {
-        CacheManager cacheManager = tangle.getCacheManager();
-        if (cacheManager == null) {
-            return null;
-        }
-        Cache<Indexable, MilestoneViewModel> cache = cacheManager.lookup(MilestoneViewModel.class);
-        if (cache != null) {
-            return cache;
-        }
-        return tangle.getCacheManager().add(MilestoneViewModel.class, new MilestoneCacheConfiguration());
+        return tangle.getCache(MilestoneViewModel.class);
     }
 
     /**

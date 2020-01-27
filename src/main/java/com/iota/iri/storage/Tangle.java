@@ -402,4 +402,15 @@ public class Tangle {
     public void setCacheManager(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
     }
+
+    /**
+     * @see PersistenceProvider#getPersistenceSize()
+     */
+    public long getPersistanceSize() {
+        long size = 0;
+        for (PersistenceProvider provider : persistenceProviders) {
+            size += provider.getPersistenceSize();
+        }
+        return size;
+    }
 }

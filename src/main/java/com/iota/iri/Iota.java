@@ -14,10 +14,13 @@ import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.snapshot.conditions.SnapshotDepthCondition;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.transactionpruning.DepthPruningCondition;
+import com.iota.iri.service.transactionpruning.SizePruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -208,6 +211,10 @@ public class Iota {
         milestoneSolidifier.start();
 
         if (localSnapshotManager != null) {
+            localSnapshotManager.addSnapshotCondition(new SnapshotDepthCondition(configuration, snapshotProvider));
+            localSnapshotManager.addPruningConditions(
+                    new DepthPruningCondition(configuration, snapshotProvider, tangle),
+                    new SizePruningCondition(tangle, configuration));
             localSnapshotManager.start(latestMilestoneTracker);
         }
         if (transactionPruner != null) {

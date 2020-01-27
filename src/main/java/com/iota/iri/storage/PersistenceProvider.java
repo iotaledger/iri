@@ -1,10 +1,10 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.utils.Pair;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import com.iota.iri.utils.Pair;
 
 /**
  * Abstracts access to the data persisitence layer.
@@ -196,4 +196,11 @@ public interface PersistenceProvider {
     void clearMetadata(Class<?> column) throws Exception;
 
     List<byte[]> loadAllKeysFromTable(Class<? extends Persistable> model);
+
+    /**
+     * Calculates the estimated size of this persistence provider on disk
+     * 
+     * @return the size in bytes
+     */
+    long getPersistenceSize();
 }

@@ -108,6 +108,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsPruningDelay = Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY;
     protected int localSnapshotsIntervalSynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_SYNCED;
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
+    protected String localSnapshotsDbMaxSize = Defaults.LOCAL_SNAPSHOTS_DB_MAX_SIZE; //Human readable
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
     protected String localSnapshotsDbPath = Defaults.LOCAL_SNAPSHOTS_DB_PATH;
     protected String localSnapshotsDbLogPath = Defaults.LOCAL_SNAPSHOTS_DB_LOG_PATH;
@@ -433,7 +434,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbCacheSize(int dbCacheSize) {
         this.dbCacheSize = dbCacheSize;
     }
-
+    
     @Override
     public String getMainDb() {
         return mainDb;
@@ -640,6 +641,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
         }
 
         this.localSnapshotsDepth = localSnapshotsDepth;
+    }
+
+    @Override
+    public String getLocalSnapshotsDbMaxSize() {
+        return localSnapshotsDbMaxSize;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-db-max-size"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_MAX_SIZE)
+    protected void setLocalSnapshotsDbMaxSize(String dbMaxSize) {
+        this.localSnapshotsDbMaxSize = dbMaxSize;
     }
 
     @Override
@@ -982,6 +994,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
         boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
 
+        String LOCAL_SNAPSHOTS_DB_MAX_SIZE = "-1";
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;

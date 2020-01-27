@@ -3,7 +3,15 @@ Feature: Test transaction confirmation
     Scenario: Zero Value Transactions are confirmed
         In this test, a number of zero value transactions will be made to a specified node.
         A milestone will be issued that references these transactions, and this should
-        confirm the transations.
+        confirm the transactions.
+
+        #Subscribe to zmq stream transaction topics
+        Given "nodeA-m2" is subscribed to the following zmq topics:
+        |keys                   |
+        |sn                     |
+        |sn_trytes              |
+        |tx                     |
+        |tx_trytes              |
 
         Given "10" transactions are issued on "nodeA-m2" with:
         |keys                   |values                     |type           |
@@ -30,18 +38,25 @@ Feature: Test transaction confirmation
 
 
         When a transaction is generated and attached on "nodeA-m2" with:
-            | keys    | values       | type        |
-            | address | TEST_ADDRESS | staticValue |
-            | value   | 0            | int         |
+        | keys                  | values                    | type          |
+        | address               | TEST_ADDRESS              | staticValue   |
+        | value                 | 0                         | int           |
 
         And "getInclusionStates" is called on "nodeA-m2" with:
-            | keys         | values             | type        |
-            | transactions | TEST_STORE_ADDRESS | staticList  |
-            | tips         | latestMilestone    | configValue |
+        | keys                  | values                    | type          |
+        | transactions          | TEST_STORE_ADDRESS        | staticList    |
+        | tips                  | latestMilestone           | configValue   |
 
         Then the response for "getInclusionStates" should return with:
-            | keys   | values | type          |
-            | states | False  | boolListMixed |
+        | keys                  | values                    | type          |
+        | states                | False                     | boolListMixed |
+
+        And the zmq stream for "nodeA-m2" contains a response for following topics:
+        |keys                   |
+        |sn                     |
+        |sn_trytes              |
+        |tx                     |
+        |tx_trytes              |
 
 
     Scenario: Value Transactions are confirmed

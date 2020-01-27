@@ -9,6 +9,13 @@ Feature: Test Bootstrapping With LS
   Scenario: PermaNode is synced
     Check that the permanode has been started correctly and is synced.
 
+    #Subscribe to zmq streams for milestones
+    Given "nodeA-m6" is subscribed to the following zmq topics:
+    |keys					|
+    |lmi					|
+    |lmsi					|
+
+
     #First make sure nodes are neighbored
     Given "nodeA-m6" and "nodeB-m6" are neighbors
     And "nodeA-m6" and "nodeC-m6" are neighbors
@@ -17,6 +24,11 @@ Feature: Test Bootstrapping With LS
     When milestone 10322 is issued on "nodeA-m6"
     And we wait "30" second/seconds
     Then "nodeA-m6" is synced up to milestone 10322
+
+    And the zmq stream for "nodeA-m6" contains a response for following topics:
+    |keys					|
+    |lmi					|
+    |lmsi					|
 
 
   Scenario: DB node is synced, and files contain expected values

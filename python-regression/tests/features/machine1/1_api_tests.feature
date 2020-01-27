@@ -113,7 +113,12 @@ Feature: Test API calls on Machine 1
 
 
 	Scenario: GetTransactionsToApprove is called
-		Given "getTransactionsToApprove" is called on "nodeA-m1" with:
+		#Subscribe to zmq stream for walker topic
+		Given "nodeA-m1" is subscribed to the following zmq topics:
+		|keys						|
+		|mctn						|
+
+		And "getTransactionsToApprove" is called on "nodeA-m1" with:
 		|keys       |values				|type           |
 		|depth      |3					|int            |
 
@@ -122,6 +127,10 @@ Feature: Test API calls on Machine 1
 		|branchTransaction				|
 		|duration					|
 		|trunkTransaction				|
+
+		And the zmq stream for "nodeA-m1" contains a response for following topics:
+		|keys						|
+		|mctn						|
 
 
 	Scenario: CheckConsistency is called

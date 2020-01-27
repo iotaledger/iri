@@ -14,6 +14,7 @@ Feature: Test Bootstrapping With LS
     |keys					|
     |lmi					|
     |lmsi					|
+    |lmhs					|
 
 
     #First make sure nodes are neighbored
@@ -29,6 +30,7 @@ Feature: Test Bootstrapping With LS
     |keys					|
     |lmi					|
     |lmsi					|
+    |lmhs					|
 
 
   Scenario: DB node is synced, and files contain expected values

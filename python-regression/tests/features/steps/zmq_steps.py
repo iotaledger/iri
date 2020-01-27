@@ -12,6 +12,12 @@ poller = zmq.Poller()
 
 @step(r'"([^"]+)" is subscribed to the following zmq topics:')
 def subscribe_zmq(step, node):
+    """
+    Subscribe to the given topics on the indicated node.
+
+    :param step.hashes:     List of topics to subscribe to
+    :param node:            The node to subscribe to
+    """
     arg_list = step.hashes
 
     host = world.machine['nodes'][node]['podip']
@@ -26,6 +32,13 @@ def subscribe_zmq(step, node):
 
 @step(r'the zmq stream for "([^"]+)" contains a response for following topics:')
 def check_zmq_response(step, node):
+    """"
+    Read the zmq stream on the indicated node, and ensure that all the provided topics are present in the
+    stream response.
+
+    :param step.hashes:     List of topics to check response for
+    :param node:            The node the stream is being read from (Not used in test, provided for clarity)
+    """
     arg_list = step.hashes
 
     keys = []

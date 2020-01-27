@@ -1,21 +1,5 @@
 package com.iota.iri.storage;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import javax.naming.OperationNotSupportedException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.Address;
@@ -27,6 +11,22 @@ import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQueueProvider;
+
+import javax.naming.OperationNotSupportedException;
+
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Delegates methods from {@link PersistenceProvider}
@@ -80,7 +80,9 @@ public class Tangle {
      */
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
-        this.persistenceProviders.forEach(PersistenceProvider::shutdown);
+        this.persistenceProviders.forEach(a -> {
+            a.shutdown();
+        });
         this.persistenceProviders.clear();
         log.info("Shutting down Tangle MessageQueue Providers... ");
         this.messageQueueProviders.forEach(MessageQueueProvider::shutdown);

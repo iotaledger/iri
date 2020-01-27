@@ -10,6 +10,8 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,14 +22,20 @@ public class SizePruningCondition implements PruningCondition {
     private static final Logger log = LoggerFactory.getLogger(SizePruningCondition.class);
 
     /**
-     * Percentage margin for the database max size due to
+     * Percentage margin for the database max size due to inaccurate size calculation
+     * The size can easily fluctuate 1gb in 10 seconds
      */
     private static final double MARGIN = 1;
 
     /**
-     * Amount of milestones we prune when the DB is too large
+     * Amount of milestones we prune when the DB is too large, 4.6mb/milestone on average
      */
-    public static final int MILESTONES = 25;
+    public static final int MILESTONES = 100;
+    
+    /**
+     * We give the db a chance to update the size before retrying to prune
+     */
+    private static final long TIME_DELAY = TimeUnit.SECONDS.toMillis(30);
 
     /**
      * The maximum size we want the DB to have, with margin due to DB delays for writing to disk
@@ -44,6 +52,10 @@ public class SizePruningCondition implements PruningCondition {
      */
     private long lastSize = -1;
 
+    /**
+     * last time we forced a check despite size not having changed
+     */
+    private long lastTime;
 
     /**
      * A condition to prune based on DB size
@@ -75,11 +87,12 @@ public class SizePruningCondition implements PruningCondition {
             return false;
         }
         long size = tangle.getPersistanceSize();
-        if (size == lastSize) {
+        if (size == lastSize && System.currentTimeMillis() < lastTime + TIME_DELAY) {
             return false;
         }
-
+        
         lastSize = size;
+        lastTime = System.currentTimeMillis();
         return size > maxSize;
     }
 
@@ -96,7 +109,6 @@ public class SizePruningCondition implements PruningCondition {
         } catch (Exception e) {
             throw new TransactionPruningException("failed to find oldest milestone", e);
         }
-
         return initialIndex + MILESTONES;
     }
 }

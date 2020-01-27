@@ -73,10 +73,12 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         }
         V value = strongStore.get(key);
 
-        if (value == null && weakStore.containsKey(key)) {
+        if (value == null) {
             value = weakStore.get(key);
-            put(key, value);
-            weakStore.remove(key);
+            if (value != null) {
+                put(key, value);
+                weakStore.remove(key);
+            }
         }
         if (value != null) {
             cacheHit();
@@ -100,6 +102,9 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void put(K key, V value) {
+        Objects.requireNonNull(key, "Cache key cannot be null");
+        Objects.requireNonNull(value, "Cache value cannot be null");
+
         if (getSize() >= cacheConfiguration.getMaxSize()) {
             release();
         }

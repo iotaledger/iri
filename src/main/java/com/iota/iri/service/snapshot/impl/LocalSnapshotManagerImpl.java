@@ -87,12 +87,6 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private PruningCondition[] pruningConditions;
 
     /**
-     * The last milestone index we send to the pruner.
-     * In order to not have duplicate messaging, we check if its a different index than here.
-     */
-    private int lastPrunedIndex;
-
-    /**
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param snapshotService service instance of the snapshot package that gives us access to packages' business logic
      * @param transactionPruner manager for the pruning jobs that allows us to clean up old transactions
@@ -201,7 +195,6 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                 log.info("Pruning at index {}", pruningMilestoneIndex);
                 // Pruning will not happen when pruning is turned off, but we don't want to know about that here
                 snapshotService.pruneSnapshotData(transactionPruner, pruningMilestoneIndex);
-                lastPrunedIndex = pruningMilestoneIndex;
             } else {
                 if (pruningMilestoneIndex > 0) {
                     log.debug("Can't prune at index {}", pruningMilestoneIndex);
@@ -248,7 +241,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private boolean canPrune(int pruningMilestoneIndex) {
         int snapshotIndex = snapshotProvider.getInitialSnapshot().getIndex();
         // -1 means we can't prune, smaller than snapshotIndex because we prune until index + 1
-        return pruningMilestoneIndex > 0 && pruningMilestoneIndex < snapshotIndex && pruningMilestoneIndex != lastPrunedIndex;
+        return pruningMilestoneIndex > 0 && pruningMilestoneIndex < snapshotIndex;
     }
 
     /**

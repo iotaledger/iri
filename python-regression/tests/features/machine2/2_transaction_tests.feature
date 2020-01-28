@@ -5,14 +5,6 @@ Feature: Test transaction confirmation
         A milestone will be issued that references these transactions, and this should
         confirm the transactions.
 
-        #Subscribe to zmq stream transaction topics
-        Given "nodeA-m2" is subscribed to the following zmq topics:
-        |keys                   |
-        |sn                     |
-        |sn_trytes              |
-        |tx                     |
-        |tx_trytes              |
-
         Given "10" transactions are issued on "nodeA-m2" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
@@ -50,13 +42,6 @@ Feature: Test transaction confirmation
         Then the response for "getInclusionStates" should return with:
         | keys                  | values                    | type          |
         | states                | False                     | boolListMixed |
-
-        And the zmq stream for "nodeA-m2" contains a response for following topics:
-        |keys                   |
-        |sn                     |
-        |sn_trytes              |
-        |tx                     |
-        |tx_trytes              |
 
 
     Scenario: Value Transactions are confirmed
@@ -102,3 +87,35 @@ Feature: Test transaction confirmation
             | keys   | values | type          |
             | states | False  | boolListMixed |
 
+
+    Scenario: ZMQ receives transaction streams
+        Sends a predefined transaction object and a milestone that references it. This should trigger a series
+        of zmq stream publications. The responses for these streams are then checked against the expected contents of
+        the stream.
+
+        #Subscribe to zmq stream transaction topics
+        Given "nodeA-m2" is subscribed to the following zmq topics:
+        | keys                  |
+        | sn                    |
+        | sn_trytes             |
+        | tx                    |
+        | tx_trytes             |
+
+        Then "storeTransactions" is called on "nodeA-m2" with:
+        |keys                   |values                                 |type           |
+        |trytes                 |TRANSACTION_TEST_TRANSACTION_TRYTES    |staticList     |
+
+        #In the default test, the latest sent index will be 52. The next milestone issued should be 53.
+        When a milestone is issued with index 53 and references:
+        |keys                   |values                                 |type           |
+        |transactions           |TRANSACTION_TEST_TRANSACTION_HASH      |staticValue    |
+
+        #Give the node time to solidify the milestone
+        And we wait "10" second/seconds
+
+        Then the zmq stream for "nodeA-m2" contains a response for following responses:
+        | keys                  | values                                | type          |
+        |sn                     | TRANSACTION_TEST_TRANSACTION_HASH     | staticValue   |
+        |sn_trytes              | TRANSACTION_TEST_TRANSACTION_TRYTES   | staticValue   |
+        |tx                     | TRANSACTION_TEST_TRANSACTION_HASH     | staticValue   |
+        |tx_trytes              | TRANSACTION_TEST_TRANSACTION_TRYTES   | staticValue   |

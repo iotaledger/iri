@@ -2,6 +2,9 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.cache.Cache;
+import com.iota.iri.cache.CacheManager;
+import com.iota.iri.cache.impl.CacheConfigurationImpl;
+import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
@@ -418,7 +421,31 @@ public class TransactionViewModelTest {
     }
 
     @Test
-    public void updatedTxShouldBeSavedToDbBeforeRelease() throws Exception {
+    public void updateTxShouldBeSavedBeforeRelease() throws Exception {
+        CacheManager cacheManager = new CacheManagerImpl(new MainnetConfig());
+        cacheManager.clearAllCaches();
+        cacheManager.add(TransactionViewModel.class, new CacheConfigurationImpl(1, 1));
+        tangle.setCacheManager(cacheManager);
+
+        int numberOfTxs = 2;
+        String trytes = "";
+
+        TransactionViewModel tvms[] = new TransactionViewModel[numberOfTxs];
+        for (int i = 0; i < numberOfTxs; i++) {
+            trytes = TransactionTestUtils.nextWord(trytes);
+            tvms[i] = TransactionTestUtils.createTransactionWithTrytes(trytes);
+            tvms[i].store(tangle, snapshot);
+        }
+        tvms[0].isMilestone(tangle, snapshot, true);
+        tvms[1].isMilestone(tangle, snapshot, true);
+
+        Hash hash = tvms[0].getHash();
+        TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        Assert.assertTrue(tvm.isMilestone());
+    }
+
+    @Test
+    public void updatedTxShouldBeSavedToDbBeforeTangleShutdown() throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         int numberOfTxs = (int) cache.getConfiguration().getMaxSize() * 2;
         String trytes = "";

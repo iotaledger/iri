@@ -983,12 +983,41 @@ public class TransactionViewModel {
     }
 
     /**
+     * Release all transactions from cache.
+     * 
+     * @param tangle Tangle
+     * @throws Exception Exception
+     */
+    public static void cacheReleaseAll(Tangle tangle) throws Exception {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+        List<Indexable> hashesToRelease = new ArrayList<>();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+
+        while (!releaseQueueCopy.isEmpty()) {
+            Indexable hash = releaseQueueCopy.poll();
+            if (hash != null) {
+                TransactionViewModel tvm = cache.get(hash);
+                hashesToRelease.add(hash);
+                if (tvm != null && !tvm.isCacheEntryFresh()) {
+                    tvm.setCacheEntryFresh(true);
+                    cache.put(hash, tvm);
+                    batch.addAll(tvm.getSaveBatch());
+                }
+            }
+        }
+
+        tangle.saveBatch(batch);
+        cache.release(hashesToRelease);
+    }
+
+    /**
      * Release {@link CacheConfiguration#getReleaseCount()} items from the cache
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheRelease(Tangle tangle) throws Exception {
+    private static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
         Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();

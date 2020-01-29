@@ -78,7 +78,7 @@ public class Tangle {
      */
     public void shutdown() throws Exception {
         log.info("Releasing all caches...");
-        TransactionViewModel.cacheRelease(this);
+        TransactionViewModel.cacheReleaseAll(this);
         ApproveeViewModel.cacheRelease(this);
         MilestoneViewModel.cacheRelease(this);
         cacheManager.clearAllCaches();

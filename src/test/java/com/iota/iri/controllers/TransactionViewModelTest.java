@@ -1,30 +1,35 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.TransactionTestUtils;
+import com.iota.iri.cache.Cache;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
+import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
+
+import java.util.*;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
-import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
 import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
 import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class TransactionViewModelTest {
 
@@ -410,5 +415,43 @@ public class TransactionViewModelTest {
 
         TransactionViewModel result = TransactionViewModel.first(tangle);
         Assert.assertEquals(transactionViewModel.getHash(), result.getHash());
+    }
+
+    @Test
+    public void updatedTxShouldBeSavedToDbBeforeRelease() throws Exception {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        int numberOfTxs = (int) cache.getConfiguration().getMaxSize() * 2;
+        String trytes = "";
+
+        TransactionViewModel tvms[] = new TransactionViewModel[numberOfTxs];
+        for (int i = 0; i < numberOfTxs; i++) {
+            trytes = TransactionTestUtils.nextWord(trytes);
+            tvms[i] = TransactionTestUtils.createTransactionWithTrytes(trytes);
+            tvms[i].store(tangle, snapshot);
+        }
+
+        List<Integer> tvmIndicesToUpdate = new ArrayList<>();
+        for (int i = 0; i < numberOfTxs; i++) {
+            tvmIndicesToUpdate.add(i);
+        }
+        Collections.shuffle(tvmIndicesToUpdate);
+        tvmIndicesToUpdate = tvmIndicesToUpdate.subList(0, numberOfTxs / 2);
+
+        for (int i : tvmIndicesToUpdate) {
+            TransactionViewModel tvm = cache.get(tvms[i].getHash());
+            if (tvm != null) {
+                tvm.isMilestone(tangle, snapshot, true);
+            }
+        }
+
+        // tangle shutdown
+        TransactionViewModel.cacheReleaseAll(tangle);
+
+        for (int i : tvmIndicesToUpdate) {
+            Hash hash = tvms[i].getHash();
+            TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash),
+                    hash);
+            Assert.assertTrue(tvm.isMilestone());
+        }
     }
 }

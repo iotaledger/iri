@@ -441,7 +441,7 @@ public class TransactionViewModelTest {
 
         Hash hash = tvms[0].getHash();
         TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
-        Assert.assertTrue(tvm.isMilestone());
+        Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
     }
 
     @Test
@@ -478,7 +478,7 @@ public class TransactionViewModelTest {
             Hash hash = tvms[i].getHash();
             TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash),
                     hash);
-            Assert.assertTrue(tvm.isMilestone());
+            Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
         }
     }
 }

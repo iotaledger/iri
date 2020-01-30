@@ -10,8 +10,6 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
@@ -173,29 +171,24 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     /**
-     * Release {@link CacheConfiguration#getReleaseCount()} items from cache
+     * Release {@link CacheConfiguration#getReleaseCount()} items from cache. Since this data is immutable, we only
+     * release from memory and not persist to DB again.
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheRelease(Tangle tangle) throws Exception {
+    private static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
         Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
-        List<Indexable> hashesToRelease = new ArrayList<>();
-        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
 
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
             Indexable hash = releaseQueueCopy.poll();
             if (hash != null) {
                 ApproveeViewModel approveeViewModel = cache.get(hash);
                 if (approveeViewModel != null) {
-                    batch.add(new Pair<>(approveeViewModel.hash, approveeViewModel.self));
-                    hashesToRelease.add(hash);
+                    cache.release(hash);
                 }
             }
         }
-
-        tangle.saveBatch(batch);
-        cache.release(hashesToRelease);
     }
 }

@@ -455,14 +455,13 @@ public class TransactionViewModel {
     }
 
     private void cacheApprovees(Tangle tangle) throws Exception {
-        Cache<Indexable, ApproveeViewModel> approveeViewModelCache = tangle.getCache(ApproveeViewModel.class);
         ApproveeViewModel branchViewModel = ApproveeViewModel.load(tangle, getBranchTransactionHash());
         branchViewModel.addHash(hash);
-        approveeViewModelCache.put(getBranchTransactionHash(), branchViewModel);
+        ApproveeViewModel.cachePut(tangle, branchViewModel, getBranchTransactionHash());
 
         ApproveeViewModel trunkViewModel = ApproveeViewModel.load(tangle, getTrunkTransactionHash());
         trunkViewModel.addHash(hash);
-        approveeViewModelCache.put(getTrunkTransactionHash(), trunkViewModel);
+        ApproveeViewModel.cachePut(tangle, trunkViewModel, getTrunkTransactionHash());
 
         ApproveeViewModel.load(tangle, hash);
     }

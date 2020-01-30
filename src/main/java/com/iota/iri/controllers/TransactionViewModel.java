@@ -85,8 +85,8 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
-    // true if entry is fresh. False if dirty
-    private boolean cacheEntryFresh = true;
+    // True if should the tvm should be persisted to DB upon cache release. False otherwise.
+    private boolean shouldPersist = false;
 
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
@@ -314,7 +314,7 @@ public class TransactionViewModel {
 
         TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
         if (cachedTvm != null) {
-            this.cacheEntryFresh = false;
+            this.shouldPersist = true;
         }
         cachePut(tangle, this, hash);
         tangle.updateMessageQueueProvider(transaction, hash, item);
@@ -998,8 +998,8 @@ public class TransactionViewModel {
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
                 hashesToRelease.add(hash);
-                if (tvm != null && !tvm.isCacheEntryFresh()) {
-                    tvm.setCacheEntryFresh(true);
+                if (tvm != null && tvm.shouldPersist()) {
+                    tvm.setShouldPersist(false);
                     cache.put(hash, tvm);
                     batch.addAll(tvm.getSaveBatch());
                 }
@@ -1027,8 +1027,8 @@ public class TransactionViewModel {
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
                 hashesToRelease.add(hash);
-                if (tvm != null && !tvm.isCacheEntryFresh()) {
-                    tvm.setCacheEntryFresh(true);
+                if (tvm != null && tvm.shouldPersist()) {
+                    tvm.setShouldPersist(false);
                     cache.put(hash, tvm);
                     batch.addAll(tvm.getSaveBatch());
                 }
@@ -1065,21 +1065,21 @@ public class TransactionViewModel {
     }
 
     /**
-     * The state of the cache entry. A fresh entry is one that has not been updated before.
+     * If the tvm should be persisted to DB upon cache release.
      *
-     * @return True if fresh. False otherwise
+     * @return True if should persist. False otherwise
      */
-    public boolean isCacheEntryFresh() {
-        return cacheEntryFresh;
+    private boolean shouldPersist() {
+        return shouldPersist;
     }
 
     /**
-     * Sets the state of the cache entry.
+     * Sets whether the tvm should be persisted to DB upon cache release or not.
      * 
-     * @param cacheEntryFresh cache entry
+     * @param shouldPersist If the tvm should be persisted
      */
-    public void setCacheEntryFresh(boolean cacheEntryFresh) {
-        this.cacheEntryFresh = cacheEntryFresh;
+    private void setShouldPersist(boolean shouldPersist) {
+        this.shouldPersist = shouldPersist;
     }
 
 }

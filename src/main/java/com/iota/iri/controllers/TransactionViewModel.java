@@ -318,6 +318,7 @@ public class TransactionViewModel {
         }
         cachePut(tangle, this, hash);
         tangle.updateMessageQueueProvider(transaction, hash, item);
+        tangle.update(transaction, hash, item);
     }
 
     /**

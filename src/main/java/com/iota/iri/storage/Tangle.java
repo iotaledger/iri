@@ -80,9 +80,7 @@ public class Tangle {
      */
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
-        this.persistenceProviders.forEach(a -> {
-            a.shutdown();
-        });
+        this.persistenceProviders.forEach(PersistenceProvider::shutdown);
         this.persistenceProviders.clear();
         log.info("Shutting down Tangle MessageQueue Providers... ");
         this.messageQueueProviders.forEach(MessageQueueProvider::shutdown);

@@ -212,7 +212,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         boolean solid = true;
         int milestoneIndex = snapshotProvider.getInitialSnapshot().getIndex();
         while(solid){
-            if(!MilestoneViewModel.load(tangle, milestoneIndex)){
+            if(MilestoneViewModel.get(tangle, milestoneIndex) == null){
                 solid = false;
             }
             milestoneIndex += 1;

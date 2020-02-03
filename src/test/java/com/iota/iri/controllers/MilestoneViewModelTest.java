@@ -5,10 +5,14 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import org.junit.*;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MilestoneViewModelTest {
     final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -40,8 +44,6 @@ public class MilestoneViewModelTest {
         Hash milestoneHash = HashFactory.TRANSACTION.create("ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
         assertTrue(milestoneViewModel.store(tangle));
-        MilestoneViewModel.clear();
-        MilestoneViewModel.load(tangle, index);
         assertEquals(MilestoneViewModel.get(tangle, index).getHash(), milestoneHash);
     }
 
@@ -68,7 +70,6 @@ public class MilestoneViewModelTest {
         Hash milestoneHash = HashFactory.TRANSACTION.create("CBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
         assertTrue(milestoneViewModel.store(tangle));
-        MilestoneViewModel.clear();
         assertEquals(MilestoneViewModel.get(tangle, index).getHash(), milestoneHash);
 
     }

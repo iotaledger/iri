@@ -487,12 +487,12 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
     }
     
-    private int getStartingIndex(SnapshotConfig config) {
+    private int getStartingIndex(SnapshotConfig config) throws SnapshotException {
         MilestoneViewModel milestonevm = null;
         try {
             milestonevm = MilestoneViewModel.first(tangle);
         } catch (Exception e) {
-            log.error("Can't load the first milestone from the db", e);
+            throw new SnapshotException("Can't load the first milestone from the db", e);
         }
         return milestonevm != null ? milestonevm.index() : config.getMilestoneStartIndex() + 1;
     }

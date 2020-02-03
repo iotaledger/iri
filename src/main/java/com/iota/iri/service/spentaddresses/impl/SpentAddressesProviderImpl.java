@@ -16,10 +16,10 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.utils.Pair;
 
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  *
  * Implementation of <tt>SpentAddressesProvider</tt>.
  * Addresses are saved/found on the {@link Tangle}.
- * The folder location is provided by {@link IotaConfig#getLocalSnapshotsBasePath()}
+ * The folder location is provided by {@link IotaConfig#getLocalSnapshotsDbPath()}
  *
  */
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {
@@ -37,16 +37,15 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesProvider.class);
 
     private final SnapshotConfig config;
-    private final PersistenceProvider provider;
+    private LocalSnapshotsPersistenceProvider localSnapshotsPersistenceProvider;
 
     /**
      * Implements the spent addresses provider interface.
      * @param configuration The snapshot configuration used for file location
-     * @param persistenceProvider A persistence provider for load/save the spent addresses
      */
-    public SpentAddressesProviderImpl(SnapshotConfig configuration, PersistenceProvider persistenceProvider) {
+    public SpentAddressesProviderImpl(SnapshotConfig configuration, LocalSnapshotsPersistenceProvider localSnapshotsPersistenceProvider) {
         this.config = configuration;
-        this.provider = persistenceProvider;
+        this.localSnapshotsPersistenceProvider = localSnapshotsPersistenceProvider;
     }
 
     /**
@@ -55,10 +54,9 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
      */
     public void init(boolean assertSpentAddressesExistence) throws SpentAddressesException {
         try {
-            this.provider.init();
-            if (assertSpentAddressesExistence && !doSpentAddressesExist(provider)) {
-                log.error("Expecting to start with a populated spent-addresses-db when initializing from a " +
-                        "local snapshot. Shutting down now");
+            if (assertSpentAddressesExistence && !doSpentAddressesExist(localSnapshotsPersistenceProvider)) {
+                log.error("Expecting to start with a localsnapshots-db containing spent addresses when initializing " +
+                        "from a local snapshot. Shutting down now");
                 //explicitly exiting rather than throwing an exception
                 System.exit(1);
             }
@@ -68,7 +66,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         }
     }
 
-    private boolean doSpentAddressesExist(PersistenceProvider provider) throws Exception {
+    private boolean doSpentAddressesExist(LocalSnapshotsPersistenceProvider provider) throws Exception {
         Pair<Indexable, Persistable> first = provider.first(SpentAddress.class, AddressHash.class);
         return first.hi != null && ((SpentAddress) first.hi).exists();
     }
@@ -98,7 +96,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public boolean containsAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            return provider.exists(SpentAddress.class, addressHash);
+            return localSnapshotsPersistenceProvider.exists(SpentAddress.class, addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
@@ -107,7 +105,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public void saveAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            provider.save(new SpentAddress(), addressHash);
+            localSnapshotsPersistenceProvider.save(new SpentAddress(), addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }
@@ -118,7 +116,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         try {
             // Its bytes are always new byte[0], therefore identical in storage
             SpentAddress spentAddressModel = new SpentAddress();
-            provider.saveBatch(addressHash
+            localSnapshotsPersistenceProvider.saveBatch(addressHash
                 .stream()
                 .map(address -> new Pair<Indexable, Persistable>(address, spentAddressModel))
                 .collect(Collectors.toList())
@@ -131,7 +129,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public List<Hash> getAllAddresses() {
         List<Hash> addresses = new ArrayList<>();
-        for (byte[] bytes : provider.loadAllKeysFromTable(SpentAddress.class)) {
+        for (byte[] bytes : localSnapshotsPersistenceProvider.loadAllKeysFromTable(SpentAddress.class)) {
             addresses.add(HashFactory.ADDRESS.create(bytes));
         }
         return addresses;

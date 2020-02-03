@@ -26,6 +26,7 @@ Topics currently found in the latest code are
 * `lmsi` for the latest solid milestone index
 * `lmhs` for the latest solid milestone hash
 * `sn` for newly confirmed transactions ( by solid milestone children measurement )
+* `sn_trytes` for raw trytes, transaction hash, and snapshot index of confirmed transactions.
 * `tx` for newly seen transactions
 * `tx_trytes` trytes of newly seen transactions
 * `<Address>` to watch activity on an address

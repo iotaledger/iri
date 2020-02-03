@@ -1,9 +1,9 @@
+import logging
 from aloe import world, step
+from util.response_logic import response_handling as response_handling
 from util.test_logic import api_test_logic as api_utils
 from util.test_logic import value_fetch_logic
-from util.response_logic import response_handling as response_handling
 
-import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,8 @@ def compare_thread_return(step, api_call):
     # Exclude duration from response list
     if 'duration' in response_list:
         del response_list['duration']
+    if 'info' in response_list:
+        del response_list['info']
     response_keys = response_list.keys()
 
     # Prepare expected values list for comparison
@@ -35,7 +37,6 @@ def compare_thread_return(step, api_call):
     # Confirm that the lists are of equal length before comparing
     assert len(keys) == len(response_keys), "Response: {} does not contain""\
                                             ""the same number of arguments: {}".format(keys,response_keys)
-
     for count in range(len(keys)):
         response_key = response_keys[count]
         response_value = response_list[response_key]
@@ -84,7 +85,7 @@ def check_response_for_value(step, api_call):
             expected_value = expected_values[expected_value_key]
             response_value = response_values[expected_value_key]
 
-            if isinstance(response_value, list) and api_call != 'getTrytes':
+            if isinstance(response_value, list) and api_call != 'getTrytes' and api_call != 'getInclusionStates':
                 response_value = response_value[0]
 
             assert expected_value == response_value, "The expected value {} does not match""\

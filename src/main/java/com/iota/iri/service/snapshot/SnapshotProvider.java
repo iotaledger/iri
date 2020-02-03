@@ -25,19 +25,12 @@ public interface SnapshotProvider {
     Snapshot getLatestSnapshot();
 
     /**
-     * This method dumps the whole snapshot to the hard disk.
+     * Removes an existing old local snapshot and persists the newly given one.
      *
-     * It is used to persist the in memory state of the snapshot and allow IRI to resume from the local snapshot after
-     * restarts.
-     *
-     * Note: This method writes two files - the meta data file and the state file. The path of the corresponding file is
-     *       determined by appending ".snapshot.meta" / ".snapshot.state" to the given base path.
-     *
-     * @param snapshot the {@link Snapshot} that shall be persisted
-     * @param basePath base path of the local snapshot files
-     * @throws SnapshotException if anything goes wrong while writing the file
+     * @param snapshot the snapshot to persist
+     * @throws SnapshotException if anything goes wrong while deleting or persisting data
      */
-    void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException;
+    void persistSnapshot(Snapshot snapshot) throws SnapshotException;
 
     /**
      * Frees the resources of the {@link SnapshotProvider}.

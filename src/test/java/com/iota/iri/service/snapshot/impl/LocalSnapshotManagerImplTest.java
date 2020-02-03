@@ -1,10 +1,14 @@
 package com.iota.iri.service.snapshot.impl;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.any;
+import com.iota.iri.TangleMockUtils;
+import com.iota.iri.TransactionTestUtils;
+import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.snapshot.conditions.SnapshotDepthCondition;
+import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.thread.ThreadUtils;
 
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import org.junit.After;
@@ -12,17 +16,18 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Answers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.exceptions.base.MockitoAssertionError;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.service.transactionpruning.TransactionPruner;
-import com.iota.iri.utils.thread.ThreadUtils;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class LocalSnapshotManagerImplTest {
     
@@ -47,6 +52,9 @@ public class LocalSnapshotManagerImplTest {
     
     @Mock
     TransactionPruner transactionPruner;
+
+    @Mock
+    Tangle tangle;
     
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     MilestoneSolidifier milestoneSolidifier;
@@ -56,6 +64,8 @@ public class LocalSnapshotManagerImplTest {
     @Before
     public void setUp() throws Exception {
         this.lsManager = new LocalSnapshotManagerImpl(snapshotProvider, snapshotService, transactionPruner, config);
+        this.lsManager.addSnapshotCondition(new SnapshotDepthCondition(config, snapshotProvider));
+        
         when(snapshotProvider.getLatestSnapshot().getIndex()).thenReturn(-5, -1, 10, 998, 999, 1999, 2000);
         
         when(config.getLocalSnapshotsIntervalSynced()).thenReturn(DELAY_SYNC);
@@ -69,13 +79,15 @@ public class LocalSnapshotManagerImplTest {
     }
     
     @Test
-    public synchronized void takeLocalSnapshot() throws SnapshotException {
+    public synchronized void takeLocalSnapshot() throws Exception {
+        // Mock a milestone we should try to get
+        TangleMockUtils.mockMilestone(tangle, TransactionTestUtils.getTransactionHash(), 100-SNAPSHOT_DEPTH-1);
+        
         // Always return true
         when(milestoneSolidifier.isInitialScanComplete()).thenReturn(true);
         
         // When we call it, we are in sync
-        when(milestoneSolidifier.getLatestMilestoneIndex()).thenReturn(-5);
-        
+        when(milestoneSolidifier.getLatestMilestoneIndex()).thenReturn(200);
         // We are more then the depth ahead
         when(snapshotProvider.getLatestSnapshot().getIndex()).thenReturn(100);
         when(snapshotProvider.getInitialSnapshot().getIndex()).thenReturn(100 - SNAPSHOT_DEPTH - DELAY_SYNC - 1);
@@ -92,7 +104,7 @@ public class LocalSnapshotManagerImplTest {
         
         // Verify we took a snapshot
         try {
-            verify(snapshotService, times(1)).takeLocalSnapshot(any(), any());
+            verify(snapshotService, times(1)).takeLocalSnapshot(any(), any(), ArgumentMatchers.anyInt());
         } catch (MockitoAssertionError e) {
             throw new MockitoAssertionError("A snapshot should have been taken when we are below SNAPSHOT_DEPTH");
         }
@@ -134,14 +146,5 @@ public class LocalSnapshotManagerImplTest {
         
         // 2000 and 2000 -> in sync again
         assertTrue("Equal index should be in sync", lsManager.isInSync(milestoneSolidifier));
-    }
-    
-    @Test
-    public void getDelayTest() {
-        assertEquals("Out of sync should return the config value at getLocalSnapshotsIntervalUnsynced", 
-                DELAY_UNSYNC, lsManager.getSnapshotInterval(false));
-        
-        assertEquals("In sync should return the config value at getLocalSnapshotsIntervalSynced", 
-                DELAY_SYNC, lsManager.getSnapshotInterval(true));
     }
 }

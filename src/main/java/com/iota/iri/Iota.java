@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.cache.CacheManager;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -21,14 +22,10 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.transactionpruning.DepthPruningCondition;
 import com.iota.iri.service.transactionpruning.SizePruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.storage.*;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
 
 import java.util.List;
 import java.util.Map;
@@ -111,6 +108,7 @@ public class Iota {
     public final TipSelector tipsSelector;
 
     public LocalSnapshotsPersistenceProvider localSnapshotsDb;
+    public final CacheManager cacheManager;
 
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
@@ -118,7 +116,17 @@ public class Iota {
      * @param configuration Information about how this node will be configured.
      *
      */
-    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb) {
+    public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider,
+            SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
+            SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
+            MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
+            LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
+            LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+            CacheManager cacheManager) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -147,6 +155,7 @@ public class Iota {
         this.transactionValidator = transactionValidator;
 
         this.tipsSelector = tipsSelector;
+        this.cacheManager = cacheManager;
     }
 
     private void initDependencies() throws SnapshotException, SpentAddressesException {
@@ -286,6 +295,7 @@ public class Iota {
                 throw new NotImplementedException("No such database type.");
             }
         }
+        tangle.setCacheManager(cacheManager);
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }

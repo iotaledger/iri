@@ -1,11 +1,7 @@
 package com.iota.iri;
 
-import java.security.SecureRandom;
-import javax.annotation.Nullable;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import com.iota.iri.cache.CacheManager;
+import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.NeighborRouter;
@@ -15,16 +11,8 @@ import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
-import com.iota.iri.service.milestone.MilestoneService;
-import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.milestone.SeenMilestonesRetriever;
-import com.iota.iri.service.milestone.impl.LatestMilestoneTrackerImpl;
-import com.iota.iri.service.milestone.impl.LatestSolidMilestoneTrackerImpl;
-import com.iota.iri.service.milestone.impl.MilestoneServiceImpl;
-import com.iota.iri.service.milestone.impl.MilestoneSolidifierImpl;
-import com.iota.iri.service.milestone.impl.SeenMilestonesRetrieverImpl;
+import com.iota.iri.service.milestone.*;
+import com.iota.iri.service.milestone.impl.*;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
@@ -35,16 +23,8 @@ import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
 import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
-import com.iota.iri.service.tipselection.EntryPointSelector;
-import com.iota.iri.service.tipselection.RatingCalculator;
-import com.iota.iri.service.tipselection.TailFinder;
-import com.iota.iri.service.tipselection.TipSelector;
-import com.iota.iri.service.tipselection.Walker;
-import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
-import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
-import com.iota.iri.service.tipselection.impl.TailFinderImpl;
-import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
-import com.iota.iri.service.tipselection.impl.WalkerAlpha;
+import com.iota.iri.service.tipselection.*;
+import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.service.validation.TransactionSolidifier;
@@ -53,6 +33,14 @@ import com.iota.iri.service.validation.impl.TransactionSolidifierImpl;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+
+import javax.annotation.Nullable;
+
+import java.security.SecureRandom;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 
 /**
  * Guice module. Configuration class for dependency injection.
@@ -163,6 +151,12 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
+    CacheManager provideCacheManager() {
+        return new CacheManagerImpl(configuration);
+    }
+
+    @Singleton
+    @Provides
     TipSelector provideTipSelector(Tangle tangle, SnapshotProvider snapshotProvider,
                                    LatestMilestoneTracker latestMilestoneTracker, LedgerService ledgerService) {
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
@@ -176,8 +170,22 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider, SnapshotService snapshotService, @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService, @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier, BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator, TransactionRequester transactionRequester, NeighborRouter neighborRouter, TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester, TipsViewModel tipsViewModel, TipSelector tipsSelector, TransactionSolidifier transactionSolidifier, LocalSnapshotsPersistenceProvider localSnapshotsDb) {
-        return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService, localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker, seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle, transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline, tipsRequester, tipsViewModel, tipsSelector, transactionSolidifier, localSnapshotsDb);
+    Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService,
+            SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+            @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService,
+            LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker,
+            SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService,
+            @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
+        return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService,
+                localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker,
+                seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle,
+                transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline,
+                tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb, cacheManager, transactionSolidifier);
     }
 
     @Singleton

@@ -4,7 +4,6 @@ from util import static_vals as static
 from util import logger as log
 from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions
-from util.threading_logic import pool_logic as pool
 from util.milestone_logic import milestones
 from time import sleep
 
@@ -99,24 +98,11 @@ def reference_stitch_transaction(step):
     api = api_utils.prepare_api_call(node)
 
     transaction_bundle = transactions.create_transaction_bundle(referencing_address, 'REFERENCE9TAG', 0)
+    branch =  api.get_transactions_to_approve(depth=3)['branchTransaction']
+    options = {'trunk_transaction': stitch, 'branch_transaction': branch, 'trytes':
+        transaction_bundle.as_tryte_strings(), 'min_weight_magnitude': 9}
 
-    def transactions_to_approve(node, arg_list):
-        response = api_utils.fetch_call('getTransactionsToApprove', arg_list['api'], {'depth': 3})
-        arg_list['responses']['getTransactionsToApprove'][node] = response
-        return response
-
-    gtta_results = pool.start_pool(transactions_to_approve, 1, {node: {'api': api, 'responses': world.responses}})
-    branch = pool.fetch_results(gtta_results[0], 30)
-    options = {'trunk': stitch, 'branch': branch, 'trytes': transaction_bundle.as_tryte_strings(),
-               'min_weight_magnitude': 9}
-
-    def make_transaction(node, arg_list):
-        response = transactions.attach_store_and_broadcast(arg_list['api'], options)
-        arg_list['responses']['attachToTangle'][node] = response
-        return response
-
-    transaction_results = pool.start_pool(make_transaction, 1, {node: {'api': api, 'responses': world.responses}})
-    pool.fetch_results(transaction_results[0], 30)
+    transactions.attach_store_and_broadcast(api, options)
 
 
 @step(r'"(\d+)" transactions are issued on "([^"]+)" with:')

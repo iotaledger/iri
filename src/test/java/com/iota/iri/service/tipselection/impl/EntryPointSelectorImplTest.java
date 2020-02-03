@@ -1,6 +1,5 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
@@ -35,7 +34,6 @@ public class EntryPointSelectorImplTest {
 
     @Before
     public void setUp() throws Exception {
-        MilestoneViewModel.cacheRelease(tangle);
         Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
         Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
     }

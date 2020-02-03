@@ -85,8 +85,8 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
-    // true if entry is fresh. False if dirty
-    private boolean cacheEntryFresh = true;
+    // True if should the tvm should be persisted to DB upon cache release. False otherwise.
+    private boolean shouldPersist = false;
 
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
@@ -314,7 +314,7 @@ public class TransactionViewModel {
 
         TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
         if (cachedTvm != null) {
-            this.cacheEntryFresh = false;
+            this.shouldPersist = true;
         }
         cachePut(tangle, this, hash);
         tangle.updateMessageQueueProvider(transaction, hash, item);
@@ -455,14 +455,13 @@ public class TransactionViewModel {
     }
 
     private void cacheApprovees(Tangle tangle) throws Exception {
-        Cache<Indexable, ApproveeViewModel> approveeViewModelCache = tangle.getCache(ApproveeViewModel.class);
         ApproveeViewModel branchViewModel = ApproveeViewModel.load(tangle, getBranchTransactionHash());
         branchViewModel.addHash(hash);
-        approveeViewModelCache.put(getBranchTransactionHash(), branchViewModel);
+        ApproveeViewModel.cachePut(tangle, branchViewModel, getBranchTransactionHash());
 
         ApproveeViewModel trunkViewModel = ApproveeViewModel.load(tangle, getTrunkTransactionHash());
         trunkViewModel.addHash(hash);
-        approveeViewModelCache.put(getTrunkTransactionHash(), trunkViewModel);
+        ApproveeViewModel.cachePut(tangle, trunkViewModel, getTrunkTransactionHash());
 
         ApproveeViewModel.load(tangle, hash);
     }
@@ -974,9 +973,41 @@ public class TransactionViewModel {
      * @param transactionViewModel The tvm to cache
      * @param hash the hash of the tvm
      */
-    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) {
+    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
+            cacheRelease(tangle);
+        }
         cache.put(hash, transactionViewModel);
+    }
+
+    /**
+     * Release all transactions from cache.
+     * 
+     * @param tangle Tangle
+     * @throws Exception Exception
+     */
+    public static void cacheReleaseAll(Tangle tangle) throws Exception {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+        List<Indexable> hashesToRelease = new ArrayList<>();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+
+        while (!releaseQueueCopy.isEmpty()) {
+            Indexable hash = releaseQueueCopy.poll();
+            if (hash != null) {
+                TransactionViewModel tvm = cache.get(hash);
+                hashesToRelease.add(hash);
+                if (tvm != null && tvm.shouldPersist()) {
+                    tvm.setShouldPersist(false);
+                    cache.put(hash, tvm);
+                    batch.addAll(tvm.getSaveBatch());
+                }
+            }
+        }
+
+        tangle.saveBatch(batch);
+        cache.release(hashesToRelease);
     }
 
     /**
@@ -985,7 +1016,7 @@ public class TransactionViewModel {
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheRelease(Tangle tangle) throws Exception {
+    private static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
         Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
@@ -995,8 +1026,10 @@ public class TransactionViewModel {
             Indexable hash = releaseQueueCopy.poll();
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
-                if (tvm != null && !tvm.isCacheEntryFresh()) {
-                    hashesToRelease.add(hash);
+                hashesToRelease.add(hash);
+                if (tvm != null && tvm.shouldPersist()) {
+                    tvm.setShouldPersist(false);
+                    cache.put(hash, tvm);
                     batch.addAll(tvm.getSaveBatch());
                 }
             }
@@ -1032,12 +1065,21 @@ public class TransactionViewModel {
     }
 
     /**
-     * The state of the cache entry. A fresh entry is one that has not been updated before.
+     * If the tvm should be persisted to DB upon cache release.
      *
-     * @return True if fresh. False otherwise
+     * @return True if should persist. False otherwise
      */
-    public boolean isCacheEntryFresh() {
-        return cacheEntryFresh;
+    private boolean shouldPersist() {
+        return shouldPersist;
+    }
+
+    /**
+     * Sets whether the tvm should be persisted to DB upon cache release or not.
+     * 
+     * @param shouldPersist If the tvm should be persisted
+     */
+    private void setShouldPersist(boolean shouldPersist) {
+        this.shouldPersist = shouldPersist;
     }
 
 }

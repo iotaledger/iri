@@ -105,9 +105,6 @@ public class CacheImpl<K, V> implements Cache<K, V> {
         Objects.requireNonNull(key, "Cache key cannot be null");
         Objects.requireNonNull(value, "Cache value cannot be null");
 
-        if (getSize() >= cacheConfiguration.getMaxSize()) {
-            release();
-        }
         // new entry
         if (strongStore.put(key, value) == null) {
             releaseQueue.offer(key);

@@ -76,9 +76,15 @@ public class UnconfirmedSubtanglePrunerJob extends AbstractTransactionPrunerJob 
                 List<Pair<Indexable, ? extends Class<? extends Persistable>>> elementsToDelete = unconfirmedTxs.stream()
                         .map(tx -> new Pair<>((Indexable) tx.getHash(), Transaction.class))
                         .collect(Collectors.toList());
+                List<Indexable> txsToDeleteFromCache = elementsToDelete.stream()
+                        .filter(element -> Transaction.class.equals(element.hi)).map(element -> element.low)
+                        .collect(Collectors.toList());
 
                 // clean database entries
                 getTangle().deleteBatch(elementsToDelete);
+
+                // delete from cache
+                TransactionViewModel.cacheDelete(getTangle(), txsToDeleteFromCache);
 
                 // clean runtime caches
                 elementsToDelete.forEach(element -> getTipsViewModel().removeTipHash((Hash) element.low));

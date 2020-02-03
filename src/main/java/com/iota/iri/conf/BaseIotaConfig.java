@@ -1,22 +1,23 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -67,6 +68,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
+
+    // Cache
+    protected int txCacheSize = Defaults.TX_CACHE_SIZE;
+    protected int milestoneBatchWrite = Defaults.MILESTONE_CACHE_SIZE;
+    protected int txCacheReleaseCount = Defaults.TX_CACHE_RELEASE_COUNT;
+    protected int milestoneCacheReleaseCount = Defaults.MILESTONE_CACHE_RELEASE_COUNT;
 
     //Protocol
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
@@ -437,6 +444,67 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
+    }
+
+    @Override
+    public int getTxCacheSize() {
+        return txCacheSize;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--tx-cache-size" }, description = DbConfig.Descriptions.TX_CACHE_SIZE)
+    protected void setTxCacheSize(int txCacheSize) {
+        if (txCacheSize < 1 || txCacheSize > Defaults.MAX_TX_CACHE_SIZE) {
+            throw new ParameterException("TX_CACHE_SIZE should be between 1 and " + Defaults.MAX_TX_CACHE_SIZE
+                    + ". (found " + txCacheSize + ")");
+        }
+        this.txCacheSize = txCacheSize;
+    }
+
+    @Override
+    public int getMilestoneBatchWrite() {
+        return milestoneBatchWrite;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--milestone-cache-size" }, description = DbConfig.Descriptions.MILESTONE_CACHE_SIZE)
+    protected void setMilestoneBatchWrite(int milestoneBatchWrite) {
+        if (milestoneBatchWrite < 1 || milestoneBatchWrite > Defaults.MAX_MILESTONE_CACHE_SIZE) {
+            throw new ParameterException("MILESTONE_CACHE_SIZE should be between 1 and "
+                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneBatchWrite + ")");
+        }
+        this.milestoneBatchWrite = milestoneBatchWrite;
+    }
+
+    @Override
+    public int getTxCacheReleaseCount() {
+        return txCacheReleaseCount;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--tx-cache-release-count" }, description = DbConfig.Descriptions.TX_BATCH_RELEASE_COUNT)
+    protected void setTxCacheReleaseCount(int txCacheReleaseCount) {
+        if (txCacheReleaseCount < 1 || txCacheReleaseCount > Defaults.MAX_TX_CACHE_RELEASE_COUNT) {
+            throw new ParameterException("TX_CACHE_RELEASE_COUNT should be between 1 and "
+                    + Defaults.MAX_TX_CACHE_RELEASE_COUNT + " .(found " + txCacheReleaseCount + ")");
+        }
+        this.txCacheReleaseCount = txCacheReleaseCount;
+    }
+
+    @Override
+    public int getMilestoneCacheReleaseCount() {
+        return milestoneCacheReleaseCount;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--milestone-cache-release-count" },
+            description = DbConfig.Descriptions.MILESTONE_BATCH_RELEASE_COUNT)
+    protected void setMilestoneCacheReleaseCount(int milestoneCacheReleaseCount) {
+        if (milestoneCacheReleaseCount < 1 || milestoneCacheReleaseCount > Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT) {
+            throw new ParameterException("MILESTONE_CACHE_RELEASE_COUNT should be between 1 and "
+                    + Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT + " .(found " + milestoneCacheReleaseCount + ")");
+        }
+        this.milestoneCacheReleaseCount = milestoneCacheReleaseCount;
     }
 
     @Override
@@ -879,6 +947,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
+
+        // Cache
+        int MAX_TX_CACHE_SIZE = 1000;
+        int MAX_MILESTONE_CACHE_SIZE = 30;
+        int MAX_TX_CACHE_RELEASE_COUNT = 10;
+        int MAX_MILESTONE_CACHE_RELEASE_COUNT = 10;
+        int TX_CACHE_SIZE = MAX_TX_CACHE_SIZE;
+        int MILESTONE_CACHE_SIZE = MAX_MILESTONE_CACHE_SIZE;
+        int TX_CACHE_RELEASE_COUNT = MAX_TX_CACHE_RELEASE_COUNT;
+        int MILESTONE_CACHE_RELEASE_COUNT = MAX_MILESTONE_CACHE_RELEASE_COUNT;
 
         //Protocol
         double P_SEND_MILESTONE = 0.02d;

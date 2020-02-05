@@ -102,19 +102,11 @@ public class ReplyStage implements Stage {
 
         TransactionViewModel tvm = null;
 
+        // finish if there is nothing requested
         if (hashOfRequestedTx.equals(Hash.NULL_HASH)) {
             try {
-                // don't reply to random tip requests if we are synchronized with a max delta of one
-                // to the newest milestone
-                if (snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex()
-                        - 1) {
-                    ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
-                    return ctx;
-                }
-                // retrieve random tx
-                neighbor.getMetrics().incrRandomTransactionRequestsCount();
-                Hash transactionPointer = getRandomTipPointer();
-                tvm = TransactionViewModel.fromHash(tangle, transactionPointer);
+                ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+                return ctx;
             } catch (Exception e) {
                 log.error("error loading random tip for reply", e);
                 ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);

@@ -68,34 +68,6 @@ public class ReplyStageTest {
     private SecureRandom random;
 
     @Test
-    public void usingTheNullHashARandomTipIsGettingReplied() {
-        Mockito.when(random.nextDouble()).thenReturn(0.6d);
-        Mockito.when(nodeConfig.getpSendMilestone()).thenReturn(0.5);
-        Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
-        Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(snapshot);
-        Mockito.when(snapshot.getIndex()).thenReturn(8);
-        Mockito.when(latestMilestoneTracker.getLatestMilestoneIndex()).thenReturn(10);
-        Mockito.when(transactionRequester.numberOfTransactionsToRequest()).thenReturn(1);
-        Mockito.when(tipsViewModel.getRandomSolidTipHash()).thenReturn(SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
-        TangleMockUtils.mockTransaction(tangle, SampleTransaction.CURL_HASH_OF_SAMPLE_TX,
-                SampleTransaction.SAMPLE_TRANSACTION);
-
-        ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
-                snapshotProvider, recentlySeenBytesCache, random);
-        ReplyPayload replyPayload = new ReplyPayload(neighbor, Hash.NULL_HASH);
-        ProcessingContext ctx = new ProcessingContext(replyPayload);
-        stage.process(ctx);
-
-        try {
-            Mockito.verify(neighborRouter).gossipTransactionTo(Mockito.any(), Mockito.any());
-            Mockito.verify(recentlySeenBytesCache).put(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
-                    SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
-
-    @Test
     public void usingASuppliedRequestedHashTheTransactionIsReplied() {
         TangleMockUtils.mockTransaction(tangle, SampleTransaction.CURL_HASH_OF_SAMPLE_TX,
                 SampleTransaction.SAMPLE_TRANSACTION);

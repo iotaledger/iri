@@ -146,16 +146,6 @@ public class ReplyStage implements Stage {
             return ctx;
         }
 
-        // we didn't have the requested transaction (random or explicit) from the neighbor but we will immediately reply
-        // with the latest known milestone and a needed transaction hash, to keep up the ping-pong
-        try {
-            final TransactionViewModel msTVM = TransactionViewModel.fromHash(tangle,
-                    latestMilestoneTracker.getLatestMilestoneHash());
-            neighborRouter.gossipTransactionTo(neighbor, msTVM, false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
         return ctx;
     }

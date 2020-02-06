@@ -8,6 +8,7 @@ import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.Snapshot;
@@ -480,5 +481,37 @@ public class TransactionViewModelTest {
                     hash);
             Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
         }
+    }
+
+    @Test
+    public void deletedTxFromDbShouldDeleteFromCache() throws Exception {
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+
+        Transaction tx = new Transaction();
+        Hash hash = HashFactory.TRANSACTION
+                .create("TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST999999999");
+        tx.address = hash;
+        TransactionViewModel tvm = new TransactionViewModel(tx, hash);
+
+        tvm.store(tangle, snapshot);
+        tvm.delete(tangle);
+        Assert.assertNull("TVM should be null", cache.get(hash));
+    }
+
+    @Test
+    public void deletedTxShouldNotBeBroughtBackToCache() throws Exception {
+        Transaction tx = new Transaction();
+        Hash hash = HashFactory.TRANSACTION
+                .create("TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST999999999");
+        tx.address = hash;
+        TransactionViewModel tvm = new TransactionViewModel(tx, hash);
+
+        tvm.store(tangle, snapshot);
+        tvm.delete(tangle);
+
+        TransactionViewModel.fromHash(tangle, hash);
+
+        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
+        Assert.assertNull("TVM should be null", cache.get(hash));
     }
 }

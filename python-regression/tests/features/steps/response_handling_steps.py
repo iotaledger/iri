@@ -24,6 +24,8 @@ def compare_thread_return(step, api_call):
     # Exclude duration from response list
     if 'duration' in response_list:
         del response_list['duration']
+    if 'info' in response_list:
+        del response_list['info']
     response_keys = response_list.keys()
 
     # Prepare expected values list for comparison
@@ -35,7 +37,6 @@ def compare_thread_return(step, api_call):
     # Confirm that the lists are of equal length before comparing
     assert len(keys) == len(response_keys), "Response: {} does not contain""\
                                             ""the same number of arguments: {}".format(keys,response_keys)
-
     for count in range(len(keys)):
         response_key = response_keys[count]
         response_value = response_list[response_key]

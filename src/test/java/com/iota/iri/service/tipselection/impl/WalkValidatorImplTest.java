@@ -10,6 +10,7 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,6 +50,11 @@ public class WalkValidatorImplTest {
         tangle.shutdown();
         dbFolder.delete();
         logFolder.delete();
+    }
+
+    @After
+    public void clearCache(){
+        tangle.getCache(TransactionViewModel.class).clear();
     }
 
     @BeforeClass

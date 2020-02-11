@@ -476,7 +476,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      */
     private void cleanupOldData(SnapshotConfig config, TransactionPruner transactionPruner,
             int targetIndex) throws SnapshotException {
-        int startingIndex = config.getMilestoneStartIndex() + 1;
+        int startingIndex = getStartingIndex(config);
 
         try {
             if (targetIndex >= startingIndex) {
@@ -485,6 +485,16 @@ public class SnapshotServiceImpl implements SnapshotService {
         } catch (TransactionPruningException e) {
             throw new SnapshotException("could not add the cleanup job to the transaction pruner", e);
         }
+    }
+    
+    private int getStartingIndex(SnapshotConfig config) throws SnapshotException {
+        MilestoneViewModel milestonevm = null;
+        try {
+            milestonevm = MilestoneViewModel.first(tangle);
+        } catch (Exception e) {
+            throw new SnapshotException("Can't load the first milestone from the db", e);
+        }
+        return milestonevm != null ? milestonevm.index() : config.getMilestoneStartIndex() + 1;
     }
 
     /**

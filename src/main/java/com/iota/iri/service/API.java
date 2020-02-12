@@ -775,7 +775,8 @@ public class API {
                 tipsViewModel.size(),
                 transactionRequester.numberOfTransactionsToRequest(),
                 features,
-                configuration.getCoordinator().toString());
+                configuration.getCoordinator().toString(),
+                tangle.getPersistanceSize());
     }
 
     /**

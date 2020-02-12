@@ -40,6 +40,7 @@ Feature: Test API calls on Machine 1
 		|tips						|
 		|transactionsToRequest				|
 		|coordinatorAddress				|
+		|dbSizeInBytes               |
 
 
 	Scenario: GetNeighbors is called

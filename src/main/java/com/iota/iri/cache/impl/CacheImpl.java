@@ -124,13 +124,6 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void release() {
-        for (int i = 0; i < cacheConfiguration.getReleaseCount(); i++) {
-            release(releaseQueue.peek());
-        }
-    }
-
-    @Override
     public void release(List<K> keys) {
         keys.forEach(key -> {
             release(key);

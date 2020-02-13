@@ -19,29 +19,7 @@ pip install -e .
 ```
 
 ### Available Tests
-Machine 1 - API Tests: This machine uses 2 nodes and tests each of the api calls, and ensures that the responses are 
-the expected values 
-
-Machine 2 - Transaction Tests: This machine uses 2 nodes. Several zero value transactions are sent to the first node, 
-as well as a milestone transaction. Then node two is checked to make sure the transactions are all confirmed. After 
-these transactions are resolved, the same approach is used to ensure that value transactions are also being confirmed 
-correctly.  
-
-Machine 3 - Blowball Tests: This machine uses 6 nodes by default, but can be customized to be performed on as many/few 
-as desired. 1000 `getTransactionsToApprove` calls are made across these nodes, and the responses checked to make sure 
-that less than 5% of the results are milestone transactions. If the responses are over this threshold, then that means 
-blowballs are occurring.  
-
-Machine 4 - Stitching Tests: This machine uses 1 node. The node is loaded with a db containing a large side tangle. A 
-stitching transaction is issued, and another transaction referencing that one is issued. After these transactions are 
-issued, making `getTransactionsToApprove` calls should not crash the node.  
-
-Machine 5 - Milestone Validation Tests: This machine uses 2 nodes. Both nodes are loaded with the same db. The db 
-contains several signed milestone transactions, and several unsigned transactions. One node is set to validate the 
-testnet coordinator signature, while the other is not. The one that requires validation should solidify to one point, 
-while the other should solidify further. 
-
-Machine 6 - Local Snapshotting Tests: This machine uses 4 nodes. The first node contains the snapshot `meta` and `state`
+Machine 1 - Local Snapshotting Tests: This machine uses 4 nodes. The first node contains the snapshot `meta` and `state`
 files, the `spent-addresses-db` and `testnetdb` of a synced node. The second only contains the database, and the third 
 only contains the snapshot files. All three of these nodes are tested to ensure that they solidify to the same point, 
 and that the proper information is contained in the snapshot files and databases. The fourth node has a larger database 
@@ -49,6 +27,29 @@ that contains more milestones than the `local-snapshots-pruning-depth`. This nod
 starting, transactions that should be pruned from the database have been pruned correctly. This machine also includes 
 tests for spent addresses including a test for exporting and merging spent addresses using IXI 
 modules.   
+
+Machine 2 - Blowball Tests: This machine uses 6 nodes by default, but can be customized to be performed on as many/few 
+as desired. 1000 `getTransactionsToApprove` calls are made across these nodes, and the responses checked to make sure 
+that less than 5% of the results are milestone transactions. If the responses are over this threshold, then that means 
+blowballs are occurring.  
+
+
+Machine 3 - Transaction Tests: This machine uses 2 nodes. Several zero value transactions are sent to the first node, 
+as well as a milestone transaction. Then node two is checked to make sure the transactions are all confirmed. After 
+these transactions are resolved, the same approach is used to ensure that value transactions are also being confirmed 
+correctly.  
+
+Machine 4 - API Tests: This machine uses 2 nodes and tests each of the api calls, and ensures that the responses are 
+the expected values 
+
+Machine 5 - Stitching Tests: This machine uses 1 node. The node is loaded with a db containing a large side tangle. A 
+stitching transaction is issued, and another transaction referencing that one is issued. After these transactions are 
+issued, making `getTransactionsToApprove` calls should not crash the node.  
+
+Machine 6 - Milestone Validation Tests: This machine uses 2 nodes. Both nodes are loaded with the same db. The db 
+contains several signed milestone transactions, and several unsigned transactions. One node is set to validate the 
+testnet coordinator signature, while the other is not. The one that requires validation should solidify to one point, 
+while the other should solidify further. 
 
 
 ### Running Tests Locally
@@ -137,7 +138,7 @@ iri
 --/tests
 ---/features
 ----/machine1 [Same structure for other machines]
------/1_api_tests.feature
+-----/4_api_tests.feature
 -----/config.yml
 -----/output.yml
 ```
@@ -151,7 +152,7 @@ From the `iri/python-regression` directory, a test can be run using the followin
 ```
 i.e. For the api tests:
 ```
-aloe 1_api_tests.feature -w ./tests/features/machine1/ -v --nologcapture 
+aloe 4_api_tests.feature -w ./tests/features/machine1/ -v --nologcapture 
 ```
 
 
@@ -168,11 +169,11 @@ When running the aloe command, you can add the `-a` flag to register that you wo
 the given attribute. Inversely you can also run all tests that do not contain that flag by using `!`. This is shown 
 below: 
 ```
-aloe 1_api_tests.feature -w ./tests/features/machine1 -a getNodeInfo
+aloe 4_api_tests.feature -w ./tests/features/machine1 -a getNodeInfo
 ```
 or to not run the flagged tests:
 ```
-aloe 1_api_tests.feature -w ./tests/features/machine1 -a '!getNodeInfo'
+aloe 4_api_tests.feature -w ./tests/features/machine1 -a '!getNodeInfo'
 ```
 _Note: To negate running the tests using the flag requires the `!` and flag to be wrapped in parentheses as shown above_
 

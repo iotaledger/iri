@@ -1,6 +1,6 @@
-defaults: &no_validation_tests_config_files
-  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Validation_tests_db.tar
-  db_checksum: 40874a129db910be2466244b3cdeea2dde9f9601221cb94b837f55ac2be384f5
+defaults: &stitching_tests_config_files
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Stitching_tests_db.tar
+  db_checksum: ac987dc8e61e37d6420e78da18c4cf94671f51e8014b4dd593f36bbd4fb0cfc1
   iri_args: ['--testnet-coordinator',
   'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
   '--milestone-keys',
@@ -12,30 +12,12 @@ defaults: &no_validation_tests_config_files
   '--testnet',
   'true'
   ]
-  java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/workdir/jacoco.exec,output=file,append=true,dumponexit=true
-
-db_with_validation: &validation_tests_config_files
-  db: https://s3.amazonaws.com/iota-db-files/dbs/machine4/validation_test_db.tar
-  db_checksum: 40874a129db910be2466244b3cdeea2dde9f9601221cb94b837f55ac2be384f5
-  iri_args: ['--testnet-coordinator',
-  'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
-  '--milestone-keys',
-  '18',
-  '--milestone-start',
-  '2',
-  '--testnet',
-  'true'
-  ]
-  java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/workdir/jacoco.exec,output=file,append=true,dumponexit=true
-
-
+  java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
+  
 seeds: # For internal use by the regression system. 
     - SEED
     - SIID
 
 nodes:
   nodeA-m5: #name
-    <<: *no_validation_tests_config_files
-  
-  nodeB-m5:
-    <<: *validation_tests_config_files
+    <<: *stitching_tests_config_files

@@ -37,7 +37,7 @@ public class CacheManagerImpl implements CacheManager {
                 new CacheConfigurationImpl(dbConfig.getTxCacheSize(), dbConfig.getTxCacheReleaseCount()));
         add(ApproveeViewModel.class,
                 new CacheConfigurationImpl(dbConfig.getTxCacheSize(), dbConfig.getTxCacheReleaseCount()));
-        add(MilestoneViewModel.class, new CacheConfigurationImpl(dbConfig.getMilestoneBatchWrite(),
+        add(MilestoneViewModel.class, new CacheConfigurationImpl(dbConfig.getMilestoneCacheSize(),
                 dbConfig.getMilestoneCacheReleaseCount()));
     }
 

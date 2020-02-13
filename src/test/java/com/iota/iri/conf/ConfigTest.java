@@ -123,7 +123,7 @@ public class ConfigTest {
         Assert.assertEquals("--local-snapshots-pruning-delay", 40000, iotaConfig.getLocalSnapshotsPruningDelay());
         Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
         Assert.assertEquals("--tx-cache-release-count", 5, iotaConfig.getTxCacheReleaseCount());
-        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneBatchWrite());
+        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneCacheSize());
         Assert.assertEquals("--milestone-cache-release-count", 2, iotaConfig.getMilestoneCacheReleaseCount());
     }
 
@@ -195,7 +195,7 @@ public class ConfigTest {
                 iotaConfig.isDontValidateTestnetMilestoneSig());
         Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
         Assert.assertEquals("--tx-cache-release-count", 5, iotaConfig.getTxCacheReleaseCount());
-        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneBatchWrite());
+        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneCacheSize());
         Assert.assertEquals("--milestone-cache-release-count", 2, iotaConfig.getMilestoneCacheReleaseCount());
     }
 

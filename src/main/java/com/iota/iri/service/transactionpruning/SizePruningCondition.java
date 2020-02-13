@@ -67,12 +67,6 @@ public class SizePruningCondition implements PruningCondition {
         this.tangle = tangle;
         if (config.getLocalSnapshotsPruningEnabled()) {
             maxSize = (long) Math.floor(IotaUtils.parseFileSize(config.getLocalSnapshotsDbMaxSize()) / 100 * (100-MARGIN));
-
-            if (config.getLocalSnapshotsPruningDelay() != BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
-                log.warn("We recommend setting pruning delay to the minimum("
-                        + BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN
-                        + ") when using db size limitation.");
-            }
         } else {
             if (config.getLocalSnapshotsDbMaxSize() != BaseIotaConfig.Defaults.LOCAL_SNAPSHOTS_DB_MAX_SIZE) {
                 log.warn("Local snapshots with size condition does not work with pruning disabled");

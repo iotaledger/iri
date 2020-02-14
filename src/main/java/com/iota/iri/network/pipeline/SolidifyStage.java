@@ -82,13 +82,10 @@ public class SolidifyStage implements Stage {
             tip = fromHash(tangle, tipHash);
         }
 
-        if(tip.isSolid()) {
-            ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-            ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), tip));
-            return ctx;
-        }
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
+        ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), tip));
 
-        ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+        tip = null;
         return ctx;
     }
 

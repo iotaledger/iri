@@ -123,7 +123,7 @@ public class ConfigTest {
         Assert.assertEquals("--local-snapshots-pruning-delay", 40000, iotaConfig.getLocalSnapshotsPruningDelay());
         Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
         Assert.assertEquals("--tx-cache-release-count", 5, iotaConfig.getTxCacheReleaseCount());
-        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneBatchWrite());
+        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneCacheSize());
         Assert.assertEquals("--milestone-cache-release-count", 2, iotaConfig.getMilestoneCacheReleaseCount());
     }
 
@@ -195,7 +195,7 @@ public class ConfigTest {
                 iotaConfig.isDontValidateTestnetMilestoneSig());
         Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
         Assert.assertEquals("--tx-cache-release-count", 5, iotaConfig.getTxCacheReleaseCount());
-        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneBatchWrite());
+        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneCacheSize());
         Assert.assertEquals("--milestone-cache-release-count", 2, iotaConfig.getMilestoneCacheReleaseCount());
     }
 
@@ -209,6 +209,7 @@ public class ConfigTest {
                 .append("ZMQ_ENABLED = true").append(System.lineSeparator())
                 .append("P_REMOVE_REQUEST = 0.4").append(System.lineSeparator())
                 .append("MWM = 4").append(System.lineSeparator())
+                .append("MILESTONE_CACHE_SIZE = 1").append(System.lineSeparator())
                 .append("FAKE").append(System.lineSeparator())
                 .append("FAKE2 = lies")
                 .toString();
@@ -231,6 +232,7 @@ public class ConfigTest {
 
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
         Assert.assertNotEquals("MWM", 4, iotaConfig.getMwm());
+        Assert.assertEquals("MILESTONE_CACHE_SIZE", 1, iotaConfig.getMilestoneCacheSize());
     }
 
     @Test

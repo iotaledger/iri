@@ -6,7 +6,10 @@ import com.google.gson.JsonSyntaxException;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.*;
@@ -21,7 +24,6 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.restserver.RestConnector;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
@@ -108,8 +110,9 @@ public class API {
     private final TipSelector tipsSelector;
     private final TipsViewModel tipsViewModel;
     private final TransactionValidator transactionValidator;
-    private final LatestMilestoneTracker latestMilestoneTracker;
-    
+    private final MilestoneSolidifier milestoneSolidifier;
+    private final TransactionSolidifier transactionSolidifier;
+
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
@@ -148,13 +151,15 @@ public class API {
      * @param tipsSelector Handles logic for selecting tips based on other transactions
      * @param tipsViewModel Contains the current tips of this node
      * @param transactionValidator Validates transactions
-     * @param latestMilestoneTracker Service that tracks the latest milestone
+     * @param milestoneSolidifier Service that tracks the latest milestone
+     * @param transactionSolidifier Holds transaction pipeline, including broadcast transactions
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
-            SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
-            SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
-            TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline) {
+               SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
+               SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
+               TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+               MilestoneSolidifier milestoneSolidifier, TransactionProcessingPipeline txPipeline,
+               TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
         this.ixi = ixi;
         
@@ -169,8 +174,9 @@ public class API {
         this.tipsSelector = tipsSelector;
         this.tipsViewModel = tipsViewModel;
         this.transactionValidator = transactionValidator;
-        this.latestMilestoneTracker = latestMilestoneTracker;
-        
+        this.milestoneSolidifier = milestoneSolidifier;
+        this.transactionSolidifier = transactionSolidifier;
+
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
         maxGetTrytes = configuration.getMaxGetTrytes();
@@ -425,7 +431,7 @@ public class API {
      */
     private boolean isNodeSynchronized() {
         return (snapshotProvider.getLatestSnapshot().getIndex() != snapshotProvider.getInitialSnapshot().getIndex()) &&
-                snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex() -1;
+                snapshotProvider.getLatestSnapshot().getIndex() >= milestoneSolidifier.getLatestMilestoneIndex() -1;
     }
 
     /**
@@ -495,6 +501,7 @@ public class API {
                 case OK:
                     log.info("Removed neighbor: {}", uriString);
                     numberOfRemovedNeighbors++;
+                    break;
                 case URI_INVALID:
                     log.info("Can't remove neighbor {}: URI is invalid", uriString);
                     break;
@@ -682,7 +689,7 @@ public class API {
             //store transactions
             if(transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot())) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis());
-                transactionValidator.updateStatus(transactionViewModel);
+                transactionSolidifier.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "sender");
             }
@@ -721,8 +728,8 @@ public class API {
 
                 Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().totalMemory(),
-                latestMilestoneTracker.getLatestMilestoneHash(),
-                latestMilestoneTracker.getLatestMilestoneIndex(),
+                milestoneSolidifier.getLatestMilestoneHash(),
+                milestoneSolidifier.getLatestMilestoneIndex(),
                 
                 snapshotProvider.getLatestSnapshot().getHash(),
                 snapshotProvider.getLatestSnapshot().getIndex(),
@@ -752,122 +759,29 @@ public class API {
      * <p>
      * Get the inclusion states of a set of transactions.
      * This endpoint determines if a transaction is confirmed by the network (referenced by a valid milestone).
-     * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
      * </p>
      * <p>
      * This API call returns a list of boolean values in the same order as the submitted transactions.
      * Boolean values will be <tt>true</tt> for confirmed transactions, otherwise <tt>false</tt>.
      * </p>
-     * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
      *
      * @param transactions List of transactions you want to get the inclusion state for.
-     * @param tips List of tip transaction hashes (including milestones) you want to search for
      * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse}
      * @throws Exception When a transaction cannot be loaded from hash
      **/
     @Document(name="getInclusionStates")
-    private AbstractResponse getInclusionStatesStatement(
-            final List<String> transactions,
-            final List<String> tips) throws Exception {
+    private AbstractResponse getInclusionStatesStatement(final List<String> transactions ) throws Exception {
 
         final List<Hash> trans = transactions.stream()
                 .map(HashFactory.TRANSACTION::create)
                 .collect(Collectors.toList());
 
-        final List<Hash> tps = tips.stream().
-                map(HashFactory.TRANSACTION::create)
-                .collect(Collectors.toList());
-
-        int numberOfNonMetTransactions = trans.size();
-        final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
-
-        List<Integer> tipsIndex = new LinkedList<>();
-        {
-            for(Hash tip: tps) {
-                TransactionViewModel tx = TransactionViewModel.fromHash(tangle, tip);
-                if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    tipsIndex.add(tx.snapshotIndex());
-                }
-            }
+        boolean[] inclusionStates = new boolean[trans.size()];
+        for(int i = 0; i < trans.size(); i++){
+            inclusionStates[i] = TransactionViewModel.fromHash(tangle, trans.get(i)).snapshotIndex() > 0;
         }
 
-        // Finds the lowest tips index, or 0
-        int minTipsIndex = tipsIndex.stream().reduce((a, b) -> a < b ? a : b).orElse(0);
-
-        // If the lowest tips index (minTipsIndex) is 0 (or lower),
-        // we can't check transactions against snapshots because there were no tips,
-        // or tips have not been confirmed by a snapshot yet
-        if (minTipsIndex > 0) {
-            // Finds the highest tips index, or 0
-            int maxTipsIndex = tipsIndex.stream().reduce((a, b) -> a > b ? a : b).orElse(0);
-            int count = 0;
-
-            // Checks transactions with indexes of tips, and sets inclusionStates byte to 1 or -1 accordingly
-            // Sets to -1 if the transaction is only known by hash,
-            // or has no index, or index is above the max tip index (not included).
-
-            // Sets to 1 if the transaction index is below the max index of tips (included).
-            for(Hash hash: trans) {
-                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
-                    inclusionStates[count] = -1;
-                } else if (transaction.snapshotIndex() > maxTipsIndex) {
-                    inclusionStates[count] = -1;
-                } else if (transaction.snapshotIndex() < maxTipsIndex) {
-                    inclusionStates[count] = 1;
-                }
-                count++;
-            }
-        }
-
-        Set<Hash> analyzedTips = new HashSet<>();
-        Map<Integer, Integer> sameIndexTransactionCount = new HashMap<>();
-        Map<Integer, Queue<Hash>> sameIndexTips = new HashMap<>();
-
-        // Sorts all tips per snapshot index. Stops if a tip is not in our database, or just as a hash.
-        for (final Hash tip : tps) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
-            if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
-                return ErrorResponse.create("One of the tips is absent");
-            }
-            int snapshotIndex = transactionViewModel.snapshotIndex();
-            sameIndexTips.putIfAbsent(snapshotIndex, new LinkedList<>());
-            sameIndexTips.get(snapshotIndex).add(tip);
-        }
-
-        // Loop over all transactions without a state, and counts the amount per snapshot index
-        for(int i = 0; i < inclusionStates.length; i++) {
-            if(inclusionStates[i] == 0) {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, trans.get(i));
-                int snapshotIndex = transactionViewModel.snapshotIndex();
-                sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
-                sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
-            }
-        }
-
-        // Loop over all snapshot indexes of transactions that were not confirmed.
-        // If we encounter an invalid tangle, stop this function completely.
-        for (Integer index : sameIndexTransactionCount.keySet()) {
-            // Get the tips from the snapshot indexes we are missing
-            Queue<Hash> sameIndexTip = sameIndexTips.get(index);
-
-            // We have tips on the same level as transactions, do a manual search.
-            if (sameIndexTip != null && !exhaustiveSearchWithinIndex(
-                    sameIndexTip, analyzedTips, trans,
-                    inclusionStates, sameIndexTransactionCount.get(index), index)) {
-
-                return ErrorResponse.create(INVALID_SUBTANGLE);
-            }
-        }
-        final boolean[] inclusionStatesBoolean = new boolean[inclusionStates.length];
-        for (int i = 0; i < inclusionStates.length; i++) {
-            // If a state is 0 by now, we know nothing so assume not included
-            inclusionStatesBoolean[i] = inclusionStates[i] == 1;
-        }
-
-        {
-            return GetInclusionStatesResponse.create(inclusionStatesBoolean);
-        }
+        return GetInclusionStatesResponse.create(inclusionStates);
     }
 
     /**
@@ -1597,10 +1511,9 @@ public class API {
                 return ErrorResponse.create(INVALID_SUBTANGLE);
             }
             final List<String> transactions = getParameterAsList(request, "transactions", HASH_SIZE);
-            final List<String> tips = getParameterAsList(request, "tips", HASH_SIZE);
 
             try {
-                return getInclusionStatesStatement(transactions, tips);
+                return getInclusionStatesStatement(transactions);
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }

@@ -1,5 +1,7 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.cache.Cache;
+import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Approvee;
@@ -8,6 +10,7 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -27,13 +30,24 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     /**
+     * Constructor for an {@link Approvee} set from an existing {@link ApproveeViewModel}
+     * 
+     * @param approveeViewModel ApproveeViewModel
+     */
+    public ApproveeViewModel(ApproveeViewModel approveeViewModel) {
+        this.hash = approveeViewModel.hash;
+        this.self = new Approvee();
+        approveeViewModel.getHashes().forEach(hash1 -> addHash(hash1));
+    }
+
+    /**
      * Constructor for an {@link Approvee} set controller from an existing {@link Approvee} set. If the set is empty, a
      * new {@link Approvee} set is created.
      *
      * @param hashes The {@link Approvee} set that the controller will be created from
      * @param hash The {@link Hash} identifier that acts as a reference for the {@link Approvee} set
      */
-    private ApproveeViewModel(Approvee hashes, Indexable hash) {
+    public ApproveeViewModel(Approvee hashes, Indexable hash) {
         self = hashes == null || hashes.set == null ? new Approvee(): hashes;
         this.hash = hash;
     }
@@ -48,7 +62,21 @@ public class ApproveeViewModel implements HashesViewModel {
      * @throws Exception Thrown if the database cannot load an {@link Approvee} set from the reference {@link Hash}
      */
     public static ApproveeViewModel load(Tangle tangle, Indexable hash) throws Exception {
-        return new ApproveeViewModel((Approvee) tangle.load(Approvee.class, hash), hash);
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        ApproveeViewModel approveeViewModel;
+        if (cache != null) {
+            approveeViewModel = cache.get(hash);
+            if (approveeViewModel != null) {
+                return new ApproveeViewModel(approveeViewModel);
+            }
+        }
+
+        approveeViewModel = new ApproveeViewModel((Approvee) tangle.load(Approvee.class, hash), hash);
+        if (cache != null && approveeViewModel.getHashes().size() > 0) {
+            cachePut(tangle, approveeViewModel, hash);
+        }
+
+        return approveeViewModel;
     }
 
     /**
@@ -69,7 +97,14 @@ public class ApproveeViewModel implements HashesViewModel {
 
     @Override
     public boolean store(Tangle tangle) throws Exception {
-        return tangle.save(self, hash);
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        ApproveeViewModel approveeViewModel = cache.get(hash);
+        if (approveeViewModel != null) {
+            return true;
+        }
+
+        cachePut(tangle, this, hash);
+        return true;
     }
 
     @Override
@@ -95,6 +130,7 @@ public class ApproveeViewModel implements HashesViewModel {
     @Override
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Approvee.class,hash);
+        cacheDelete(tangle, hash);
     }
 
     @Override
@@ -104,5 +140,55 @@ public class ApproveeViewModel implements HashesViewModel {
             return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);
         }
         return null;
+    }
+
+    /**
+     * Puts the approvee in cache
+     * 
+     * @param tangle            Tangle
+     * @param approveeViewModel The approveeViewModel to cache
+     * @param hash              The hash of this viewmodel
+     */
+    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
+            cacheRelease(tangle);
+        }
+        cache.put(hash, approveeViewModel);
+    }
+
+    /**
+     * Deletes the item with the specified hash fro the cache. Delegates to {@link Cache#delete(Object)}
+     *
+     * @param tangle Tangle
+     * @param hash   Hash of the item to delete
+     */
+    private static void cacheDelete(Tangle tangle, Indexable hash) {
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache != null) {
+            cache.delete(hash);
+        }
+    }
+
+    /**
+     * Release {@link CacheConfiguration#getReleaseCount()} items from cache. Since this data is immutable, we only
+     * release from memory and not persist to DB again.
+     * 
+     * @param tangle Tangle
+     * @throws Exception Exception
+     */
+    private static void cacheRelease(Tangle tangle) throws Exception {
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+
+        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
+            Indexable hash = releaseQueueCopy.poll();
+            if (hash != null) {
+                ApproveeViewModel approveeViewModel = cache.get(hash);
+                if (approveeViewModel != null) {
+                    cache.release(hash);
+                }
+            }
+        }
     }
 }

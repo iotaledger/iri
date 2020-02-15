@@ -91,6 +91,9 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
     }
 
     public void persistValidatedSpentAddressesAsync(Collection<TransactionViewModel> transactions) {
+        if(transactions.stream().noneMatch(tx -> tx.value() < 0)){
+            return;
+        }
         asyncSpentAddressesPersistor.submit(() -> {
             try {
                 List<Hash> spentAddresses = transactions.stream()

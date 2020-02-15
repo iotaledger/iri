@@ -1,22 +1,23 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -68,6 +69,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
+    // Cache
+    protected int txCacheSize = Defaults.TX_CACHE_SIZE;
+    protected int milestoneBatchWrite = Defaults.MILESTONE_CACHE_SIZE;
+    protected int txCacheReleaseCount = Defaults.TX_CACHE_RELEASE_COUNT;
+    protected int milestoneCacheReleaseCount = Defaults.MILESTONE_CACHE_RELEASE_COUNT;
+
     //Protocol
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
 
@@ -101,10 +108,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsPruningDelay = Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY;
     protected int localSnapshotsIntervalSynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_SYNCED;
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
+    protected String localSnapshotsDbMaxSize = Defaults.LOCAL_SNAPSHOTS_DB_MAX_SIZE; //Human readable
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
-    protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
-    protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
-    protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
+    protected String localSnapshotsDbPath = Defaults.LOCAL_SNAPSHOTS_DB_PATH;
+    protected String localSnapshotsDbLogPath = Defaults.LOCAL_SNAPSHOTS_DB_LOG_PATH;
 
     //Solidification
     protected boolean printSyncProgressEnabled = Defaults.PRINT_SYNC_PROGRESS_ENABLED;
@@ -427,7 +434,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbCacheSize(int dbCacheSize) {
         this.dbCacheSize = dbCacheSize;
     }
-
+    
     @Override
     public String getMainDb() {
         return mainDb;
@@ -437,6 +444,67 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
+    }
+
+    @Override
+    public int getTxCacheSize() {
+        return txCacheSize;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--tx-cache-size" }, description = DbConfig.Descriptions.TX_CACHE_SIZE)
+    protected void setTxCacheSize(int txCacheSize) {
+        if (txCacheSize < 1 || txCacheSize > Defaults.MAX_TX_CACHE_SIZE) {
+            throw new ParameterException("TX_CACHE_SIZE should be between 1 and " + Defaults.MAX_TX_CACHE_SIZE
+                    + ". (found " + txCacheSize + ")");
+        }
+        this.txCacheSize = txCacheSize;
+    }
+
+    @Override
+    public int getMilestoneBatchWrite() {
+        return milestoneBatchWrite;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--milestone-cache-size" }, description = DbConfig.Descriptions.MILESTONE_CACHE_SIZE)
+    protected void setMilestoneBatchWrite(int milestoneBatchWrite) {
+        if (milestoneBatchWrite < 1 || milestoneBatchWrite > Defaults.MAX_MILESTONE_CACHE_SIZE) {
+            throw new ParameterException("MILESTONE_CACHE_SIZE should be between 1 and "
+                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneBatchWrite + ")");
+        }
+        this.milestoneBatchWrite = milestoneBatchWrite;
+    }
+
+    @Override
+    public int getTxCacheReleaseCount() {
+        return txCacheReleaseCount;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--tx-cache-release-count" }, description = DbConfig.Descriptions.TX_BATCH_RELEASE_COUNT)
+    protected void setTxCacheReleaseCount(int txCacheReleaseCount) {
+        if (txCacheReleaseCount < 1 || txCacheReleaseCount > Defaults.MAX_TX_CACHE_RELEASE_COUNT) {
+            throw new ParameterException("TX_CACHE_RELEASE_COUNT should be between 1 and "
+                    + Defaults.MAX_TX_CACHE_RELEASE_COUNT + " .(found " + txCacheReleaseCount + ")");
+        }
+        this.txCacheReleaseCount = txCacheReleaseCount;
+    }
+
+    @Override
+    public int getMilestoneCacheReleaseCount() {
+        return milestoneCacheReleaseCount;
+    }
+
+    @JsonProperty
+    @Parameter(names = { "--milestone-cache-release-count" },
+            description = DbConfig.Descriptions.MILESTONE_BATCH_RELEASE_COUNT)
+    protected void setMilestoneCacheReleaseCount(int milestoneCacheReleaseCount) {
+        if (milestoneCacheReleaseCount < 1 || milestoneCacheReleaseCount > Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT) {
+            throw new ParameterException("MILESTONE_CACHE_RELEASE_COUNT should be between 1 and "
+                    + Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT + " .(found " + milestoneCacheReleaseCount + ")");
+        }
+        this.milestoneCacheReleaseCount = milestoneCacheReleaseCount;
     }
 
     @Override
@@ -576,15 +644,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getLocalSnapshotsBasePath() {
-        return this.localSnapshotsBasePath;
+    public String getLocalSnapshotsDbMaxSize() {
+        return localSnapshotsDbMaxSize;
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-base-path"}, description =
-            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_BASE_PATH)
-    protected void setLocalSnapshotsBasePath(String localSnapshotsBasePath) {
-        this.localSnapshotsBasePath = localSnapshotsBasePath;
+    @Parameter(names = {"--local-snapshots-db-max-size"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_MAX_SIZE)
+    protected void setLocalSnapshotsDbMaxSize(String dbMaxSize) {
+        this.localSnapshotsDbMaxSize = dbMaxSize;
     }
 
     @Override
@@ -623,25 +690,25 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getSpentAddressesDbPath() {
-        return spentAddressesDbPath;
+    public String getLocalSnapshotsDbPath() {
+        return localSnapshotsDbPath;
     }
 
     @JsonProperty
-    @Parameter(names = {"--spent-addresses-db-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_PATH)
-    protected void setSpentAddressesDbPath(String spentAddressesDbPath) {
-        this.spentAddressesDbPath = spentAddressesDbPath;
+    @Parameter(names = {"--localsnapshots-db-path"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_PATH)
+    protected void setLocalSnapshotsDbPath(String localSnapshotsDbPath) {
+        this.localSnapshotsDbPath = localSnapshotsDbPath;
     }
 
     @Override
-    public String getSpentAddressesDbLogPath() {
-        return spentAddressesDbLogPath;
+    public String getLocalSnapshotsDbLogPath() {
+        return localSnapshotsDbLogPath;
     }
 
     @JsonProperty
-    @Parameter(names = {"--spent-addresses-db-log-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH)
-    protected void setSpentAddressesDbLogPath(String spentAddressesDbLogPath) {
-        this.spentAddressesDbLogPath = spentAddressesDbLogPath;
+    @Parameter(names = {"--localsnapshots-db-log-path"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_LOG_PATH)
+    protected void setLocalSnapshotsDbLogPath(String localSnapshotsDbLogPath) {
+        this.localSnapshotsDbLogPath = localSnapshotsDbLogPath;
     }
 
     /**
@@ -881,6 +948,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
 
+        // Cache
+        int MAX_TX_CACHE_SIZE = 1000;
+        int MAX_MILESTONE_CACHE_SIZE = 30;
+        int MAX_TX_CACHE_RELEASE_COUNT = 10;
+        int MAX_MILESTONE_CACHE_RELEASE_COUNT = 10;
+        int TX_CACHE_SIZE = MAX_TX_CACHE_SIZE;
+        int MILESTONE_CACHE_SIZE = MAX_MILESTONE_CACHE_SIZE;
+        int TX_CACHE_RELEASE_COUNT = MAX_TX_CACHE_RELEASE_COUNT;
+        int MILESTONE_CACHE_RELEASE_COUNT = MAX_MILESTONE_CACHE_RELEASE_COUNT;
+
         //Protocol
         double P_SEND_MILESTONE = 0.02d;
         int MWM = 14;
@@ -917,16 +994,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
         boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
 
+        String LOCAL_SNAPSHOTS_DB_MAX_SIZE = "-1";
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
         int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
         int LOCAL_SNAPSHOTS_DEPTH = 100;
         int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
-        String SPENT_ADDRESSES_DB_PATH = "spent-addresses-db";
-        String SPENT_ADDRESSES_DB_LOG_PATH = "spent-addresses-log";
+        String LOCAL_SNAPSHOTS_DB_PATH = "localsnapshots-db";
+        String LOCAL_SNAPSHOTS_DB_LOG_PATH = "localsnapshots-log";
 
-        String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIGNATURE_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_FILE =

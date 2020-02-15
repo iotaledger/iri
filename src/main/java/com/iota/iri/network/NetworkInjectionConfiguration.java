@@ -3,13 +3,15 @@ package com.iota.iri.network;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.impl.TipsRequesterImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 
@@ -37,18 +39,21 @@ public class NetworkInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    TipsRequester provideTipsRequester(NeighborRouter neighborRouter, Tangle tangle, LatestMilestoneTracker latestMilestoneTracker, TransactionRequester txRequester) {
-        return new TipsRequesterImpl(neighborRouter, tangle, latestMilestoneTracker, txRequester);
+    TipsRequester provideTipsRequester(NeighborRouter neighborRouter, Tangle tangle,
+                                       MilestoneSolidifier milestoneSolidifier, TransactionRequester txRequester) {
+        return new TipsRequesterImpl(neighborRouter, tangle, milestoneSolidifier, txRequester);
     }
 
     @Singleton
     @Provides
     TransactionProcessingPipeline provideTransactionProcessingPipeline(NeighborRouter neighborRouter,
             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester transactionRequester) {
+            TipsViewModel tipsViewModel, TransactionRequester transactionRequester,
+            TransactionSolidifier transactionSolidifier, MilestoneService milestoneService,
+            MilestoneSolidifier milestoneSolidifier) {
         return new TransactionProcessingPipelineImpl(neighborRouter, configuration, txValidator, tangle,
-                snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester);
+                snapshotProvider, tipsViewModel, transactionRequester, transactionSolidifier,
+                milestoneService, milestoneSolidifier);
     }
 
     @Singleton

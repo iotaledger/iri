@@ -1,10 +1,11 @@
+import json
+import logging
+import urllib3
 from aloe import world
 from iota import Iota, Address, Tag, TryteString
-import json
-import urllib3
+
 from . import value_fetch_logic as value_fetch
 
-import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,7 @@ def prepare_options(args, option_list):
                 'configValue': value_fetch.fetch_config_value,
                 'configList': value_fetch.fetch_config_list,
                 'boolList': value_fetch.fetch_bool_list,
+                'boolListMixed': value_fetch.fetch_bool_list_mixed,
                 # TODO: remove the need for this logic
                 'ignore': value_fetch.fetch_string
             }
@@ -134,7 +136,8 @@ def fetch_call(api_call, api, options):
 
     try:
         response = call_list[api_call](**options)
-    except ValueError:
+    except ValueError as e:
+        logger.error(str(e))
         response = None
 
     return response

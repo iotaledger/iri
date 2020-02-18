@@ -3,7 +3,7 @@ package com.iota.iri.cache;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Cache operations
@@ -107,5 +107,5 @@ public interface Cache<K, V> {
      * 
      * @return The release queue
      */
-    Queue<K> getReleaseQueueCopy();
+    ConcurrentLinkedQueue<K> getReleaseQueue();
 }

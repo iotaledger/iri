@@ -132,9 +132,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void release(List<K> keys) {
-        keys.forEach(key -> {
-            release(key);
-        });
+        keys.forEach(this::release);
     }
 
     @Override
@@ -183,7 +181,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public Queue<K> getReleaseQueueCopy() {
-        return new ConcurrentLinkedQueue<>(releaseQueue);
+    public ConcurrentLinkedQueue<K> getReleaseQueue() {
+        return releaseQueue;
     }
 }

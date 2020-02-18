@@ -989,25 +989,19 @@ public class TransactionViewModel {
      */
     public static void cacheReleaseAll(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
-        List<Indexable> hashesToRelease = new ArrayList<>();
-        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
 
-        while (!releaseQueueCopy.isEmpty()) {
-            Indexable hash = releaseQueueCopy.poll();
+        for(Indexable hash : releaseQueue) {
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
-                hashesToRelease.add(hash);
                 if (tvm != null && tvm.shouldPersist()) {
                     tvm.setShouldPersist(false);
                     cache.put(hash, tvm);
-                    batch.addAll(tvm.getSaveBatch());
+                    tangle.save(tvm.getTransaction(), hash);
+                    cache.release();
                 }
             }
         }
-
-        tangle.saveBatch(batch);
-        cache.release(hashesToRelease);
     }
 
     /**
@@ -1018,24 +1012,24 @@ public class TransactionViewModel {
      */
     private static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
-        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
-        List<Indexable> hashesToRelease = new ArrayList<>();
+        Queue<Indexable> releaseQueue = cache.getReleaseQueue();
 
-        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable hash = releaseQueueCopy.poll();
+        int releaseCount = 0;
+        for (Indexable hash : releaseQueue) {
+            if(releaseCount > cache.getConfiguration().getReleaseCount()){
+                break;
+            }
             if (hash != null) {
                 TransactionViewModel tvm = cache.get(hash);
-                hashesToRelease.add(hash);
                 if (tvm != null && tvm.shouldPersist()) {
                     tvm.setShouldPersist(false);
                     cache.put(hash, tvm);
-                    batch.addAll(tvm.getSaveBatch());
+                    tangle.save(tvm.getTransaction(), hash);
+                    cache.release(hash);
                 }
             }
+            releaseCount++;
         }
-        tangle.saveBatch(batch);
-        cache.release(hashesToRelease);
     }
 
     /**

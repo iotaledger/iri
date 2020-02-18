@@ -998,7 +998,7 @@ public class TransactionViewModel {
                     tvm.setShouldPersist(false);
                     cache.put(hash, tvm);
                     tangle.save(tvm.getTransaction(), hash);
-                    cache.release();
+                    cache.release(hash);
                 }
             }
         }

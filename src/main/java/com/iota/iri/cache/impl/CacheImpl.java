@@ -124,15 +124,15 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public void release() {
-        for (int i = 0; i < cacheConfiguration.getReleaseCount(); i++) {
-            release(releaseQueue.peek());
+    public void releaseNext() {
+        K key = releaseQueue.poll();
+        if (key == null) {
+            return;
         }
-    }
-
-    @Override
-    public void release(List<K> keys) {
-        keys.forEach(this::release);
+        V value = strongStore.remove(key);
+        if (value != null) {
+            weakStore.put(key, value);
+        }
     }
 
     @Override
@@ -147,7 +147,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
 
     @Override
     public void delete(List<K> keys) {
-        keys.forEach(key -> delete(key));
+        keys.forEach(this::delete);
     }
 
     @Override
@@ -181,7 +181,7 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public ConcurrentLinkedQueue<K> getReleaseQueue() {
-        return releaseQueue;
+    public K getNextReleaseKey() {
+        return releaseQueue.peek();
     }
 }

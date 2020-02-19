@@ -425,7 +425,7 @@ public class TransactionViewModelTest {
     public void updateTxShouldBeSavedBeforeRelease() throws Exception {
         CacheManager cacheManager = new CacheManagerImpl(new MainnetConfig());
         cacheManager.clearAllCaches();
-        cacheManager.add(TransactionViewModel.class, new CacheConfigurationImpl(1, 1));
+        cacheManager.add(TransactionViewModel.class, new CacheConfigurationImpl(1));
         tangle.setCacheManager(cacheManager);
 
         int numberOfTxs = 2;

@@ -3,7 +3,6 @@ package com.iota.iri.cache;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Cache operations
@@ -53,14 +52,9 @@ public interface Cache<K, V> {
     void release(K key);
 
     /**
-     * Release expired items from the cache according to its {@link CacheConfiguration} and puts it in the weak store.
+     * Release the key at the top of the release queue and puts it in the weak store.
      */
-    void release();
-
-    /**
-     * Release all items specified in the given collection and puts them in the weak store.
-     */
-    void release(List<K> keys);
+    void releaseNext();
 
     /**
      * Permanently deletes an item from cache. It does not put it in the weak store.
@@ -103,9 +97,9 @@ public interface Cache<K, V> {
     CacheConfiguration getConfiguration();
 
     /**
-     * Gets the release queue
+     * Gets the next key that will be release from cache
      * 
-     * @return The release queue
+     * @return Key to be released
      */
-    ConcurrentLinkedQueue<K> getReleaseQueue();
+    K getNextReleaseKey();
 }

@@ -35,6 +35,7 @@ public class NeighborRouterImpl implements NeighborRouter {
 
     private static final Logger log = LoggerFactory.getLogger(NeighborRouterImpl.class);
     private static final String PROTOCOL_PREFIX = "tcp://";
+    private static final int MAX_PORT = 65535;
 
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -829,7 +830,10 @@ public class NeighborRouterImpl implements NeighborRouter {
     }
 
     /**
-     * Checks whether the given URI is valid. The URI is valid if it is not null and it uses TCP as the protocol.
+     * Checks whether the given URI is valid. The URI is valid if
+     * - it is not null
+     * - it uses TCP as the protocol and
+     * - the port is in the range 0 and {@value MAX_PORT}
      * 
      * @param uri The URI to check
      * @return true if the URI is valid, false if not
@@ -837,6 +841,10 @@ public class NeighborRouterImpl implements NeighborRouter {
     private static boolean isURIValid(final URI uri) {
         if (!uri.getScheme().equals("tcp")) {
             log.error("'{}' is not a valid URI schema, only TCP ({}) is supported", uri, PROTOCOL_PREFIX);
+            return false;
+        }
+        if (uri.getPort() < 0 || uri.getPort() > MAX_PORT) {
+            log.error("'{} is not in the valid port range of {} and {}", uri.getPort(), 0, MAX_PORT);
             return false;
         }
         return true;

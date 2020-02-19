@@ -74,10 +74,10 @@ To compile the Java file yourself, do the following on a Linux operating system:
 git clone https://github.com/iotaledger/iri
 cd iri
 mvn clean compile
-mvn package
+mvn clean package
 ```
 
-Your `.jar` file will be in the `target` directory.
+Your `.jar` file is in the `target` directory.
 
 # Getting started
 

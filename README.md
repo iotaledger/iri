@@ -73,7 +73,6 @@ To compile the Java file yourself, do the following on a Linux operating system:
 ```bash
 git clone https://github.com/iotaledger/iri
 cd iri
-mvn clean compile
 mvn clean package
 ```
 

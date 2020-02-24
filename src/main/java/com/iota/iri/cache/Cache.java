@@ -53,8 +53,10 @@ public interface Cache<K, V> {
 
     /**
      * Release the key at the top of the release queue and puts it in the weak store.
+     *
+     * @return True if the key was not null. False otherwise.
      */
-    void releaseNext();
+    boolean releaseNext();
 
     /**
      * Permanently deletes an item from cache. It does not put it in the weak store.

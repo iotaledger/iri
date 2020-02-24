@@ -84,7 +84,7 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
-    // True if should the tvm should be persisted to DB upon cache releaseNext. False otherwise.
+    // True if should the tvm should be persisted to DB upon cache persistAndReleaseNext. False otherwise.
     private boolean shouldPersist = false;
 
     /**
@@ -975,7 +975,7 @@ public class TransactionViewModel {
     private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
         if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(tangle, cache);
+            cachePersistAndReleaseNext(tangle, cache);
         }
         cache.put(hash, transactionViewModel);
     }
@@ -988,10 +988,10 @@ public class TransactionViewModel {
      */
     public static void cacheReleaseAll(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        Indexable hash = cache.getNextReleaseKey();
-        while(hash != null) {
-            releaseNext(tangle, cache, hash);
-            hash = cache.getNextReleaseKey();
+        while(true) {
+            if (!cachePersistAndReleaseNext(tangle, cache)){
+                break;
+            }
         }
     }
 
@@ -1001,19 +1001,15 @@ public class TransactionViewModel {
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    private static void cacheRelease(Tangle tangle, Cache<Indexable, TransactionViewModel> cache) throws Exception {
+    private static boolean cachePersistAndReleaseNext(Tangle tangle, Cache<Indexable, TransactionViewModel> cache) throws Exception {
         Indexable hash = cache.getNextReleaseKey();
-        releaseNext(tangle, cache, hash);
-    }
-
-    private static void releaseNext(Tangle tangle, Cache<Indexable, TransactionViewModel> cache, Indexable hash) throws Exception {
         TransactionViewModel tvm = cache.get(hash);
         if (tvm != null && tvm.shouldPersist()) {
             tvm.setShouldPersist(false);
             cache.put(hash, tvm);
             tangle.save(tvm.getTransaction(), hash);
         }
-        cache.releaseNext();
+        return cache.releaseNext();
     }
 
     /**
@@ -1043,7 +1039,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * If the tvm should be persisted to DB upon cache releaseNext.
+     * If the tvm should be persisted to DB upon cache persistAndReleaseNext.
      *
      * @return True if should persist. False otherwise
      */
@@ -1052,7 +1048,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * Sets whether the tvm should be persisted to DB upon cache releaseNext or not.
+     * Sets whether the tvm should be persisted to DB upon cache persistAndReleaseNext or not.
      * 
      * @param shouldPersist If the tvm should be persisted
      */

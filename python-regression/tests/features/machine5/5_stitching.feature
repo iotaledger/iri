@@ -19,7 +19,7 @@ Feature: Ensure node reliability while stitching a side tangle
 
 		When a transaction is issued referencing the previous transaction
 
-		And "getTransactionsToApprove" is called on "nodeA-m4" with:
+		And "getTransactionsToApprove" is called on "nodeA-m5" with:
 		|keys                   |values                 |type           |
 		|depth                  |3                      |int            |
 

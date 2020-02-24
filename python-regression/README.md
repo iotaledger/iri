@@ -51,6 +51,7 @@ contains several signed milestone transactions, and several unsigned transaction
 testnet coordinator signature, while the other is not. The one that requires validation should solidify to one point, 
 while the other should solidify further. 
 
+__*Note:*__ _The db's used for these tests have been documented below for reference_
 
 ### Running Tests Locally
 
@@ -178,3 +179,55 @@ aloe 4_api_tests.feature -w ./tests/features/machine1 -a '!getNodeInfo'
 _Note: To negate running the tests using the flag requires the `!` and flag to be wrapped in parentheses as shown above_
 
 The same flag can be used for several scenarios, and they will all either be included or negated by this flag. 
+
+
+### _*DB Descriptions:*_ 
+##### _Machine 1_
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_Db_With_LS_Db.tar.gz - Full LocalSnapshot test db 
+synced to milestone 10321 and a local snapshot at 10220. Contains mostly 0 value transactions with a few spends early on 
+to generate the localsnapshot-db as well as to provide transactions for pruning reference 
+
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_DB_and_Snapshot.tar - Full LocalSnapshot test db 
+synced to milestone 10321 without any localsnapshots-db. 
+
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_LS_Db.tar.gz - No LocalSnapshot test db provided, 
+instead the localsnapshot-db from index 10220 is provided instead. 
+
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/PruningTestDB.tar - A full db synced to milestone 15000 
+containing a mix of value and 0 value transactions that will be pruned once the node takes its snapshot. This is used 
+to ensure that any transaction below the threshold is pruned correctly. 
+
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/SpentAddressesTestDB.tar - A full db synced to milestone 
+10100 with a mix of value and 0 value transactions that will be pruned once the node takes its snapshot. This is used 
+to ensure that spent addresses are persisted in the local snapshot data after pruning occurs. 
+
+
+##### _Machine 2_
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Blowball_Tests_db.tar - A full db synced to milestone 27. 
+There are several tips surrounding the last milestone, and the test is used to ensure that new transactions aren't 
+attaching en masse to the last milestone present. 
+
+
+##### _Machine 3_
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Transactions_Tests_db.tar - A small db synced to milestone 
+50 with a snapshot file containing a list of addresses preset for value spending. This DB is used to test value and non 
+value transactions and their inclusion in the next milestone.
+
+
+##### _Machine 4_
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/testnet_files.tgz - A full db synced to milestone 8412 used 
+for testing basic api commands.
+
+
+##### _Machine 5_
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Stitching_tests_db.tar - A full db synced to milestone 37 
+with a large subtangle that is building beside the main tangle. This db is used to test the success or failure of 
+stitching this subtangle back into the original.
+
+
+##### _Machine 6_
+https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Validation_tests_db.tar - A full db containing 2 separate 
+synchronisation points. The first point is hit at milestone 37, where the last milestone issued with valid signatures is 
+present. The db contains several more milestones that have been attached without a valid signature. The test will sync 
+to 37 if a valid signature is required and 45 if not. 
+

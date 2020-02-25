@@ -1,6 +1,10 @@
 # Contribute to IRI
 
+This document describes how to contribute to IRI.
+
 We encourage everyone with knowledge of IOTA technology to contribute.
+
+Thanks! :heart:
 
 ## Do you have a question?
 
@@ -42,6 +46,8 @@ Please check the following list:
 
 To report a bug, [open a new issue](https://github.com/iotaledger/iri/issues/new), and be sure include as many details as possible, using the template.
 
+**Note:** Minor changes such as fixing a typo can but do not need an open issue.
+
 If you also want to fix the bug, submit a [pull request](#pull-requests) and reference the issue.
 
 ## Suggest a new feature
@@ -82,10 +88,29 @@ The IOTA documentation is based in the [documentation](https://github.com/iotale
 
 ## Pull Requests
 
+This section guides you through submitting a pull request (PR). Following these guidelines helps give your PR the best chance of being approved and merged.
+
+### Before submitting a pull request
+
 When creating a pull request, please follow these steps to have your contribution considered by the maintainers:
 
-1. Follow all instructions in the PR template
-2. Follow the [code styleguide](STYLEGUIDE.md)
-3. After you submit your pull request, make sure that all [status checks](https://help.github.com/articles/about-status-checks/) are passing
+- A pull request should have exactly one concern (for example one feature or one bug). If a PR address more than one concern, it should be split into two or more PRs.
+
+- A pull request can be merged only if it references an open issue
+
+    **Note:** Minor changes such as fixing a typo can but do not need an open issue.
+
+- All code should be well tested and follow the [code styleguide](STYLEGUIDE.md)
+
+### Submitting a pull request
+
+The following is a typical workflow for submitting a new pull request:
+
+1. Fork the repository
+2. Create a new branch in your fork
+3. Commit changes and push them to your fork
+4. Create a pull request against the `upstream/master` branch
+
+If all [status checks](https://help.github.com/articles/about-status-checks/) pass, and the maintainer approves the PR, it will be merged.
 
 **Note:** Reviewers may ask you to complete additional work, tests, or other changes before your pull request can be approved and merged.

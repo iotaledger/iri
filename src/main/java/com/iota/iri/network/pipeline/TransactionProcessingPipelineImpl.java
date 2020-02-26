@@ -20,10 +20,7 @@ import com.iota.iri.utils.Converter;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import com.iota.iri.utils.IotaUtils;
 import org.slf4j.Logger;
@@ -70,11 +67,11 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
 
-    private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> preProcessStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> validationStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> receivedStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> broadcastStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> replyStageQueue = new LinkedBlockingQueue<>();
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.

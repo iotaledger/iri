@@ -102,11 +102,13 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     @Override
     public void addToSolidificationQueue(Hash hash){
         try{
-            if (transactionsToSolidify.size() >= MAX_SIZE - 1) {
-                transactionsToSolidify.remove();
-            }
+            if(!transactionsToSolidify.contains(hash)) {
+                if (transactionsToSolidify.size() >= MAX_SIZE - 1) {
+                    transactionsToSolidify.remove();
+                }
 
-            transactionsToSolidify.put(hash);
+                transactionsToSolidify.put(hash);
+            }
         } catch(Exception e){
             log.error("Error placing transaction into solidification queue",e);
         }

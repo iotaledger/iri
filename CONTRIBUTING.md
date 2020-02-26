@@ -10,18 +10,14 @@ Thanks! :heart:
 
 If you have a general or technical question, you can use one of the following resources instead of submitting an issue:
 
-- [**Developer documentation:**](https://docs.iota.org/) For information about developing on IOTA
-- [**Discord:**](https://discord.iota.org/) For communicating with the developers and community members
-- [**IOTA cafe:**](https://iota.cafe/) For discussing technical questions with the Research Department at the IOTA Foundation
-- [**StackExchange:**](https://iota.stackexchange.com/) For asking technical questions
-
-## Code of Conduct
-
-This project and everyone participating in it is governed by the [IOTA Code of Conduct](CODE_OF_CONDUCT.md).
+- [**Developer documentation:**](https://docs.iota.org/) For official information about developing with IOTA technology
+- [**Discord:**](https://discord.iota.org/) For real-time chats with the developers and community members
+- [**IOTA cafe:**](https://iota.cafe/) For technical discussions with the Research and Development Department at the IOTA Foundation
+- [**StackExchange:**](https://iota.stackexchange.com/) For technical and troubleshooting questions
 
 ## Ways to contribute
 
-To contribute to IRI, you can do any of the following:
+To contribute to IRI on GitHub, you can:
 
 - Report a bug
 - Suggest a new feature
@@ -44,7 +40,7 @@ Please check the following list:
 
 ### Submitting A Bug Report
 
-To report a bug, [open a new issue](https://github.com/iotaledger/iri/issues/new), and be sure include as many details as possible, using the template.
+To report a bug, [open a new issue](https://github.com/iotaledger/iri/issues/new), and be sure to include as many details as possible, using the template.
 
 **Note:** Minor changes such as fixing a typo can but do not need an open issue.
 
@@ -62,7 +58,7 @@ This section guides you through suggesting a new feature. Following these guidel
 
 To suggest a new feature, talk to the IOTA community and IOTA Foundation members in the #iri-discussion channel on [Discord](https://discord.iota.org/).
 
-If the IRI team agrees that your feature is necessary, the team will create an issue for it.
+If the IRI team approves your feature, the team will create an issue for it.
 
 ## Build a new feature
 
@@ -84,9 +80,11 @@ To build a new feature, check out a new branch based on the `dev` branch, and be
 
 ## Contribute to the IRI documentation
 
-The IOTA documentation is based in the [documentation](https://github.com/iotaledger/documentation) repository. You are welcome to contribute.
+The IRI documentation is hosted on https://docs.iota.org, which is built from content in the [documentation](https://github.com/iotaledger/documentation) repository.
 
-## Pull Requests
+Please see the [guidelines](https://github.com/iotaledger/documentation/CONTRIBUTING.md) on the documentation repository for information on how to contribute to the documentation.
+
+## Pull requests
 
 This section guides you through submitting a pull request (PR). Following these guidelines helps give your PR the best chance of being approved and merged.
 
@@ -106,11 +104,15 @@ When creating a pull request, please follow these steps to have your contributio
 
 The following is a typical workflow for submitting a new pull request:
 
-1. Fork the repository
-2. Create a new branch in your fork
+1. Fork this repository
+2. Create a new branch based on your fork
 3. Commit changes and push them to your fork
-4. Create a pull request against the `upstream/master` branch
+4. Create a pull request against the `dev` branch
 
 If all [status checks](https://help.github.com/articles/about-status-checks/) pass, and the maintainer approves the PR, it will be merged.
 
 **Note:** Reviewers may ask you to complete additional work, tests, or other changes before your pull request can be approved and merged.
+
+## Code of Conduct
+
+This project and everyone participating in it is governed by the [IOTA Code of Conduct](CODE_OF_CONDUCT.md).

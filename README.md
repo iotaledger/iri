@@ -88,7 +88,7 @@ For an API reference, see the [documentation portal](https://docs.iota.org/docs/
 
 ## Supporting the project
 
-If the IOTA JavaScript client library has been useful to you and you feel like contributing, consider posting a [bug report](https://github.com/iotaledger/iri/issues/new), [feature request](https://github.com/iotaledger/iri/issues/new) or a [pull request](https://github.com/iotaledger/iri/pulls/). 
+If you want to contribute to IRI, consider posting a [bug report](https://github.com/iotaledger/iri/issues/new), [feature request](https://github.com/iotaledger/iri/issues/new) or a [pull request](https://github.com/iotaledger/iri/pulls/). 
 
 Please read the following before contributing:
 

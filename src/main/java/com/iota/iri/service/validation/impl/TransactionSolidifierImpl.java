@@ -35,6 +35,8 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     private static final int MAX_SIZE= 10000;
 
+    private static final int SOLIDIFICATION_INTERVAL = 100;
+
     private static final IntervalLogger log = new IntervalLogger(TransactionSolidifier.class);
 
     /**
@@ -82,8 +84,8 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     @Override
     public void start(){
-        executorService.silentExecute(this::processTransactionsToSolidify);
-
+        executorService.silentScheduleWithFixedDelay(this::processTransactionsToSolidify, 0,
+                SOLIDIFICATION_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -100,14 +102,11 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     @Override
     public void addToSolidificationQueue(Hash hash){
         try{
-            if(!transactionsToSolidify.contains(hash)) {
-
-                if(transactionsToSolidify.size() >= MAX_SIZE - 1){
-                    transactionsToSolidify.remove();
-                }
-
-                transactionsToSolidify.put(hash);
+            if (transactionsToSolidify.size() >= MAX_SIZE - 1) {
+                transactionsToSolidify.remove();
             }
+
+            transactionsToSolidify.put(hash);
         } catch(Exception e){
             log.error("Error placing transaction into solidification queue",e);
         }
@@ -157,16 +156,14 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     private void processTransactionsToSolidify(){
         Hash hash;
-        while (!Thread.currentThread().isInterrupted()) {
-            if((hash = transactionsToSolidify.poll()) != null) {
-                try {
-                    checkSolidity(hash);
-                } catch (Exception e) {
-                    log.info(e.getMessage());
-                }
+        if((hash = transactionsToSolidify.poll()) != null) {
+            try {
+                checkSolidity(hash);
+            } catch (Exception e) {
+                log.info(e.getMessage());
             }
-            propagateSolidTransactions();
         }
+            propagateSolidTransactions();
     }
 
     /**
@@ -350,12 +347,11 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
 
     @VisibleForTesting
     void propagateSolidTransactions() {
-        Iterator<Hash> cascadeIterator = solidTransactions.iterator();
         int cascadeCount = 0;
-        while(cascadeCount < MAX_SIZE && cascadeIterator.hasNext() && !Thread.currentThread().isInterrupted()) {
+        while(!Thread.currentThread().isInterrupted() && solidTransactions.peek() != null && cascadeCount < MAX_SIZE) {
             try {
                 cascadeCount += 1;
-                Hash hash = cascadeIterator.next();
+                Hash hash = solidTransactions.poll();
                 TransactionViewModel transaction = fromHash(tangle, hash);
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
@@ -365,7 +361,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                         tipsViewModel.setSolid(h);
                     }
                 }
-                cascadeIterator.remove();
             } catch (Exception e) {
                 log.error("Error while propagating solidity upwards", e);
             }

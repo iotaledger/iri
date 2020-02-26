@@ -347,10 +347,8 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
 
     @VisibleForTesting
     void propagateSolidTransactions() {
-        int cascadeCount = 0;
-        while(!Thread.currentThread().isInterrupted() && solidTransactions.peek() != null && cascadeCount < MAX_SIZE) {
+        while(!Thread.currentThread().isInterrupted() && solidTransactions.peek() != null) {
             try {
-                cascadeCount += 1;
                 Hash hash = solidTransactions.poll();
                 TransactionViewModel transaction = fromHash(tangle, hash);
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();

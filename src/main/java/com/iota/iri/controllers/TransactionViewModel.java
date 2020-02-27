@@ -988,7 +988,7 @@ public class TransactionViewModel {
      */
     public static void cacheReleaseAll(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        while(cachePersistAndReleaseNext(tangle, cache));
+        while(cachePersistAndReleaseNext(tangle, cache)){}
     }
 
     /**

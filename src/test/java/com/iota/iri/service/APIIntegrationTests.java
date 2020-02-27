@@ -358,7 +358,6 @@ public class APIIntegrationTests {
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "getBalances");
         request.put("addresses", ADDRESSES);
-        request.put("threshold", 100);
 
         given().
             body(gson().toJson(request)).

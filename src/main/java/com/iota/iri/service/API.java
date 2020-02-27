@@ -1059,20 +1059,12 @@ public class API {
       *
       * @param addresses Address for which to get the balance (do not include the checksum)
       * @param tips The optional tips to find the balance through.
-      * @param threshold The confirmation threshold between 0 and 100(inclusive).
-      *                  Should be set to 100 for getting balance by counting only confirmed transactions.
       * @return {@link com.iota.iri.service.dto.GetBalancesResponse}
       * @throws Exception When the database has encountered an error
       **/
     @Document(name="getBalances")
     private AbstractResponse getBalancesStatement(List<String> addresses, 
-                                                  List<String> tips,
-                                                  int threshold) throws Exception {
-
-        if (threshold <= 0 || threshold > 100) {
-            return ErrorResponse.create("Illegal 'threshold'");
-        }
-
+                                                  List<String> tips) throws Exception {
         final List<Hash> addressList = addresses.stream()
                 .map(address -> (HashFactory.ADDRESS.create(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
@@ -1527,10 +1519,8 @@ public class API {
             final List<String> tips = request.containsKey("tips") ?
                 getParameterAsList(request,"tips", HASH_SIZE):
                 null;
-            final int threshold = getParameterAsInt(request, "threshold");
-            
             try {
-                return getBalancesStatement(addresses, tips, threshold);
+                return getBalancesStatement(addresses, tips);
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }

@@ -988,11 +988,7 @@ public class TransactionViewModel {
      */
     public static void cacheReleaseAll(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        while(true) {
-            if (!cachePersistAndReleaseNext(tangle, cache)){
-                break;
-            }
-        }
+        while(!cachePersistAndReleaseNext(tangle, cache));
     }
 
     /**
@@ -1005,6 +1001,8 @@ public class TransactionViewModel {
         Indexable hash = cache.getNextReleaseKey();
         TransactionViewModel tvm = cache.get(hash);
         if (tvm != null && tvm.shouldPersist()) {
+            //We update and cache this item again so that in the case where this released item is brought back from
+            // weakStore, it does not write to DB again.
             tvm.setShouldPersist(false);
             cache.put(hash, tvm);
             tangle.save(tvm.getTransaction(), hash);

@@ -80,11 +80,27 @@ Feature: Test Bootstrapping With LS
     Takes a node with a large db and transaction pruning enabled, and checks to make sure that the transactions below
     the pruning depth are no longer present.
 
-    Given "checkConsistency" is called on "nodeD-m6" with:
+    Given "getInclusionStates" is called on "nodeD-m6" with:
       |keys                       |values                   |type             |
-      |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue      |
+      |transactions               |LS_PRUNED_TRANSACTIONS   |staticValue      |
+      |tips                       |LS_PRUNING_TIP           |staticList       |
 
-    Then the response for "checkConsistency" should return null
+    And the response for "getInclusionStates" should return with:
+      |keys                       |values                   |type             |
+      |states                     |True                     |boolList         |
+
+    # Trigger pruning and wait for it to finish
+    When the next 10 milestones are issued
+    And we wait "15" second/seconds
+
+    And "getInclusionStates" is called on "nodeD-m6" with:
+      |keys                       |values                   |type             |
+      |transactions               |LS_PRUNED_TRANSACTIONS   |staticValue      |
+      |tips                       |LS_PRUNING_TIP           |staticList       |
+
+    Then the response for "getInclusionStates" should return with:
+      |keys                       |values                   |type             |
+      |states                     |False                    |boolList         |
 
 
   Scenario: Check unconfirmed transaction is spent from

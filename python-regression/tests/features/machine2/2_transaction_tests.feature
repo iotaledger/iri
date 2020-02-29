@@ -17,7 +17,7 @@ Feature: Test transaction confirmation
         |transactions           |evaluate_and_send          |responseValue  |
 
         #Give the node 10 seconds to solidify the milestone
-        And we wait "10" second/seconds
+        And we wait "15" second/seconds
 
         Then "getInclusionStates" is called on "nodeA-m2" with:
         |keys                   |values                     |type           |
@@ -62,7 +62,7 @@ Feature: Test transaction confirmation
         |transactions           |evaluate_and_send          |responseValue  |
 
         #Give the node time to solidify the milestone
-        And we wait "10" second/seconds
+        And we wait "15" second/seconds
 
         Then "getInclusionStates" is called on "nodeA-m2" with:
         |keys                   |values                     |type           |

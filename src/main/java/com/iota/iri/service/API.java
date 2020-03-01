@@ -566,6 +566,8 @@ public class API {
             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
+            } else {
+                elements.add(null);
             }
         }
         if (elements.size() > maxGetTrytes){

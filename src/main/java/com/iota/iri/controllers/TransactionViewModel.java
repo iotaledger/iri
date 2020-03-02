@@ -974,7 +974,7 @@ public class TransactionViewModel {
      */
     private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
+        while (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
             cachePersistAndReleaseNext(tangle, cache);
         }
         cache.put(hash, transactionViewModel);

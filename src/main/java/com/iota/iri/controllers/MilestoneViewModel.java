@@ -154,7 +154,7 @@ public class MilestoneViewModel {
         if (cache == null) {
             return;
         }
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
+        while (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
             cacheRelease(cache);
         }
         cache.put(index, milestoneViewModel);

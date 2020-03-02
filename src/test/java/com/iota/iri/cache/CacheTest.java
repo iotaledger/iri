@@ -33,7 +33,7 @@ public class CacheTest {
 
     @Before
     public void setUp() {
-        cacheConfiguration = new CacheConfigurationImpl(100, 10);
+        cacheConfiguration = new CacheConfigurationImpl(100);
         cache = new CacheImpl<>(cacheConfiguration);
     }
 
@@ -98,21 +98,10 @@ public class CacheTest {
     }
 
     @Test
-    public void shouldReleaseElementsWithKeys() {
+    public void shouldRelease() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
-        cache.put(hash1, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH1), hash1));
-
-        List<Indexable> keys = new ArrayList<Indexable>() {
-
-            {
-                add(hash);
-                add(hash1);
-            }
-        };
-
-        cache.release(keys);
-
-        Assert.assertTrue("Cache should be empty", cache.getSize() == 0);
+        cache.releaseNext();
+        Assert.assertTrue("Cache should be empty after full release", cache.getSize() == 0);
     }
 
     @Test

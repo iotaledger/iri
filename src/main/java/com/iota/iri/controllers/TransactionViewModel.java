@@ -1,7 +1,6 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.cache.Cache;
-import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.service.snapshot.Snapshot;
@@ -85,7 +84,7 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
-    // True if should the tvm should be persisted to DB upon cache release. False otherwise.
+    // True if should the tvm should be persisted to DB upon cache persistAndReleaseNext. False otherwise.
     private boolean shouldPersist = false;
 
     /**
@@ -975,67 +974,40 @@ public class TransactionViewModel {
      */
     private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(tangle);
+        while (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
+            cachePersistAndReleaseNext(tangle, cache);
         }
         cache.put(hash, transactionViewModel);
     }
 
     /**
      * Release all transactions from cache.
-     * 
+     *
      * @param tangle Tangle
      * @throws Exception Exception
      */
     public static void cacheReleaseAll(Tangle tangle) throws Exception {
         Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
-        List<Indexable> hashesToRelease = new ArrayList<>();
-        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
-
-        while (!releaseQueueCopy.isEmpty()) {
-            Indexable hash = releaseQueueCopy.poll();
-            if (hash != null) {
-                TransactionViewModel tvm = cache.get(hash);
-                hashesToRelease.add(hash);
-                if (tvm != null && tvm.shouldPersist()) {
-                    tvm.setShouldPersist(false);
-                    cache.put(hash, tvm);
-                    batch.addAll(tvm.getSaveBatch());
-                }
-            }
-        }
-
-        tangle.saveBatch(batch);
-        cache.release(hashesToRelease);
+        while(cachePersistAndReleaseNext(tangle, cache)){}
     }
 
     /**
-     * Release {@link CacheConfiguration#getReleaseCount()} items from the cache
-     * 
+     * Release the next item from the cache
+     *
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    private static void cacheRelease(Tangle tangle) throws Exception {
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
-        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
-        List<Indexable> hashesToRelease = new ArrayList<>();
-
-        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable hash = releaseQueueCopy.poll();
-            if (hash != null) {
-                TransactionViewModel tvm = cache.get(hash);
-                hashesToRelease.add(hash);
-                if (tvm != null && tvm.shouldPersist()) {
-                    tvm.setShouldPersist(false);
-                    cache.put(hash, tvm);
-                    batch.addAll(tvm.getSaveBatch());
-                }
-            }
+    private static boolean cachePersistAndReleaseNext(Tangle tangle, Cache<Indexable, TransactionViewModel> cache) throws Exception {
+        Indexable hash = cache.getNextReleaseKey();
+        TransactionViewModel tvm = cache.get(hash);
+        if (tvm != null && tvm.shouldPersist()) {
+            //We update and cache this item again so that in the case where this released item is brought back from
+            // weakStore, it does not write to DB again.
+            tvm.setShouldPersist(false);
+            cache.put(hash, tvm);
+            tangle.save(tvm.getTransaction(), hash);
         }
-        tangle.saveBatch(batch);
-        cache.release(hashesToRelease);
+        return cache.releaseNext();
     }
 
     /**
@@ -1065,7 +1037,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * If the tvm should be persisted to DB upon cache release.
+     * If the tvm should be persisted to DB upon cache persistAndReleaseNext.
      *
      * @return True if should persist. False otherwise
      */
@@ -1074,7 +1046,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * Sets whether the tvm should be persisted to DB upon cache release or not.
+     * Sets whether the tvm should be persisted to DB upon cache persistAndReleaseNext or not.
      * 
      * @param shouldPersist If the tvm should be persisted
      */

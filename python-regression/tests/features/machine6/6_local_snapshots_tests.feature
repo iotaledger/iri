@@ -9,6 +9,14 @@ Feature: Test Bootstrapping With LS
   Scenario: PermaNode is synced
     Check that the permanode has been started correctly and is synced.
 
+    #Subscribe to zmq streams for milestones
+    Given "nodeA-m6" is subscribed to the following zmq topics:
+    |keys					      |
+    |lmi					      |
+    |lmsi					      |
+    |lmhs					      |
+
+
     #First make sure nodes are neighbored
     Given "nodeA-m6" and "nodeB-m6" are neighbors
     And "nodeA-m6" and "nodeC-m6" are neighbors
@@ -18,6 +26,12 @@ Feature: Test Bootstrapping With LS
     And we wait "30" second/seconds
     Then "nodeA-m6" is synced up to milestone 10322
 
+    And the zmq stream for "nodeA-m6" contains a response for following topics:
+    |keys					      |
+    |lmi					      |
+    |lmsi					      |
+    |lmhs					      |
+
 
   Scenario: DB node is synced, and files contain expected values
     Check that the node started with just a DB is synced correctly, and that the proper addresses and hashes have been
@@ -26,6 +40,12 @@ Feature: Test Bootstrapping With LS
     #First make sure nodes are neighbored
     Given "nodeB-m6" and "nodeA-m6" are neighbors
     And "nodeB-m6" and "nodeC-m6" are neighbors
+
+    #Subscribe to zmq streams for milestones
+    Then "nodeA-m6" is subscribed to the following zmq topics:
+    |keys					      |
+    |lmi					      |
+    |lmsi					      |
 
     # Default for test is to issue 10323
     When milestone 10323 is issued on "nodeA-m6"
@@ -41,6 +61,11 @@ Feature: Test Bootstrapping With LS
     And reading the local snapshot metadata on "nodeB-m6" returns with:
       |keys                       |values                   |type             |
       |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
+
+    Then the zmq stream for "nodeA-m6" contains a response for following topics:
+      |keys					      |values                   |type             |
+      |lmi					      |10323                    |int              |
+      |lmsi					      |10323                    |int              |
 
 
   Scenario: LS DB node is synced

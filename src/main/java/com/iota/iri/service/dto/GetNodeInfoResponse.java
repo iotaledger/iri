@@ -70,8 +70,8 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private int latestSolidSubtangleMilestoneIndex;
     
     /**
-     * The start index of the milestones. 
-     * This index is encoded in each milestone transaction by the coordinator
+	 * The index of the milestone from which the node started synchronizing when it first joined the network.
+	 * The Coordinator encodes this index in each milestone transaction.
      */
     private int milestoneStartIndex;
     

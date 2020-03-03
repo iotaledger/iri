@@ -14,6 +14,12 @@ import com.iota.iri.model.Hash;
  * </p>
  */
 public interface LatestMilestoneTracker {
+
+    /**
+     * The default offset above the last milestone we know about where we start tracking from
+     */
+    int TRACK_OFFSET = 5;
+
     /**
      * <p>
      * Returns the index of the latest milestone that was seen by this tracker.

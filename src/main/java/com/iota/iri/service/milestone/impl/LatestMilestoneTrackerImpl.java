@@ -1,6 +1,6 @@
 package com.iota.iri.service.milestone.impl;
 
-import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.conf.MilestoneConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -14,6 +14,7 @@ import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
@@ -49,10 +50,11 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      */
     private static final IntervalLogger log = new IntervalLogger(LatestMilestoneTrackerImpl.class);
 
+
     /**
      * Holds the Tangle object which acts as a database interface.
      */
-    protected final Tangle tangle;
+    private final Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots that the node uses (for faster
@@ -95,7 +97,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     /**
      * A list of milestones that still have to be analyzed.
      */
-    protected final Deque<Hash> milestoneCandidatesToAnalyze = new ArrayDeque<>();
+    private final Deque<Hash> milestoneCandidatesToAnalyze = new ArrayDeque<>();
 
     /**
      * A flag that allows us to detect if the background worker is in its first iteration (for different log
@@ -109,6 +111,18 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     private boolean initialized = false;
 
     /**
+     * The next milestone index to track for
+     */
+    private int nextIndexToTrack;
+
+    /**
+     * A previous milestone index
+     */
+    private int previousIndexToTrack;
+
+
+
+    /**
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
      * @param milestoneService contains the important business logic when dealing with milestones
@@ -116,17 +130,19 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * @param config configuration object which allows us to determine the important config parameters of the node
      */
     public LatestMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider, MilestoneService milestoneService,
-                                      MilestoneSolidifier milestoneSolidifier, IotaConfig config) {
+                                      MilestoneSolidifier milestoneSolidifier, MilestoneConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
         this.coordinatorAddress = config.getCoordinator();
+        this.nextIndexToTrack = config.getMilestoneIndexToTrack();
     }
 
     @Override
     public void init() {
         bootstrapLatestMilestoneValue();
+        bootstrapMilestoneIndexesToTrack();
     }
 
     /**
@@ -291,32 +307,48 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * #milestoneCandidatesToAnalyze} queue.
      * </p>
      * <p>
-     * We simply request all transaction that are originating from the coordinator address and treat them as potential
-     * milestone candidates.
+     * We try to load milestones one by one by scanning from predefined start points.
+     * We scan up from {@link #nextIndexToTrack} and down from {@link #previousIndexToTrack} as long as we're above the
+     * latest known snapshot
      * </p>
      *
      * @throws MilestoneException if anything unexpected happens while collecting the new milestone candidates
      */
     private void collectNewMilestoneCandidates() throws MilestoneException {
-        int latestMilestoneIndex = getLatestMilestoneIndex();
+        Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
         try {
-            ObsoleteTag tag;
-            do {
-                byte[] indexTrits = new byte[TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE];
-                Converter.copyTrits(++latestMilestoneIndex, indexTrits, 0,
-                        TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE);
-                byte[] indexBytes = new byte[TransactionViewModel.TAG_SIZE_IN_BYTES];
-                Converter.bytes(indexTrits, indexBytes);
-                tag = (ObsoleteTag) tangle.load(ObsoleteTag.class, HashFactory.OBSOLETETAG.create(indexBytes));
-                if (tag != null && tag.exists()) {
-                    tag.set.forEach(milestoneCandidatesToAnalyze::offer);
-                }
+            while (previousIndexToTrack >= latestSnapshot.getIndex() && collectMilestones(previousIndexToTrack)) {
+                --previousIndexToTrack;
             }
-            while (tag != null);
+        } 
+        catch (Exception e) {
+            throw new MilestoneException(
+                    "Unexpected error while trying to load previous milestone " + previousIndexToTrack, e);
+        }
+
+        try {
+            while (collectMilestones(nextIndexToTrack)) {
+                --nextIndexToTrack;
+            }
         }
         catch (Exception e) {
-            throw new MilestoneException("Problem while trying to load milestone #" + latestMilestoneIndex);
+            throw new MilestoneException(
+                    "Unexpected error while trying to load previous milestone " + nextIndexToTrack, e);
         }
+    }
+
+    private boolean collectMilestones(int msIndexToTrack) throws Exception {
+        ObsoleteTag nextTag;
+        byte[] indexTrits = new byte[TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE];
+        Converter.copyTrits(msIndexToTrack, indexTrits, 0, TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE);
+        byte[] indexBytes = new byte[TransactionViewModel.TAG_SIZE_IN_BYTES];
+        Converter.bytes(indexTrits, indexBytes);
+        nextTag = (ObsoleteTag) tangle.load(ObsoleteTag.class, HashFactory.OBSOLETETAG.create(indexBytes));
+        if (nextTag != null && nextTag.exists()) {
+            nextTag.set.forEach(milestoneCandidatesToAnalyze::offer);
+        }
+
+        return nextTag != null;
     }
 
 
@@ -373,6 +405,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * milestone at the end of our database. While this last entry in the database doesn't necessarily have to be the
      * latest one we know it at least gives a reasonable value most of the times.
      * </p>
+     * <p>
+     * It also  
+     * </p>
      */
     private void bootstrapLatestMilestoneValue() {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
@@ -386,5 +421,15 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         } catch (Exception e) {
              log.error("unexpectedly failed to retrieve the latest milestone from the database", e);
         }
+    }
+
+    private void bootstrapMilestoneIndexesToTrack() {
+        // If the nextIndexToTrack wasn't configured or well configured, then use a default setting and hope
+        // all will go well
+        if (nextIndexToTrack <= getLatestMilestoneIndex()) {
+            nextIndexToTrack = getLatestMilestoneIndex() + TRACK_OFFSET;
+        }
+        previousIndexToTrack = nextIndexToTrack - 1;
+        log.info("Will start tracking milestones from index " + nextIndexToTrack);
     }
 }

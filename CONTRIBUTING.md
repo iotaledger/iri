@@ -1,40 +1,118 @@
-## How to contribute to IRI
+# Contribute to IRI
 
-#### **How should a Pull Request look like**?
-Before creating a PR make sure you have read the entire contributing guideline. Ensure the PR description clearly describes the problem and solution by following the template. It is best to discuss your changes in an issue before creating the PR. A PR should address a **specific concern**. If it addresses more than one concern it **should be split**. Small PRs get merged in faster. Very large PRs are difficult to review and test. This makes them less likely to be merged.
+This document describes how to contribute to IRI.
 
-#### **Did you find a bug?**
+We encourage everyone with knowledge of IOTA technology to contribute.
 
-* **Do not open a GitHub issue if the bug is a security vulnerability
-  in IRI**, and instead, please contact us via [security@iota.org](mailto:security@iota.org).
+Thanks! :heart:
 
-* **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/iotaledger/iri/issues). You can also look up related issues by a label. For example, if your issue is database-related, filter based on the `C-DB` label and look for related issues. If it's API related, use `C-API` and so on. `C` stands for component. Make sure you skim through the labels to find your category. 
+## Do you have a question?
 
-* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/iotaledger/iri/issues/new). Be sure to include a **title and clear description**, and as much relevant information as possible. Make sure you follow our new issue template. The first part of the issue template is dedicated to reporting bugs, delete the second part. Steps to reproduce are particularly important. Add any relevant log output and screenshots. The easier it will be to reproduce your issue, the more likely it's getting fixed. 
+If you have a general or technical question, you can use one of the following resources instead of submitting an issue:
 
-#### **Did you write a patch that fixes a bug?**
+- [**Developer documentation:**](https://docs.iota.org/) For official information about developing with IOTA technology
+- [**Discord:**](https://discord.iota.org/) For real-time chats with the developers and community members
+- [**IOTA cafe:**](https://iota.cafe/) For technical discussions with the Research and Development Department at the IOTA Foundation
+- [**StackExchange:**](https://iota.stackexchange.com/) For technical and troubleshooting questions
 
-* [New issues](https://github.com/iotaledger/iri/issues/new) should be used for reporting issues. If you already wrote a patch for an issue that you or someone else reported, make sure you link it to the open issue. You can do this by mentioning the issue number in the comment or description on the PR, for example `#123` to link issue "123". 
+## Ways to contribute
 
-#### **Do you intend to add a new feature or change an existing one?**
+To contribute to IRI on GitHub, you can:
 
-* Suggest your change as a [new issues](https://github.com/iotaledger/iri/issues/new). Use the second part of the issue template, dedicated to new feature requests and delete the first part. If you plan on implementing the change yourself, start writing the code and submit a PR. Note that the fact that the feature is "code ready" doesn't mean it will get merged. It is advisable to gather feedback for the change first. You are encouraged to start and drive a discussion on [Discord](https://discord.iota.org/). The IRI team also monitors the repo and will provide feedback where relevant.
+- Report a bug
+- Suggest a new feature
+- Build a new feature
+- Contribute to the documentation
 
-#### **Want to write a regression test for your feature? Or to any other feature that needs a test?**
+## Report a bug
 
-* Please refer to our current [regression tests](https://github.com/iotaledger/iri/tree/dev/python-regression).
+This section guides you through reporting a bug. Following these guidelines helps maintainers and the community understand the bug, reproduce the behavior, and find related bugs.
 
+### Before reporting a bug
 
-#### **Do you have questions about the functioning of IRI nodes, the network or anything IOTA related?**
+Please check the following list:
 
-* Use our [Discord](https://discordapp.com/invite/fNGZXvh) to join the discussion and ask questions.
+- **Do not open a GitHub issue for [security vulnerabilities](SECURITY.MD)**, instead, please contact us at [security@iota.org](mailto:security@iota.org).
 
-#### **Do you want to contribute to the IRI documentation?**
+- **Ensure the bug was not already reported** by searching on GitHub under [**Issues**](https://github.com/iotaledger/iri/issues). If the bug has already been reported **and the issue is still open**, add a comment to the existing issue instead of opening a new one. You can also find related issues by their [label](https://github.com/iotaledger/iri/labels?page=1&sort=name-asc). For example, if your issue is database related, filter issues based on the `C-DB` label to look for related ones. `C` stands for component.
 
-The IOTA documentation is based in the [docs](https://github.com/iotaledger/docs) repo. You are welcome to contribute. Make sure you follow the instructions on adding new docs. 
+**Note:** If you find a **Closed** issue that seems similar to what you're experiencing, open a new issue and include a link to the original issue in the body of your new one.
 
-Thanks! :heart: :heart: :heart:
+### Submitting A Bug Report
 
-The contribution guidelines are inspired by the Ruby on Rails contribution guidelines. 
+To report a bug, [open a new issue](https://github.com/iotaledger/iri/issues/new), and be sure to include as many details as possible, using the template.
 
-IRI Team
+**Note:** Minor changes such as fixing a typo can but do not need an open issue.
+
+If you also want to fix the bug, submit a [pull request](#pull-requests) and reference the issue.
+
+## Suggest a new feature
+
+This section guides you through suggesting a new feature. Following these guidelines helps maintainers and the community collaborate to find the best possible way forward with your suggestion.
+
+### Before suggesting a new feature
+
+**Ensure the feature has not already been suggested** by searching on GitHub under [**Issues**](https://github.com/iotaledger/iri/issues).
+
+### Suggesting a new feature
+
+To suggest a new feature, talk to the IOTA community and IOTA Foundation members in the #iri-discussion channel on [Discord](https://discord.iota.org/).
+
+If the IRI team approves your feature, the team will create an issue for it.
+
+## Build a new feature
+
+This section guides you through building a new feature. Following these guidelines helps give your feature the best chance of being approved and merged.
+
+### Before building a new feature
+
+Make sure to discuss the feature in the #iri-discussion channel on [Discord](https://discord.iota.org/).
+
+Otherwise, your feature may not be approved at all.
+
+### Building a new feature
+
+To build a new feature, check out a new branch based on the `dev` branch, and be sure to consider the following:
+
+- If the feature has a public facing API, make sure to document it, using Javadoc code comments
+
+- Where necessary, please write regression tests for your feature. Refer to our current [regression tests](https://github.com/iotaledger/iri/tree/dev/python-regression) for guidance.
+
+## Contribute to the IRI documentation
+
+The IRI documentation is hosted on https://docs.iota.org, which is built from content in the [documentation](https://github.com/iotaledger/documentation) repository.
+
+Please see the [guidelines](https://github.com/iotaledger/documentation/CONTRIBUTING.md) on the documentation repository for information on how to contribute to the documentation.
+
+## Pull requests
+
+This section guides you through submitting a pull request (PR). Following these guidelines helps give your PR the best chance of being approved and merged.
+
+### Before submitting a pull request
+
+When creating a pull request, please follow these steps to have your contribution considered by the maintainers:
+
+- A pull request should have exactly one concern (for example one feature or one bug). If a PR address more than one concern, it should be split into two or more PRs.
+
+- A pull request can be merged only if it references an open issue
+
+    **Note:** Minor changes such as fixing a typo can but do not need an open issue.
+
+- All code should be well tested and follow the [code styleguide](STYLEGUIDE.md)
+
+### Submitting a pull request
+
+The following is a typical workflow for submitting a new pull request:
+
+1. Fork this repository
+2. Create a new branch based on your fork
+3. Commit changes and push them to your fork
+4. Create a pull request against the `dev` branch
+
+If all [status checks](https://help.github.com/articles/about-status-checks/) pass, and the maintainer approves the PR, it will be merged.
+
+**Note:** Reviewers may ask you to complete additional work, tests, or other changes before your pull request can be approved and merged.
+
+## Code of Conduct
+
+This project and everyone participating in it is governed by the [IOTA Code of Conduct](CODE_OF_CONDUCT.md).

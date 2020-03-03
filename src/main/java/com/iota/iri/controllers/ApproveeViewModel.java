@@ -103,7 +103,7 @@ public class ApproveeViewModel implements HashesViewModel {
     public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
         while (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(cache);
+            cacheRelease(tangle, cache);
         }
         cache.put(hash, approveeViewModel);
     }
@@ -126,22 +126,18 @@ public class ApproveeViewModel implements HashesViewModel {
      * again.
      *
      */
-    private static void cacheRelease(Cache<Indexable, ApproveeViewModel> cache) {
+    private static void cacheRelease(Tangle tangle, Cache<Indexable, ApproveeViewModel> cache) throws Exception {
+        Indexable hash = cache.getNextReleaseKey();
+        ApproveeViewModel avm = cache.get(hash);
+        if(avm != null){
+            avm.store(tangle);
+        }
         cache.releaseNext();
     }
 
     @Override
     public boolean store(Tangle tangle) throws Exception {
-        if (tangle.getCache(ApproveeViewModel.class).get(hash) == null) {
-            cachePut(tangle, this, hash);
-        }
-
-        if (tangle.exists(Approvee.class, hash)) {
-            return false;
-        }
-
-        tangle.save(self, hash);
-        return true;
+        return tangle.save(self, hash);
     }
 
     @Override

@@ -44,6 +44,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
+    //Milestone
+    protected int milestoneIndexToTrack= Defaults.MILESTONE_INDEX_TO_TRACK;
+
     //Network
     protected String neighboringSocketAddress = Defaults.NEIGHBORING_SOCKET_ADDRESS;
     protected int neighboringSocketPort = Defaults.NEIGHBORING_SOCKET_PORT;
@@ -772,6 +775,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getMilestoneIndexToTrack() {
+        return milestoneIndexToTrack;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--milestone-index-to-track",
+            description = MilestoneConfig.Descriptions.MILESTONE_INDEX_TO_TRACK)
+    public void setMilestoneIndexToTrack(int milestoneIndexToTrack) {
+        this.milestoneIndexToTrack = milestoneIndexToTrack;
+    }
+
+    @Override
     public boolean isDontValidateTestnetMilestoneSig() {
         return false;
     }
@@ -868,6 +883,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_NEIGHBORS = 5;
         boolean DNS_REFRESHER_ENABLED = true;
         boolean DNS_RESOLUTION_ENABLED = true;
+
+        //Milestone Index To Track
+        int MILESTONE_INDEX_TO_TRACK = -1;
 
         //ixi
         String IXI_DIR = "ixi";

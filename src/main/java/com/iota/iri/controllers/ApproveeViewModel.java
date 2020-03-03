@@ -132,13 +132,15 @@ public class ApproveeViewModel implements HashesViewModel {
 
     @Override
     public boolean store(Tangle tangle) throws Exception {
-        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        ApproveeViewModel approveeViewModel = cache.get(hash);
-        if (approveeViewModel != null) {
-            return true;
+        if (tangle.getCache(ApproveeViewModel.class).get(hash) == null) {
+            cachePut(tangle, this, hash);
         }
 
-        cachePut(tangle, this, hash);
+        if (tangle.exists(Approvee.class, hash)) {
+            return false;
+        }
+
+        tangle.save(self, hash);
         return true;
     }
 

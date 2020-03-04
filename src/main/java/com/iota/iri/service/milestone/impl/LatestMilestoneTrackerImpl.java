@@ -330,7 +330,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
 
         try {
             while (collectMilestones(nextIndexToTrack)) {
-                --nextIndexToTrack;
+                ++nextIndexToTrack;
             }
         }
         catch (Exception e) {
@@ -344,7 +344,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         byte[] indexTrits = new byte[TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE];
         Converter.copyTrits(msIndexToTrack, indexTrits, 0, TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE);
         byte[] indexBytes = new byte[TransactionViewModel.TAG_SIZE_IN_BYTES];
-        Converter.bytes(indexTrits, indexBytes);
+        Converter.bytes(indexTrits,  indexBytes);
         nextTag = (ObsoleteTag) tangle.load(ObsoleteTag.class, HashFactory.OBSOLETETAG.create(indexBytes));
         if (nextTag != null && nextTag.exists()) {
             nextTag.set.forEach(milestoneCandidatesToAnalyze::offer);

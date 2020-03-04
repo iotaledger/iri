@@ -14,7 +14,6 @@ import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
@@ -113,12 +112,12 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     /**
      * The next milestone index to track for
      */
-    private int nextIndexToTrack;
+    private volatile int nextIndexToTrack;
 
     /**
      * A previous milestone index
      */
-    private int previousIndexToTrack;
+    private volatile int previousIndexToTrack;
 
 
 
@@ -142,7 +141,6 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     @Override
     public void init() {
         bootstrapLatestMilestoneValue();
-        bootstrapMilestoneIndexesToTrack();
     }
 
     /**
@@ -151,6 +149,8 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * <p>
      * In addition to setting the internal properties, we also issue a log message and publish the change to the ZeroMQ
      * message processor so external receivers get informed about this change.
+     *
+     * We may also change milestones we track as a result
      * </p>
      */
     @Override
@@ -161,6 +161,8 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
 
         this.latestMilestoneHash = latestMilestoneHash;
         this.latestMilestoneIndex = latestMilestoneIndex;
+
+        setMilestoneIndexesToTrack(latestMilestoneIndex);
     }
 
     @Override
@@ -423,13 +425,13 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         }
     }
 
-    private void bootstrapMilestoneIndexesToTrack() {
+    private void setMilestoneIndexesToTrack(int latestMilestoneIndex) {
         // If the nextIndexToTrack wasn't configured or well configured, then use a default setting and hope
         // all will go well
-        if (nextIndexToTrack <= getLatestMilestoneIndex()) {
+        if (nextIndexToTrack <= latestMilestoneIndex) {
             nextIndexToTrack = getLatestMilestoneIndex() + TRACK_OFFSET;
         }
         previousIndexToTrack = nextIndexToTrack - 1;
-        log.info("Will start tracking milestones from index " + nextIndexToTrack);
+        log.delegate().info("Setting index to track to  " + nextIndexToTrack);
     }
 }

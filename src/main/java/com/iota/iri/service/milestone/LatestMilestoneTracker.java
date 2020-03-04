@@ -18,7 +18,7 @@ public interface LatestMilestoneTracker {
     /**
      * The default offset above the last milestone we know about where we start tracking from
      */
-    int TRACK_OFFSET = 5;
+    int TRACK_OFFSET = 2;
 
     /**
      * <p>

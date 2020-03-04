@@ -21,6 +21,7 @@ import com.iota.iri.utils.thread.SilentScheduledExecutorService;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>
@@ -112,12 +113,12 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     /**
      * The next milestone index to track for
      */
-    private volatile int nextIndexToTrack;
+    private AtomicInteger nextIndexToTrack;
 
     /**
      * A previous milestone index
      */
-    private volatile int previousIndexToTrack;
+    private AtomicInteger previousIndexToTrack;
 
 
 
@@ -135,7 +136,8 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
         this.coordinatorAddress = config.getCoordinator();
-        this.nextIndexToTrack = config.getMilestoneIndexToTrack();
+        this.nextIndexToTrack = new AtomicInteger(config.getMilestoneIndexToTrack());
+        this.previousIndexToTrack = new AtomicInteger(config.getMilestoneIndexToTrack() - 1);
     }
 
     @Override
@@ -319,8 +321,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     private void collectNewMilestoneCandidates() throws MilestoneException {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
         try {
-            while (previousIndexToTrack >= latestSnapshot.getIndex() && collectMilestones(previousIndexToTrack)) {
-                --previousIndexToTrack;
+            while (previousIndexToTrack.get() >= latestSnapshot.getIndex()
+                    && collectMilestones(previousIndexToTrack.get())) {
+                previousIndexToTrack.decrementAndGet();
             }
         } 
         catch (Exception e) {
@@ -329,8 +332,8 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         }
 
         try {
-            while (collectMilestones(nextIndexToTrack)) {
-                ++nextIndexToTrack;
+            while (collectMilestones(nextIndexToTrack.get())) {
+                nextIndexToTrack.incrementAndGet();
             }
         }
         catch (Exception e) {
@@ -429,10 +432,10 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     private void setMilestoneIndexesToTrack(int latestMilestoneIndex) {
         // If the nextIndexToTrack wasn't configured or well configured, then use a default setting and hope
         // all will go well
-        if (nextIndexToTrack <= latestMilestoneIndex) {
-            nextIndexToTrack = getLatestMilestoneIndex() + TRACK_OFFSET;
+        if (nextIndexToTrack.get() <= latestMilestoneIndex) {
+            nextIndexToTrack.set(getLatestMilestoneIndex() + TRACK_OFFSET);
         }
-        previousIndexToTrack = nextIndexToTrack - 1;
-        log.delegate().info("Setting index to track to  " + nextIndexToTrack);
+        previousIndexToTrack.set(nextIndexToTrack.get() - 1);
+        log.delegate().info("Setting index to track to #" + nextIndexToTrack);
     }
 }

@@ -346,11 +346,12 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         byte[] indexBytes = new byte[TransactionViewModel.TAG_SIZE_IN_BYTES];
         Converter.bytes(indexTrits,  indexBytes);
         nextTag = (ObsoleteTag) tangle.load(ObsoleteTag.class, HashFactory.OBSOLETETAG.create(indexBytes));
-        if (nextTag != null && nextTag.exists()) {
+        boolean found = nextTag != null && nextTag.exists();
+        if (found) {
             nextTag.set.forEach(milestoneCandidatesToAnalyze::offer);
         }
 
-        return nextTag != null;
+        return found;
     }
 
 

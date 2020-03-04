@@ -3,7 +3,7 @@
   <a href="https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview"><img src="IRI.png"></a>
 </h1>
 
-<h2 align="center">The official node software that runs on the IOTA Mainnet and Devent</h2>
+<h2 align="center">The official node software that runs on the IOTA Mainnet and Devnet</h2>
 
 <p align="center">
     <a href="https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview" style="text-decoration:none;">

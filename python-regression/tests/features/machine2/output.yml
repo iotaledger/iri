@@ -21,3 +21,47 @@ nodes:
       api: 15265
       gossip-tcp: 15605
       zmq-feed: 6556
+  nodeC-m2:
+    host: localhost
+    podip: localhost
+    ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556
+    clusterip_ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556
+  nodeD-m2:
+    host: localhost
+    podip: localhost
+    ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556
+    clusterip_ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556
+  nodeE-m2:
+    host: localhost
+    podip: localhost
+    ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556
+    clusterip_ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556
+  nodeF-m2:
+    host: localhost
+    podip: localhost
+    ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556
+    clusterip_ports:
+      api: 15265
+      gossip-tcp: 15605
+      zmq-feed: 6556

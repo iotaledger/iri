@@ -8,8 +8,8 @@ Feature: Ensure node reliability while stitching a side tangle
 	
 	Scenario: Check consistency on a stitching transaction responds
 		
-		Given a stitching transaction is issued on "nodeA-m4" with the tag "STITCHING"
-		And "checkConsistency" is called in parallel on "nodeA-m4" with:
+		Given a stitching transaction is issued on "nodeA-m5" with the tag "STITCHING"
+		And "checkConsistency" is called in parallel on "nodeA-m5" with:
 		|keys                   |values                 |type           |
 		|tails                  |previousTransaction    |responseList   |
 
@@ -19,7 +19,7 @@ Feature: Ensure node reliability while stitching a side tangle
 
 		When a transaction is issued referencing the previous transaction
 
-		And "getTransactionsToApprove" is called on "nodeA-m4" with:
+		And "getTransactionsToApprove" is called on "nodeA-m5" with:
 		|keys                   |values                 |type           |
 		|depth                  |3                      |int            |
 

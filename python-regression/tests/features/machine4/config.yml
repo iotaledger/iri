@@ -1,23 +1,26 @@
-defaults: &stitching_tests_config_files
-  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Stitching_tests_db.tar
-  db_checksum: ac987dc8e61e37d6420e78da18c4cf94671f51e8014b4dd593f36bbd4fb0cfc1
+defaults: &api_tests_config_files
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/testnet_files.tgz
+  db_checksum: 6eaa06d5442416b7b8139e337a1598d2bae6a7f55c2d9d01f8c5dac69c004f75
   iri_args: ['--testnet-coordinator',
-  'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
-  '--milestone-keys',
-  '18',
-  '--milestone-start',
-  '2',
+  'BTCAAFIH9CJIVIMWFMIHKFNWRTLJRKSTMRCVRE9CIP9AEDTOULVFRHQZT9QAQBZXXAZGBNMVOOKTKAXTB',
+  '--milestone-start', 
+  '0',
+  '--snapshot', 
+  './snapshot.txt',
   '--testnet-no-coo-validation',
   'true',
   '--testnet',
   'true'
   ]
   java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
-  
+
 seeds: # For internal use by the regression system. 
     - SEED
     - SIID
 
 nodes:
   nodeA-m4: #name
-    <<: *stitching_tests_config_files
+    <<: *api_tests_config_files
+  
+  nodeB-m4:
+    <<: *api_tests_config_files

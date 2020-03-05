@@ -434,8 +434,8 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         // all will go well
         if (nextIndexToTrack.get() <= latestMilestoneIndex) {
             nextIndexToTrack.set(getLatestMilestoneIndex() + TRACK_OFFSET);
-            previousIndexToTrack.set(nextIndexToTrack.get() - 1);
-            log.delegate().info("Setting index to track to #" + nextIndexToTrack);
         }
+        previousIndexToTrack.set(nextIndexToTrack.get() - 1);
+        log.delegate().info("Setting index to track to #" + nextIndexToTrack);
     }
 }

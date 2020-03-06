@@ -809,8 +809,8 @@ public class TransactionViewModel {
      * @return True if the {@link Transaction#solid} has been updated, False if not.
      */
     public boolean updateSolid(boolean solid) throws Exception {
-        if (solid != transaction.solid) {
-            transaction.solid = solid;
+        if (solid != transaction.solid.get()) {
+            transaction.solid.set(solid);
             return true;
         }
         return false;
@@ -818,7 +818,7 @@ public class TransactionViewModel {
 
     /** @return True if {@link Transaction#solid} is True (exists in the database), False if not */
     public boolean isSolid() {
-        return transaction.solid;
+        return transaction.solid.get();
     }
 
     /** @return The {@link Transaction#snapshot} index */

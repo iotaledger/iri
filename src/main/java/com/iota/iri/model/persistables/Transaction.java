@@ -9,6 +9,7 @@ import com.iota.iri.utils.TransactionTruncator;
 
 import javax.naming.OperationNotSupportedException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -73,7 +74,7 @@ public class Transaction implements Persistable {
     /**
      * This flag indicates whether the transaction is considered solid or not
      */
-    public volatile boolean solid = false;
+    public AtomicBoolean solid = new AtomicBoolean(false);
 
     /**
      * This flag indicates if the transaction is a coordinator issued milestone.
@@ -140,7 +141,7 @@ public class Transaction implements Persistable {
 
         // encode booleans in 1 byte
         byte flags = 0;
-        flags |= solid ? IS_SOLID_BITMASK : 0;
+        flags |= solid.get() ? IS_SOLID_BITMASK : 0;
         flags |= milestone ? IS_MILESTONE_BITMASK : 0;
         buffer.put(flags);
 
@@ -203,7 +204,7 @@ public class Transaction implements Persistable {
         */
 
         // decode the boolean byte by checking the bitmasks
-        solid = (bytes[i] & IS_SOLID_BITMASK) != 0;
+        solid.set((bytes[i] & IS_SOLID_BITMASK) != 0);
         milestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
         i++;
 

@@ -73,7 +73,7 @@ public class Transaction implements Persistable {
     /**
      * This flag indicates whether the transaction is considered solid or not
      */
-    public boolean solid = false;
+    public volatile boolean solid = false;
 
     /**
      * This flag indicates if the transaction is a coordinator issued milestone.

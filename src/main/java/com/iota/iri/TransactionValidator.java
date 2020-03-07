@@ -278,6 +278,7 @@ public class TransactionValidator {
         }
         if (solid) {
             updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), analyzedHashes);
+            analyzedHashes.forEach(this::addSolidTransaction);
         }
         analyzedHashes.clear();
         return solid;

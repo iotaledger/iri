@@ -126,7 +126,7 @@ public class TangleMockUtils {
         Transaction transaction = new Transaction();
         transaction.bytes = new byte[0];
         transaction.type = TransactionViewModel.FILLED_SLOT;
-        transaction.parsed = true;
+        transaction.parsed.set(true);
 
         return mockTransaction(tangle, hash, transaction);
     }

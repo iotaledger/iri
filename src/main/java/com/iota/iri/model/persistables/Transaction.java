@@ -10,6 +10,9 @@ import com.iota.iri.utils.TransactionTruncator;
 import javax.naming.OperationNotSupportedException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -69,7 +72,7 @@ public class Transaction implements Persistable {
     /**
      * This flag indicates if the transaction metadata was parsed from a byte array.
      */
-    public boolean parsed = false;
+    public AtomicBoolean parsed = new AtomicBoolean(false);
 
     /**
      * This flag indicates whether the transaction is considered solid or not
@@ -79,11 +82,11 @@ public class Transaction implements Persistable {
     /**
      * This flag indicates if the transaction is a coordinator issued milestone.
      */
-    public boolean milestone = false;
+    public AtomicBoolean milestone = new AtomicBoolean(false);
 
-    public long height = 0;
-    public String sender = "";
-    public int snapshot;
+    public AtomicLong height = new AtomicLong(0);
+    public AtomicReference<String> sender = new AtomicReference<>("");
+    public AtomicInteger snapshot = new AtomicInteger();
 
     /**
      * Returns a truncated representation of the bytes of the transaction.
@@ -116,7 +119,7 @@ public class Transaction implements Persistable {
                         Long.BYTES * 9 + //value,currentIndex,lastIndex,timestamp,attachmentTimestampLowerBound,attachmentTimestampUpperBound,arrivalTime,height
                         Integer.BYTES * 3 + //validity,type,snapshot
                         1 + //solid
-                        sender.getBytes().length; //sender
+                        sender.get().getBytes().length; //sender
         ByteBuffer buffer = ByteBuffer.allocate(allocateSize);
         buffer.put(address.bytes());
         buffer.put(bundle.bytes());
@@ -136,17 +139,17 @@ public class Transaction implements Persistable {
         buffer.put(Serializer.serialize(validity));
         buffer.put(Serializer.serialize(type));
         buffer.put(Serializer.serialize(arrivalTime));
-        buffer.put(Serializer.serialize(height));
+        buffer.put(Serializer.serialize(height.get()));
         //buffer.put((byte) (confirmed ? 1:0));
 
         // encode booleans in 1 byte
         byte flags = 0;
         flags |= solid.get() ? IS_SOLID_BITMASK : 0;
-        flags |= milestone ? IS_MILESTONE_BITMASK : 0;
+        flags |= milestone.get() ? IS_MILESTONE_BITMASK : 0;
         buffer.put(flags);
 
-        buffer.put(Serializer.serialize(snapshot));
-        buffer.put(sender.getBytes());
+        buffer.put(Serializer.serialize(snapshot.get()));
+        buffer.put(sender.get().getBytes());
         return buffer.array();
     }
 
@@ -196,7 +199,7 @@ public class Transaction implements Persistable {
         i += Integer.BYTES;
         arrivalTime = Serializer.getLong(bytes, i);
         i += Long.BYTES;
-        height = Serializer.getLong(bytes, i);
+        height.set(Serializer.getLong(bytes, i));
         i += Long.BYTES;
         /*
         confirmed = bytes[i] == 1;
@@ -205,17 +208,17 @@ public class Transaction implements Persistable {
 
         // decode the boolean byte by checking the bitmasks
         solid.set((bytes[i] & IS_SOLID_BITMASK) != 0);
-        milestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
+        milestone.set((bytes[i] & IS_MILESTONE_BITMASK) != 0);
         i++;
 
-        snapshot = Serializer.getInteger(bytes, i);
+        snapshot.set(Serializer.getInteger(bytes, i));
         i += Integer.BYTES;
         byte[] senderBytes = new byte[bytes.length - i];
         if (senderBytes.length != 0) {
             System.arraycopy(bytes, i, senderBytes, 0, senderBytes.length);
         }
-        sender = new String(senderBytes);
-        parsed = true;
+        sender.set(new String(senderBytes));
+        parsed.set(true);
     }
 
 

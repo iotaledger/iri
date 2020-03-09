@@ -98,7 +98,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if the database fails to save the batch of data.
      */
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
-        if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
+        if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed.get()) {
             transactionViewModel.setAttachmentData();
             transactionViewModel.setMetadata();
         }
@@ -823,7 +823,7 @@ public class TransactionViewModel {
 
     /** @return The {@link Transaction#snapshot} index */
     public int snapshotIndex() {
-        return transaction.snapshot;
+        return transaction.snapshot.get();
     }
 
     /**
@@ -837,8 +837,8 @@ public class TransactionViewModel {
      * @throws Exception Thrown if the database update does not return correctly
      */
     public void setSnapshot(Tangle tangle, Snapshot initialSnapshot, final int index) throws Exception {
-        if (index != transaction.snapshot) {
-            transaction.snapshot = index;
+        if (index != transaction.snapshot.get()) {
+            transaction.snapshot.set(index);
             update(tangle, initialSnapshot, "snapshot");
         }
     }
@@ -856,8 +856,8 @@ public class TransactionViewModel {
      * @throws Exception if something goes wrong while saving the changes to the database
      */
     public void isMilestone(Tangle tangle, Snapshot initialSnapshot, final boolean isMilestone) throws Exception {
-        if (isMilestone != transaction.milestone) {
-            transaction.milestone = isMilestone;
+        if (isMilestone != transaction.milestone.get()) {
+            transaction.milestone.set(isMilestone);
             update(tangle, initialSnapshot, "milestone");
         }
     }
@@ -874,12 +874,12 @@ public class TransactionViewModel {
      * @return true if the {@link Transaction} is a milestone and false otherwise
      */
     public boolean isMilestone() {
-        return transaction.milestone;
+        return transaction.milestone.get();
     }
 
     /** @return The current {@link Transaction#height} */
     public long getHeight() {
-        return transaction.height;
+        return transaction.height.get();
     }
 
     /**
@@ -888,7 +888,7 @@ public class TransactionViewModel {
      * @param height The new height of the {@link Transaction}
      */
     private void updateHeight(long height) throws Exception {
-        transaction.height = height;
+        transaction.height.set(height);
     }
 
     public void updateHeights(Tangle tangle, Snapshot initialSnapshot) throws Exception {
@@ -929,12 +929,12 @@ public class TransactionViewModel {
      * @param sender The sender of the {@link Transaction}
      */
     public void updateSender(String sender) throws Exception {
-        transaction.sender = sender;
+        transaction.sender.set(sender);
     }
 
     /** @return The {@link Transaction#sender} */
     public String getSender() {
-        return transaction.sender;
+        return transaction.sender.get();
     }
 
     @Override

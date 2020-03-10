@@ -56,21 +56,32 @@ public class BundleValidator {
     public static final int MODE_VALIDATE_SEMANTICS = 1 << 2;
 
     /**
+     * Instructs the validation code to validate all transactions within the bundle approve via their branch the trunk
+     * transaction of the head transaction
+     */
+    public static final int MODE_VALIDATE_BUNDLE_TX_APPROVAL = 1 << 3;
+
+    /**
+     * Instructs the validation code to validate that the bundle only approves tail txs.
+     */
+    public static final int MODE_VALIDATE_TAIL_APPROVAL = 1 << 4;
+
+    /**
      * Instructs the validation code to fully validate the semantics, bundle hash and signatures of the given bundle.
      */
-    public static final int MODE_VALIDATE_ALL = MODE_VALIDATE_SIGNATURES | MODE_VALIDATE_BUNDLE_HASH | MODE_VALIDATE_SEMANTICS;
+    public static final int MODE_VALIDATE_ALL = MODE_VALIDATE_SIGNATURES | MODE_VALIDATE_BUNDLE_HASH | MODE_VALIDATE_SEMANTICS | MODE_VALIDATE_TAIL_APPROVAL | MODE_VALIDATE_BUNDLE_TX_APPROVAL;
 
     /**
      * Instructs the validation code to skip checking the bundle's already computed validity and instead to proceed to
      * validate the bundle further.
      */
-    public static final int MODE_SKIP_CACHED_VALIDITY = 1 << 3;
+    public static final int MODE_SKIP_CACHED_VALIDITY = 1 << 5;
 
     /**
      * Instructs the validation code to skip checking whether the tail transaction is present or a tail transaction was
      * given as the start transaction.
      */
-    public static final int MODE_SKIP_TAIL_TX_EXISTENCE = 1 << 4;
+    public static final int MODE_SKIP_TAIL_TX_EXISTENCE = 1 << 6;
 
     /**
      * Fetches a bundle of transactions identified by the {@code tailHash} and validates the transactions. Bundle is a
@@ -85,6 +96,8 @@ public class BundleValidator {
      *  <li>Total bundle value is 0 (inputs and outputs are balanced)</li>
      *  <li>Recalculate the bundle hash by absorbing and squeezing the transactions' essence</li>
      *  <li>Validate the signature on input transactions</li>
+     *  <li>The bundle must only approve tail transactions</li>
+     *  <li>All transactions within the bundle approve via their branch the trunk transaction of the head transaction.</li>
      * </ol>
      * <p>
      * As well as the following syntactic checks:
@@ -177,6 +190,17 @@ public class BundleValidator {
             return bundleHashValidity;
         }
 
+        //verify that the bundle only approves tail txs
+        Validity bundleTailApprovalValidity = validateBundleTailApproval(tangle, bundleTxs);
+        if(hasMode(validationMode, MODE_VALIDATE_TAIL_APPROVAL) && bundleTailApprovalValidity != Validity.VALID){
+            return bundleTailApprovalValidity;
+        }
+
+        //verify all transactions within the bundle approve via their branch the trunk transaction of the head transaction
+        Validity bundleTransactionsApprovalValidity = validateBundleTransactionsApproval(bundleTxs);
+        if(hasMode(validationMode, MODE_VALIDATE_BUNDLE_TX_APPROVAL) && bundleTransactionsApprovalValidity != Validity.VALID){
+            return bundleTransactionsApprovalValidity;
+        }
 
         // verify the signatures of input transactions
         if (hasMode(validationMode, MODE_VALIDATE_SIGNATURES)) {
@@ -377,6 +401,37 @@ public class BundleValidator {
     public static boolean isInconsistent(Collection<TransactionViewModel> transactionViewModels) {
         long sum = transactionViewModels.stream().map(TransactionViewModel::value).reduce(0L, Long::sum);
         return (sum != 0 || transactionViewModels.isEmpty());
+    }
+
+    /**
+     * A bundle is invalid if The branch transaction hash of the non head transactions within a bundle, is not the same
+     * as the trunk transaction hash of the head transaction.
+     *
+     * @param bundleTxs list of transactions that are in a bundle.
+     * @return Whether the bundle tx chain is valid.
+     */
+    public static Validity validateBundleTransactionsApproval(List<TransactionViewModel> bundleTxs){
+        Hash headTrunkTransactionHash = bundleTxs.get(bundleTxs.size() - 1).getTrunkTransactionHash();
+        for(int i = 0; i < bundleTxs.size() - 1; i++){
+            if(!bundleTxs.get(i).getBranchTransactionHash().equals(headTrunkTransactionHash)){
+                return Validity.INVALID;
+            }
+        }
+        return Validity.VALID;
+    }
+
+    /**
+     * A bundle is invalid if the trunk and branch transactions approved by the bundle are non tails.
+     *
+     * @param bundleTxs The txs in the bundle.
+     * @return Whether the bundle approves only tails.
+     */
+    public static Validity validateBundleTailApproval(Tangle tangle, List<TransactionViewModel> bundleTxs) throws Exception {
+        TransactionViewModel headTx = bundleTxs.get(bundleTxs.size() - 1);
+        TransactionViewModel bundleTrunkTvm = headTx.getTrunkTransaction(tangle);
+        TransactionViewModel bundleBranchTvm = headTx.getBranchTransaction(tangle);
+        return bundleTrunkTvm != null && bundleBranchTvm != null && bundleBranchTvm.getCurrentIndex() == 0
+                && bundleTrunkTvm.getCurrentIndex() == 0 ? Validity.VALID : Validity.INVALID;
     }
 
     /**

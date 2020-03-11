@@ -1,4 +1,4 @@
-defaults: &transaction_tests_config_files
+defaults: &blowball_tests_config_files
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Blowball_Tests_db.tar
   db_checksum: cf4da9fef58f74d8721eee7e2726f3321ecc2257ef111e6b8b2f4c348b40c980
   iri_args: ['--testnet-coordinator',

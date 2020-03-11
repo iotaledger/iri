@@ -59,7 +59,7 @@ public class Transaction implements Persistable {
     public long attachmentTimestampUpperBound;
 
     public int validity = 0;
-    public int type = TransactionViewModel.PREFILLED_SLOT;
+    public AtomicInteger type = new AtomicInteger(TransactionViewModel.PREFILLED_SLOT);
 
     /**
      * The time when the transaction arrived. In milliseconds.
@@ -105,7 +105,7 @@ public class Transaction implements Persistable {
     public void read(byte[] bytes) {
         if(bytes != null) {
             this.bytes = TransactionTruncator.expandTransaction(bytes);
-            this.type = TransactionViewModel.FILLED_SLOT;
+            this.type.set(TransactionViewModel.FILLED_SLOT);
         }
     }
 
@@ -137,7 +137,7 @@ public class Transaction implements Persistable {
         buffer.put(Serializer.serialize(attachmentTimestampUpperBound));
 
         buffer.put(Serializer.serialize(validity));
-        buffer.put(Serializer.serialize(type));
+        buffer.put(Serializer.serialize(type.get()));
         buffer.put(Serializer.serialize(arrivalTime));
         buffer.put(Serializer.serialize(height.get()));
         //buffer.put((byte) (confirmed ? 1:0));
@@ -195,7 +195,7 @@ public class Transaction implements Persistable {
 
         validity = Serializer.getInteger(bytes, i);
         i += Integer.BYTES;
-        type = Serializer.getInteger(bytes, i);
+        type.set(Serializer.getInteger(bytes, i));
         i += Integer.BYTES;
         arrivalTime = Serializer.getLong(bytes, i);
         i += Long.BYTES;

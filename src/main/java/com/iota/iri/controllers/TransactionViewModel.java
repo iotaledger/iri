@@ -212,7 +212,7 @@ public class TransactionViewModel {
 
         this.hash = hash;
         weightMagnitude = this.hash.trailingZeros();
-        transaction.type = FILLED_SLOT;
+        transaction.type.set(FILLED_SLOT);
     }
 
     /**
@@ -508,7 +508,7 @@ public class TransactionViewModel {
      * @return The current type of the transaction.
      */
     public final int getType() {
-        return transaction.type;
+        return transaction.type.get();
     }
 
     /**
@@ -773,8 +773,8 @@ public class TransactionViewModel {
         transaction.currentIndex = Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET,
                 CURRENT_INDEX_TRINARY_SIZE);
         transaction.lastIndex = Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
-        transaction.type = transaction.bytes == null ? TransactionViewModel.PREFILLED_SLOT
-                : TransactionViewModel.FILLED_SLOT;
+        transaction.type.set(transaction.bytes == null ? TransactionViewModel.PREFILLED_SLOT
+                : TransactionViewModel.FILLED_SLOT);
     }
 
     /**

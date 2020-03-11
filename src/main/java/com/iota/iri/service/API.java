@@ -225,7 +225,6 @@ public class API {
         commandRoute.put(ApiCommand.GET_NEIGHBORS, getNeighbors());
         commandRoute.put(ApiCommand.GET_NODE_INFO, getNodeInfo());
         commandRoute.put(ApiCommand.GET_NODE_API_CONFIG, getNodeAPIConfiguration());
-        commandRoute.put(ApiCommand.GET_TIPS, getTips());
         commandRoute.put(ApiCommand.GET_TRANSACTIONS_TO_APPROVE, getTransactionsToApprove());
         commandRoute.put(ApiCommand.GET_TRYTES, getTrytes());
         commandRoute.put(ApiCommand.INTERRUPT_ATTACHING_TO_TANGLE, interruptAttachingToTangle());
@@ -692,19 +691,6 @@ public class API {
             counterGetTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
-    }
-
-    /**
-      * Returns all tips currently known by this node.
-      *
-      * @return {@link com.iota.iri.service.dto.GetTipsResponse}
-      **/
-    @Document(name="getTips")
-    private synchronized AbstractResponse getTipsStatement() throws Exception {
-        return GetTipsResponse.create(tipsViewModel.getTips()
-                .stream()
-                .map(Hash::toString)
-                .collect(Collectors.toList()));
     }
 
     /**
@@ -1560,16 +1546,6 @@ public class API {
     
     private Function<Map<String, Object>, AbstractResponse> getNodeAPIConfiguration() {
         return request -> getNodeAPIConfigurationStatement();
-    }
-
-    private Function<Map<String, Object>, AbstractResponse> getTips() {
-        return request -> {
-            try {
-                return getTipsStatement();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        };
     }
 
     private Function<Map<String, Object>, AbstractResponse> getTransactionsToApprove() {

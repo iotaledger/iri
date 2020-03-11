@@ -89,18 +89,6 @@ Feature: Test API calls on Machine 1
 		|duration					|
 		|removedNeighbors				|
 
-
-	Scenario: GetTips is called
-		Given "getTips" is called on "nodeA-m1" with:
-		|keys       |values				|type           |
-
-		Then a response with the following is returned:
-		|keys						|
-		|hashes						|
-		|duration					|
-
-
-
     #Values can be found in util/static_vals.py
 	Scenario: GetTrytes is called
 		Given "getTrytes" is called on "nodeA-m1" with:

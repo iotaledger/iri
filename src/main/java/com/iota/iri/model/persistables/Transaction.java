@@ -66,9 +66,6 @@ public class Transaction implements Persistable {
      */
     public long arrivalTime = 0;
 
-
-    //public boolean confirmed = false;
-
     /**
      * This flag indicates if the transaction metadata was parsed from a byte array.
      */

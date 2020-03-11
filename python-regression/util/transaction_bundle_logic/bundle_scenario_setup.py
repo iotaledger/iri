@@ -2,7 +2,7 @@ from iota.crypto.signing import KeyGenerator
 from util import logger as log
 
 from iota import Iota, ProposedTransaction, Address, Bundle, TransactionHash, \
-    TransactionTrytes, Transaction, TryteString, Tag, ProposedBundle
+    Transaction, TryteString, Tag, ProposedBundle
 
 
 logger = log.getLogger(__name__)
@@ -54,9 +54,9 @@ def create_double_spend_bundles(seedFrom, addressFrom, address1, address2, tag, 
     bundle2.sign_inputs(KeyGenerator(seedFrom))
     return [bundle1, bundle2]
 
-def create_split_bundles(api, seedFrom, addressFrom, addressTo, addressRest, tag, value):
+def create_split_bundles(api, seedFrom, addressFrom, addressTo, addressRest, tag, value, reference):
     """
-    Create a bundle that sends the specified value back and forth.
+    Create a bundle that reuses the last transaction form another bundle in its own
 
     :param api: Api used to create and attach the first bundle
     :param seedfrom: The seed used for signing, addressFrom should be created form this
@@ -65,6 +65,7 @@ def create_split_bundles(api, seedFrom, addressFrom, addressTo, addressRest, tag
     :param addressRest: Where the rest of the balance gets send to, if any
     :param tag:  The tag that will be associated with the transaction
     :param value: The value we will send
+    :param reference: The reference we use to connect the trunk with
     """
     bundle1 = ProposedBundle()
     bundle1.add_transaction(ProposedTransaction(
@@ -85,7 +86,7 @@ def create_split_bundles(api, seedFrom, addressFrom, addressTo, addressRest, tag
     
     gtta_response = api.get_transactions_to_approve(3)
 
-    trunk = gtta_response.get('trunkTransaction')
+    trunk = reference
     branch = gtta_response.get('branchTransaction')
 
     attached_original_trytes = api.attach_to_tangle(trunk, branch, bundle1.as_tryte_strings()).get('trytes')
@@ -124,7 +125,7 @@ def custom_attach(trytes, mwm):
     bundle = Bundle.from_tryte_strings(trytes)
 
     # and we need the head tx first
-    for txn in reversed(bundle.transactions):        
+    for txn in reversed(bundle.transactions):
         if (not previoustx): # this is the head transaction
             # head tx stays the same, it is the original
             previoustx = txn.hash
@@ -160,7 +161,7 @@ def custom_attach(trytes, mwm):
 def create_incomplete_bundle_trytes(address, tag):
     """
     Creates an incomplete bundle by leaving out the first transaction
-    
+
     :param address: The address we will use with the transaction
     :param tag:  The tag that will be associated with the transaction
     """

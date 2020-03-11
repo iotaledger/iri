@@ -90,7 +90,7 @@ def create_incomplete_transfer(step):
     address = get_step_value(step, "address")
     tag = get_step_value(step, "tag")
     
-    trytes = bundle_scenario_setup.create_incomplete_bundle_trytes(tag, addres)
+    trytes = bundle_scenario_setup.create_incomplete_bundle_trytes(tag, address)
     argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
                      'trytes': trytes, 'min_weight_magnitude': 14}
 
@@ -177,8 +177,9 @@ def create_double_spent(step):
 @step(r'a split bundle is generated referencing the previous transaction with:')
 def create_split_bundle(step):
     """
-    Creates two bundles which both try to spend the same address.
-    This test fails if they are both confirmed 
+    Create a bundle that reuses the last transaction form another bundle in its own
+    
+    This test fails if we do not find the correct balance after confirming the second bundle(reattachment)
     :param step.hashes: A gherkin table present in the feature file specifying the
                         arguments and the associated type.
     """
@@ -194,12 +195,12 @@ def create_split_bundle(step):
     response = api.get_inputs(start=0, stop=1, threshold=0, security_level=3)
     addressFrom = response['inputs'][0]
     
-    bundles = bundle_scenario_setup.create_split_bundles(api, seed, addressFrom, addressTo, static.SPLIT_REST_ADDRESS, tag, value)
+    bundles = bundle_scenario_setup.create_split_bundles(api, seed, addressFrom, addressTo, static.SPLIT_REST_ADDRESS, tag, value, previous)
 
     logger.info(bundles[0][0].hash)
     logger.info(bundles[1][0].hash)
     api.broadcast_and_store(bundles[0].as_tryte_strings())
-    api.broadcast_and_store(bundles[1].as_tryte_strings())    
+    api.broadcast_and_store(bundles[1].as_tryte_strings())
     
     set_previous_transaction(node, [bundles[1][0].hash])
     set_world_object(node, "reattachSplitSpend", [bundles[1][0].hash])
@@ -366,8 +367,8 @@ def issue_a_milestone(step, index, node):
     milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
     world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
 
-def set_previous_transaction(node, hash):
-   set_world_object(node, 'previousTransaction', hash)
+def set_previous_transaction(node, txHash):
+   set_world_object(node, 'previousTransaction', txHash)
     
 def set_world_object(node, objectName, value):
     if objectName not in world.responses:
@@ -382,7 +383,7 @@ def get_step_value(step, key_name):
             else:
                 return arg['values']
     return 0
-            
+
 def wait_for_update(index, api):
     updated = False
     i = 0

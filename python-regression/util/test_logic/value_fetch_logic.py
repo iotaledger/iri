@@ -36,7 +36,7 @@ def fetch_int_list(value):
     """
     int_list = value.split()
     return [int(x) for x in int_list]
-    
+
 def fetch_string(value):
     """
     Returns a string representation of the input value.

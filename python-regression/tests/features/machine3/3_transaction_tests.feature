@@ -90,7 +90,7 @@ Feature: Test transaction confirmation
         We want to ascertain that ledger state is always calculated correctly.
         Even in the presence of a bundle that handles funds but without changing address
 
-        Then "1" transaction is issued on "nodeA-m2" with:
+        Then "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
@@ -117,7 +117,7 @@ Feature: Test transaction confirmation
         #Give the node time to solidify the milestone
         And we wait "15" second/seconds
         
-        Given "getBalances" is called on "nodeA-m2" with:
+        Given "getBalances" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |addresses              |FAKE_SPEND_ADDRESSES       |staticList     |
 
@@ -129,7 +129,7 @@ Feature: Test transaction confirmation
         We want to ascertain that ledger state is always calculated correctly.
         Even in the presence of double spend, the confirmed state should have spent only once
 
-        Then "1" transaction is issued on "nodeA-m2" with:
+        Then "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
@@ -149,7 +149,7 @@ Feature: Test transaction confirmation
         #Give the node time to solidify the milestone
         And we wait "15" second/seconds
         
-        Given "getBalances" is called on "nodeA-m2" with:
+        Given "getBalances" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |addresses              |DOUBLE_SPEND_ADDRESSES     |staticList     |
 
@@ -162,7 +162,7 @@ Feature: Test transaction confirmation
         We want to ascertain that ledger state is always calculated correctly.
         Even when there is a transaction used in 2 different bundles
 
-        Then "1" transaction is issued on "nodeA-m2" with:
+        Then "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
@@ -190,7 +190,7 @@ Feature: Test transaction confirmation
         #Give the node time to solidify the milestone
         And we wait "15" second/seconds
         
-        Given "getBalances" is called on "nodeA-m2" with:
+        Given "getBalances" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |addresses              |SPLIT_TO_ADDRESS           |staticList    |
 

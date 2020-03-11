@@ -4,7 +4,7 @@
         We want to ascertain that ledger state is always calculated correctly.
         Even in the presence of invalid bundles being approved.
 
-        Given "1" transaction is issued on "nodeA-m2" with:
+        Given "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
@@ -27,7 +27,7 @@
         #Give the node time to solidify the milestone
         And we wait "15" second/seconds
         
-        Given "getBalances" is called on "nodeA-m2" with:
+        Given "getBalances" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |addresses              |TEST_EMPTY_ADDRESS         |staticList     |
 
@@ -40,7 +40,7 @@
         We want to ascertain that ledger state is always calculated correctly.
         Even in the presence of incomplete bundles being approved.
 
-        Then "1" transaction is issued on "nodeA-m2" with:
+        Then "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
@@ -66,7 +66,7 @@
         #Give the node time to solidify the milestone
         And we wait "10" second/seconds
         
-        Given "getBalances" is called on "nodeA-m2" with:
+        Given "getBalances" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |addresses              |TEST_EMPTY_ADDRESS         |staticList     |
 

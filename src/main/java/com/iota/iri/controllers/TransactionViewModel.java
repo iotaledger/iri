@@ -98,7 +98,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if the database fails to save the batch of data.
      */
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
-        if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
+        if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed.get()) {
             transactionViewModel.setAttachmentData();
             transactionViewModel.setMetadata();
         }
@@ -212,7 +212,7 @@ public class TransactionViewModel {
 
         this.hash = hash;
         weightMagnitude = this.hash.trailingZeros();
-        transaction.type = FILLED_SLOT;
+        transaction.type.set(FILLED_SLOT);
     }
 
     /**
@@ -441,13 +441,13 @@ public class TransactionViewModel {
         // We need to save approvees, tags, and other metadata that is used by
         // non-cached operations.
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
-        cacheApprovees(tangle);
-        if (tangle.getCache(TransactionViewModel.class).get(hash) == null) {
-            cachePut(tangle, this, hash);
-        }
 
         if (tangle.exists(Transaction.class, hash)) {
             return false;
+        }
+        cacheApprovees(tangle);
+        if (tangle.getCache(TransactionViewModel.class).get(hash) == null) {
+            cachePut(tangle, this, hash);
         }
         tangle.saveBatch(batch);
         return true;
@@ -508,7 +508,7 @@ public class TransactionViewModel {
      * @return The current type of the transaction.
      */
     public final int getType() {
-        return transaction.type;
+        return transaction.type.get();
     }
 
     /**
@@ -773,8 +773,8 @@ public class TransactionViewModel {
         transaction.currentIndex = Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET,
                 CURRENT_INDEX_TRINARY_SIZE);
         transaction.lastIndex = Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
-        transaction.type = transaction.bytes == null ? TransactionViewModel.PREFILLED_SLOT
-                : TransactionViewModel.FILLED_SLOT;
+        transaction.type.set(transaction.bytes == null ? TransactionViewModel.PREFILLED_SLOT
+                : TransactionViewModel.FILLED_SLOT);
     }
 
     /**
@@ -809,8 +809,8 @@ public class TransactionViewModel {
      * @return True if the {@link Transaction#solid} has been updated, False if not.
      */
     public boolean updateSolid(boolean solid) throws Exception {
-        if (solid != transaction.solid) {
-            transaction.solid = solid;
+        if (solid != transaction.solid.get()) {
+            transaction.solid.set(solid);
             return true;
         }
         return false;
@@ -818,12 +818,12 @@ public class TransactionViewModel {
 
     /** @return True if {@link Transaction#solid} is True (exists in the database), False if not */
     public boolean isSolid() {
-        return transaction.solid;
+        return transaction.solid.get();
     }
 
     /** @return The {@link Transaction#snapshot} index */
     public int snapshotIndex() {
-        return transaction.snapshot;
+        return transaction.snapshot.get();
     }
 
     /**
@@ -837,8 +837,8 @@ public class TransactionViewModel {
      * @throws Exception Thrown if the database update does not return correctly
      */
     public void setSnapshot(Tangle tangle, Snapshot initialSnapshot, final int index) throws Exception {
-        if (index != transaction.snapshot) {
-            transaction.snapshot = index;
+        if (index != transaction.snapshot.get()) {
+            transaction.snapshot.set(index);
             update(tangle, initialSnapshot, "snapshot");
         }
     }
@@ -856,8 +856,8 @@ public class TransactionViewModel {
      * @throws Exception if something goes wrong while saving the changes to the database
      */
     public void isMilestone(Tangle tangle, Snapshot initialSnapshot, final boolean isMilestone) throws Exception {
-        if (isMilestone != transaction.milestone) {
-            transaction.milestone = isMilestone;
+        if (isMilestone != transaction.milestone.get()) {
+            transaction.milestone.set(isMilestone);
             update(tangle, initialSnapshot, "milestone");
         }
     }
@@ -874,12 +874,12 @@ public class TransactionViewModel {
      * @return true if the {@link Transaction} is a milestone and false otherwise
      */
     public boolean isMilestone() {
-        return transaction.milestone;
+        return transaction.milestone.get();
     }
 
     /** @return The current {@link Transaction#height} */
     public long getHeight() {
-        return transaction.height;
+        return transaction.height.get();
     }
 
     /**
@@ -888,7 +888,7 @@ public class TransactionViewModel {
      * @param height The new height of the {@link Transaction}
      */
     private void updateHeight(long height) throws Exception {
-        transaction.height = height;
+        transaction.height.set(height);
     }
 
     public void updateHeights(Tangle tangle, Snapshot initialSnapshot) throws Exception {
@@ -929,12 +929,12 @@ public class TransactionViewModel {
      * @param sender The sender of the {@link Transaction}
      */
     public void updateSender(String sender) throws Exception {
-        transaction.sender = sender;
+        transaction.sender.set(sender);
     }
 
     /** @return The {@link Transaction#sender} */
     public String getSender() {
-        return transaction.sender;
+        return transaction.sender.get();
     }
 
     @Override

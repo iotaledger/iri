@@ -290,21 +290,6 @@ public class APIIntegrationTests {
     }
 
     @Test
-    public void shouldTestGetTips() {
-
-        final Map<String, Object> request = new HashMap<>();
-        request.put("command", "getTips");
-
-        given().
-            body(gson().toJson(request)).
-            when().
-            post("/").
-            then().
-            spec(specSuccessResponse).
-            body(containsString("hashes"));
-    }
-
-    @Test
     public void shouldTestFindTransactions() {
 
         final Map<String, Object> request = new HashMap<>();

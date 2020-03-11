@@ -46,7 +46,6 @@ def create_invalid_transaction(step):
     """
     
     node = world.config['nodeId']
-    logger.info(world.responses['evaluate_and_send'][node][0])
     previous = world.responses['evaluate_and_send'][node][0]
 
     api = api_utils.prepare_api_call(node)
@@ -197,14 +196,11 @@ def create_split_bundle(step):
     
     bundles = bundle_scenario_setup.create_split_bundles(api, seed, addressFrom, addressTo, static.SPLIT_REST_ADDRESS, tag, value, previous)
 
-    logger.info(bundles[0][0].hash)
-    logger.info(bundles[1][0].hash)
     api.broadcast_and_store(bundles[0].as_tryte_strings())
     api.broadcast_and_store(bundles[1].as_tryte_strings())
     
     set_previous_transaction(node, [bundles[1][0].hash])
     set_world_object(node, "reattachSplitSpend", [bundles[1][0].hash])
-    logger.info("End split")
         
 @step(r'an inconsistent transaction is generated on "([^"]+)"')
 def create_inconsistent_transaction(step, node):
@@ -267,8 +263,7 @@ def reference_stitch_transaction(step):
     api = api_utils.prepare_api_call(node)
 
     transaction_bundle = transactions.create_transaction_bundle(referencing_address, 'REFERENCE9TAG', 0)
-
-    branch =  api.get_transactions_to_approve(depth=3, reference=stitch[0])['branchTransaction']
+    branch =  api.get_transactions_to_approve(depth=3)['branchTransaction']
     options = {'trunk_transaction': stitch[0], 'branch_transaction': branch, 'trytes':
         transaction_bundle.as_tryte_strings(), 'min_weight_magnitude': 9}
 

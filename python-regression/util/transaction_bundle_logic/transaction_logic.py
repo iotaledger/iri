@@ -112,9 +112,7 @@ def fetch_transaction_from_list(args, node):
 
     if args[0]['type'] == 'responseValue':
         transaction_list = value_fetch.fetch_response(args[0]['values'])
-        logger.info(len(transaction_list) - 1)
         reference_transaction = transaction_list[node][len(transaction_list) - 1]
-        logger.info(reference_transaction)
     elif args[0]['type'] == 'staticValue':
         transaction_list = options['transactions']
         reference_transaction = transaction_list[len(transaction_list) - 1]

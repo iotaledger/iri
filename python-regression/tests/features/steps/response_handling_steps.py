@@ -79,14 +79,14 @@ def check_response_for_value(step, api_call):
     expected_values = {}
     args = step.hashes
     api_utils.prepare_options(args, expected_values)
-
     for expected_value_key in expected_values:
         if expected_value_key in response_values:
             expected_value = expected_values[expected_value_key]
             response_value = response_values[expected_value_key]
-
-            if isinstance(response_value, list) and api_call != 'getTrytes' and api_call != 'getInclusionStates':
+            
+            if isinstance(response_value, list) and isinstance(expected_value, list) != True and api_call != 'getTrytes' and api_call != 'getInclusionStates':
                 response_value = response_value[0]
+              
 
             assert expected_value == response_value, "The expected value {} does not match""\
                                                      ""the response value: {}".format(expected_value, response_value)

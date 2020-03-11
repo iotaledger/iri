@@ -28,7 +28,15 @@ def fetch_int(value):
     """
     return int(value)
 
-
+def fetch_int_list(value):
+    """
+    Returns an array of int representations of the input value.
+    :param value: The input value
+    :return: The int list
+    """
+    int_list = value.split()
+    return [int(x) for x in int_list]
+    
 def fetch_string(value):
     """
     Returns a string representation of the input value.
@@ -95,7 +103,10 @@ def fetch_static_list(value):
     :return: The stored object in list format
     """
     static_value = getattr(static, value)
-    return [static_value]
+    if isinstance(static_value, list):
+        return static_value
+    else:
+        return [static_value]
 
 
 def fetch_bool(value):

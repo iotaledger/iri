@@ -3,6 +3,7 @@ from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
 from util.test_logic import value_fetch_logic as value_fetch
 import logging
+from util.transaction_bundle_logic import bundle_logic as bundle_logic
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def create_transaction_bundle(address, tag, value):
     )
     bundle = ProposedBundle()
     bundle.add_transaction(txn)
-    bundle.finalize()
+    bundle_logic.finalize(bundle)
 
     return bundle
 
@@ -111,7 +112,9 @@ def fetch_transaction_from_list(args, node):
 
     if args[0]['type'] == 'responseValue':
         transaction_list = value_fetch.fetch_response(args[0]['values'])
+        logger.info(len(transaction_list) - 1)
         reference_transaction = transaction_list[node][len(transaction_list) - 1]
+        logger.info(reference_transaction)
     elif args[0]['type'] == 'staticValue':
         transaction_list = options['transactions']
         reference_transaction = transaction_list[len(transaction_list) - 1]

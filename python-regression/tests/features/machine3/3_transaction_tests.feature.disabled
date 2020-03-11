@@ -1,0 +1,75 @@
+ Feature: Test transaction confirmation
+
+   Scenario: Invalid bundle doesnt affect ledger state
+        We want to ascertain that ledger state is always calculated correctly.
+        Even in the presence of invalid bundles being approved.
+
+        Given "1" transaction is issued on "nodeA-m2" with:
+        |keys                   |values                     |type           |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |0                          |int            |
+        |tag                    |ZERO9VALUE                 |string         |
+
+        Then an invalid bundle is generated referencing the previous transaction
+
+        Then a transaction is issued referencing the previous transaction
+        |keys                   |values                     |type           |
+        |seed                   |THE_BANK                   |staticList     |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |10                         |int            |
+        |tag                    |VALUE9TRANSACTION          |string         |
+
+        #In the default test, the latest sent index will be 52. The next milestone issued should be 53.
+        When a milestone is issued with index 51 and references:
+        |keys                   |values                     |type           |
+        |transactions           |previousTransaction        |responseValue  |
+
+        #Give the node time to solidify the milestone
+        And we wait "15" second/seconds
+        
+        Given "getBalances" is called on "nodeA-m2" with:
+        |keys                   |values                     |type           |
+        |addresses              |TEST_EMPTY_ADDRESS         |staticList     |
+
+        Then the response for "getBalances" should return with:
+        |keys                   |values                     |type           |
+        |balances               |0                          |int            |  
+
+
+    Scenario: Incomplete bundle doesnt affect ledger state
+        We want to ascertain that ledger state is always calculated correctly.
+        Even in the presence of incomplete bundles being approved.
+
+        Then "1" transaction is issued on "nodeA-m2" with:
+        |keys                   |values                     |type           |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |0                          |int            |
+        |tag                    |ZERO9VALUE                 |string         |
+
+        Then an incomplete bundle is generated referencing the previous transaction with:
+        |keys                   |values                     |type           |
+        |address                |TEST_EMPTY_ADDRESS         |staticValue    |
+        |tag                    |INCOMPLETE9TAG             |string         |
+
+        Then a transaction is issued referencing the previous transaction
+        |keys                   |values                     |type           |
+        |seed                   |THE_BANK                   |staticList     |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |11                         |int            |
+        |tag                    |VALUE9TRANSACTION          |string         |
+
+        #In the default test, the latest sent index will be 53. The next milestone issued should be 54.
+        When a milestone is issued with index 54 and references:
+        |keys                   |values                     |type           |
+        |transactions           |previousTransaction        |responseValue  |
+
+        #Give the node time to solidify the milestone
+        And we wait "10" second/seconds
+        
+        Given "getBalances" is called on "nodeA-m2" with:
+        |keys                   |values                     |type           |
+        |addresses              |TEST_EMPTY_ADDRESS         |staticList     |
+
+        Then the response for "getBalances" should return with:
+        |keys                   |values                     |type           |
+        |balances               |0                          |int            | 

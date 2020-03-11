@@ -26,7 +26,13 @@ def issue_milestone(address, api, index, *reference_transaction):
 
     bundle_logic.finalize(bundle)
 
-    tips = api.get_transactions_to_approve(depth=3)
+    if reference_transaction:
+        logger.info("referencing ")
+        logger.info(reference_transaction[0])
+        tips = api.get_transactions_to_approve(depth=3, reference=reference_transaction[0])
+    else:
+        tips = api.get_transactions_to_approve(depth=3)
+        
     trunk = tips['trunkTransaction']
     if reference_transaction:
         branch = reference_transaction[0]

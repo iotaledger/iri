@@ -1,6 +1,6 @@
-defaults: &blowball_tests_config_files
-  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Blowball_Tests_db.tar
-  db_checksum: cf4da9fef58f74d8721eee7e2726f3321ecc2257ef111e6b8b2f4c348b40c980
+defaults: &transaction_tests_config_files
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/TransactionsTestsDb.tar
+  db_checksum: 4d94ae65b38ea0f8461d5ec24e5140b20eb86590d54e87e30aa9a72b26a131be
   iri_args: ['--testnet-coordinator',
   'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
   '--milestone-keys',

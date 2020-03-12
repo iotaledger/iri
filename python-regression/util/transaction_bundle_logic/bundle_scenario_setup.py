@@ -1,11 +1,11 @@
 from iota.crypto.signing import KeyGenerator
-from util import logger as log
 
 from iota import Iota, ProposedTransaction, Address, Bundle, TransactionHash, \
     Transaction, TryteString, Tag, ProposedBundle
 
-
-logger = log.getLogger(__name__)
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def create_double_spend_bundles(seedFrom, addressFrom, address1, address2, tag, value):
     """

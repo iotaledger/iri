@@ -50,7 +50,11 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaUtils;
-
+import com.iota.iri.utils.comparators.TryteIndexComparator;
+import org.apache.commons.lang3.StringUtils;
+import org.iota.mddoclet.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -1188,6 +1192,7 @@ public class API {
         pearlDiver = new PearlDiver();
 
         byte[] transactionTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        trytes.sort(new TryteIndexComparator().reversed());
 
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();

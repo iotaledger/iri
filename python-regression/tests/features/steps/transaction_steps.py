@@ -100,7 +100,7 @@ def create_incomplete_transfer(step):
     set_world_object(node, 'incompleteTransactions', transaction_hash.hash)
     set_previous_transaction(node, [transaction_hash.hash])
     
-@step(r'a value transaction which does not move funds is generated referencing the previous transaction with:')
+@step(r'Then a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:')
 def fake_value_transaction(step):
     """
     Creates a bundle that both receives and sends value between 2 addresses.
@@ -138,7 +138,7 @@ def fake_value_transaction(step):
 def create_double_spent(step):
     """
     Creates two bundles which both try to spend the same address.
-    This test fails if they are both confirmed 
+    This test fails if they are both confirmed
     :param step.hashes: A gherkin table present in the feature file specifying the
                         arguments and the associated type.
     """
@@ -364,7 +364,7 @@ def issue_a_milestone(step, index, node):
 
 def set_previous_transaction(node, txHash):
    set_world_object(node, 'previousTransaction', txHash)
-    
+
 def set_world_object(node, objectName, value):
     if objectName not in world.responses:
         world.responses[objectName] = {}

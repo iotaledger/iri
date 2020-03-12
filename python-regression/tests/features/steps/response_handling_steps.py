@@ -83,7 +83,7 @@ def check_response_for_value(step, api_call):
         if expected_value_key in response_values:
             expected_value = expected_values[expected_value_key]
             response_value = response_values[expected_value_key]
-            
+
             if isinstance(response_value, list) and isinstance(expected_value, list) != True and api_call != 'getTrytes' and api_call != 'getInclusionStates':
                 response_value = response_value[0]
 

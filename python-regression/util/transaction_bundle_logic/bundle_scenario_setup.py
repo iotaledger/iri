@@ -157,7 +157,7 @@ def custom_attach(trytes, mwm):
         # put that back in the bundle
         bundle.transactions[txn.current_index] = powed_txn
     return bundle.as_tryte_strings()
-    
+
 def create_incomplete_bundle_trytes(address, tag):
     """
     Creates an incomplete bundle by leaving out the first transaction

@@ -96,7 +96,7 @@ Feature: Test transaction confirmation
         |value                  |0                          |int            |
         |tag                    |ZERO9VALUE                 |string         |
 
-        Then a value transaction which does not move funds is generated referencing the previous transaction with:
+        Then a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:
         |keys                   |values                     |type           |
         |seed                   |THE_BANK                   |staticList     |
         |value                  |100                        |int            |  
@@ -138,7 +138,7 @@ Feature: Test transaction confirmation
         Then a double spend is generated referencing the previous transaction with:
         |keys                   |values                     |type           |
         |seed                   |DOUBLE_SPEND_SEED          |staticValue    |
-        |value                  |1000                       |int            |  
+        |value                  |1000                       |int            |
         |tag                    |FAKE9VALUE                 |string         |
 
         #In the default test, the latest sent index will be 53. The next milestone issued should be 54.
@@ -157,10 +157,10 @@ Feature: Test transaction confirmation
         |keys                   |values                     |type           |
         |balances               |1000 0                     |intList        | 
 
-    @getNodeInfo
     Scenario: Split transaction over 2 bundles
         We want to ascertain that ledger state is always calculated correctly.
-        Even when there is a transaction used in 2 different bundles
+        Even when there is a transaction used in 2 different bundles. A split bundle is
+        a bundle that uses a transaction from another bundle.
 
         Then "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
@@ -183,7 +183,7 @@ Feature: Test transaction confirmation
         |tag                    |VALUE9TRANSACTION          |string         |
 
         #In the default test, the latest sent index will be 54. The next milestone issued should be 55.
-        When a milestone is issued with index 51 and references:
+        When a milestone is issued with index 55 and references:
         |keys                   |values                     |type           |
         |transactions           |previousTransaction        |responseValue  |
 

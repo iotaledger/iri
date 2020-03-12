@@ -138,8 +138,8 @@ def fetch_call(api_call, api, options):
     try:
         response = call_list[api_call](**options)
     except ValueError as e:
-        logger.error(e.context["filter_errors"])
-        logger.error(str(e))
+        if "filter_errors" in e.context:
+            logger.info(e.context["filter_errors"])
         response = None
 
     return response

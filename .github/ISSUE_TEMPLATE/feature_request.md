@@ -1,24 +1,28 @@
 ---
 name: Request a feature for IRI
 about: Request a feature
-
 ---
 
-*Note*
-The feature request will probably be integrated faster if you do a pull request for it.
-If you want to discuss the feature before you actually write the code you are welcome to do it by first submitting an issue.
+## Description
 
-### Description
-Briefly describe the feature you want.
+Briefly describe the feature are requesting.
 
-### Motivation
+## Motivation
+
 Explain why this feature is needed.
 
-### Requirements
-Create a list of what you want this feature request to fulfill.
+## Requirements
 
-### Open Questions (optional)
+Write a list of what you want this feature to do.
+
+1. 
+2. 
+3. 
+
+## Open questions (optional)
+
 Anything you want to discuss.
 
-### Am I planning to do it myself with a PR?
+## Are you planning to do it yourself in a pull request?
+
 Yes/No.

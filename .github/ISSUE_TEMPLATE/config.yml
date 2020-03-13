@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discord
+    url: https://discord.iota.org/
+    about: Please ask and answer questions about IRI here.
+  - name: Security vulnerabilities
+    url: security@iota.org
+    about: Please report security vulnerabilities here.

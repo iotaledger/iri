@@ -1,5 +1,5 @@
 nodes:
-  nodeA:
+  nodeA-m3:
     host: localhost
     podip: localhost
     ports:
@@ -10,51 +10,7 @@ nodes:
       api: 14265
       gossip-tcp: 15600
       zmq-feed: 5556
-  nodeB:
-    host: localhost
-    podip: localhost
-    ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-    clusterip_ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-  nodeC:
-    host: localhost
-    podip: localhost
-    ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-    clusterip_ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-  nodeD:
-    host: localhost
-    podip: localhost
-    ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-    clusterip_ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-  nodeE:
-    host: localhost
-    podip: localhost
-    ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-    clusterip_ports:
-      api: 15265
-      gossip-tcp: 15605
-      zmq-feed: 6556
-  nodeF:
+  nodeB-m3:
     host: localhost
     podip: localhost
     ports:

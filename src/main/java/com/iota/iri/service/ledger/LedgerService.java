@@ -2,6 +2,7 @@ package com.iota.iri.service.ledger;
 
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Tangle;
 
 import java.util.List;
 import java.util.Map;
@@ -99,12 +100,16 @@ public interface LedgerService {
      * </p>
      *
      * @param visitedTransactions a set of transaction hashes that shall be considered to be visited already
-     * @param startTransaction the transaction that marks the start of the dag traversal and that has its approvees
-     *                        examined
+     * @param startTransaction    the transaction that marks the start of the dag traversal and that has its approvees
+     *                            examined
+     * @param enforceExtraRules   enforce {@link com.iota.iri.BundleValidator#validateBundleTransactionsApproval(List)}
+     *                            and {@link com.iota.iri.BundleValidator#validateBundleTailApproval(Tangle, List)}.
+     *                            Enforcing them may break backwards compatibility.
      * @return a map of the balance changes (addresses associated to their balance) or {@code null} if the balance could
      *         not be generated due to inconsistencies
      * @throws LedgerException if anything unexpected happens while generating the balance changes
      */
-    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex)
+    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex,
+            boolean enforceExtraRules)
             throws LedgerException;
 }

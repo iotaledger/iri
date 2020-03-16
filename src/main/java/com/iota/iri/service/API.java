@@ -389,10 +389,14 @@ public class API {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
-            } else if (bundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), txVM.getHash()).isEmpty()) {
-                state = false;
-                info = "tails are not consistent (bundle is invalid): " + transaction;
-                break;
+            } else {
+                if (bundleValidator
+                        .validate(tangle, true, snapshotProvider.getInitialSnapshot(), txVM.getHash())
+                        .isEmpty()) {
+                    state = false;
+                    info = "tails are not consistent (bundle is invalid): " + transaction;
+                    break;
+                }
             }
         }
 

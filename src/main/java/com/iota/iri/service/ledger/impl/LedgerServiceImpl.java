@@ -133,7 +133,7 @@ public class LedgerServiceImpl implements LedgerService {
         }
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
         Map<Hash, Long> currentState = generateBalanceDiff(visitedHashes, tip,
-                snapshotProvider.getLatestSnapshot().getIndex());
+                snapshotProvider.getLatestSnapshot().getIndex(), true);
         if (currentState == null) {
             return false;
         }
@@ -152,7 +152,8 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex)
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex,
+            boolean enforceExtraRules)
             throws LedgerException {
 
         Map<Hash, Long> state = new HashMap<>();
@@ -176,7 +177,8 @@ public class LedgerServiceImpl implements LedgerService {
                     if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
 
                         final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
-                                snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
+                                enforceExtraRules, snapshotProvider.getInitialSnapshot(),
+                                transactionViewModel.getHash());
 
                         if (bundleTransactions.isEmpty()) {
                             return null;
@@ -257,7 +259,7 @@ public class LedgerServiceImpl implements LedgerService {
                 try {
                     Hash tail = transactionViewModel.getHash();
                     Map<Hash, Long> balanceChanges = generateBalanceDiff(new HashSet<>(), tail,
-                            snapshotProvider.getLatestSnapshot().getIndex());
+                            snapshotProvider.getLatestSnapshot().getIndex(), false);
                     successfullyProcessed = balanceChanges != null;
                     if (successfullyProcessed) {
                         successfullyProcessed = snapshotProvider.getLatestSnapshot().patchedState(

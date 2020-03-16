@@ -5,7 +5,7 @@ about: Request a feature
 
 ## Description
 
-Briefly describe the feature are requesting.
+Briefly describe the feature that you are requesting.
 
 ## Motivation
 
@@ -21,7 +21,7 @@ Write a list of what you want this feature to do.
 
 ## Open questions (optional)
 
-Anything you want to discuss.
+Use this section to ask any questions that are related to the feature.
 
 ## Are you planning to do it yourself in a pull request?
 

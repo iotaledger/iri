@@ -9,13 +9,27 @@ labels: T-Bug
 
 Briefly describe the bug.
 
-## IRI version
+## Version
 
 Which version of IRI are you running?
 
-## Hardware Specification
+- Version:
+
+## IOTA network
+
+Which node are you connected to and which IOTA network is it in?
+
+- Node URL:
+- Network:
+
+## Hardware specification
 
 What hardware are you using?
+
+- Operating system:
+- RAM:
+- Number of cores:
+- Device type:
 
 ## Steps To reproduce the bug
 

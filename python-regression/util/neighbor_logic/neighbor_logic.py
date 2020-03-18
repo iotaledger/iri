@@ -1,6 +1,5 @@
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from util import logger as log
+logger = log.getLogger(__name__)
 
 
 def check_if_neighbors(api, neighbors, expected_neighbor):

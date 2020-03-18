@@ -5,14 +5,14 @@ Feature: Test milestone validation
 
     Scenario: Verify current milestone index
 
-        Given "getNodeInfo" is called on "nodeA-m5" with:
+        Given "getNodeInfo" is called on "nodeA-m6" with:
         |keys                   |values     |type       |
 
         Then the response for "getNodeInfo" should return with:
         |keys                   |values     |type       |
         |latestMilestoneIndex   |45         |int        |
 
-        And "getNodeInfo" is called on "nodeB-m5" with:
+        And "getNodeInfo" is called on "nodeB-m6" with:
         |keys                   |values     |type       |
 
         Then the response for "getNodeInfo" should return with:

@@ -28,7 +28,7 @@ Topics currently found in the latest code are
 * `sn` for newly confirmed transactions ( by solid milestone children measurement )
 * `sn_trytes` for raw trytes, transaction hash, and snapshot index of confirmed transactions.
 * `tx` for newly seen transactions
-* `tx_trytes` trytes of newly seen transactions
+* `trytes` trytes of newly seen transactions
 * `<Address>` to watch activity on an address
 
 All topic must be lowercase (to not clash with `<Address>` containing the topic title - like `TXCR9...` & `TX`)

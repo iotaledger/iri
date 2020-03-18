@@ -1,4 +1,4 @@
-package com.iota.iri;
+package com.iota.iri.service.validation;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.conf.ProtocolConfig;
@@ -65,7 +65,7 @@ public class TransactionValidator {
      *                       minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the
      *                       transaction hash
      */
-    TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig) {
+    public TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, ProtocolConfig protocolConfig) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.tipsViewModel = tipsViewModel;

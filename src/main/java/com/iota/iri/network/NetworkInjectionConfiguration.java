@@ -3,7 +3,7 @@ package com.iota.iri.network;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.impl.TipsRequesterImpl;

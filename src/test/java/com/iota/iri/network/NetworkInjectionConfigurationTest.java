@@ -3,7 +3,7 @@ package com.iota.iri.network;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;

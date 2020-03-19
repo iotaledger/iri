@@ -3,6 +3,7 @@ package com.iota.iri.network;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
@@ -37,6 +38,11 @@ public class NetworkInjectionConfigurationTest {
         assertNotNull("instance creation did not work", testInjector().getInstance(TransactionProcessingPipeline.class));
     }
 
+    @Test
+    public void provideTransactionSolidifier(){
+        assertNotNull("instance creation did not work", testInjector().getInstance(TransactionSolidifier.class));
+    }
+
     private Injector testInjector() {
         IotaConfig config = mock(IotaConfig.class);
         when(config.getCoordinator()).thenReturn(BaseIotaConfig.Defaults.COORDINATOR);
@@ -50,6 +56,7 @@ public class NetworkInjectionConfigurationTest {
             bind(LatestMilestoneTracker.class).toInstance(mock(LatestMilestoneTracker.class));
             bind(SnapshotProvider.class).toInstance(mock(SnapshotProvider.class));
             bind(TransactionValidator.class).toInstance(mock(TransactionValidator.class));
+            bind(TransactionSolidifier.class).toInstance(mock(TransactionSolidifier.class));
         }
 
     }

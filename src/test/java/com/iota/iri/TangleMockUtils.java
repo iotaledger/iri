@@ -101,7 +101,7 @@ public class TangleMockUtils {
         }
 
         Collections.reverse(bundle);
-        Mockito.when(bundleValidator.validate(Mockito.eq(tangle), Mockito.any(),
+        Mockito.when(bundleValidator.validate(Mockito.eq(tangle), Mockito.eq(true), Mockito.any(),
                 Mockito.eq(bundle.iterator().next().getHash())))
                 .thenReturn(bundle);
 

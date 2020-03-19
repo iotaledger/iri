@@ -779,28 +779,6 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT;
     }
 
-    /**
-     * Update solid transactions
-     * @param tangle Tangle
-     * @param initialSnapshot Initial snapshot
-     * @param analyzedHashes analyzed hashes
-     * @throws Exception Exception
-     */
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot,
-                                               final Set<Hash> analyzedHashes) throws Exception {
-        Object[] hashes = analyzedHashes.toArray();
-        TransactionViewModel transactionViewModel;
-        for (int i = hashes.length - 1; i >= 0; i--) {
-            transactionViewModel = TransactionViewModel.fromHash(tangle, (Hash) hashes[i]);
-
-            transactionViewModel.updateHeights(tangle, initialSnapshot);
-
-            if (!transactionViewModel.isSolid()) {
-                transactionViewModel.updateSolid(true);
-                transactionViewModel.update(tangle, initialSnapshot, "solid|height");
-            }
-        }
-    }
 
     /**
      * Updates the {@link Transaction#solid} value of the referenced {@link Transaction} object.

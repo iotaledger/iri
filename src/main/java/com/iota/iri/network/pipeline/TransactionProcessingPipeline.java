@@ -1,6 +1,7 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.service.validation.TransactionSolidifier;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
@@ -14,7 +15,7 @@ public interface TransactionProcessingPipeline {
      * Defines the different stages of the {@link TransactionProcessingPipelineImpl}.
      */
     enum Stage {
-        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH,
+        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH, SOLIDIFY,
     }
 
     /**
@@ -66,6 +67,12 @@ public interface TransactionProcessingPipeline {
     void process(byte[] txTrits);
 
     /**
+     * Fetches a set of transactions from the {@link TransactionSolidifier} and submits
+     * the object into the {@link BroadcastStage} queue.
+     */
+    void refillBroadcastQueue();
+
+    /**
      * Shut downs the pipeline by shutting down all stages.
      */
     void shutdown();
@@ -111,4 +118,11 @@ public interface TransactionProcessingPipeline {
      * @param hashingStage the {@link HashingStage} to use
      */
     void setHashingStage(HashingStage hashingStage);
+
+    /**
+     * Sets the solidify stage. This method should only be used for injecting mocked objects.
+     *
+     * @param solidifyStage the {@link SolidifyStage} to use
+     */
+    void setSolidifyStage(SolidifyStage solidifyStage);
 }

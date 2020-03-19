@@ -3,6 +3,7 @@ package com.iota.iri.network;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
@@ -44,11 +45,11 @@ public class NetworkInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     TransactionProcessingPipeline provideTransactionProcessingPipeline(NeighborRouter neighborRouter,
-            TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester transactionRequester) {
+                                                                       TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
+                                                                       TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+                                                                       TransactionRequester transactionRequester, TransactionSolidifier transactionSolidifier) {
         return new TransactionProcessingPipelineImpl(neighborRouter, configuration, txValidator, tangle,
-                snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester);
+                snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester, transactionSolidifier);
     }
 
     @Singleton

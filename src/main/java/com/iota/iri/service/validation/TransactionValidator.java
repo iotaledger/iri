@@ -167,5 +167,4 @@ public class TransactionValidator {
             super(message);
         }
     }
-
 }

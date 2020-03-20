@@ -162,7 +162,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return existingMilestone.getHash().equals(transactionViewModel.getHash()) ? VALID : INVALID;
             }
 
-            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
+            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle, true,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
             if (bundleTransactions.isEmpty()) {

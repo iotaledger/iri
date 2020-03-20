@@ -99,6 +99,20 @@ public class TransactionTestUtils {
     }
 
     /**
+     * Generates a transaction with a hash. Transaction last and current index are set to the index provided.
+     *
+     * @param index The index to set the transaction to
+     * @return A transaction which is located on the end of its (nonexistent) bundle
+     */
+    public static TransactionViewModel createBundleHead(int index, Hash hash) {
+
+        TransactionViewModel tx = new TransactionViewModel(getTransactionTrits(), hash);
+        setLastIndex(tx, index);
+        setCurrentIndex(tx, index);
+        return tx;
+    }
+
+    /**
      * Generates a transaction with the specified trunk and branch, and bundle hash from trunk.
      * This transaction indices are updated to match the trunk index.
      * 

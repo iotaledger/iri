@@ -37,6 +37,11 @@ public class Transaction implements Persistable {
      */
     public static final int IS_MILESTONE_BITMASK = 0b10;
 
+    /**
+     * Bitmask used to access and store the conflicting flag.
+     */
+    public static final int IS_CONFLICTING_BITMASK = 0b100;
+
     public byte[] bytes;
 
     public Hash address;
@@ -74,6 +79,11 @@ public class Transaction implements Persistable {
      * This flag indicates whether the transaction is considered solid or not
      */
     public boolean solid = false;
+
+    /**
+     * This flag indicates whether the transaction is conflicting and was ignored in balance computation
+     */
+    public boolean conflicting = false;
 
     /**
      * This flag indicates if the transaction is a coordinator issued milestone.
@@ -142,6 +152,7 @@ public class Transaction implements Persistable {
         byte flags = 0;
         flags |= solid ? IS_SOLID_BITMASK : 0;
         flags |= milestone ? IS_MILESTONE_BITMASK : 0;
+        flags |= conflicting ? IS_CONFLICTING_BITMASK : 0;
         buffer.put(flags);
 
         buffer.put(Serializer.serialize(snapshot));
@@ -205,6 +216,7 @@ public class Transaction implements Persistable {
         // decode the boolean byte by checking the bitmasks
         solid = (bytes[i] & IS_SOLID_BITMASK) != 0;
         milestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
+        conflicting = (bytes[i] & IS_CONFLICTING_BITMASK) != 0;
         i++;
 
         snapshot = Serializer.getInteger(bytes, i);

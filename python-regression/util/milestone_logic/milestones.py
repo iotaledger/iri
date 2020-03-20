@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def issue_milestone(address, api, index, *reference_transaction):
+def issue_milestone(address, api, index, reference_transaction, full_reference=False):
     txn1 = ProposedTransaction(
         address=Address(address),
         value=0
@@ -29,7 +29,12 @@ def issue_milestone(address, api, index, *reference_transaction):
     tips = api.get_transactions_to_approve(depth=3)
     trunk = tips['trunkTransaction']
     if reference_transaction:
-        branch = reference_transaction[0]
+        if full_reference:
+            if len(reference_transaction) > 1:
+                trunk = reference_transaction[len(reference_transaction) - 2]
+            else:
+                logger.error('Cannot reference 2 txs because is only 1 tx in the reference list')
+        branch = reference_transaction[len(reference_transaction) - 1]
     else:
         branch = tips['branchTransaction']
 

@@ -2,6 +2,8 @@ from iota import ProposedBundle, ProposedTransaction, Address, Tag
 from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
 from util.test_logic import value_fetch_logic as value_fetch
+from iota.crypto.signing import KeyGenerator
+
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -111,7 +113,7 @@ def fetch_transaction_from_list(args, node):
 
     if args[0]['type'] == 'responseValue':
         transaction_list = value_fetch.fetch_response(args[0]['values'])
-        reference_transaction = transaction_list[node][len(transaction_list) - 1]
+        reference_transaction = transaction_list[node]
     elif args[0]['type'] == 'staticValue':
         transaction_list = options['transactions']
         reference_transaction = transaction_list[len(transaction_list) - 1]
@@ -144,3 +146,50 @@ def evaluate_and_send(api, seed, arg_list):
     api.broadcast_and_store(transaction.get('trytes'))
 
     return transaction
+
+def create_double_spend_bundles(seedFrom, addressFrom, address1, address2, tag, value):
+    """
+    Create 2 bundles with conflicting value transfers
+    :param seedFrom: The seed used for signing the bundles
+    :param addressFrom: The address which we will use for input
+    :param address1: The address we will use with the first bundle
+    :param address2: The address we will use with the second bundle
+    :param tag:  The tag that will be associated with the transaction
+    :param value: The value we will send
+    """
+
+    bundle1 = ProposedBundle()
+    bundle1.add_transaction(ProposedTransaction(
+        address = Address(address1),
+        tag = Tag(tag),
+        value = value
+    ))
+    bundle1.add_inputs([Address(
+        addressFrom,
+        balance = addressFrom.balance,
+        key_index = addressFrom.key_index,
+        security_level = addressFrom.security_level
+      ),
+    ])
+    bundle1.send_unspent_inputs_to(Address(addressFrom))
+    bundle1.finalize()
+    bundle1.sign_inputs(KeyGenerator(seedFrom))
+
+    bundle2 = ProposedBundle()
+    bundle2.add_transaction(ProposedTransaction(
+        address = Address(address2),
+        tag = Tag(tag),
+        value = value
+    ))
+    bundle2.add_inputs([Address(
+        addressFrom,
+        balance = addressFrom.balance,
+        key_index = addressFrom.key_index,
+        security_level = addressFrom.security_level
+      ),
+    ])
+    bundle2.send_unspent_inputs_to(Address(addressFrom))
+    bundle2.finalize()
+    bundle2.sign_inputs(KeyGenerator(seedFrom))
+
+    return [bundle1, bundle2]

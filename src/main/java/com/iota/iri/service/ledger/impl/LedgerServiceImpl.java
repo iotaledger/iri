@@ -5,6 +5,7 @@ import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.ledger.LedgerException;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.MilestoneService;
@@ -173,11 +174,10 @@ public class LedgerServiceImpl implements LedgerService {
                 TransactionViewModel trunk = transactionViewModel.getTrunkTransaction(tangle);
                 TransactionViewModel branch = transactionViewModel.getBranchTransaction(tangle);
 
-
                 boolean approvedTrunk = (trunk.snapshotIndex() > 0) && (trunk.snapshotIndex() != milestoneIndex);
                 boolean approvedBranch = (branch.snapshotIndex() > 0) && (branch.snapshotIndex() != milestoneIndex);
-                if ((visitedTransactions.contains(trunk.getHash()) || approvedTrunk) &&
-                        (visitedTransactions.contains(branch.getHash()) || approvedBranch)) {
+                if ((trunk.isEmpty()  || visitedTransactions.contains(trunk.getHash()) || approvedTrunk) &&
+                        (branch.isEmpty() || visitedTransactions.contains(branch.getHash()) || approvedBranch)) {
                     if (transactionViewModel.getCurrentIndex() == 0) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
@@ -224,9 +224,9 @@ public class LedgerServiceImpl implements LedgerService {
                     visitedTransactions.add(transactionPointer);
                     stack.pop();
                 }
-                else if((!visitedTransactions.contains(trunk.getHash()) && !approvedTrunk)){
+                else if((!trunk.isEmpty() && !visitedTransactions.contains(trunk.getHash()) && !approvedTrunk)){
                     stack.push(trunk.getHash());
-                }else if((!visitedTransactions.contains(branch.getHash()) && !approvedBranch)) {
+                }else if((!branch.isEmpty() && !visitedTransactions.contains(branch.getHash()) && !approvedBranch)) {
                     stack.push(branch.getHash());
                 }
             }catch(Exception e){

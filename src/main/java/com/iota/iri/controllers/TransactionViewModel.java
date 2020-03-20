@@ -880,6 +880,14 @@ public class TransactionViewModel {
     }
 
     /**
+     * Checks if a transaction is empty.
+     * @return True if empty. False otherwise.
+     */
+    public boolean isEmpty(){
+        return Arrays.equals(getBytes(), new byte[SIZE]);
+    }
+
+    /**
      * This method gets the {@link Transaction#milestone}.
      *
      * The {@link Transaction#milestone} flag indicates if the {@link Transaction} is a coordinator issued milestone. It

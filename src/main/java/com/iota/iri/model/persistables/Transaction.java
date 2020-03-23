@@ -9,6 +9,7 @@ import com.iota.iri.utils.TransactionTruncator;
 
 import javax.naming.OperationNotSupportedException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -83,7 +84,7 @@ public class Transaction implements Persistable {
     /**
      * This flag indicates whether the transaction is conflicting and was ignored in balance computation
      */
-    public boolean conflicting = false;
+    public AtomicBoolean conflicting = new AtomicBoolean(false);
 
     /**
      * This flag indicates if the transaction is a coordinator issued milestone.
@@ -152,7 +153,7 @@ public class Transaction implements Persistable {
         byte flags = 0;
         flags |= solid ? IS_SOLID_BITMASK : 0;
         flags |= milestone ? IS_MILESTONE_BITMASK : 0;
-        flags |= conflicting ? IS_CONFLICTING_BITMASK : 0;
+        flags |= conflicting.get() ? IS_CONFLICTING_BITMASK : 0;
         buffer.put(flags);
 
         buffer.put(Serializer.serialize(snapshot));
@@ -216,7 +217,7 @@ public class Transaction implements Persistable {
         // decode the boolean byte by checking the bitmasks
         solid = (bytes[i] & IS_SOLID_BITMASK) != 0;
         milestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
-        conflicting = (bytes[i] & IS_CONFLICTING_BITMASK) != 0;
+        conflicting.set((bytes[i] & IS_CONFLICTING_BITMASK) != 0);
         i++;
 
         snapshot = Serializer.getInteger(bytes, i);

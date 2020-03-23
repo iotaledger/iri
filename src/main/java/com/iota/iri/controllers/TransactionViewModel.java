@@ -872,19 +872,11 @@ public class TransactionViewModel {
      * @param isConflicting     True if the transaction is conflicting and ignored during balance computation
      * @throws Exception        If something goes wrong
      */
-    public void isConflicting(Tangle tangle, Snapshot initialSnapshot, final boolean isConflicting) throws Exception {
-        if(isConflicting != transaction.conflicting){
-            transaction.conflicting = isConflicting;
+    public void setConflicting(Tangle tangle, Snapshot initialSnapshot, final boolean isConflicting) throws Exception {
+        if(isConflicting != transaction.conflicting.get()){
+            transaction.conflicting.set(isConflicting);
             update(tangle, initialSnapshot, "conflicting");
         }
-    }
-
-    /**
-     * Checks if a transaction is empty.
-     * @return True if empty. False otherwise.
-     */
-    public boolean isEmpty(){
-        return Arrays.equals(getBytes(), new byte[SIZE]);
     }
 
     /**

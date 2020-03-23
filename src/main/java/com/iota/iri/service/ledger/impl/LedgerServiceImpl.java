@@ -5,7 +5,6 @@ import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.ledger.LedgerException;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.MilestoneService;
@@ -163,21 +162,21 @@ public class LedgerServiceImpl implements LedgerService {
             visitedTransactions.add(solidEntryPointHash);
         });
 
-        Stack<Hash> stack = new Stack<>();
+        Deque<Hash> stack = new ArrayDeque<>();
         stack.push(startTransaction);
 
-        while(!stack.empty()){
+        while(stack.size() != 0){
             try {
                 Map<Hash, Long> currentState = new HashMap<>();
                 Hash transactionPointer = stack.peek();
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
-                TransactionViewModel trunk = transactionViewModel.getTrunkTransaction(tangle);
-                TransactionViewModel branch = transactionViewModel.getBranchTransaction(tangle);
+                TransactionViewModel trunkTransactionViewModel = transactionViewModel.getTrunkTransaction(tangle);
+                TransactionViewModel branchTransactionViewModel = transactionViewModel.getBranchTransaction(tangle);
 
-                boolean approvedTrunk = (trunk.snapshotIndex() > 0) && (trunk.snapshotIndex() != milestoneIndex);
-                boolean approvedBranch = (branch.snapshotIndex() > 0) && (branch.snapshotIndex() != milestoneIndex);
-                if ((trunk.isEmpty()  || visitedTransactions.contains(trunk.getHash()) || approvedTrunk) &&
-                        (branch.isEmpty() || visitedTransactions.contains(branch.getHash()) || approvedBranch)) {
+                boolean approvedTrunk = (trunkTransactionViewModel.snapshotIndex() > 0) && (trunkTransactionViewModel.snapshotIndex() != milestoneIndex);
+                boolean approvedBranch = (branchTransactionViewModel.snapshotIndex() > 0) && (branchTransactionViewModel.snapshotIndex() != milestoneIndex);
+                if ((trunkTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT  || visitedTransactions.contains(trunkTransactionViewModel.getHash()) || approvedTrunk) &&
+                        (branchTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT || visitedTransactions.contains(branchTransactionViewModel.getHash()) || approvedBranch)) {
                     if (transactionViewModel.getCurrentIndex() == 0) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
@@ -200,34 +199,38 @@ public class LedgerServiceImpl implements LedgerService {
                                 return null;
                             }
 
-                            for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
-                                if (bundleTransactionViewModel.value() != 0) {
-                                    final Hash address = bundleTransactionViewModel.getAddressHash();
-                                    final Long value = currentState.get(address);
-                                    currentState.put(address, value == null ? bundleTransactionViewModel.value()
-                                            : Math.addExact(value, bundleTransactionViewModel.value()));
+                            try{
+                                for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
+                                    if (bundleTransactionViewModel.value() != 0) {
+                                        final Hash address = bundleTransactionViewModel.getAddressHash();
+                                        final Long value = currentState.get(address);
+                                        currentState.put(address, value == null ? bundleTransactionViewModel.value()
+                                                : Math.addExact(value, bundleTransactionViewModel.value()));
+                                    }
                                 }
-                            }
-                            state.forEach((key, value) -> {
-                                if (currentState.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
-                                    currentState.putIfAbsent(key, value);
+                                state.forEach((key, value) -> {
+                                    if (currentState.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
+                                        currentState.putIfAbsent(key, value);
+                                    }
+                                });
+                                boolean isConsistent = snapshotProvider.getLatestSnapshot().patchedState(new SnapshotStateDiffImpl(currentState)).isConsistent();
+                                if(isConsistent){
+                                    state = currentState;
+                                }else{
+                                    transactionViewModel.setConflicting(tangle, initialSnapshot, true);
                                 }
-                            });
-                            boolean isConsistent = snapshotProvider.getLatestSnapshot().patchedState(new SnapshotStateDiffImpl(currentState)).isConsistent();
-                            if(isConsistent){
-                                state = currentState;
-                            }else{
-                                transactionViewModel.isConflicting(tangle, initialSnapshot, true);
+                            }catch(ArithmeticException e){
+                                transactionViewModel.setConflicting(tangle, initialSnapshot, true);
                             }
                         }
                     }
                     visitedTransactions.add(transactionPointer);
                     stack.pop();
                 }
-                else if((!trunk.isEmpty() && !visitedTransactions.contains(trunk.getHash()) && !approvedTrunk)){
-                    stack.push(trunk.getHash());
-                }else if((!branch.isEmpty() && !visitedTransactions.contains(branch.getHash()) && !approvedBranch)) {
-                    stack.push(branch.getHash());
+                else if((trunkTransactionViewModel.getType() != TransactionViewModel.PREFILLED_SLOT && !visitedTransactions.contains(trunkTransactionViewModel.getHash()) && !approvedTrunk)){
+                    stack.addFirst(trunkTransactionViewModel.getHash());
+                }else if((branchTransactionViewModel.getType() != TransactionViewModel.PREFILLED_SLOT && !visitedTransactions.contains(branchTransactionViewModel.getHash()) && !approvedBranch)) {
+                    stack.addFirst(branchTransactionViewModel.getHash());
                 }
             }catch(Exception e){
                 throw new LedgerException("unexpected error while generating the balance diff", e);

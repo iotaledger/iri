@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def issue_milestone(address, api, index, reference_transaction, full_reference=False):
+def issue_milestone(address, api, index, full_reference=False, reference_transaction=None):
     txn1 = ProposedTransaction(
         address=Address(address),
         value=0

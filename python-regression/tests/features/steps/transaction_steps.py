@@ -154,7 +154,7 @@ def issue_a_milestone_with_reference(step, index):
     logger.info('Issuing milestone {}'.format(index))
     #To reference both trunk and branch of the milestone from the reference list
     full_reference = bool(get_step_value(step,"fullReference"))
-    milestone = milestones.issue_milestone(address, api, index, reference_transaction, full_reference)
+    milestone = milestones.issue_milestone(address, api, index, full_reference, reference_transaction)
 
     milestones.update_latest_milestone(world.config, node, milestone)
 

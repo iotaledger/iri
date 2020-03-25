@@ -1,5 +1,6 @@
-package com.iota.iri;
+package com.iota.iri.service.validation;
 
+import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.ProtocolConfig;
 
@@ -11,6 +12,7 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;

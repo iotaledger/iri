@@ -5,6 +5,7 @@ import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -804,7 +805,7 @@ public class TransactionViewModel {
     /**
      * Updates the {@link Transaction#solid} value of the referenced {@link Transaction} object.
      *
-     * Used by the {@link com.iota.iri.TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
+     * Used by the {@link TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
      *
      * @param solid The solidity of the transaction in the database
      * @return True if the {@link Transaction#solid} has been updated, False if not.

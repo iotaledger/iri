@@ -6,7 +6,7 @@ import com.google.gson.JsonSyntaxException;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.*;

@@ -1,6 +1,6 @@
 package com.iota.iri.service;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.service.snapshot.SnapshotProvider;

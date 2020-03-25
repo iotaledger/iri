@@ -1,8 +1,7 @@
-import logging
 from util.threading_logic import pool_logic as pool
+from util import logger as log
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = log.getLogger(__name__)
 
 
 def find_in_response(key, response):

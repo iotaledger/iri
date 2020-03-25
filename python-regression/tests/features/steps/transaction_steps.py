@@ -105,8 +105,6 @@ def create_double_spent(step):
     set_previous_transaction(node, [firstDoubleSpend.hash])
     set_world_object(node, "firstDoubleSpend", [firstDoubleSpend.hash])
 
-
-
 @step(r'an invalid bundle is generated referencing the previous transaction')
 def create_invalid_transaction(step):
     """

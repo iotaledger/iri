@@ -173,10 +173,14 @@ public class LedgerServiceImpl implements LedgerService {
                 TransactionViewModel trunkTransactionViewModel = transactionViewModel.getTrunkTransaction(tangle);
                 TransactionViewModel branchTransactionViewModel = transactionViewModel.getBranchTransaction(tangle);
 
-                boolean approvedTrunk = (trunkTransactionViewModel.snapshotIndex() > 0) && (trunkTransactionViewModel.snapshotIndex() != milestoneIndex);
-                boolean approvedBranch = (branchTransactionViewModel.snapshotIndex() > 0) && (branchTransactionViewModel.snapshotIndex() != milestoneIndex);
-                if ((trunkTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT  || visitedTransactions.contains(trunkTransactionViewModel.getHash()) || approvedTrunk) &&
-                        (branchTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT || visitedTransactions.contains(branchTransactionViewModel.getHash()) || approvedBranch)) {
+                boolean isEmptyTrunk = trunkTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT;
+                boolean isEmptyBranch = branchTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT;
+                boolean isApprovedTrunk = (trunkTransactionViewModel.snapshotIndex() > 0) && (trunkTransactionViewModel.snapshotIndex() != milestoneIndex);
+                boolean isApprovedBranch = (branchTransactionViewModel.snapshotIndex() > 0) && (branchTransactionViewModel.snapshotIndex() != milestoneIndex);
+                boolean isLeafTrunk = isEmptyTrunk  || visitedTransactions.contains(trunkTransactionViewModel.getHash()) || isApprovedTrunk;
+                boolean isLeafBranch = isEmptyBranch || visitedTransactions.contains(branchTransactionViewModel.getHash()) || isApprovedBranch;
+
+                if (isLeafTrunk && isLeafBranch) {
                     if (transactionViewModel.getCurrentIndex() == 0) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
@@ -227,9 +231,9 @@ public class LedgerServiceImpl implements LedgerService {
                     visitedTransactions.add(transactionPointer);
                     stack.pop();
                 }
-                else if((trunkTransactionViewModel.getType() != TransactionViewModel.PREFILLED_SLOT && !visitedTransactions.contains(trunkTransactionViewModel.getHash()) && !approvedTrunk)){
+                else if(!isLeafTrunk){
                     stack.addFirst(trunkTransactionViewModel.getHash());
-                }else if((branchTransactionViewModel.getType() != TransactionViewModel.PREFILLED_SLOT && !visitedTransactions.contains(branchTransactionViewModel.getHash()) && !approvedBranch)) {
+                }else if(!isLeafBranch) {
                     stack.addFirst(branchTransactionViewModel.getHash());
                 }
             }catch(Exception e){

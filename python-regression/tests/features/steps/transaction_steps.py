@@ -176,7 +176,7 @@ def create_double_spent(step):
 @step(r'a split bundle is generated referencing the previous transaction with:')
 def create_split_bundle(step):
     """
-    Create a bundle that reuses the last transaction form another bundle in its own
+    Create a bundle that reuses the last transaction from another bundle in its own
     
     This test fails if we do not find the correct balance after confirming the second bundle(reattachment)
     :param step.hashes: A gherkin table present in the feature file specifying the

@@ -129,6 +129,34 @@ def create_inconsistent_transaction(step, node):
 
     set_world_object(node, 'inconsistentTransactions', transaction_hash.hash)
 
+@step(r'a split bundle is generated referencing the previous transaction with:')
+def create_split_bundle(step):
+    """
+    Create a bundle that reuses the last transaction from another bundle in its own
+    
+    This test fails if we do not find the correct balance after confirming the second bundle(reattachment)
+    :param step.hashes: A gherkin table present in the feature file specifying the
+                        arguments and the associated type.
+    """
+    node = world.config['nodeId']
+    previous = world.responses['evaluate_and_send'][node][0]
+    seed = get_step_value(step, "seed")
+    api = api_utils.prepare_api_call(node, seed=seed)
+    
+    tag = get_step_value(step, "tag")[0]
+    value = int(get_step_value(step, "value"))
+    addressTo = get_step_value(step, "address")[0]
+    
+    response = api.get_inputs(start=0, stop=1, threshold=0, security_level=3)
+    addressFrom = response['inputs'][0]
+    
+    bundles = bundle_scenario_setup.create_split_bundles(api, seed, addressFrom, addressTo, static.SPLIT_REST_ADDRESS, tag, value, previous)
+
+    api.broadcast_and_store(bundles[0].as_tryte_strings())
+    api.broadcast_and_store(bundles[1].as_tryte_strings())
+    
+    set_previous_transaction(node, [bundles[1][0].hash])
+    set_world_object(node, "reattachSplitSpend", [bundles[1][0].hash])
 
 @step(r'a stitching transaction is issued on "([^"]*)" with the tag "([^"]*)"')
 def issue_stitching_transaction(step, node, tag):

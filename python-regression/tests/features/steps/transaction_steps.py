@@ -105,6 +105,72 @@ def create_double_spent(step):
     set_previous_transaction(node, [firstDoubleSpend.hash])
     set_world_object(node, "firstDoubleSpend", [firstDoubleSpend.hash])
 
+
+
+@step(r'an invalid bundle is generated referencing the previous transaction')
+def create_invalid_transaction(step):
+    """
+    
+    Creates an invalid bundle by generating a value receiving transaction without spending
+    from an address (bundle total not 0)
+    :param step.hashes: A gherkin table present in the feature file specifying the
+                        arguments and the associated type.
+    """
+    
+    node = world.config['nodeId']
+    previous = world.responses['evaluate_and_send'][node][0]
+
+    api = api_utils.prepare_api_call(node)
+    logger.info('Finding Transactions')
+    gtta_transactions = api.get_transactions_to_approve(depth=3)
+
+    trunk = previous
+    branch = gtta_transactions['branchTransaction']
+    
+    transaction_bundle = transactions.create_transaction_bundle(static.TEST_EMPTY_ADDRESS, 'INVALID9TAG', 10)
+    
+    argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
+                     'trytes': transaction_bundle.as_tryte_strings(), 'min_weight_magnitude': 14}
+
+    bundle = transactions.attach_store_and_broadcast(api, argument_list)
+    transaction_trytes = bundle.get('trytes')
+    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
+    
+    set_previous_transaction(node, [transaction_hash.hash])
+
+@step(r'an incomplete bundle is generated referencing the previous transaction')
+def create_incomplete_transfer(step):
+    """
+    
+    Creates an incomplete bundle by generating a bundle which only contains a transaction
+    with index 1, thus not beeing complete
+    :param step.hashes: A gherkin table present in the feature file specifying the
+                        arguments and the associated type.
+    """
+    
+    node = world.config['nodeId']
+    previous = world.responses['evaluate_and_send'][node][0]
+
+    api = api_utils.prepare_api_call(node)
+    logger.info('Finding Transactions')
+    gtta_transactions = api.get_transactions_to_approve(depth=3)
+
+    trunk = previous
+    branch = gtta_transactions['branchTransaction']
+    address = get_step_value(step, "address")
+    tag = get_step_value(step, "tag")
+    
+    trytes = bundle_scenario_setup.create_incomplete_bundle_trytes(tag, address)
+    argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
+                     'trytes': trytes, 'min_weight_magnitude': 14}
+
+    bundle = transactions.attach_store_and_broadcast(api, argument_list)
+    transaction_trytes = bundle.get('trytes')
+    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
+    
+    set_world_object(node, 'incompleteTransactions', transaction_hash.hash)
+    set_previous_transaction(node, [transaction_hash.hash])
+
 @step(r'an inconsistent transaction is generated on "([^"]+)"')
 def create_inconsistent_transaction(step, node):
     """

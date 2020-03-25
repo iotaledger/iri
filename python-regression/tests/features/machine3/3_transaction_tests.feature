@@ -155,4 +155,78 @@ Feature: Test transaction confirmation
 
         Then the response for "getBalances" should return with:
         |keys                   |values                     |type           |
-        |balances               |1000 0                     |intList        | 
+        |balances               |1000 0                     |intList        |
+
+   Scenario: Invalid bundle doesnt affect ledger state
+        We want to ascertain that ledger state is always calculated correctly.
+        Even in the presence of invalid bundles being approved.
+
+        Given "1" transaction is issued on "nodeA-m3" with:
+        |keys                   |values                     |type           |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |0                          |int            |
+        |tag                    |ZERO9VALUE                 |string         |
+
+        Then an invalid bundle is generated referencing the previous transaction
+
+        Then a transaction is issued referencing the previous transaction
+        |keys                   |values                     |type           |
+        |seed                   |THE_BANK                   |staticList     |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |10                         |int            |
+        |tag                    |VALUE9TRANSACTION          |string         |
+
+        #In the default test, the latest sent index will be 54. The next milestone issued should be 55.
+        When a milestone is issued with index 55 and references:
+        |keys                   |values                     |type           |
+        |transactions           |previousTransaction        |responseValue  |
+
+        #Give the node time to solidify the milestone
+        And we wait "15" second/seconds
+        
+        Given "getBalances" is called on "nodeA-m3" with:
+        |keys                   |values                     |type           |
+        |addresses              |TEST_EMPTY_ADDRESS         |staticList     |
+
+        Then the response for "getBalances" should return with:
+        |keys                   |values                     |type           |
+        |balances               |0                          |int            |  
+
+
+    Scenario: Incomplete bundle doesnt affect ledger state
+        We want to ascertain that ledger state is always calculated correctly.
+        Even in the presence of incomplete bundles being approved.
+
+        Then "1" transaction is issued on "nodeA-m3" with:
+        |keys                   |values                     |type           |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |0                          |int            |
+        |tag                    |ZERO9VALUE                 |string         |
+
+        Then an incomplete bundle is generated referencing the previous transaction with:
+        |keys                   |values                     |type           |
+        |address                |TEST_EMPTY_ADDRESS         |staticValue    |
+        |tag                    |INCOMPLETE9TAG             |string         |
+
+        Then a transaction is issued referencing the previous transaction
+        |keys                   |values                     |type           |
+        |seed                   |THE_BANK                   |staticList     |
+        |address                |TEST_ADDRESS               |staticValue    |
+        |value                  |11                         |int            |
+        |tag                    |VALUE9TRANSACTION          |string         |
+
+        #In the default test, the latest sent index will be 55. The next milestone issued should be 564.
+        When a milestone is issued with index 56 and references:
+        |keys                   |values                     |type           |
+        |transactions           |previousTransaction        |responseValue  |
+
+        #Give the node time to solidify the milestone
+        And we wait "10" second/seconds
+        
+        Given "getBalances" is called on "nodeA-m3" with:
+        |keys                   |values                     |type           |
+        |addresses              |TEST_EMPTY_ADDRESS         |staticList     |
+
+        Then the response for "getBalances" should return with:
+        |keys                   |values                     |type           |
+        |balances               |0                          |int            | 

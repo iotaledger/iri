@@ -7,6 +7,27 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def create_incomplete_bundle_trytes(address, tag):
+    """
+    Creates an incomplete bundle by leaving out the first transaction
+
+    :param address: The address we will use with the transaction
+    :param tag:  The tag that will be associated with the transaction
+    """
+    bundle = ProposedBundle()
+    bundle.add_transaction(ProposedTransaction(
+        address=Address(static.TEST_EMPTY_ADDRESS),
+        tag=Tag("INCOMPLETE9TAG"),
+        value=0
+    ))
+    bundle.add_transaction(ProposedTransaction(
+        address=Address(static.TEST_EMPTY_ADDRESS),
+        tag=Tag("INCOMPLETE9TAG"),
+        value=0
+    ))
+    bundle.finalize()
+    return [bundle.as_tryte_strings()[1]]
+    
 def create_double_spend_bundles(seedFrom, addressFrom, address1, address2, tag, value):
     """
     Create 2 bundles with conflicting value transfers

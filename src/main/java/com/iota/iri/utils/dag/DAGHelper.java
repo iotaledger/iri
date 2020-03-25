@@ -94,7 +94,8 @@ public class DAGHelper {
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {
-                if(currentTransactionHash == startingTransactionHash || processedTransactions.add(currentTransactionHash)) {
+                if(currentTransactionHash == startingTransactionHash || processedTransactions == null ||
+                        processedTransactions.add(currentTransactionHash)) {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
                         // do not "test" the starting transaction since it is not an "approver"
@@ -108,7 +109,11 @@ public class DAGHelper {
                             currentTransactionConsumer.accept(currentTransaction);
                         }
 
-                        transactionsToExamine.addAll(ApproveeViewModel.load(tangle, currentTransactionHash).getHashes());
+                        ApproveeViewModel.load(tangle, currentTransactionHash).getHashes().forEach(hash -> {
+                            if(!transactionsToExamine.contains(hash)){
+                                transactionsToExamine.add(hash);
+                            }
+                        });
                     }
                 }
             }
@@ -132,7 +137,7 @@ public class DAGHelper {
     public void traverseApprovers(Hash startingTransactionHash,
                                   Predicate<TransactionViewModel> condition,
                                   Consumer<TransactionViewModel> currentTransactionConsumer) throws TraversalException {
-        traverseApprovers(startingTransactionHash, condition, currentTransactionConsumer, new HashSet<>());
+        traverseApprovers(startingTransactionHash, condition, currentTransactionConsumer, null);
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -169,7 +174,8 @@ public class DAGHelper {
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {
-                if(currentTransactionHash == startingTransactionHash || processedTransactions.add(currentTransactionHash)) {
+                if(currentTransactionHash == startingTransactionHash || processedTransactions == null ||
+                        processedTransactions.add(currentTransactionHash)) {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
                         currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&(
@@ -183,8 +189,13 @@ public class DAGHelper {
                             currentTransactionConsumer.accept(currentTransaction);
                         }
 
-                        transactionsToExamine.add(currentTransaction.getBranchTransactionHash());
-                        transactionsToExamine.add(currentTransaction.getTrunkTransactionHash());
+                        if(!transactionsToExamine.contains(currentTransaction.getBranchTransactionHash())) {
+                            transactionsToExamine.add(currentTransaction.getBranchTransactionHash());
+                        }
+
+                        if(!transactionsToExamine.contains(currentTransaction.getTrunkTransactionHash())) {
+                            transactionsToExamine.add(currentTransaction.getTrunkTransactionHash());
+                        }
                     }
                 }
             }
@@ -209,7 +220,7 @@ public class DAGHelper {
                                   Predicate<TransactionViewModel> condition,
                                   ThrowingConsumer<TransactionViewModel, ? extends Exception> currentTransactionConsumer)
             throws TraversalException {
-        traverseApprovees(startingTransactionHash, condition, currentTransactionConsumer, new HashSet<>());
+        traverseApprovees(startingTransactionHash, condition, currentTransactionConsumer, null);
     }
 
     /**

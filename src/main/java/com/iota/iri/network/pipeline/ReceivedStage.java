@@ -1,6 +1,6 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
@@ -19,19 +19,19 @@ public class ReceivedStage implements Stage {
 
     private Tangle tangle;
     private TransactionRequester transactionRequester;
-    private TransactionValidator txValidator;
+    private TransactionSolidifier txSolidifier;
     private SnapshotProvider snapshotProvider;
 
     /**
      * Creates a new {@link ReceivedStage}.
      * 
      * @param tangle           The {@link Tangle} database used to store/update the transaction
-     * @param txValidator      The {@link TransactionValidator} used to store/update the transaction
+     * @param txSolidifier      The {@link TransactionSolidifier} used to store/update the transaction
      * @param snapshotProvider The {@link SnapshotProvider} used to store/update the transaction
      */
-    public ReceivedStage(Tangle tangle, TransactionValidator txValidator, SnapshotProvider snapshotProvider,
+    public ReceivedStage(Tangle tangle, TransactionSolidifier txSolidifier, SnapshotProvider snapshotProvider,
                          TransactionRequester transactionRequester) {
-        this.txValidator = txValidator;
+        this.txSolidifier = txSolidifier;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.transactionRequester = transactionRequester;
@@ -39,7 +39,7 @@ public class ReceivedStage implements Stage {
 
     /**
      * Stores the given transaction in the database, updates it status
-     * ({@link TransactionValidator#updateStatus(TransactionViewModel)}) and updates the sender.
+     * ({@link TransactionSolidifier#updateStatus(TransactionViewModel)}) and updates the sender.
      * 
      * @param ctx the received stage {@link ProcessingContext}
      * @return a {@link ProcessingContext} which redirects to the {@link BroadcastStage}
@@ -65,7 +65,7 @@ public class ReceivedStage implements Stage {
         if (stored) {
             tvm.setArrivalTime(System.currentTimeMillis());
             try {
-                txValidator.updateStatus(tvm);
+                txSolidifier.updateStatus(tvm);
 
                 // free up the recently requested transaction set
                 if(transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash())){
@@ -91,8 +91,8 @@ public class ReceivedStage implements Stage {
         }
 
         // broadcast the newly saved tx to the other neighbors
-        ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-        ctx.setPayload(new BroadcastPayload(originNeighbor, tvm));
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.SOLIDIFY);
+        ctx.setPayload(new SolidifyPayload(originNeighbor, tvm));
         return ctx;
     }
 }

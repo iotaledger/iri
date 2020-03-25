@@ -1,11 +1,9 @@
 from iota import ProposedTransaction, ProposedBundle, Tag, Address, Transaction
 from util import conversion as converter
+from util import logger as log
 from util.transaction_bundle_logic import bundle_logic
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+logger = log.getLogger(__name__)
 
 def issue_milestone(address, api, index, *reference_transaction):
     txn1 = ProposedTransaction(

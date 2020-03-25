@@ -6,7 +6,7 @@ import com.google.gson.JsonSyntaxException;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.*;
@@ -389,10 +389,14 @@ public class API {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
-            } else if (bundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), txVM.getHash()).isEmpty()) {
-                state = false;
-                info = "tails are not consistent (bundle is invalid): " + transaction;
-                break;
+            } else {
+                if (bundleValidator
+                        .validate(tangle, true, snapshotProvider.getInitialSnapshot(), txVM.getHash())
+                        .isEmpty()) {
+                    state = false;
+                    info = "tails are not consistent (bundle is invalid): " + transaction;
+                    break;
+                }
             }
         }
 

@@ -22,6 +22,7 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.transactionpruning.DepthPruningCondition;
 import com.iota.iri.service.transactionpruning.SizePruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;

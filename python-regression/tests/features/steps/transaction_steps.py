@@ -34,72 +34,6 @@ def generate_transaction_and_attach(step, node):
     setattr(static, "TEST_STORE_TRANSACTION", transaction.get('trytes'))
     return transaction
     
-@step(r'an invalid bundle is generated referencing the previous transaction')
-def create_invalid_transaction(step):
-    """
-    CURRENTLY UNUSED (But can be used once we have white flag?)
-    
-    Creates an invalid bundle by generating a value receiving transaction without spending
-    from an address (bundle total not 0)
-    :param step.hashes: A gherkin table present in the feature file specifying the
-                        arguments and the associated type.
-    """
-    
-    node = world.config['nodeId']
-    previous = world.responses['evaluate_and_send'][node][0]
-
-    api = api_utils.prepare_api_call(node)
-    logger.info('Finding Transactions')
-    gtta_transactions = api.get_transactions_to_approve(depth=3)
-
-    trunk = previous
-    branch = gtta_transactions['branchTransaction']
-    
-    transaction_bundle = transactions.create_transaction_bundle(static.TEST_EMPTY_ADDRESS, 'INVALID9TAG', 10)
-    
-    argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
-                     'trytes': transaction_bundle.as_tryte_strings(), 'min_weight_magnitude': 14}
-
-    bundle = transactions.attach_store_and_broadcast(api, argument_list)
-    transaction_trytes = bundle.get('trytes')
-    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
-    
-    set_previous_transaction(node, [transaction_hash.hash])
-    
-@step(r'an incomplete bundle is generated referencing the previous transaction')
-def create_incomplete_transfer(step):
-    """
-    CURRENTLY UNUSED (But can be used once we have white flag)
-    
-    Creates an incomplete bundle by generating a bundle which only contains a transaction
-    with index 1, thus not beeing complete
-    :param step.hashes: A gherkin table present in the feature file specifying the
-                        arguments and the associated type.
-    """
-    
-    node = world.config['nodeId']
-    previous = world.responses['evaluate_and_send'][node][0]
-
-    api = api_utils.prepare_api_call(node)
-    logger.info('Finding Transactions')
-    gtta_transactions = api.get_transactions_to_approve(depth=3)
-
-    trunk = previous
-    branch = gtta_transactions['branchTransaction']
-    address = get_step_value(step, "address")
-    tag = get_step_value(step, "tag")
-    
-    trytes = bundle_scenario_setup.create_incomplete_bundle_trytes(tag, address)
-    argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
-                     'trytes': trytes, 'min_weight_magnitude': 14}
-
-    bundle = transactions.attach_store_and_broadcast(api, argument_list)
-    transaction_trytes = bundle.get('trytes')
-    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
-    
-    set_world_object(node, 'incompleteTransactions', transaction_hash.hash)
-    set_previous_transaction(node, [transaction_hash.hash])
-    
 @step(r'Then a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:')
 def fake_value_transaction(step):
     """
@@ -133,7 +67,7 @@ def fake_value_transaction(step):
     transaction_trytes = bundle.get('trytes')
     transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
     set_previous_transaction(node, [transaction_hash.hash])
-    
+
 @step(r'a double spend is generated referencing the previous transaction with:')
 def create_double_spent(step):
     """
@@ -172,36 +106,7 @@ def create_double_spent(step):
          
     set_previous_transaction(node, [firstDoubleSpend.hash])
     set_world_object(node, "firstDoubleSpend", [firstDoubleSpend.hash])
-    
-@step(r'a split bundle is generated referencing the previous transaction with:')
-def create_split_bundle(step):
-    """
-    Create a bundle that reuses the last transaction from another bundle in its own
-    
-    This test fails if we do not find the correct balance after confirming the second bundle(reattachment)
-    :param step.hashes: A gherkin table present in the feature file specifying the
-                        arguments and the associated type.
-    """
-    node = world.config['nodeId']
-    previous = world.responses['evaluate_and_send'][node][0]
-    seed = get_step_value(step, "seed")
-    api = api_utils.prepare_api_call(node, seed=seed)
-    
-    tag = get_step_value(step, "tag")[0]
-    value = int(get_step_value(step, "value"))
-    addressTo = get_step_value(step, "address")[0]
-    
-    response = api.get_inputs(start=0, stop=1, threshold=0, security_level=3)
-    addressFrom = response['inputs'][0]
-    
-    bundles = bundle_scenario_setup.create_split_bundles(api, seed, addressFrom, addressTo, static.SPLIT_REST_ADDRESS, tag, value, previous)
 
-    api.broadcast_and_store(bundles[0].as_tryte_strings())
-    api.broadcast_and_store(bundles[1].as_tryte_strings())
-    
-    set_previous_transaction(node, [bundles[1][0].hash])
-    set_world_object(node, "reattachSplitSpend", [bundles[1][0].hash])
-        
 @step(r'an inconsistent transaction is generated on "([^"]+)"')
 def create_inconsistent_transaction(step, node):
     """

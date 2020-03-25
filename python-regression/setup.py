@@ -6,7 +6,7 @@ setup(name='IRI_PyRegression',
     author='DyrellC',
     packages=['util','tests'],
     install_requires=[
-        'pyota[pow]',
+        'pyota',
         'aloe',
         'pyyaml',
         ]

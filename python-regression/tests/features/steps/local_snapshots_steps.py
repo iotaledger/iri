@@ -1,9 +1,8 @@
 from aloe import step
 from util.test_logic import api_test_logic as api_utils
+from util import logger as log
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = log.getLogger(__name__)
 
 
 @step(r'A local snapshot was taken on "([^"]+)" at index (\d+)')

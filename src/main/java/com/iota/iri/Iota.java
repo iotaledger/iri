@@ -121,16 +121,16 @@ public class Iota {
      *
      */
     public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider,
-                SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
-                SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
-                MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
-                LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
-                LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
-                BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
-                TransactionRequester transactionRequester, NeighborRouter neighborRouter,
-                TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
-                TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-                CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
+            SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
+            SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
+            MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
+            LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
+            LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -316,8 +316,8 @@ public class Iota {
      * @return A new Persistance provider
      */
     private PersistenceProvider createRocksDbProvider(String path, String log, String configFile, int cacheSize,
-                                                      Map<String, Class<? extends Persistable>> columnFamily,
-                                                      Map.Entry<String, Class<? extends Persistable>> metadata) {
+            Map<String, Class<? extends Persistable>> columnFamily,
+            Map.Entry<String, Class<? extends Persistable>> metadata) {
         return new RocksDBPersistenceProvider(
                 path, log, configFile, cacheSize, columnFamily, metadata);
     }

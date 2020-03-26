@@ -45,9 +45,9 @@ public class NetworkInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     TransactionProcessingPipeline provideTransactionProcessingPipeline(NeighborRouter neighborRouter,
-                                                                       TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-                                                                       TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-                                                                       TransactionRequester transactionRequester, TransactionSolidifier transactionSolidifier) {
+            TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
+            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+            TransactionRequester transactionRequester, TransactionSolidifier transactionSolidifier) {
         return new TransactionProcessingPipelineImpl(neighborRouter, configuration, txValidator, tangle,
                 snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester, transactionSolidifier);
     }

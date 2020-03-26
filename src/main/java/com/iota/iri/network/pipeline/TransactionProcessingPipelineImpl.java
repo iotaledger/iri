@@ -97,9 +97,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      *                               reply stage
      */
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
-                                             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-                                             TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-                                             TransactionRequester transactionRequester, TransactionSolidifier txSolidifier) {
+            TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
+            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+            TransactionRequester transactionRequester, TransactionSolidifier txSolidifier) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
@@ -126,13 +126,13 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
 
     /**
      * Adds the given stage to the processing pipeline.
-     *
+     * 
      * @param name  the name of the stage
      * @param queue the queue from which contexts are taken to process within the stage
      * @param stage the stage with the processing logic
      */
     private void addStage(String name, BlockingQueue<ProcessingContext> queue,
-                          com.iota.iri.network.pipeline.Stage stage) {
+            com.iota.iri.network.pipeline.Stage stage) {
         stagesThreadPool.submit(new Thread(() -> {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
@@ -199,6 +199,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     public void process(Neighbor neighbor, ByteBuffer data) {
         try {
             preProcessStageQueue.put(new ProcessingContext(new PreProcessPayload(neighbor, data)));
+            refillBroadcastQueue();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -213,11 +214,27 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         hashAndValidate(new ProcessingContext(payload));
     }
 
+    @Override
+    public void refillBroadcastQueue(){
+        try{
+            Iterator<TransactionViewModel> hashIterator = txSolidifier.getBroadcastQueue().iterator();
+            Set<TransactionViewModel> toRemove = new LinkedHashSet<>();
+            while(!Thread.currentThread().isInterrupted() && hashIterator.hasNext()){
+                TransactionViewModel tx = hashIterator.next();
+                broadcastStageQueue.put(new ProcessingContext(new BroadcastPayload(null, tx)));
+                toRemove.add(tx);
+                hashIterator.remove();
+            }
+            txSolidifier.clearFromBroadcastQueue(toRemove);
+        } catch(InterruptedException e){
+            log.info(e.getMessage());
+        }
+    }
 
     /**
      * Sets up the given hashing stage {@link ProcessingContext} so that up on success, it will submit further to the
      * validation stage.
-     *
+     * 
      * @param ctx the hashing stage {@link ProcessingContext}
      */
     private void hashAndValidate(ProcessingContext ctx) {

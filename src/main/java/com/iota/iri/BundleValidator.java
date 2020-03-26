@@ -8,6 +8,7 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.util.*;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Validates bundles.
@@ -56,21 +57,32 @@ public class BundleValidator {
     public static final int MODE_VALIDATE_SEMANTICS = 1 << 2;
 
     /**
+     * Instructs the validation code to validate all transactions within the bundle approve via their branch the trunk
+     * transaction of the head transaction
+     */
+    public static final int MODE_VALIDATE_BUNDLE_TX_APPROVAL = 1 << 3;
+
+    /**
+     * Instructs the validation code to validate that the bundle only approves tail txs.
+     */
+    public static final int MODE_VALIDATE_TAIL_APPROVAL = 1 << 4;
+
+    /**
      * Instructs the validation code to fully validate the semantics, bundle hash and signatures of the given bundle.
      */
-    public static final int MODE_VALIDATE_ALL = MODE_VALIDATE_SIGNATURES | MODE_VALIDATE_BUNDLE_HASH | MODE_VALIDATE_SEMANTICS;
+    public static final int MODE_VALIDATE_ALL = MODE_VALIDATE_SIGNATURES | MODE_VALIDATE_BUNDLE_HASH | MODE_VALIDATE_SEMANTICS | MODE_VALIDATE_TAIL_APPROVAL | MODE_VALIDATE_BUNDLE_TX_APPROVAL;
 
     /**
      * Instructs the validation code to skip checking the bundle's already computed validity and instead to proceed to
      * validate the bundle further.
      */
-    public static final int MODE_SKIP_CACHED_VALIDITY = 1 << 3;
+    public static final int MODE_SKIP_CACHED_VALIDITY = 1 << 5;
 
     /**
      * Instructs the validation code to skip checking whether the tail transaction is present or a tail transaction was
      * given as the start transaction.
      */
-    public static final int MODE_SKIP_TAIL_TX_EXISTENCE = 1 << 4;
+    public static final int MODE_SKIP_TAIL_TX_EXISTENCE = 1 << 6;
 
     /**
      * Fetches a bundle of transactions identified by the {@code tailHash} and validates the transactions. Bundle is a
@@ -85,6 +97,8 @@ public class BundleValidator {
      *  <li>Total bundle value is 0 (inputs and outputs are balanced)</li>
      *  <li>Recalculate the bundle hash by absorbing and squeezing the transactions' essence</li>
      *  <li>Validate the signature on input transactions</li>
+     *  <li>The bundle must only approve tail transactions</li>
+     *  <li>All transactions within the bundle approve via their branch the trunk transaction of the head transaction.</li>
      * </ol>
      * <p>
      * As well as the following syntactic checks:
@@ -96,9 +110,11 @@ public class BundleValidator {
      *  we lose the last trit in the process</li>
      * </ol>
      *
-     * @param tangle          used to fetch the bundle's transactions from the persistence layer
-     * @param initialSnapshot the initial snapshot that defines the genesis for our ledger state
-     * @param tailHash        the hash of the last transaction in a bundle.
+     * @param tangle            used to fetch the bundle's transactions from the persistence layer
+     * @param enforceExtraRules true if enforce {@link #validateBundleTailApproval(Tangle, List)} and
+     *                          {@link #validateBundleTransactionsApproval(List)}
+     * @param initialSnapshot   the initial snapshot that defines the genesis for our ledger state
+     * @param tailHash          the hash of the last transaction in a bundle.
      * @return A list of transactions of the bundle contained in another list. If the bundle is valid then the tail
      * transaction's {@link TransactionViewModel#getValidity()} will return 1, else {@link
      * TransactionViewModel#getValidity()} will return -1. If the bundle is invalid then an empty list will be
@@ -108,9 +124,32 @@ public class BundleValidator {
      * validate it again.
      * </p>
      */
-    public List<TransactionViewModel> validate(Tangle tangle, Snapshot initialSnapshot, Hash tailHash) throws Exception {
+    public List<TransactionViewModel> validate(Tangle tangle, boolean enforceExtraRules, Snapshot initialSnapshot,
+            Hash tailHash) throws Exception {
+        int mode = getMode(enforceExtraRules);
+        return validate(tangle, initialSnapshot, tailHash, mode);
+    }
+
+    /**
+     * Does {@link #validate(Tangle, boolean, Snapshot, Hash)} but with an option of skipping some checks according to
+     * the give {@code mode}
+     *
+     * @param tangle          used to fetch the bundle's transactions from the persistence layer
+     * @param initialSnapshot the initial snapshot that defines the genesis for our ledger state
+     * @param tailHash        the hash of the last transaction in a bundle.
+     * @param mode            flags that specify which validation checks to perform
+     * @return A list of transactions of the bundle contained in another list. If the bundle is valid then the tail
+     *         transaction's {@link TransactionViewModel#getValidity()} will return 1, else
+     *         {@link TransactionViewModel#getValidity()} will return -1. If the bundle is invalid then an empty list
+     *         will be returned.
+     * @throws Exception if a persistence error occurred
+     * @implNote if {@code tailHash} was already invalidated/validated by a previous call to this method then we don't
+     *           validate it again.
+     * @see #validate(Tangle, boolean, Snapshot, Hash)
+     */
+    private List<TransactionViewModel> validate(Tangle tangle, Snapshot initialSnapshot, Hash tailHash, int mode) throws Exception {
         List<TransactionViewModel> bundleTxs = new LinkedList<>();
-        switch (validate(tangle, tailHash, MODE_VALIDATE_ALL, bundleTxs)) {
+        switch (validate(tangle, tailHash, mode, bundleTxs)) {
             case VALID:
                 if (bundleTxs.get(0).getValidity() != 1) {
                     bundleTxs.get(0).setValidity(tangle, initialSnapshot, 1);
@@ -126,7 +165,14 @@ public class BundleValidator {
         }
     }
 
-    private static boolean hasMode(int mode, int has) {
+    private static int getMode(boolean enforceExtraRules) {
+        if (enforceExtraRules) {
+            return MODE_VALIDATE_ALL;
+        }
+        return MODE_VALIDATE_SIGNATURES | MODE_VALIDATE_BUNDLE_HASH | MODE_VALIDATE_SEMANTICS;
+    }
+
+        private static boolean hasMode(int mode, int has) {
         return (mode & has) == has;
     }
 
@@ -147,7 +193,9 @@ public class BundleValidator {
      * @return whether the validation criteria were passed or not
      * @throws Exception if an error occurred in the persistence layer
      */
-    public static Validity validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs) throws Exception {
+    @VisibleForTesting
+    Validity validate(Tangle tangle, Hash startTxHash, int validationMode, List<TransactionViewModel> bundleTxs)
+            throws Exception {
         TransactionViewModel startTx = TransactionViewModel.fromHash(tangle, startTxHash);
         if (startTx == null || (!hasMode(validationMode, MODE_SKIP_TAIL_TX_EXISTENCE) &&
                 (startTx.getCurrentIndex() != 0 || startTx.getValidity() == -1))) {
@@ -160,7 +208,8 @@ public class BundleValidator {
                 !hasMode(validationMode, MODE_VALIDATE_SEMANTICS));
 
         // check the semantics of the bundle: total sum, semantics per tx (current/last index), missing txs, supply
-        Validity bundleSemanticsValidity = validateBundleSemantics(startTx, bundleTxsMapping, bundleTxs, validationMode);
+        Validity bundleSemanticsValidity = validateBundleSemantics(startTx, bundleTxsMapping, bundleTxs,
+                validationMode);
         if (hasMode(validationMode, MODE_VALIDATE_SEMANTICS) && bundleSemanticsValidity != Validity.VALID) {
             return bundleSemanticsValidity;
         }
@@ -177,6 +226,21 @@ public class BundleValidator {
             return bundleHashValidity;
         }
 
+        //verify that the bundle only approves tail txs
+        if (hasMode(validationMode, MODE_VALIDATE_TAIL_APPROVAL)) {
+            Validity bundleTailApprovalValidity = validateBundleTailApproval(tangle, bundleTxs);
+            if (bundleTailApprovalValidity != Validity.VALID) {
+                return bundleTailApprovalValidity;
+            }
+        }
+
+        //verify all transactions within the bundle approve via their branch the trunk transaction of the head transaction
+        if (hasMode(validationMode, MODE_VALIDATE_BUNDLE_TX_APPROVAL)) {
+            Validity bundleTransactionsApprovalValidity = validateBundleTransactionsApproval(bundleTxs);
+            if (bundleTransactionsApprovalValidity != Validity.VALID) {
+                return bundleTransactionsApprovalValidity;
+            }
+        }
 
         // verify the signatures of input transactions
         if (hasMode(validationMode, MODE_VALIDATE_SIGNATURES)) {
@@ -198,7 +262,8 @@ public class BundleValidator {
      * @param bundleTxs        an empty list which gets filled with the transactions in order of trunk ordering
      * @return whether the bundle is semantically valid
      */
-    public static Validity validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs) {
+    public Validity validateBundleSemantics(TransactionViewModel startTx,
+            Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs) {
         return validateBundleSemantics(startTx, bundleTxsMapping, bundleTxs, MODE_VALIDATE_SEMANTICS);
     }
 
@@ -221,7 +286,9 @@ public class BundleValidator {
      * @param validationMode   the used validation mode
      * @return whether the bundle is semantically valid
      */
-    private static Validity validateBundleSemantics(TransactionViewModel startTx, Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs, int validationMode) {
+    private Validity validateBundleSemantics(TransactionViewModel startTx,
+            Map<Hash, TransactionViewModel> bundleTxsMapping, List<TransactionViewModel> bundleTxs,
+            int validationMode) {
         TransactionViewModel tvm = startTx;
         final long lastIndex = tvm.lastIndex();
         long bundleValue = 0;
@@ -377,6 +444,39 @@ public class BundleValidator {
     public static boolean isInconsistent(Collection<TransactionViewModel> transactionViewModels) {
         long sum = transactionViewModels.stream().map(TransactionViewModel::value).reduce(0L, Long::sum);
         return (sum != 0 || transactionViewModels.isEmpty());
+    }
+
+    /**
+     * A bundle is invalid if The branch transaction hash of the non head transactions within a bundle, is not the same
+     * as the trunk transaction hash of the head transaction.
+     *
+     * @param bundleTxs list of transactions that are in a bundle.
+     * @return Whether the bundle tx chain is valid.
+     */
+    @VisibleForTesting
+    Validity validateBundleTransactionsApproval(List<TransactionViewModel> bundleTxs) {
+        Hash headTrunkTransactionHash = bundleTxs.get(bundleTxs.size() - 1).getTrunkTransactionHash();
+        for(int i = 0; i < bundleTxs.size() - 1; i++){
+            if(!bundleTxs.get(i).getBranchTransactionHash().equals(headTrunkTransactionHash)){
+                return Validity.INVALID;
+            }
+        }
+        return Validity.VALID;
+    }
+
+    /**
+     * A bundle is invalid if the trunk and branch transactions approved by the bundle are non tails.
+     *
+     * @param bundleTxs The txs in the bundle.
+     * @return Whether the bundle approves only tails.
+     */
+    @VisibleForTesting
+    Validity validateBundleTailApproval(Tangle tangle, List<TransactionViewModel> bundleTxs) throws Exception {
+        TransactionViewModel headTx = bundleTxs.get(bundleTxs.size() - 1);
+        TransactionViewModel bundleTrunkTvm = headTx.getTrunkTransaction(tangle);
+        TransactionViewModel bundleBranchTvm = headTx.getBranchTransaction(tangle);
+        return bundleTrunkTvm != null && bundleBranchTvm != null && bundleBranchTvm.getCurrentIndex() == 0
+                && bundleTrunkTvm.getCurrentIndex() == 0 ? Validity.VALID : Validity.INVALID;
     }
 
     /**

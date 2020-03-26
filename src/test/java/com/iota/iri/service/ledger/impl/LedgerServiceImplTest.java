@@ -71,7 +71,7 @@ public class LedgerServiceImplTest {
         int milestoneIndex = 1;
         when(milestoneService.isTransactionConfirmed(tailTx, milestoneIndex)).thenReturn(false);
         when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(Collections.emptyMap());
-        ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex);
+        ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex, true);
         verify(spentAddressesService, times(1)).persistValidatedSpentAddressesAsync(eq(bundle));
     }
 }

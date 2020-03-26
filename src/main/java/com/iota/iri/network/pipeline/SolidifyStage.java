@@ -1,6 +1,5 @@
 package com.iota.iri.network.pipeline;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -55,6 +54,8 @@ public class SolidifyStage implements Stage {
             TransactionViewModel tvm = payload.getTransaction();
 
             if (tvm.isSolid() || txSolidifier.quickSetSolid(tvm)) {
+                // If the transaction is in the solidifier broadcast queue, remove it as it will be broadcast now
+                txSolidifier.clearFromBroadcastQueue(tvm);
                 ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
                 ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), payload.getTransaction()));
                 return ctx;
@@ -70,14 +71,20 @@ public class SolidifyStage implements Stage {
     }
 
     private ProcessingContext broadcastTip(ProcessingContext ctx, SolidifyPayload payload) throws  Exception{
-        Hash tipHash = tipsViewModel.getRandomSolidTipHash();
+        // First check if there is a transaction available to broadcast from the broadcast queue
+        TransactionViewModel tip = txSolidifier.getNextTxInBroadcastQueue();
 
-        if (tipHash == null) {
-            ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
-            return ctx;
+        // If there is not a transaction available from the broadcast queue, instead try to send a solid tip
+        if (tip == null) {
+            Hash tipHash = tipsViewModel.getRandomSolidTipHash();
+
+            if (tipHash == null) {
+                ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+                return ctx;
+            }
+
+            tip = fromHash(tangle, tipHash);
         }
-
-        TransactionViewModel tip = fromHash(tangle, tipHash);
 
         ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
         ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), tip));

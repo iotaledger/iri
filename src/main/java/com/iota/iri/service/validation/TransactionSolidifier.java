@@ -6,8 +6,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.validation.impl.TransactionSolidifierImpl;
 import com.iota.iri.network.TransactionRequester;
 
-import java.util.Set;
-
 /**
  * Solidification tool. Transactions placed into the solidification queue will be checked for solidity. Any missing
  * reference transactions will be placed into the {@link TransactionRequester}. If a transaction is found to be solid
@@ -42,16 +40,16 @@ public interface TransactionSolidifier {
      */
     boolean addMilestoneToSolidificationQueue(Hash hash, int maxToProcess);
     /**
-     * Fetch a copy of the current transactionsToBroadcast set.
-     * @return          A set of {@link TransactionViewModel} objects to be broadcast.
+     * Fetch the next transaction in the transactionsToBroadcast set.
+     * @return          A {@link TransactionViewModel} object to be broadcast.
      */
-    Set<TransactionViewModel> getBroadcastQueue();
+    TransactionViewModel getNextTxInBroadcastQueue();
 
     /**
-     * Remove any broadcasted transactions from the transactionsToBroadcast set
-     * @param transactionsBroadcasted   A set of {@link TransactionViewModel} objects to remove from the set.
+     * Remove a broadcasted transaction from the transactionsToBroadcast set
+     * @param transactionsBroadcasted   A {@link TransactionViewModel} object to remove from the set.
      */
-    void clearFromBroadcastQueue(Set<TransactionViewModel> transactionsBroadcasted);
+    void clearFromBroadcastQueue(TransactionViewModel transactionsBroadcasted);
 
     /**
      * This method does the same as {@link #checkSolidity(Hash, int)} but defaults to an unlimited amount

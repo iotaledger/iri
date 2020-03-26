@@ -199,7 +199,6 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     public void process(Neighbor neighbor, ByteBuffer data) {
         try {
             preProcessStageQueue.put(new ProcessingContext(new PreProcessPayload(neighbor, data)));
-            refillBroadcastQueue();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -214,22 +213,6 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         hashAndValidate(new ProcessingContext(payload));
     }
 
-    @Override
-    public void refillBroadcastQueue(){
-        try{
-            Iterator<TransactionViewModel> hashIterator = txSolidifier.getBroadcastQueue().iterator();
-            Set<TransactionViewModel> toRemove = new LinkedHashSet<>();
-            while(!Thread.currentThread().isInterrupted() && hashIterator.hasNext()){
-                TransactionViewModel tx = hashIterator.next();
-                broadcastStageQueue.put(new ProcessingContext(new BroadcastPayload(null, tx)));
-                toRemove.add(tx);
-                hashIterator.remove();
-            }
-            txSolidifier.clearFromBroadcastQueue(toRemove);
-        } catch(InterruptedException e){
-            log.info(e.getMessage());
-        }
-    }
 
     /**
      * Sets up the given hashing stage {@link ProcessingContext} so that up on success, it will submit further to the

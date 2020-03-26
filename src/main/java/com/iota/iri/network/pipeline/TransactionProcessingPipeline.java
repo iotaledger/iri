@@ -67,12 +67,6 @@ public interface TransactionProcessingPipeline {
     void process(byte[] txTrits);
 
     /**
-     * Fetches a set of transactions from the {@link TransactionSolidifier} and submits
-     * the object into the {@link BroadcastStage} queue.
-     */
-    void refillBroadcastQueue();
-
-    /**
      * Shut downs the pipeline by shutting down all stages.
      */
     void shutdown();

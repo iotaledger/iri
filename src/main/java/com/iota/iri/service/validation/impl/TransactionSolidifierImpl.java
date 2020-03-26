@@ -137,18 +137,16 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      *{@inheritDoc}
      */
     @Override
-    public Set<TransactionViewModel> getBroadcastQueue(){
-        return new LinkedHashSet<>(transactionsToBroadcast);
+    public TransactionViewModel getNextTxInBroadcastQueue(){
+        return transactionsToBroadcast.poll();
     }
 
     /**
      *{@inheritDoc}
      */
     @Override
-    public void clearFromBroadcastQueue(Set<TransactionViewModel> transactionsBroadcasted){
-        for (TransactionViewModel tvm : transactionsBroadcasted) {
-            transactionsToBroadcast.remove(tvm);
-        }
+    public void clearFromBroadcastQueue(TransactionViewModel transaction){
+        transactionsToBroadcast.remove(transaction);
     }
 
 

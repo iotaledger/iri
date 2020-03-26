@@ -21,6 +21,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +33,9 @@ public class TransactionSolidifierImplTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
+
+    private List<TransactionViewModel> broadcastTransactions = new ArrayList<>();
+    private TransactionViewModel transactionForBroadcast;
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -111,8 +117,15 @@ public class TransactionSolidifierImplTest {
 
         //Time to process through the steps
         Thread.sleep(1000);
+
+        while((transactionForBroadcast = txSolidifier.getNextTxInBroadcastQueue()) != null){
+            broadcastTransactions.add(transactionForBroadcast);
+        }
+
         assertTrue("Expected transaction to be present in the broadcast queue",
-                txSolidifier.getBroadcastQueue().contains(tx));
+                broadcastTransactions.contains(tx));
+
+        broadcastTransactions.clear();
     }
 
 
@@ -123,8 +136,15 @@ public class TransactionSolidifierImplTest {
 
         //Time to process through the steps
         Thread.sleep(1000);
+
+        while((transactionForBroadcast = txSolidifier.getNextTxInBroadcastQueue()) != null){
+            broadcastTransactions.add(transactionForBroadcast);
+        }
+
         assertFalse("Expected transaction not to be present in the broadcast queue",
-                txSolidifier.getBroadcastQueue().contains(tx));
+                broadcastTransactions.contains(tx));
+
+        broadcastTransactions.clear();
     }
 
     private TransactionViewModel getTxWithBranchAndTrunk() throws Exception {

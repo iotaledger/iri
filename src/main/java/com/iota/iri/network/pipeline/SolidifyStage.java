@@ -25,7 +25,6 @@ public class SolidifyStage implements Stage {
     private TransactionSolidifier txSolidifier;
     private TipsViewModel tipsViewModel;
     private Tangle tangle;
-    private TransactionViewModel tip;
 
     /**
      * Constructor for the {@link SolidifyStage}.
@@ -71,27 +70,18 @@ public class SolidifyStage implements Stage {
     }
 
     private ProcessingContext broadcastTip(ProcessingContext ctx, SolidifyPayload payload) throws  Exception{
-        if(tip == null) {
-            Hash tipHash = tipsViewModel.getRandomSolidTipHash();
+        Hash tipHash = tipsViewModel.getRandomSolidTipHash();
 
-            if (tipHash == null) {
-                ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
-                return ctx;
-            }
-
-            tip = fromHash(tangle, tipHash);
+        if (tipHash == null) {
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+            return ctx;
         }
+
+        TransactionViewModel tip = fromHash(tangle, tipHash);
 
         ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
         ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), tip));
 
-        tip = null;
         return ctx;
-    }
-
-    @VisibleForTesting
-    void injectTip(TransactionViewModel tvm) throws Exception {
-        tip = tvm;
-        tip.updateSolid(true);
     }
 }

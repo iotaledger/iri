@@ -114,11 +114,4 @@ public interface TransactionSolidifier {
      * @throws Exception
      */
     boolean quickSetSolid(TransactionViewModel transactionViewModel) throws Exception;
-
-    /**
-     * Add to the propagation queue where it will be processed to help solidify approving transactions faster
-     * @param hash      The transaction hash to be removed
-     * @throws Exception
-     */
-    void addToPropagationQueue(Hash hash) throws Exception;
 }

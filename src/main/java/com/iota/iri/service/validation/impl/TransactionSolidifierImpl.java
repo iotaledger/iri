@@ -51,11 +51,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     private BlockingQueue<Hash> transactionsToSolidify = new ArrayBlockingQueue<>(MAX_SIZE);
 
-    /**
-     * A queue for processing transactions with the {@link #propagateSolidTransactions()} call. This will check
-     * approving transactions with {@link #quickSetSolid(TransactionViewModel)}.
-     */
-    private BlockingQueue<Hash> solidTransactions = new ArrayBlockingQueue<>(MAX_SIZE);
 
     /**
      * A set of transactions that will be called by the {@link TransactionProcessingPipeline} to be broadcast to
@@ -64,6 +59,8 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     private BlockingQueue<TransactionViewModel> transactionsToBroadcast = new ArrayBlockingQueue<>(MAX_SIZE);
 
     private TipsViewModel tipsViewModel;
+
+    private TransactionPropagator transactionPropagator;
 
     /**
      * Constructor for the solidifier.
@@ -77,6 +74,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         this.snapshotProvider = snapshotProvider;
         this.transactionRequester = transactionRequester;
         this.tipsViewModel = tipsViewModel;
+        this.transactionPropagator = new TransactionPropagator();
     }
 
     /**
@@ -122,7 +120,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         try{
             TransactionViewModel tx = fromHash(tangle, hash);
             if(tx.isSolid()){
-                addToPropagationQueue(hash);
+                transactionPropagator.addToPropagationQueue(hash);
                 return true;
             }
             addToSolidificationQueue(hash);
@@ -163,7 +161,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                 log.info(e.getMessage());
             }
         }
-        propagateSolidTransactions();
+        transactionPropagator.propagateSolidTransactions();
     }
 
     /**
@@ -242,7 +240,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                     tvm.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
                 }
                 addToBroadcastQueue(tvm);
-                addToPropagationQueue(tvm.getHash());
+                transactionPropagator.addToPropagationQueue(tvm.getHash());
             } catch (Exception e) {
                 log.info(e.getMessage());
             }
@@ -256,7 +254,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         if(!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)){
             return true;
         }
-        addToPropagationQueue(hashPointer);
+        transactionPropagator.addToPropagationQueue(hashPointer);
         return false;
     }
 
@@ -291,19 +289,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         if(quickSetSolid(transactionViewModel)) {
             transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
             tipsViewModel.setSolid(transactionViewModel.getHash());
-            addToPropagationQueue(transactionViewModel.getHash());
+            transactionPropagator.addToPropagationQueue(transactionViewModel.getHash());
         }
     }
 
-    @Override
-    public void addToPropagationQueue(Hash hash) throws Exception{
-        if(!solidTransactions.contains(hash)) {
-            if (solidTransactions.size() >= MAX_SIZE) {
-                solidTransactions.poll();
-            }
-            solidTransactions.put(hash);
-        }
-    }
 
     @Override
     public boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
@@ -318,7 +307,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             if(solid) {
                 transactionViewModel.updateSolid(true);
                 transactionViewModel.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
-                addToPropagationQueue(transactionViewModel.getHash());
+                transactionPropagator.addToPropagationQueue(transactionViewModel.getHash());
                 addToBroadcastQueue(transactionViewModel);
                 return true;
             }
@@ -345,37 +334,61 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         return approovee.isSolid();
     }
 
-    @VisibleForTesting
-    void propagateSolidTransactions() {
-        while(!Thread.currentThread().isInterrupted() && solidTransactions.peek() != null) {
-            try {
-                Hash hash = solidTransactions.poll();
-                TransactionViewModel transaction = fromHash(tangle, hash);
-                Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
-                for(Hash h: approvers) {
-                    TransactionViewModel tx = fromHash(tangle, h);
-                    if (quietQuickSetSolid(tx)) {
-                        tx.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
-                        tipsViewModel.setSolid(h);
-                    }
+
+
+    public class TransactionPropagator {
+        /**
+         * A queue for processing transactions with the {@link #propagateSolidTransactions()} call. This will check
+         * approving transactions with {@link #quickSetSolid(TransactionViewModel)}.
+         */
+        private BlockingQueue<Hash> solidTransactions = new ArrayBlockingQueue<>(MAX_SIZE);
+
+        /**
+         * Add to the propagation queue where it will be processed to help solidify approving transactions faster
+         * @param hash      The transaction hash to be removed
+         * @throws Exception
+         */
+        public void addToPropagationQueue(Hash hash) throws Exception{
+            if(!solidTransactions.contains(hash)) {
+                if (solidTransactions.size() >= MAX_SIZE) {
+                    solidTransactions.poll();
                 }
-            } catch (Exception e) {
-                log.error("Error while propagating solidity upwards", e);
+                solidTransactions.put(hash);
             }
         }
-    }
 
-    /**
-     * Perform a {@link #quickSetSolid} while capturing and logging errors
-     * @param transactionViewModel transaction we try to solidify.
-     * @return <tt>true</tt> if we managed to solidify, else <tt>false</tt>.
-     */
-    private boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
-        try {
-            return quickSetSolid(transactionViewModel);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return false;
+        @VisibleForTesting
+        void propagateSolidTransactions() {
+            while(!Thread.currentThread().isInterrupted() && solidTransactions.peek() != null) {
+                try {
+                    Hash hash = solidTransactions.poll();
+                    TransactionViewModel transaction = fromHash(tangle, hash);
+                    Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
+                    for(Hash h: approvers) {
+                        TransactionViewModel tx = fromHash(tangle, h);
+                        if (quietQuickSetSolid(tx)) {
+                            tx.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
+                            tipsViewModel.setSolid(h);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Error while propagating solidity upwards", e);
+                }
+            }
+        }
+
+        /**
+         * Perform a {@link #quickSetSolid} while capturing and logging errors
+         * @param transactionViewModel transaction we try to solidify.
+         * @return <tt>true</tt> if we managed to solidify, else <tt>false</tt>.
+         */
+        private boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
+            try {
+                return quickSetSolid(transactionViewModel);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                return false;
+            }
         }
     }
 }

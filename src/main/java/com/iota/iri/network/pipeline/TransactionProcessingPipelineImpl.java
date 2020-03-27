@@ -71,7 +71,6 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
     private SolidifyStage solidifyStage;
-    private TransactionSolidifier txSolidifier;
 
     private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
@@ -106,7 +105,6 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
         this.solidifyStage = new SolidifyStage(txSolidifier, tipsViewModel, tangle);
-        this.txSolidifier = txSolidifier;
     }
 
     @Override

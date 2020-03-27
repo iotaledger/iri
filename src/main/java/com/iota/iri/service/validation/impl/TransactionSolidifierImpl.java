@@ -334,8 +334,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         return approovee.isSolid();
     }
 
-
-
+    /**
+     *  A transaction solidification service that propagates upwards through transactions approving a solid transaction
+     *  and performs {@link #quickSetSolid} checks to determine their solidity as well
+     */
     public class TransactionPropagator {
         /**
          * A queue for processing transactions with the {@link #propagateSolidTransactions()} call. This will check

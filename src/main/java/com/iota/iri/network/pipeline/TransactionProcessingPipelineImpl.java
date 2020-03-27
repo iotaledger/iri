@@ -4,7 +4,6 @@ import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.batched.BatchedHasher;
 import com.iota.iri.crypto.batched.BatchedHasherFactory;
 import com.iota.iri.crypto.batched.HashRequest;
@@ -21,10 +20,7 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;

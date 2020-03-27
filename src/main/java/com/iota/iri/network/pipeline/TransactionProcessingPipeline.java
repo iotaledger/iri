@@ -1,7 +1,6 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.network.neighbor.Neighbor;
-import com.iota.iri.service.validation.TransactionSolidifier;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;

@@ -24,22 +24,6 @@ public interface TransactionSolidifier {
     void shutdown();
 
     /**
-     * Add a hash to the solidification queue, and runs an initial {@link #checkSolidity} call.
-     *
-     * @param hash      Hash of the transaction to solidify
-     */
-    void addToSolidificationQueue(Hash hash);
-
-    /**
-     * Checks if milestone transaction is solid. Returns true if it is, and if it is not, it adds the hash to the
-     * solidification queue and returns false.
-     *
-     * @param hash          Hash of the transaction to solidify
-     * @param maxToProcess  Maximum number of transactions to analyze
-     * @return              True if solid, false if not
-     */
-    boolean addMilestoneToSolidificationQueue(Hash hash, int maxToProcess);
-    /**
      * Fetch the next transaction in the transactionsToBroadcast set.
      * @return          A {@link TransactionViewModel} object to be broadcast.
      */

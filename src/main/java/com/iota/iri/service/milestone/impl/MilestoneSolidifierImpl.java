@@ -341,7 +341,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         try {
-            return transactionSolidifier.addMilestoneToSolidificationQueue(currentEntry.getKey(), SOLIDIFICATION_TRANSACTIONS_LIMIT);
+            return transactionSolidifier.checkSolidity(currentEntry.getKey(), SOLIDIFICATION_TRANSACTIONS_LIMIT);
         } catch (Exception e) {
             log.error("Error while solidifying milestone #" + currentEntry.getValue(), e);
 

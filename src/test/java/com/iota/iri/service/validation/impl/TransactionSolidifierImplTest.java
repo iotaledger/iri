@@ -98,22 +98,11 @@ public class TransactionSolidifierImplTest {
         assertFalse("Expected transaction to fail solidity check", txSolidifier.checkSolidity(tx.getHash()));
     }
 
-    @Test
-    public void getSolidificationQueue() throws Exception {
-        TransactionViewModel mainTx = getTxWithBranchAndTrunk();
-        for(int i = 0; i < 10; i++) {
-            TransactionViewModel tx = getTxWithBranchAndTrunk();
-            txSolidifier.addToSolidificationQueue(tx.getHash());
-        }
-        txSolidifier.addToSolidificationQueue(mainTx.getHash());
-        assertTrue("Expected transaction to be present in the solidification queue",
-                txSolidifier.getSolidificationQueue().contains(mainTx.getHash()));
-    }
 
     @Test
     public void verifyTransactionIsProcessedFully() throws Exception {
         TransactionViewModel tx = getTxWithBranchAndTrunk();
-        txSolidifier.addToSolidificationQueue(tx.getHash());
+        txSolidifier.checkSolidity(tx.getHash());
 
         //Time to process through the steps
         Thread.sleep(1000);
@@ -132,7 +121,7 @@ public class TransactionSolidifierImplTest {
     @Test
     public void verifyInconsistentTransactionIsNotProcessedFully() throws Exception {
         TransactionViewModel tx = getTxWithoutBranchAndTrunk();
-        txSolidifier.addToSolidificationQueue(tx.getHash());
+        txSolidifier.checkSolidity(tx.getHash());
 
         //Time to process through the steps
         Thread.sleep(1000);

@@ -46,13 +46,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             "Transaction Solidifier", log.delegate());
 
     /**
-     * A queue for processing transactions with the {@link #checkSolidity(Hash)} call. Once a transaction has been
-     * marked solid it will be placed into the {@link #transactionsToBroadcast} queue.
-     */
-    private BlockingQueue<Hash> transactionsToSolidify = new ArrayBlockingQueue<>(MAX_SIZE);
-
-
-    /**
      * A set of transactions that will be called by the {@link TransactionProcessingPipeline} to be broadcast to
      * neighboring nodes.
      */
@@ -98,43 +91,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      *{@inheritDoc}
      */
     @Override
-    public void addToSolidificationQueue(Hash hash){
-        try{
-            if(!transactionsToSolidify.contains(hash)) {
-                if (transactionsToSolidify.size() >= MAX_SIZE - 1) {
-                    transactionsToSolidify.remove();
-                }
-
-                transactionsToSolidify.put(hash);
-            }
-        } catch(Exception e){
-            log.error("Error placing transaction into solidification queue",e);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean addMilestoneToSolidificationQueue(Hash hash, int maxToProcess){
-        try{
-            TransactionViewModel tx = fromHash(tangle, hash);
-            if(tx.isSolid()){
-                transactionPropagator.addToPropagationQueue(hash);
-                return true;
-            }
-            addToSolidificationQueue(hash);
-            return false;
-        }catch(Exception e){
-            log.error("Error adding milestone to solidification queue", e);
-            return false;
-        }
-    }
-
-    /**
-     *{@inheritDoc}
-     */
-    @Override
     public TransactionViewModel getNextTxInBroadcastQueue(){
         return transactionsToBroadcast.poll();
     }
@@ -149,18 +105,9 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
 
 
     /**
-     * Iterate through the {@link #transactionsToSolidify} queue and call {@link #checkSolidity(Hash)} on each hash.
-     * Solid transactions are then processed into the {@link #transactionsToBroadcast} queue.
+     * Process any solid transactions present in the {@link TransactionPropagator}.
      */
     private void processTransactionsToSolidify(){
-        Hash hash;
-        if((hash = transactionsToSolidify.poll()) != null) {
-            try {
-                checkSolidity(hash);
-            } catch (Exception e) {
-                log.info(e.getMessage());
-            }
-        }
         transactionPropagator.propagateSolidTransactions();
     }
 
@@ -270,12 +217,6 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             log.info("Error placing transaction into broadcast queue: " + e.getMessage());
         }
     }
-
-    @VisibleForTesting
-    Set<Hash> getSolidificationQueue(){
-        return new LinkedHashSet<>(transactionsToSolidify);
-    }
-
 
     @Override
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {

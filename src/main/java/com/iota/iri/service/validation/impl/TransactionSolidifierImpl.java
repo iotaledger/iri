@@ -196,7 +196,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             maxProcessedTransactions += analyzedHashes.size();
         }
         boolean solid = true;
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
+        final Deque<Hash> nonAnalyzedTransactions = new ArrayDeque<>(Collections.singleton(hash));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (!analyzedHashes.add(hashPointer)) {

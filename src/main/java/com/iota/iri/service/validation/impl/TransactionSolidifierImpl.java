@@ -192,9 +192,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             return true;
         }
         LinkedHashSet<Hash> analyzedHashes = new LinkedHashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
-        if(maxProcessedTransactions != Integer.MAX_VALUE) {
-            maxProcessedTransactions += analyzedHashes.size();
-        }
+        maxProcessedTransactions = Math.addExact(maxProcessedTransactions, analyzedHashes.size());
         boolean solid = true;
         final Deque<Hash> nonAnalyzedTransactions = new ArrayDeque<>(Collections.singleton(hash));
         Hash hashPointer;

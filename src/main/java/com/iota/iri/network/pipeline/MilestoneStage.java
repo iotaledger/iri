@@ -1,7 +1,6 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.validation.TransactionSolidifier;
@@ -21,7 +20,6 @@ public class MilestoneStage implements Stage {
     private MilestoneSolidifier milestoneSolidifier;
     private Tangle tangle;
     private SnapshotProvider snapshotProvider;
-    private LatestMilestoneTracker latestMilestoneTracker;
     private TransactionSolidifier transactionSolidifier;
 
     /**
@@ -34,15 +32,13 @@ public class MilestoneStage implements Stage {
      * @param milestoneSolidifier       Solidification service for processing milestone objects
      * @param snapshotProvider          Snapshot provider service for latest snapshot references
      * @param transactionSolidifier     A service for solidifying transactions
-     * @param latestMilestoneTracker    Tracks the latest milestone object
+     * @param milestoneSolidifier    Tracks the latest milestone object
      */
     public MilestoneStage(Tangle tangle, MilestoneSolidifier milestoneSolidifier,
-                          SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier,
-                          LatestMilestoneTracker latestMilestoneTracker){
+                          SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier){
         this.milestoneSolidifier = milestoneSolidifier;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.latestMilestoneTracker = latestMilestoneTracker;
         this.transactionSolidifier = transactionSolidifier;
     }
 
@@ -71,8 +67,8 @@ public class MilestoneStage implements Stage {
             boolean isFirstInBundle = (milestone.getCurrentIndex() == 0);
 
             // Log new milestones
-            if (newMilestoneIndex > latestMilestoneTracker.getLatestMilestoneIndex()) {
-                latestMilestoneTracker.setLatestMilestone(milestone.getHash(), newMilestoneIndex);
+            if (newMilestoneIndex > milestoneSolidifier.getLatestMilestoneIndex()) {
+                milestoneSolidifier.setLatestMilestone(milestone.getHash(), newMilestoneIndex);
             }
 
             // Add unsolid milestones to the milestone solidifier, or add solid milestones to the propagation queue

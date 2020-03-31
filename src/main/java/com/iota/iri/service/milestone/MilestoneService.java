@@ -83,7 +83,7 @@ public interface MilestoneService {
      * </p>
      * <p>
      * This allows us to reprocess the milestone in case of errors where the given milestone could not be applied to the
-     * ledger state. It is for example used by the automatic repair routine of the {@link LatestSolidMilestoneTracker}
+     * ledger state. It is for example used by the automatic repair routine of the {@link MilestoneSolidifier}
      * (to recover from inconsistencies due to crashes of IRI).
      * </p>
      * <p>
@@ -104,7 +104,7 @@ public interface MilestoneService {
      * </p>
      * We determine if the transaction was confirmed by examining its {@code snapshotIndex} value. For this method to
      * work we require that the previous milestones have been processed already (which is enforced by the {@link
-     * com.iota.iri.service.milestone.LatestSolidMilestoneTracker} which applies the milestones in the order that they
+     * com.iota.iri.service.milestone.MilestoneSolidifier} which applies the milestones in the order that they
      * are issued by the coordinator).
      * </p>
      *

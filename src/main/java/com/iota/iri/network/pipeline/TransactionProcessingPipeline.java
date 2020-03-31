@@ -14,7 +14,7 @@ public interface TransactionProcessingPipeline {
      * Defines the different stages of the {@link TransactionProcessingPipelineImpl}.
      */
     enum Stage {
-        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH,
+        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, QUICK_BUNDLE_VALIDATION, BROADCAST, MULTIPLE, ABORT, FINISH,
     }
 
     /**
@@ -111,4 +111,11 @@ public interface TransactionProcessingPipeline {
      * @param hashingStage the {@link HashingStage} to use
      */
     void setHashingStage(HashingStage hashingStage);
+
+    /**
+     * Sets the quick bundle validation stage.
+     *
+     * @param quickBundleValidationStage The {@link QuickBundleValidationStage} to use.
+     */
+    void setQuickBundleValidationStage(QuickBundleValidationStage quickBundleValidationStage);
 }

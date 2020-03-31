@@ -1,5 +1,6 @@
 package com.iota.iri.network.pipeline;
 
+import com.iota.iri.BundleValidator;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
@@ -69,12 +70,14 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BroadcastStage broadcastStage;
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
+    private QuickBundleValidationStage quickBundleValidationStage;
 
     private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> quickBundleValidationStageQueue = new ArrayBlockingQueue<>(100);
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.
@@ -89,9 +92,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      *                               reply stage
      */
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
-            TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester transactionRequester) {
+                                             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
+                                             TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+                                             TransactionRequester transactionRequester, BundleValidator bundleValidator) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
@@ -101,6 +104,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider, transactionRequester);
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
+        this.quickBundleValidationStage = new QuickBundleValidationStage(tangle,snapshotProvider,bundleValidator,txValidator);
     }
 
     @Override
@@ -111,6 +115,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         addStage("reply", replyStageQueue, replyStage);
         addStage("received", receivedStageQueue, receivedStage);
         addStage("broadcast", broadcastStageQueue, broadcastStage);
+        addStage("quickBundleValidation", quickBundleValidationStageQueue, quickBundleValidationStage);
     }
 
     /**
@@ -135,6 +140,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             break;
                         case RECEIVED:
                             receivedStageQueue.put(ctx);
+                            break;
+                        case QUICK_BUNDLE_VALIDATION:
+                            quickBundleValidationStageQueue.put(ctx);
                             break;
                         case MULTIPLE:
                             MultiStagePayload payload = (MultiStagePayload) ctx.getPayload();
@@ -254,5 +262,10 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     @Override
     public void setHashingStage(HashingStage hashingStage) {
         this.hashingStage = hashingStage;
+    }
+
+    @Override
+    public void setQuickBundleValidationStage(QuickBundleValidationStage quickBundleValidationStage) {
+        this.quickBundleValidationStage = quickBundleValidationStage;
     }
 }

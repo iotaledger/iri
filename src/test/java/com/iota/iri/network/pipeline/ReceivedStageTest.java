@@ -58,7 +58,7 @@ public class ReceivedStageTest {
         Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester).requestTrunkAndBranch(Mockito.any());
-        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION,
                 ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
         assertEquals("neighbor is still the same", neighbor, broadcastPayload.getOriginNeighbor());
@@ -79,7 +79,7 @@ public class ReceivedStageTest {
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester, Mockito.never()).requestTrunkAndBranch(Mockito.any());
-        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION,
                 ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
         assertEquals("neighbor should still be the same", neighbor, broadcastPayload.getOriginNeighbor());

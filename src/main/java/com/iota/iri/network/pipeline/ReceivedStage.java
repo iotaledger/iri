@@ -91,7 +91,7 @@ public class ReceivedStage implements Stage {
         }
 
         // broadcast the newly saved tx to the other neighbors
-        ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION);
         ctx.setPayload(new BroadcastPayload(originNeighbor, tvm));
         return ctx;
     }

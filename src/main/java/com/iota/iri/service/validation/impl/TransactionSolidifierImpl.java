@@ -142,7 +142,19 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     }
 
     /**
-     *{@inheritDoc}
+     * {@inheritDoc}
+     */
+    @Override
+    public void addToPropagationQueue(Hash hash){
+        try {
+            this.transactionPropagator.addToPropagationQueue(hash);
+        } catch(Exception e){
+            log.debug("Error adding transaction to propagation queue: " + e.getMessage());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public TransactionViewModel getNextTxInBroadcastQueue(){

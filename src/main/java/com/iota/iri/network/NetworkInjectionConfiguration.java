@@ -11,6 +11,8 @@ import com.iota.iri.network.impl.TipsRequesterImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 
@@ -47,9 +49,11 @@ public class NetworkInjectionConfiguration extends AbstractModule {
     TransactionProcessingPipeline provideTransactionProcessingPipeline(NeighborRouter neighborRouter,
             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
             TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester transactionRequester, TransactionSolidifier transactionSolidifier) {
+            TransactionRequester transactionRequester, TransactionSolidifier transactionSolidifier,
+            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier) {
         return new TransactionProcessingPipelineImpl(neighborRouter, configuration, txValidator, tangle,
-                snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester, transactionSolidifier);
+                snapshotProvider, tipsViewModel, latestMilestoneTracker, transactionRequester, transactionSolidifier,
+                milestoneService, milestoneSolidifier);
     }
 
     @Singleton

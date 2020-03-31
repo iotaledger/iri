@@ -114,4 +114,10 @@ public interface TransactionSolidifier {
      * @throws Exception
      */
     boolean quickSetSolid(TransactionViewModel transactionViewModel) throws Exception;
+
+    /**
+     * Adds the given transaction to the internal propagation thread.
+     * @param hash the transaction to be placed into propagation
+     */
+    void addToPropagationQueue(Hash hash);
 }

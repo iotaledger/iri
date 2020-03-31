@@ -3,6 +3,8 @@ package com.iota.iri.network;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.BaseIotaConfig;
@@ -57,6 +59,8 @@ public class NetworkInjectionConfigurationTest {
             bind(SnapshotProvider.class).toInstance(mock(SnapshotProvider.class));
             bind(TransactionValidator.class).toInstance(mock(TransactionValidator.class));
             bind(TransactionSolidifier.class).toInstance(mock(TransactionSolidifier.class));
+            bind(MilestoneService.class).toInstance(mock(MilestoneService.class));
+            bind(MilestoneSolidifier.class).toInstance(mock(MilestoneSolidifier.class));
         }
 
     }

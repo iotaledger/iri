@@ -1,5 +1,7 @@
 package com.iota.iri.network.pipeline;
 
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
@@ -71,6 +73,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
     private SolidifyStage solidifyStage;
+    private MilestoneStage milestoneStage;
 
     private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
@@ -78,6 +81,8 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext> solidifyStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> milestoneStageQueue = new ArrayBlockingQueue<>(100);
+
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.
@@ -94,17 +99,21 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
             TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester transactionRequester, TransactionSolidifier txSolidifier) {
+            TransactionRequester transactionRequester, TransactionSolidifier txSolidifier,
+            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
                 snapshotProvider, recentlySeenBytesCache);
         this.broadcastStage = new BroadcastStage(neighborRouter);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
-        this.receivedStage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester);
+        this.receivedStage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester,
+                milestoneService, config.getCoordinator());
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
         this.solidifyStage = new SolidifyStage(txSolidifier, tipsViewModel, tangle);
+        this.milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier,
+                latestMilestoneTracker);
     }
 
     @Override
@@ -116,6 +125,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         addStage("received", receivedStageQueue, receivedStage);
         addStage("broadcast", broadcastStageQueue, broadcastStage);
         addStage("solidify", solidifyStageQueue, solidifyStage);
+        addStage("milestone", milestoneStageQueue, milestoneStage);
     }
 
     /**
@@ -152,6 +162,9 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             break;
                         case SOLIDIFY:
                             solidifyStageQueue.put(ctx);
+                            break;
+                        case MILESTONE:
+                            milestoneStageQueue.put(ctx);
                             break;
                         case ABORT:
                             break;
@@ -268,5 +281,10 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     @Override
     public void setSolidifyStage(SolidifyStage solidifyStage){
         this.solidifyStage = solidifyStage;
+    }
+
+    @Override
+    public void setMilestoneStage(MilestoneStage milestoneStage){
+        this.milestoneStage = milestoneStage;
     }
 }

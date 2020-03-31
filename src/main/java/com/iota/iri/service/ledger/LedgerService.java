@@ -101,10 +101,11 @@ public interface LedgerService {
      * @param visitedTransactions a set of transaction hashes that shall be considered to be visited already
      * @param startTransaction the transaction that marks the start of the dag traversal and that has its approvees
      *                        examined
+     * @param allowGenesisReference Allows for confirmation of a transaction that references genesis
      * @return a map of the balance changes (addresses associated to their balance) or {@code null} if the balance could
      *         not be generated due to inconsistencies
      * @throws LedgerException if anything unexpected happens while generating the balance changes
      */
-    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex)
+    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex, boolean allowGenesisReference)
             throws LedgerException;
 }

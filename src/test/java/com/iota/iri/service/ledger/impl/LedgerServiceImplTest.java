@@ -8,7 +8,10 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
+import com.iota.iri.model.Hash;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -71,7 +74,19 @@ public class LedgerServiceImplTest {
         int milestoneIndex = 1;
         when(milestoneService.isTransactionConfirmed(tailTx, milestoneIndex)).thenReturn(false);
         when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(Collections.emptyMap());
-        ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex);
+        ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex, true);
         verify(spentAddressesService, times(1)).persistValidatedSpentAddressesAsync(eq(bundle));
+    }
+
+    @Test
+    public void generateBalanceDiffWithGenesisReference() throws Exception {
+        List<TransactionViewModel> bundle = TangleMockUtils.mockValidBundle(tangle, bundleValidator, 1,
+                "A", "Z");
+        TransactionViewModel tailTx = bundle.get(0);
+        int milestoneIndex = 1;
+        when(milestoneService.isTransactionConfirmed(tailTx, milestoneIndex)).thenReturn(false);
+        when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(Collections.emptyMap());
+        Map<Hash, Long> diffMap = ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex, false);
+        Assert.assertNull("Diff map should be null because genesis trunk reference is not allowed", diffMap);
     }
 }

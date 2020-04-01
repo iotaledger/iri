@@ -90,9 +90,9 @@ public class ReceivedStage implements Stage {
             transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash());
         }
 
-        // broadcast the newly saved tx to the other neighbors
+        // validate the bundle
         ctx.setNextStage(TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION);
-        ctx.setPayload(new BroadcastPayload(originNeighbor, tvm));
+        ctx.setPayload(new QuickBundleValidationPayload(originNeighbor, tvm));
         return ctx;
     }
 }

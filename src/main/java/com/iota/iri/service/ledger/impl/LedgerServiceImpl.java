@@ -132,7 +132,7 @@ public class LedgerServiceImpl implements LedgerService {
         }
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
         Map<Hash, Long> currentState = generateBalanceDiff(visitedHashes, tip,
-                snapshotProvider.getLatestSnapshot().getIndex(), true);
+                snapshotProvider.getLatestSnapshot().getIndex());
         if (currentState == null) {
             return false;
         }
@@ -151,7 +151,7 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex, boolean allowGenesisReference)
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex)
             throws LedgerException {
 
         Map<Hash, Long> state = new HashMap<>();
@@ -173,24 +173,10 @@ public class LedgerServiceImpl implements LedgerService {
                 TransactionViewModel trunkTransactionViewModel = transactionViewModel.getTrunkTransaction(tangle);
                 TransactionViewModel branchTransactionViewModel = transactionViewModel.getBranchTransaction(tangle);
 
-                boolean isEmptyTrunk = trunkTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT;
-                boolean isEmptyBranch = branchTransactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT;
-
-                //Don't confirm non-solid txs.
-                Hash genesisHash = Hash.NULL_HASH;
-                if(isEmptyTrunk  && !allowGenesisReference){
-                    return null;
-                 }
-                //proceed only if empty trunk or branch is genesis
-                if((isEmptyTrunk && !trunkTransactionViewModel.getHash().equals(genesisHash))||
-                (isEmptyBranch && !branchTransactionViewModel.getHash().equals(genesisHash))){
-                    return null;
-                }
-
                 boolean isApprovedTrunk = (trunkTransactionViewModel.snapshotIndex() > 0) && (trunkTransactionViewModel.snapshotIndex() != milestoneIndex);
                 boolean isApprovedBranch = (branchTransactionViewModel.snapshotIndex() > 0) && (branchTransactionViewModel.snapshotIndex() != milestoneIndex);
-                boolean isLeafTrunk = isEmptyTrunk  || visitedTransactions.contains(trunkTransactionViewModel.getHash()) || isApprovedTrunk;
-                boolean isLeafBranch = isEmptyBranch || visitedTransactions.contains(branchTransactionViewModel.getHash()) || isApprovedBranch;
+                boolean isLeafTrunk = visitedTransactions.contains(trunkTransactionViewModel.getHash()) || isApprovedTrunk;
+                boolean isLeafBranch = visitedTransactions.contains(branchTransactionViewModel.getHash()) || isApprovedBranch;
 
                 if (isLeafTrunk && isLeafBranch) {
                     if (transactionViewModel.getCurrentIndex() == 0) {
@@ -298,7 +284,7 @@ public class LedgerServiceImpl implements LedgerService {
                 try {
                     Hash tail = transactionViewModel.getHash();
                     Map<Hash, Long> balanceChanges = generateBalanceDiff(new HashSet<>(), tail,
-                            snapshotProvider.getLatestSnapshot().getIndex(), true);
+                            snapshotProvider.getLatestSnapshot().getIndex());
                     successfullyProcessed = balanceChanges != null;
                     if (successfullyProcessed) {
                         milestoneService.updateMilestoneIndexOfMilestoneTransactions(milestone.getHash(),

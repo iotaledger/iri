@@ -5,10 +5,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.iota.iri.model.Hash;
 import org.junit.Assert;
@@ -40,7 +37,7 @@ public class LedgerServiceImplTest {
     @Mock
     private Tangle tangle;
 
-    @Mock(answer = Answers.RETURNS_MOCKS)
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private SnapshotProvider snapshotProvider;
 
     @Mock
@@ -72,21 +69,12 @@ public class LedgerServiceImplTest {
                 "A", "Z");
         TransactionViewModel tailTx = bundle.get(0);
         int milestoneIndex = 1;
+        Map<Hash, Integer> solidEntryPoints = new HashMap<Hash, Integer>(){{
+            put(Hash.NULL_HASH, 1);
+        }};
         when(milestoneService.isTransactionConfirmed(tailTx, milestoneIndex)).thenReturn(false);
-        when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(Collections.emptyMap());
-        ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex, true);
+        when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(solidEntryPoints);
+        ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex);
         verify(spentAddressesService, times(1)).persistValidatedSpentAddressesAsync(eq(bundle));
-    }
-
-    @Test
-    public void generateBalanceDiffWithGenesisReference() throws Exception {
-        List<TransactionViewModel> bundle = TangleMockUtils.mockValidBundle(tangle, bundleValidator, 1,
-                "A", "Z");
-        TransactionViewModel tailTx = bundle.get(0);
-        int milestoneIndex = 1;
-        when(milestoneService.isTransactionConfirmed(tailTx, milestoneIndex)).thenReturn(false);
-        when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(Collections.emptyMap());
-        Map<Hash, Long> diffMap = ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex, false);
-        Assert.assertNull("Diff map should be null because genesis trunk reference is not allowed", diffMap);
     }
 }

@@ -60,9 +60,9 @@ public class ReceivedStageTest {
         Mockito.verify(transactionRequester).requestTrunkAndBranch(Mockito.any());
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION,
                 ctx.getNextStage());
-        BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor is still the same", neighbor, broadcastPayload.getOriginNeighbor());
-        assertEquals("tvm is still the same", tvm, broadcastPayload.getTransactionViewModel());
+        QuickBundleValidationPayload quickBundleValidationPayload = (QuickBundleValidationPayload) ctx.getPayload();
+        assertEquals("neighbor is still the same", neighbor, quickBundleValidationPayload.getOriginNeighbor());
+        assertEquals("tvm is still the same", tvm, quickBundleValidationPayload.getTransactionViewModel());
     }
 
     @Test
@@ -81,9 +81,9 @@ public class ReceivedStageTest {
         Mockito.verify(transactionRequester, Mockito.never()).requestTrunkAndBranch(Mockito.any());
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION,
                 ctx.getNextStage());
-        BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor should still be the same", neighbor, broadcastPayload.getOriginNeighbor());
-        assertEquals("tvm should still be the same", tvm, broadcastPayload.getTransactionViewModel());
+        QuickBundleValidationPayload quickBundleValidationPayload = (QuickBundleValidationPayload) ctx.getPayload();
+        assertEquals("neighbor should still be the same", neighbor, quickBundleValidationPayload.getOriginNeighbor());
+        assertEquals("tvm should still be the same", tvm, quickBundleValidationPayload.getTransactionViewModel());
     }
 
 }

@@ -1,5 +1,6 @@
 package com.iota.iri.network.pipeline;
 
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
@@ -17,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
 
 public class TransactionProcessingPipelineTest {
 
@@ -75,6 +77,15 @@ public class TransactionProcessingPipelineTest {
     private HashingPayload hashingPayload;
 
     @Mock
+    private BroadcastPayload broadcastPayload;
+
+    @Mock
+    private SolidifyStage solidifyStage;
+
+    @Mock
+    private SolidifyPayload solidifyPayload;
+
+    @Mock
     private ProcessingContext validationCtx;
 
     @Mock
@@ -90,7 +101,13 @@ public class TransactionProcessingPipelineTest {
     private ProcessingContext broadcastCtx;
 
     @Mock
+    private ProcessingContext solidifyCtx;
+
+    @Mock
     private ProcessingContext abortCtx;
+
+    @Mock
+    private TransactionSolidifier transactionSolidifier;
 
     private void mockHashingStage(TransactionProcessingPipeline pipeline) {
         Mockito.when(hashingPayload.getTxTrits()).thenReturn(null);
@@ -107,6 +124,7 @@ public class TransactionProcessingPipelineTest {
         pipeline.setHashingStage(hashingStage);
         pipeline.setReplyStage(replyStage);
         pipeline.setValidationStage(validationStage);
+        pipeline.setSolidifyStage(solidifyStage);
     }
 
     @Test
@@ -114,7 +132,7 @@ public class TransactionProcessingPipelineTest {
 
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester);
+                transactionRequester, transactionSolidifier);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -136,7 +154,13 @@ public class TransactionProcessingPipelineTest {
 
         // mock received
         Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);
-        Mockito.when(receivedStage.process(receivedCtx)).thenReturn(broadcastCtx);
+        Mockito.when(broadcastCtx.getPayload()).thenReturn(broadcastPayload);
+        Mockito.when(receivedStage.process(receivedCtx)).thenReturn(solidifyCtx);
+
+        // mock solidify
+        Mockito.when(solidifyCtx.getPayload()).thenReturn(solidifyPayload);
+        Mockito.when(solidifyCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.SOLIDIFY);
+        Mockito.when(solidifyStage.process(solidifyCtx)).thenReturn(broadcastCtx);
 
         pipeline.start();
 
@@ -152,6 +176,7 @@ public class TransactionProcessingPipelineTest {
         Mockito.verify(validationStage).process(Mockito.any());
         Mockito.verify(receivedStage).process(Mockito.any());
         Mockito.verify(replyStage).process(Mockito.any());
+        Mockito.verify(solidifyStage).process(Mockito.any());
         Mockito.verify(broadcastStage).process(Mockito.any());
     }
 
@@ -159,7 +184,7 @@ public class TransactionProcessingPipelineTest {
     public void processingAKnownTransactionOnlyFlowsToTheReplyStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester);
+                transactionRequester, transactionSolidifier);
 
         // inject mocks
         pipeline.setPreProcessStage(preProcessStage);
@@ -181,6 +206,7 @@ public class TransactionProcessingPipelineTest {
         Mockito.verify(hashingStage, Mockito.never()).process(Mockito.any());
         Mockito.verify(validationStage, Mockito.never()).process(Mockito.any());
         Mockito.verify(receivedStage, Mockito.never()).process(Mockito.any());
+        Mockito.verify(solidifyStage, Mockito.never()).process(Mockito.any());
         Mockito.verify(broadcastStage, Mockito.never()).process(Mockito.any());
 
         // should have called
@@ -193,7 +219,7 @@ public class TransactionProcessingPipelineTest {
             throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester);
+                transactionRequester, transactionSolidifier);
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
 
@@ -203,7 +229,6 @@ public class TransactionProcessingPipelineTest {
         Mockito.when(hashingCtx.getPayload()).thenReturn(hashingPayload);
 
         // mock hashing context/stage
-        // mock hashing context/stage
         mockHashingStage(pipeline);
 
         // mock validation context/stage
@@ -212,7 +237,12 @@ public class TransactionProcessingPipelineTest {
 
         // mock received
         Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);
-        Mockito.when(receivedStage.process(receivedCtx)).thenReturn(broadcastCtx);
+        Mockito.when(receivedStage.process(receivedCtx)).thenReturn(solidifyCtx);
+
+        // mock solidify
+        Mockito.when(solidifyCtx.getPayload()).thenReturn(solidifyPayload);
+        Mockito.when(solidifyCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.SOLIDIFY);
+        Mockito.when(solidifyStage.process(solidifyCtx)).thenReturn(broadcastCtx);
 
         pipeline.start();
 
@@ -231,6 +261,7 @@ public class TransactionProcessingPipelineTest {
         Mockito.verify(hashingStage).process(Mockito.any());
         Mockito.verify(validationStage).process(Mockito.any());
         Mockito.verify(receivedStage).process(Mockito.any());
+        Mockito.verify(solidifyStage).process(Mockito.any());
         Mockito.verify(broadcastStage).process(Mockito.any());
     }
 
@@ -238,7 +269,7 @@ public class TransactionProcessingPipelineTest {
     public void anInvalidNewTransactionStopsBeingProcessedAfterTheValidationStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester);
+                transactionRequester, transactionSolidifier);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -269,6 +300,7 @@ public class TransactionProcessingPipelineTest {
         Mockito.verify(preProcessStage, Mockito.never()).process(Mockito.any());
         Mockito.verify(broadcastStage, Mockito.never()).process(Mockito.any());
         Mockito.verify(receivedStage, Mockito.never()).process(Mockito.any());
+        Mockito.verify(solidifyStage, Mockito.never()).process(Mockito.any());
 
         // should have called
         Mockito.verify(hashingStage).process(Mockito.any());

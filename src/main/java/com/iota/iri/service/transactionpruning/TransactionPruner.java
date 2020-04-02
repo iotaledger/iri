@@ -46,4 +46,12 @@ public interface TransactionPruner {
      */
     void shutdown();
 
+    /**
+     * Checks if we have an active job running for the current type
+     * 
+     * @param jobClass  THe type of job we check for.
+     * @return <code>true</code> if there is a job running, otherwise <code>false</code>
+     */
+    <T extends TransactionPrunerJob> boolean hasActiveJobFor(Class<T> jobClass);
+
 }

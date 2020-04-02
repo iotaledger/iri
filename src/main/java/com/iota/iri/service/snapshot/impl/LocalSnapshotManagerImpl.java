@@ -12,6 +12,7 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.transactionpruning.PruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
+import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
 
@@ -241,7 +242,9 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private boolean canPrune(int pruningMilestoneIndex) {
         int snapshotIndex = snapshotProvider.getInitialSnapshot().getIndex();
         // -1 means we can't prune, smaller than snapshotIndex because we prune until index + 1
-        return pruningMilestoneIndex > 0 && pruningMilestoneIndex < snapshotIndex;
+        return pruningMilestoneIndex > 0 
+                && pruningMilestoneIndex < snapshotIndex 
+                && !transactionPruner.hasActiveJobFor(MilestonePrunerJob.class);
     }
 
     /**

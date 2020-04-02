@@ -28,7 +28,7 @@ public class SolidifyStage implements Stage {
     /**
      * Constructor for the {@link SolidifyStage}.
      *
-     * @param txSolidifier       Transaction validator implementation for determining the validity of a transaction
+     * @param txSolidifier       Transaction solidifier implementation for determining the validity of a transaction
      * @param tipsViewModel     Used for broadcasting random solid tips if the subject transaction is unsolid
      * @param tangle            A reference to the nodes DB
      */
@@ -41,7 +41,7 @@ public class SolidifyStage implements Stage {
     /**
      * Processes the payload of the {@link ProcessingContext} as a {@link SolidifyPayload}. First the transaction will
      * be checked for solidity and validity. If the transaction is already solid or can be set solid quickly by the
-     * transaction validator, the transaction is passed to the {@link BroadcastStage}. If not, a random solid tip is
+     * transaction solidifier, the transaction is passed to the {@link BroadcastStage}. If not, a random solid tip is
      * pulled form the {@link TipsViewModel} to be broadcast instead.
      *
      * @param ctx       The context to process

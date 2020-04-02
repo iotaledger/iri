@@ -1,15 +1,17 @@
 package com.iota.iri.service;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.controllers.*;
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TagViewModel;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.PearlDiver;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
@@ -19,7 +21,24 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.service.dto.*;
+import com.iota.iri.service.dto.AbstractResponse;
+import com.iota.iri.service.dto.AccessLimitedResponse;
+import com.iota.iri.service.dto.AddedNeighborsResponse;
+import com.iota.iri.service.dto.AttachToTangleResponse;
+import com.iota.iri.service.dto.CheckConsistency;
+import com.iota.iri.service.dto.ErrorResponse;
+import com.iota.iri.service.dto.ExceptionResponse;
+import com.iota.iri.service.dto.FindTransactionsResponse;
+import com.iota.iri.service.dto.GetBalancesResponse;
+import com.iota.iri.service.dto.GetInclusionStatesResponse;
+import com.iota.iri.service.dto.GetNeighborsResponse;
+import com.iota.iri.service.dto.GetNodeAPIConfigurationResponse;
+import com.iota.iri.service.dto.GetNodeInfoResponse;
+import com.iota.iri.service.dto.GetTipsResponse;
+import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
+import com.iota.iri.service.dto.GetTrytesResponse;
+import com.iota.iri.service.dto.RemoveNeighborsResponse;
+import com.iota.iri.service.dto.WereAddressesSpentFrom;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.restserver.RestConnector;
@@ -30,22 +49,45 @@ import com.iota.iri.service.tipselection.impl.TipSelectionCancelledException;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
-
 import com.iota.iri.utils.IotaUtils;
+import com.iota.iri.utils.comparators.TryteIndexComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.iota.mddoclet.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+
+import org.apache.commons.lang3.StringUtils;
+import org.iota.mddoclet.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -187,7 +229,6 @@ public class API {
         commandRoute.put(ApiCommand.GET_NEIGHBORS, getNeighbors());
         commandRoute.put(ApiCommand.GET_NODE_INFO, getNodeInfo());
         commandRoute.put(ApiCommand.GET_NODE_API_CONFIG, getNodeAPIConfiguration());
-        commandRoute.put(ApiCommand.GET_TIPS, getTips());
         commandRoute.put(ApiCommand.GET_TRANSACTIONS_TO_APPROVE, getTransactionsToApprove());
         commandRoute.put(ApiCommand.GET_TRYTES, getTrytes());
         commandRoute.put(ApiCommand.INTERRUPT_ATTACHING_TO_TANGLE, interruptAttachingToTangle());
@@ -532,6 +573,8 @@ public class API {
             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
+            } else {
+                elements.add(null);
             }
         }
         if (elements.size() > maxGetTrytes){
@@ -659,19 +702,6 @@ public class API {
     }
 
     /**
-      * Returns all tips currently known by this node.
-      *
-      * @return {@link com.iota.iri.service.dto.GetTipsResponse}
-      **/
-    @Document(name="getTips")
-    private synchronized AbstractResponse getTipsStatement() throws Exception {
-        return GetTipsResponse.create(tipsViewModel.getTips()
-                .stream()
-                .map(Hash::toString)
-                .collect(Collectors.toList()));
-    }
-
-    /**
       * Stores transactions in the local storage.
       * The trytes to be used for this call should be valid, attached transaction trytes.
       * These trytes are returned by <tt>attachToTangle</tt>, or by doing proof of work somewhere else.
@@ -741,7 +771,8 @@ public class API {
                 tipsViewModel.size(),
                 transactionRequester.numberOfTransactionsToRequest(),
                 features,
-                configuration.getCoordinator().toString());
+                configuration.getCoordinator().toString(),
+                tangle.getPersistanceSize());
     }
 
     /**
@@ -1013,7 +1044,6 @@ public class API {
         return AbstractResponse.createEmptyResponse();
     }
 
-
     /**
       * <p>
       * Calculates the confirmed balance, as viewed by the specified <tt>tips</tt>.
@@ -1025,20 +1055,12 @@ public class API {
       *
       * @param addresses Address for which to get the balance (do not include the checksum)
       * @param tips The optional tips to find the balance through.
-      * @param threshold The confirmation threshold between 0 and 100(inclusive).
-      *                  Should be set to 100 for getting balance by counting only confirmed transactions.
       * @return {@link com.iota.iri.service.dto.GetBalancesResponse}
       * @throws Exception When the database has encountered an error
       **/
     @Document(name="getBalances")
     private AbstractResponse getBalancesStatement(List<String> addresses, 
-                                                  List<String> tips,
-                                                  int threshold) throws Exception {
-
-        if (threshold <= 0 || threshold > 100) {
-            return ErrorResponse.create("Illegal 'threshold'");
-        }
-
+                                                  List<String> tips) throws Exception {
         final List<Hash> addressList = addresses.stream()
                 .map(address -> (HashFactory.ADDRESS.create(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
@@ -1174,6 +1196,7 @@ public class API {
         pearlDiver = new PearlDiver();
 
         byte[] transactionTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        trytes.sort(new TryteIndexComparator().reversed());
 
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();
@@ -1493,10 +1516,8 @@ public class API {
             final List<String> tips = request.containsKey("tips") ?
                 getParameterAsList(request,"tips", HASH_SIZE):
                 null;
-            final int threshold = getParameterAsInt(request, "threshold");
-            
             try {
-                return getBalancesStatement(addresses, tips, threshold);
+                return getBalancesStatement(addresses, tips);
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
@@ -1534,16 +1555,6 @@ public class API {
     
     private Function<Map<String, Object>, AbstractResponse> getNodeAPIConfiguration() {
         return request -> getNodeAPIConfigurationStatement();
-    }
-
-    private Function<Map<String, Object>, AbstractResponse> getTips() {
-        return request -> {
-            try {
-                return getTipsStatement();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        };
     }
 
     private Function<Map<String, Object>, AbstractResponse> getTransactionsToApprove() {

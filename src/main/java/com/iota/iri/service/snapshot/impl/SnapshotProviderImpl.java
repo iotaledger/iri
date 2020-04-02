@@ -1,28 +1,37 @@
 package com.iota.iri.service.snapshot.impl;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.LocalSnapshotViewModel;
-
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.LocalSnapshot;
-import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotMetaData;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotState;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.utils.Pair;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.utils.Pair;
+import com.google.common.annotations.VisibleForTesting;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -205,7 +214,9 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         try {
             Pair<Indexable, Persistable> pair = localSnapshotsDb.first(LocalSnapshot.class, IntegerIndex.class);
             if (pair.hi == null) {
-                log.info("no local snapshot persisted in the database");
+                log.info("No Local snapshot was found. Starting to sync from Global Snapshot. "
+                        + "In case you have a local snapshot present it may be in outdated format. "
+                        + "See https://dbfiles.iota.org/?prefix=mainnet/iri/");
                 return null;
             }
 

@@ -1,6 +1,6 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
@@ -58,11 +58,11 @@ public class ReceivedStageTest {
         Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester).requestTrunkAndBranch(Mockito.any());
-        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION,
                 ctx.getNextStage());
-        BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor is still the same", neighbor, broadcastPayload.getOriginNeighbor());
-        assertEquals("tvm is still the same", tvm, broadcastPayload.getTransactionViewModel());
+        QuickBundleValidationPayload quickBundleValidationPayload = (QuickBundleValidationPayload) ctx.getPayload();
+        assertEquals("neighbor is still the same", neighbor, quickBundleValidationPayload.getOriginNeighbor());
+        assertEquals("tvm is still the same", tvm, quickBundleValidationPayload.getTransactionViewModel());
     }
 
     @Test
@@ -79,11 +79,11 @@ public class ReceivedStageTest {
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester, Mockito.never()).requestTrunkAndBranch(Mockito.any());
-        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION,
                 ctx.getNextStage());
-        BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor should still be the same", neighbor, broadcastPayload.getOriginNeighbor());
-        assertEquals("tvm should still be the same", tvm, broadcastPayload.getTransactionViewModel());
+        QuickBundleValidationPayload quickBundleValidationPayload = (QuickBundleValidationPayload) ctx.getPayload();
+        assertEquals("neighbor should still be the same", neighbor, quickBundleValidationPayload.getOriginNeighbor());
+        assertEquals("tvm should still be the same", tvm, quickBundleValidationPayload.getTransactionViewModel());
     }
 
 }

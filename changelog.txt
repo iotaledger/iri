@@ -1,3 +1,10 @@
+1.8.5
+
+Protocol-Change:
+    Added bundle validity rules - check that bundles confirm only tails and 2 bundles at most (#1786)
+    Check validity rules on tip-sel and check-consistency only (#1802)
+
+
 1.8.4
 
 Hotfix: Ensure proper creation of solid entrypoints (#1702)

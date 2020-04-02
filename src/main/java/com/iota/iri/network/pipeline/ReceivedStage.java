@@ -1,6 +1,6 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
@@ -90,9 +90,9 @@ public class ReceivedStage implements Stage {
             transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash());
         }
 
-        // broadcast the newly saved tx to the other neighbors
-        ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
-        ctx.setPayload(new BroadcastPayload(originNeighbor, tvm));
+        // validate the bundle
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.QUICK_BUNDLE_VALIDATION);
+        ctx.setPayload(new QuickBundleValidationPayload(originNeighbor, tvm));
         return ctx;
     }
 }

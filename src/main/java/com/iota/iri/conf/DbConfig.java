@@ -66,21 +66,7 @@ public interface DbConfig extends Config {
      *
      * @return {@value DbConfig.Descriptions#MILESTONE_CACHE_SIZE}
      */
-    int getMilestoneBatchWrite();
-
-    /**
-     * Default Value: {@value BaseIotaConfig.Defaults#TX_CACHE_RELEASE_COUNT}
-     *
-     * @return {@value DbConfig.Descriptions#TX_BATCH_RELEASE_COUNT}
-     */
-    int getTxCacheReleaseCount();
-
-    /**
-     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_CACHE_RELEASE_COUNT}
-     *
-     * @return {@value DbConfig.Descriptions#MILESTONE_BATCH_RELEASE_COUNT}
-     */
-    int getMilestoneCacheReleaseCount();
+    int getMilestoneCacheSize();
 
     interface Descriptions {
 
@@ -94,7 +80,5 @@ public interface DbConfig extends Config {
         String DB_CONFIG_FILE = "The location of the RocksDB configuration file";
         String TX_CACHE_SIZE = "The size of the tangle cache for transactions";
         String MILESTONE_CACHE_SIZE = "The size of the tangle cache for milestones";
-        String TX_BATCH_RELEASE_COUNT = "The number of transactions to release from cache";
-        String MILESTONE_BATCH_RELEASE_COUNT = "The number of milestones to release from cache";
     }
 }

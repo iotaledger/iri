@@ -1,12 +1,8 @@
 package com.iota.iri.service;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import com.iota.iri.IXI;
-import com.iota.iri.MainInjectionConfiguration;
 import com.iota.iri.Iota;
+import com.iota.iri.MainInjectionConfiguration;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IXIConfig;
 import com.iota.iri.conf.IotaConfig;
@@ -17,6 +13,15 @@ import com.iota.iri.network.NetworkInjectionConfiguration;
 import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.utils.Converter;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.ResponseSpecBuilder;
 import com.jayway.restassured.config.HttpClientConfig;
@@ -24,6 +29,7 @@ import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.specification.RequestSpecification;
 import com.jayway.restassured.specification.ResponseSpecification;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -31,10 +37,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -196,15 +198,13 @@ public class APIIntegrationTests {
             spec(specSuccessResponse).
             body(containsString("appName")).
             body(containsString("appVersion")).
-            body(containsString("duration")).
-            body(containsString("jreAvailableProcessors")).
             body(containsString("jreFreeMemory")).
+            body(containsString("jreVersion")).
             body(containsString("jreMaxMemory")).
             body(containsString("jreTotalMemory")).
-            body(containsString("jreVersion")).
+            body(containsString("jreAvailableProcessors")).
             body(containsString("latestMilestone")).
             body(containsString("latestMilestoneIndex")).
-            body(containsString("jreAvailableProcessors")).
             body(containsString("latestSolidSubtangleMilestone")).
             body(containsString("latestSolidSubtangleMilestoneIndex")).
             body(containsString("milestoneStartIndex")).
@@ -213,7 +213,10 @@ public class APIIntegrationTests {
             body(containsString("packetsQueueSize")).
             body(containsString("time")).
             body(containsString("tips")).
-            body(containsString("transactionsToRequest"));
+            body(containsString("transactionsToRequest")).
+            body(containsString("features")).
+            body(containsString("coordinatorAddress")).
+            body(containsString("dbSizeInBytes"));
     }
 
     @Test
@@ -287,21 +290,6 @@ public class APIIntegrationTests {
     }
 
     @Test
-    public void shouldTestGetTips() {
-
-        final Map<String, Object> request = new HashMap<>();
-        request.put("command", "getTips");
-
-        given().
-            body(gson().toJson(request)).
-            when().
-            post("/").
-            then().
-            spec(specSuccessResponse).
-            body(containsString("hashes"));
-    }
-
-    @Test
     public void shouldTestFindTransactions() {
 
         final Map<String, Object> request = new HashMap<>();
@@ -355,7 +343,6 @@ public class APIIntegrationTests {
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "getBalances");
         request.put("addresses", ADDRESSES);
-        request.put("threshold", 100);
 
         given().
             body(gson().toJson(request)).

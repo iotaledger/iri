@@ -77,6 +77,7 @@ def prepare_options(args, option_list):
 
             fetch_list = {
                 'int': value_fetch.fetch_int,
+                'intList': value_fetch.fetch_int_list,
                 'string': value_fetch.fetch_string,
                 'list': value_fetch.fetch_list,
                 'nodeAddress': value_fetch.fetch_node_address,

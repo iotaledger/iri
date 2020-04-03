@@ -5,10 +5,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
+import com.iota.iri.model.Hash;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,7 +37,7 @@ public class LedgerServiceImplTest {
     @Mock
     private Tangle tangle;
 
-    @Mock(answer = Answers.RETURNS_MOCKS)
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private SnapshotProvider snapshotProvider;
 
     @Mock
@@ -69,8 +69,11 @@ public class LedgerServiceImplTest {
                 "A", "Z");
         TransactionViewModel tailTx = bundle.get(0);
         int milestoneIndex = 1;
+        Map<Hash, Integer> solidEntryPoints = new HashMap<Hash, Integer>(){{
+            put(Hash.NULL_HASH, 1);
+        }};
         when(milestoneService.isTransactionConfirmed(tailTx, milestoneIndex)).thenReturn(false);
-        when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(Collections.emptyMap());
+        when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(solidEntryPoints);
         ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex, true);
         verify(spentAddressesService, times(1)).persistValidatedSpentAddressesAsync(eq(bundle));
     }

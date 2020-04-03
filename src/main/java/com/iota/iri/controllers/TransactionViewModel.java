@@ -842,6 +842,22 @@ public class TransactionViewModel {
     }
 
     /**
+     * This method sets the {@link Transaction#conflicting} flag.
+     *
+     * It first checks if the {@link Transaction#conflicting} flag has changed. If so, it issues a database update.
+     * @param tangle            Tangle instance
+     * @param initialSnapshot   The snapshot representing the start of the ledger
+     * @param isConflicting     True if the transaction is conflicting and ignored during balance computation
+     * @throws Exception        If something goes wrong
+     */
+    public void setConflicting(Tangle tangle, Snapshot initialSnapshot, final boolean isConflicting) throws Exception {
+        if(isConflicting != transaction.conflicting.get()){
+            transaction.conflicting.set(isConflicting);
+            update(tangle, initialSnapshot, "conflicting");
+        }
+    }
+
+    /**
      * This method gets the {@link Transaction#milestone}.
      *
      * The {@link Transaction#milestone} flag indicates if the {@link Transaction} is a coordinator issued milestone. It

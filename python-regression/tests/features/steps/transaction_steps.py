@@ -150,7 +150,9 @@ def issue_a_milestone_with_reference(step, index):
 
     reference_transaction = transactions.fetch_transaction_from_list(step.hashes, node)
     logger.info('Issuing milestone {}'.format(index))
-    milestone = milestones.issue_milestone(address, api, index, reference_transaction)
+    #To reference both trunk and branch of the milestone from the reference list
+    full_reference = bool(get_step_value(step,"fullReference"))
+    milestone = milestones.issue_milestone(address, api, index, full_reference, reference_transaction)
 
     milestones.update_latest_milestone(world.config, node, milestone)
 
@@ -193,6 +195,43 @@ def issue_a_milestone(step, index, node):
     milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
     world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
 
+@step(r'a double spend is generated referencing the previous transaction with:')
+def create_double_spent(step):
+    """
+    Creates two bundles which both try to spend the same address.
+    :param step.hashes: A gherkin table present in the feature file specifying the
+                        arguments and the associated type.
+    """
+    node = world.config['nodeId']
+    previous = world.responses['evaluate_and_send'][node][0]
+    seed = get_step_value(step, "seed")
+    api = api_utils.prepare_api_call(node, seed=seed)
+
+    tag = get_step_value(step, "tag")[0]
+    value = int(get_step_value(step, "value"))
+
+    response = api.get_inputs(start=0, stop=1, threshold=0, security_level=2)
+    addressFrom = response['inputs'][0]
+
+    bundles = transactions.create_double_spend_bundles(seed, addressFrom, static.DOUBLE_SPEND_ADDRESSES[0], static.DOUBLE_SPEND_ADDRESSES[1], tag, value)
+
+    logger.info('Finding Transactions')
+    gtta_transactions = api.get_transactions_to_approve(depth=3)
+    trunk1 = previous
+    branch1 = gtta_transactions['branchTransaction']
+    trunk2 = previous
+    branch2 = gtta_transactions['trunkTransaction']
+
+    argument_list = {'trunk_transaction': trunk1, 'branch_transaction': branch1,
+                     'trytes': bundles[0].as_tryte_strings(), 'min_weight_magnitude': 14}
+    firstDoubleSpend = Transaction.from_tryte_string( transactions.attach_store_and_broadcast(api, argument_list).get('trytes')[0] )
+
+    argument_list = {'trunk_transaction': trunk2, 'branch_transaction': branch2,
+                     'trytes': bundles[1].as_tryte_strings(), 'min_weight_magnitude': 14}
+    secondDoubleSpend = Transaction.from_tryte_string( transactions.attach_store_and_broadcast(api, argument_list).get('trytes')[0] )
+
+    doubleSpends = [firstDoubleSpend.hash, secondDoubleSpend.hash]
+    set_world_object(node, "doubleSpends", doubleSpends)
 
 def wait_for_update(index, api):
     updated = False
@@ -206,3 +245,17 @@ def wait_for_update(index, api):
         sleep(1)
 
     assert updated is True, "The node was unable to update to index {}".format(index)
+
+def set_world_object(node, objectName, value):
+    if objectName not in world.responses:
+        world.responses[objectName] = {}
+    world.responses[objectName][node] = value
+
+def get_step_value(step, key_name):
+    for arg_index, arg in enumerate(step.hashes):
+        if arg['keys'] == key_name :
+            if arg['type'] == "staticValue" or arg['type'] == "staticList":
+                return getattr(static, arg['values'])
+            else:
+                return arg['values']
+    return 0

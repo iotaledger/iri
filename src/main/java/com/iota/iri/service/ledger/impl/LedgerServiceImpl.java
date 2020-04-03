@@ -15,7 +15,6 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.impl.SnapshotStateDiffImpl;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.dag.DAGHelper;
 
 import java.util.*;
 
@@ -164,55 +163,84 @@ public class LedgerServiceImpl implements LedgerService {
             visitedTransactions.add(solidEntryPointHash);
         });
 
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(startTransaction));
-        Hash transactionPointer;
-        while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
+        Deque<Hash> stack = new ArrayDeque<>();
+        stack.push(startTransaction);
+
+        while(stack.size() != 0){
             try {
-                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle,
-                        transactionPointer);
-                if (transactionViewModel.getCurrentIndex() == 0 && visitedTransactions.add(transactionPointer)) {
-                    if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                        return null;
-                    }
-                    if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
+                Map<Hash, Long> currentState = new HashMap<>();
+                Hash transactionPointer = stack.peek();
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
+                TransactionViewModel trunkTransactionViewModel = transactionViewModel.getTrunkTransaction(tangle);
+                TransactionViewModel branchTransactionViewModel = transactionViewModel.getBranchTransaction(tangle);
 
-                        final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
-                                enforceExtraRules, snapshotProvider.getInitialSnapshot(),
-                                transactionViewModel.getHash());
+                boolean isApprovedTrunk = (trunkTransactionViewModel.snapshotIndex() > 0) && (trunkTransactionViewModel.snapshotIndex() != milestoneIndex);
+                boolean isApprovedBranch = (branchTransactionViewModel.snapshotIndex() > 0) && (branchTransactionViewModel.snapshotIndex() != milestoneIndex);
+                boolean isLeafTrunk = visitedTransactions.contains(trunkTransactionViewModel.getHash()) || isApprovedTrunk;
+                boolean isLeafBranch = visitedTransactions.contains(branchTransactionViewModel.getHash()) || isApprovedBranch;
 
-                        if (bundleTransactions.isEmpty()) {
+                if (isLeafTrunk && isLeafBranch) {
+                    if (transactionViewModel.getCurrentIndex() == 0) {
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
                         }
 
-                        // ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
-                        // concerns
-                        spentAddressesService.persistValidatedSpentAddressesAsync(bundleTransactions);
+                        if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
+                            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
+                                    enforceExtraRules, snapshotProvider.getInitialSnapshot(),
+                                    transactionViewModel.getHash());
 
-                        if (BundleValidator.isInconsistent(bundleTransactions)) {
-                            log.error("Encountered an inconsistent bundle with tail {} and bundle hash {}",
-                                    bundleTransactions.get(0).getHash(), bundleTransactions.get(0).getBundleHash());
-                            return null;
-                        }
+                            if (bundleTransactions.isEmpty()) {
+                                return null;
+                            }
 
-                        for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
-                            if (bundleTransactionViewModel.value() != 0) {
+                            // ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
+                            // concerns
+                            spentAddressesService.persistValidatedSpentAddressesAsync(bundleTransactions);
 
-                                final Hash address = bundleTransactionViewModel.getAddressHash();
-                                final Long value = state.get(address);
-                                state.put(address, value == null ? bundleTransactionViewModel.value()
-                                        : Math.addExact(value, bundleTransactionViewModel.value()));
+                            if (BundleValidator.isInconsistent(bundleTransactions)) {
+                                log.error("Encountered an inconsistent bundle with tail {} and bundle hash {}",
+                                        bundleTransactions.get(0).getHash(), bundleTransactions.get(0).getBundleHash());
+                                return null;
+                            }
+
+                            try{
+                                for (final TransactionViewModel bundleTransactionViewModel : bundleTransactions) {
+                                    if (bundleTransactionViewModel.value() != 0) {
+                                        final Hash address = bundleTransactionViewModel.getAddressHash();
+                                        final Long value = currentState.get(address);
+                                        currentState.put(address, value == null ? bundleTransactionViewModel.value()
+                                                : Math.addExact(value, bundleTransactionViewModel.value()));
+                                    }
+                                }
+                                state.forEach((key, value) -> {
+                                    if (currentState.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
+                                        currentState.putIfAbsent(key, value);
+                                    }
+                                });
+                                boolean isConsistent = snapshotProvider.getLatestSnapshot().patchedState(new SnapshotStateDiffImpl(currentState)).isConsistent();
+                                if(isConsistent){
+                                    state = currentState;
+                                }else{
+                                    transactionViewModel.setConflicting(tangle, initialSnapshot, true);
+                                }
+                            }catch(ArithmeticException e){
+                                transactionViewModel.setConflicting(tangle, initialSnapshot, true);
                             }
                         }
-                        nonAnalyzedTransactions.addAll(DAGHelper.get(tangle).findTails(transactionViewModel));
                     }
-
+                    visitedTransactions.add(transactionPointer);
+                    stack.pop();
                 }
-
-            } catch (Exception e) {
+                else if(!isLeafTrunk){
+                    stack.addFirst(trunkTransactionViewModel.getHash());
+                }else if(!isLeafBranch) {
+                    stack.addFirst(branchTransactionViewModel.getHash());
+                }
+            }catch(Exception e){
                 throw new LedgerException("unexpected error while generating the balance diff", e);
             }
         }
-
         return state;
     }
 
@@ -262,15 +290,10 @@ public class LedgerServiceImpl implements LedgerService {
                             snapshotProvider.getLatestSnapshot().getIndex(), false);
                     successfullyProcessed = balanceChanges != null;
                     if (successfullyProcessed) {
-                        successfullyProcessed = snapshotProvider.getLatestSnapshot().patchedState(
-                                new SnapshotStateDiffImpl(balanceChanges)).isConsistent();
-                        if (successfullyProcessed) {
-                            milestoneService.updateMilestoneIndexOfMilestoneTransactions(milestone.getHash(),
-                                    milestone.index());
-
-                            if (!balanceChanges.isEmpty()) {
-                                new StateDiffViewModel(balanceChanges, milestone.getHash()).store(tangle);
-                            }
+                        milestoneService.updateMilestoneIndexOfMilestoneTransactions(milestone.getHash(),
+                                milestone.index());
+                        if (!balanceChanges.isEmpty()) {
+                            new StateDiffViewModel(balanceChanges, milestone.getHash()).store(tangle);
                         }
                     }
                 } finally {

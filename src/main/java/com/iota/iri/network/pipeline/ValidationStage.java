@@ -1,6 +1,6 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;

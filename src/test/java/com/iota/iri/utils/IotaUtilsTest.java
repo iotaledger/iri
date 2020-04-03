@@ -14,8 +14,9 @@ public class IotaUtilsTest {
 
         assertEquals("No space should be allowed in conversion", 1000000000l, IotaUtils.parseFileSize("1GB"));
         assertEquals("No space should be allowed in conversion", 1073741824l, IotaUtils.parseFileSize("1GiB"));
-        
 
+        assertEquals("Default should be GB", 1000000000l, IotaUtils.parseFileSize("1"));
+        
         assertEquals("-1 should return -1", -1l, IotaUtils.parseFileSize("-1"));
     }
 }

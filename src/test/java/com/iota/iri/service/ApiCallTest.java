@@ -14,7 +14,7 @@ public class ApiCallTest {
     @Before
     public void setUp() {
         IotaConfig configuration = Mockito.mock(IotaConfig.class);
-        api = new API(configuration, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        api = new API(configuration, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     @Test

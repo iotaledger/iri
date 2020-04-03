@@ -1,7 +1,6 @@
 from multiprocessing.dummy import Pool
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+from util import logger as log
+logger = log.getLogger(__name__)
 
 
 def start_pool(function, iterations, args):

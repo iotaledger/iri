@@ -1,15 +1,13 @@
 from aloe import world, step
 from iota import Transaction
 from util import static_vals as static
+from util import logger as log
 from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions
 from util.milestone_logic import milestones
 from time import sleep
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+logger = log.getLogger(__name__)
 
 @step(r'a transaction is generated and attached on "([^"]+)" with:')
 def generate_transaction_and_attach(step, node):

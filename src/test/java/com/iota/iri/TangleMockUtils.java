@@ -103,7 +103,7 @@ public class TangleMockUtils {
         }
 
         Collections.reverse(bundle);
-        Mockito.when(bundleValidator.validate(Mockito.eq(tangle), Mockito.any(),
+        Mockito.when(bundleValidator.validate(Mockito.eq(tangle), Mockito.eq(true), Mockito.any(),
                 Mockito.eq(bundle.iterator().next().getHash())))
                 .thenReturn(bundle);
 
@@ -125,8 +125,8 @@ public class TangleMockUtils {
     public static Transaction mockTransaction(Tangle tangle, Hash hash) {
         Transaction transaction = new Transaction();
         transaction.bytes = new byte[0];
-        transaction.type = TransactionViewModel.FILLED_SLOT;
-        transaction.parsed = true;
+        transaction.type.set(TransactionViewModel.FILLED_SLOT);
+        transaction.parsed.set(true);
 
         return mockTransaction(tangle, hash, transaction);
     }

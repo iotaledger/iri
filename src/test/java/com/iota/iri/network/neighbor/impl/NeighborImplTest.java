@@ -233,7 +233,7 @@ public class NeighborImplTest {
         neighbor.send(heartbeatPacket);
 
         try {
-            assertEquals("should have written the entire packet", heartbeatPacket.capacity(), neighbor.write());
+            assertEquals("should have written the entire heartbeat packet", heartbeatPacket.capacity(), neighbor.write());
         } catch (IOException e) {
             fail("didn't expect an exception");
         }

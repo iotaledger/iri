@@ -71,7 +71,7 @@ Feature: Test transaction confirmation
 
         And the response for "getInclusionStates" should return with:
         |keys                   |values                     |type           |
-        | states | True True True True True True True True True False | boolListMixed |
+        | states | True True True True True True True True True True | boolListMixed |
 
         When a transaction is generated and attached on "nodeA-m3" with:
             | keys    | values       | type        |

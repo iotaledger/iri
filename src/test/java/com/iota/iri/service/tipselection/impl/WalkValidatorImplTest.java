@@ -139,6 +139,7 @@ public class WalkValidatorImplTest {
         tipSelSolidifier ,config);
         Assert.assertFalse("Validation succeded but should have failed since tx is not solid",
                 walkValidator.isValid(hash));
+        Mockito.verify(tipSelSolidifier, Mockito.times(1)).solidify(hash);
     }
 
     @Test

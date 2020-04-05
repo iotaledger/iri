@@ -39,6 +39,7 @@ public class AsyncTipSelSolidifier implements TipSelSolidifier {
         if (transactionToSolidify.add(transactionHash)) {
             solidExecutor.submit(() -> {
                 try {
+                    log.debug("attempting to solidify transaction {}", transactionHash);
                     transactionValidator.checkSolidity(transactionHash);
                 } catch (Exception e) {
                     log.error("Failed to solidify transaction during a walk", e);

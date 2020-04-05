@@ -8,6 +8,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
+import com.iota.iri.service.tipselection.TipSelSolidifier;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.After;
@@ -44,6 +45,9 @@ public class WalkValidatorImplTest {
 
     @Mock
     private static LedgerService ledgerService;
+
+    @Mock
+    private TipSelSolidifier tipSelSolidifier;
 
     @AfterClass
     public static void tearDown() throws Exception {
@@ -85,7 +89,8 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(depth);
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+                tipSelSolidifier, config);
         Assert.assertTrue("Validation failed", walkValidator.isValid(hash));
     }
 
@@ -101,7 +106,7 @@ public class WalkValidatorImplTest {
         snapshotProvider.getLatestSnapshot().setIndex(depth);
 
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+                tipSelSolidifier, config);
         Assert.assertFalse("Validation succeded but should have failed since tx is missing", walkValidator.isValid(hash));
     }
 
@@ -116,7 +121,7 @@ public class WalkValidatorImplTest {
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
 
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+                tipSelSolidifier, config);
         Assert.assertFalse("Validation succeded but should have failed since we are not on a tail", walkValidator.isValid(hash));
     }
 
@@ -131,7 +136,7 @@ public class WalkValidatorImplTest {
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
 
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+        tipSelSolidifier ,config);
         Assert.assertFalse("Validation succeded but should have failed since tx is not solid",
                 walkValidator.isValid(hash));
     }
@@ -147,7 +152,7 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+                tipSelSolidifier, config);
         Assert.assertFalse("Validation succeeded but should have failed tx is below max depth",
                 walkValidator.isValid(hash));
     }
@@ -170,7 +175,7 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(100);
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+        tipSelSolidifier ,config);
         Assert.assertTrue("Validation failed but should have succeeded since tx is above max depth",
                 walkValidator.isValid(hash));
     }
@@ -195,7 +200,7 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(100);
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+        tipSelSolidifier, config);
         Assert.assertFalse("Validation succeeded but should have failed since tx is below max depth",
                 walkValidator.isValid(hash));
     }
@@ -217,7 +222,7 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(15);
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+                tipSelSolidifier, config);
         Assert.assertTrue("Validation failed but should have succeeded. We didn't exceed the maximal amount of" +
                         "transactions that may be analyzed.",
                 walkValidator.isValid(tx.getHash()));
@@ -241,7 +246,7 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(17);
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+        tipSelSolidifier, config);
         Assert.assertFalse("Validation succeeded but should have failed. We exceeded the maximal amount of" +
                         "transactions that may be analyzed.",
                 walkValidator.isValid(tx.getHash()));
@@ -258,7 +263,7 @@ public class WalkValidatorImplTest {
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
 
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+                tipSelSolidifier, config);
         Assert.assertFalse("Validation succeded but should have failed due to inconsistent ledger state",
                 walkValidator.isValid(hash));
     }
@@ -302,7 +307,7 @@ public class WalkValidatorImplTest {
 
         snapshotProvider.getLatestSnapshot().setIndex(100);
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+                tipSelSolidifier, config);
         Assert.assertFalse("Validation of tx4 succeeded but should have failed since tx is below max depth",
                 walkValidator.isValid(tx4.getHash()));
         Assert.assertTrue("Validation of tx2 failed but should have succeeded since tx is above max depth",
@@ -346,7 +351,7 @@ public class WalkValidatorImplTest {
 
         snapshotProvider.getLatestSnapshot().setIndex(100);
         WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
-        config);
+        tipSelSolidifier, config);
         Assert.assertFalse("Validation of tx4 succeeded but should have failed since tx is below max depth",
                 walkValidator.isValid(tx4.getHash()));
 

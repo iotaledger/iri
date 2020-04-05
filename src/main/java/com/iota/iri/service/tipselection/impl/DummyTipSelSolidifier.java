@@ -6,7 +6,7 @@ import com.iota.iri.service.tipselection.TipSelSolidifier;
 /**
  * Does nothing
  */
-public class FakeTipSelSolidifier implements TipSelSolidifier {
+public class DummyTipSelSolidifier implements TipSelSolidifier {
 
 
     @Override

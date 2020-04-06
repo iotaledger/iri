@@ -22,6 +22,7 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.transactionpruning.DepthPruningCondition;
 import com.iota.iri.service.transactionpruning.SizePruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -96,6 +97,8 @@ public class Iota {
 
     public final MilestoneSolidifier milestoneSolidifier;
 
+    public final TransactionSolidifier transactionSolidifier;
+
     public final BundleValidator bundleValidator;
 
     public final Tangle tangle;
@@ -127,7 +130,7 @@ public class Iota {
             TransactionRequester transactionRequester, NeighborRouter neighborRouter,
             TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
             TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-            CacheManager cacheManager) {
+            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -145,8 +148,8 @@ public class Iota {
         this.neighborRouter = neighborRouter;
         this.txPipeline = transactionProcessingPipeline;
         this.tipsRequester = tipsRequester;
+        this.transactionSolidifier = transactionSolidifier;
         this.localSnapshotsDb = localSnapshotsDb;
-
 
         // legacy classes
         this.bundleValidator = bundleValidator;
@@ -200,8 +203,6 @@ public class Iota {
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
 
-        transactionValidator.init();
-
         txPipeline.start();
         neighborRouter.start();
         tipsRequester.start();
@@ -210,6 +211,7 @@ public class Iota {
         latestSolidMilestoneTracker.start();
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
+        transactionSolidifier.start();
 
         if (localSnapshotManager != null) {
             localSnapshotManager.addSnapshotCondition(new SnapshotDepthCondition(configuration, snapshotProvider));
@@ -256,6 +258,7 @@ public class Iota {
     public void shutdown() throws Exception {
         // shutdown in reverse starting order (to not break any dependencies)
         milestoneSolidifier.shutdown();
+        transactionSolidifier.shutdown();
         seenMilestonesRetriever.shutdown();
         latestSolidMilestoneTracker.shutdown();
         latestMilestoneTracker.shutdown();
@@ -270,7 +273,6 @@ public class Iota {
         tipsRequester.shutdown();
         txPipeline.shutdown();
         neighborRouter.shutdown();
-        transactionValidator.shutdown();
         localSnapshotsDb.shutdown();
         tangle.shutdown();
 

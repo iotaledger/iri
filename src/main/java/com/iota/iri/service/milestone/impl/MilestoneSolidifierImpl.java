@@ -1,6 +1,6 @@
 package com.iota.iri.service.milestone.impl;
 
-import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -35,7 +35,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     /**
      * Defines the interval in which solidity checks are issued (in milliseconds).
      */
-    private static final int SOLIDIFICATION_INTERVAL = 500;
+    private static final int SOLIDIFICATION_INTERVAL = 100;
 
     /**
      * <p>
@@ -44,7 +44,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * </p>
      * <p>
      * Note: We want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
-     *       long running {@link TransactionValidator#checkSolidity(Hash)} call.
+     *       long running {@link TransactionSolidifier#checkSolidity(Hash)} call.
      * </p>
      */
     private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;
@@ -60,9 +60,9 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private final SnapshotProvider snapshotProvider;
 
     /**
-     * Holds a reference to the TransactionValidator which allows us to issue solidity checks.
+     * Holds a reference to the transactionSolidifier which allows us to issue solidity checks.
      */
-    private final TransactionValidator transactionValidator;
+    private final TransactionSolidifier transactionSolidifier;
 
     /**
      * Holds a reference to the manager of the background worker.
@@ -105,16 +105,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
     /**
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
-     * @param transactionValidator TransactionValidator instance that is used by the node
+     * @param transactionSolidifier transactionSolidifier instance that is used by the node
      */
-    public MilestoneSolidifierImpl(SnapshotProvider snapshotProvider, TransactionValidator transactionValidator) {
+    public MilestoneSolidifierImpl(SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier) {
         this.snapshotProvider = snapshotProvider;
-        this.transactionValidator = transactionValidator;
+        this.transactionSolidifier = transactionSolidifier;
     }
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * <p>
      * Since this method might be called from a performance critical context, we simply add the milestone to a temporary
      * pool, that gets examined later by the background process. This doesn't just speed up the addition of new jobs but
@@ -206,7 +206,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     private void processNewlyAddedMilestones() {
         for (Iterator<Map.Entry<Hash, Integer>> iterator = newlyAddedMilestones.entrySet().iterator();
-                !Thread.currentThread().isInterrupted() && iterator.hasNext();) {
+             !Thread.currentThread().isInterrupted() && iterator.hasNext();) {
 
             Map.Entry<Hash, Integer> currentEntry = iterator.next();
 
@@ -232,7 +232,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     private void processSolidificationQueue() {
         for (Iterator<Map.Entry<Hash, Integer>> iterator = milestonesToSolidify.entrySet().iterator();
-                !Thread.currentThread().isInterrupted() && iterator.hasNext();) {
+             !Thread.currentThread().isInterrupted() && iterator.hasNext();) {
 
             Map.Entry<Hash, Integer> currentEntry = iterator.next();
 
@@ -321,7 +321,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * </p>
      * <p>
      * It first dumps a log message to keep the node operator informed about the progress of solidification, and then
-     * issues the {@link TransactionValidator#checkSolidity(Hash, int)} call that starts the solidification
+     * issues the {@link TransactionSolidifier#checkSolidity(Hash, int)} call that starts the solidification
      * process.
      * </p>
      * <p>
@@ -341,7 +341,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         try {
-            return transactionValidator.checkSolidity(currentEntry.getKey(), SOLIDIFICATION_TRANSACTIONS_LIMIT);
+            return transactionSolidifier.checkSolidity(currentEntry.getKey(), SOLIDIFICATION_TRANSACTIONS_LIMIT);
         } catch (Exception e) {
             log.error("Error while solidifying milestone #" + currentEntry.getValue(), e);
 

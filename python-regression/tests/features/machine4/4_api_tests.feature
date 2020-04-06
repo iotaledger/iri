@@ -40,6 +40,7 @@ Feature: Test API calls on Machine 1
 		|tips						|
 		|transactionsToRequest				|
 		|coordinatorAddress				|
+		|dbSizeInBytes					|
 
 
 	Scenario: GetNeighbors is called
@@ -87,18 +88,6 @@ Feature: Test API calls on Machine 1
 		|keys						|
 		|duration					|
 		|removedNeighbors				|
-
-
-	Scenario: GetTips is called
-		Given "getTips" is called on "nodeA-m4" with:
-		|keys       |values				|type           |
-
-		Then a response with the following is returned:
-		|keys						|
-		|hashes						|
-		|duration					|
-
-
 
     #Values can be found in util/static_vals.py
 	Scenario: GetTrytes is called

@@ -99,7 +99,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
                 snapshotProvider, recentlySeenBytesCache);
-        this.broadcastStage = new BroadcastStage(neighborRouter);
+        this.broadcastStage = new BroadcastStage(neighborRouter, txSolidifier);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
         this.receivedStage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester);
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);

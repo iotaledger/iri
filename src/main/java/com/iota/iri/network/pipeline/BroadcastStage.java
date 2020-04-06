@@ -3,6 +3,7 @@ package com.iota.iri.network.pipeline;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +19,16 @@ public class BroadcastStage implements Stage {
 
     private NeighborRouter neighborRouter;
 
+    private TransactionSolidifier transactionSolidifier;
+
     /**
      * Creates a new {@link BroadcastStage}.
      * 
      * @param neighborRouter The {@link NeighborRouter} instance to use to broadcast
      */
-    public BroadcastStage(NeighborRouter neighborRouter) {
+    public BroadcastStage(NeighborRouter neighborRouter, TransactionSolidifier transactionSolidifier) {
         this.neighborRouter = neighborRouter;
+        this.transactionSolidifier = transactionSolidifier;
     }
 
     /**
@@ -52,6 +56,13 @@ public class BroadcastStage implements Stage {
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
+        }
+
+        TransactionViewModel transactionToBroadcast;
+        if((transactionToBroadcast = transactionSolidifier.getNextTxInBroadcastQueue()) != null){
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
+            ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), transactionToBroadcast));
+            return ctx;
         }
 
         ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);

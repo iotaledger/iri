@@ -80,7 +80,7 @@ Feature: Test Bootstrapping With LS
     Takes a node with a large db and transaction pruning enabled, and checks to make sure that the transactions below
     the pruning depth are no longer present.
 
-    Given "getInclusionStates" is called on "nodeD-m6" with:
+    Given "getInclusionStates" is called on "nodeD-m1" with:
       |keys                       |values                   |type             |
       |transactions               |LS_PRUNED_TRANSACTIONS   |staticValue      |
       |tips                       |LS_PRUNING_TIP           |staticList       |
@@ -93,7 +93,7 @@ Feature: Test Bootstrapping With LS
     When the next 10 milestones are issued
     And we wait "15" second/seconds
 
-    And "getInclusionStates" is called on "nodeD-m6" with:
+    And "getInclusionStates" is called on "nodeD-m1" with:
       |keys                       |values                   |type             |
       |transactions               |LS_PRUNED_TRANSACTIONS   |staticValue      |
       |tips                       |LS_PRUNING_TIP           |staticList       |

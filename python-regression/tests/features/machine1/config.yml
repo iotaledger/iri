@@ -1,26 +1,71 @@
-defaults: &api_tests_config_files
-  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/testnet_files.tgz
-  db_checksum: 6eaa06d5442416b7b8139e337a1598d2bae6a7f55c2d9d01f8c5dac69c004f75
-  iri_args: ['--testnet-coordinator',
-  'BTCAAFIH9CJIVIMWFMIHKFNWRTLJRKSTMRCVRE9CIP9AEDTOULVFRHQZT9QAQBZXXAZGBNMVOOKTKAXTB',
-  '--milestone-start', 
-  '0',
-  '--snapshot', 
-  './snapshot.txt',
-  '--testnet-no-coo-validation',
-  'true',
-  '--testnet',
-  'true'
+default_args: &args
+  ['--testnet-coordinator',
+   'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
+   '--mwm',
+   '1',
+   '--milestone-start',
+   '0',
+   '--testnet-no-coo-validation',
+   'true',
+   '--testnet',
+   'true',
+   '--snapshot',
+   './snapshot.txt',
+   '--local-snapshots-pruning-enabled',
+   'true',
+   '--local-snapshots-pruning-delay',
+   '10000',
+   '--remote',
+   'true',
+   '--remote-limit-api',
+   '""'
   ]
-  java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
 
-seeds: # For internal use by the regression system. 
-    - SEED
-    - SIID
+default_ixi: &ixi
+  ['IXI/LocalSnapshots.ixi']
+
+java_options: -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -javaagent:/opt/jacoco/lib/jacocoagent.jar=destfile=/iri/jacoco.exec,output=file,append=true,dumponexit=true
+
+defaults: &db_full
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_Db_With_LS_Db.tar.gz
+  db_checksum: 2055406bf312136d7cd0efa21248bd8cc9c407ab14ef0d18b921cf18c72c5270
+  iri_args: *args
+  ixis: *ixi
+
+db_with_snapshot: &db_with_snapshot
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_DB_and_Snapshot.tar
+  db_checksum: eabb81b0570a20e8d1c65c3d29e4b4e723de537ebca0eada536e3155d5a96972
+  iri_args: *args
+  ixis: *ixi
+
+db_with_ls_db: &db_with_ls_db
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_LS_Db.tar.gz
+  db_checksum: d217729fd5efb0432d179ec59472f283cd61e8ad4ca9aab32e5c1f82632a1a29
+  iri_args: *args
+  ixis: *ixi
+
+db_for_pruning: &db_for_pruning
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/PruningTestDB.tar
+  db_checksum: 15122ba80c0a03dc5b6b4186e5d880d0a1a15b5a6de48bafe4002c4c9b682221
+  iri_args: *args
+
+db_for_spent_addresses: &db_for_spent_addresses
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/SpentAddressesTestDB.tar
+  db_checksum: 7e15b2cbc76585d6483668cb1709201daa71314e7d488d9e7d71d7052479e73e
+  iri_args: *args
 
 nodes:
   nodeA-m1: #name
-    <<: *api_tests_config_files
-  
+    <<: *db_full
+
   nodeB-m1:
-    <<: *api_tests_config_files
+    <<: *db_with_snapshot
+
+  nodeC-m1:
+    <<: *db_with_ls_db
+
+  nodeD-m1:
+    <<: *db_for_pruning
+
+  nodeE-m1:
+    <<: *db_for_spent_addresses

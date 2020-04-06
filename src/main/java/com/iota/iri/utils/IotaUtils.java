@@ -141,7 +141,7 @@ public class IotaUtils {
         }
 
         //Default to GB
-        String sub = amount == humanReadableSize.length() ? "GB" : humanReadableSize.substring(spaceNdx);
+        String sub = amount == humanReadableSize.length() ? "gb" : humanReadableSize.substring(spaceNdx);
         switch (sub) {
             case "tb":
                 return (long) (amount * TB_FACTOR);

@@ -2,10 +2,9 @@ from iota import ProposedBundle, ProposedTransaction, Address, Tag
 from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
 from util.test_logic import value_fetch_logic as value_fetch
-import logging
+from util import logger as log
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = log.getLogger(__name__)
 
 
 def create_transaction_bundle(address, tag, value):

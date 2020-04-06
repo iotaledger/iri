@@ -1,5 +1,5 @@
 nodes:
-  nodeA:
+  nodeA-m4:
     host: localhost
     podip: localhost
     ports:
@@ -10,7 +10,7 @@ nodes:
       api: 14265
       gossip-tcp: 15600
       zmq-feed: 5556
-  nodeB:
+  nodeB-m4:
     host: localhost
     podip: localhost
     ports:

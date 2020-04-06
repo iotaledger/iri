@@ -162,7 +162,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return existingMilestone.getHash().equals(transactionViewModel.getHash()) ? VALID : INVALID;
             }
 
-            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle,
+            final List<TransactionViewModel> bundleTransactions = bundleValidator.validate(tangle, true,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
             if (bundleTransactions.isEmpty()) {
@@ -424,7 +424,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                 transaction.getTrunkTransactionHash(), transaction.getBranchTransactionHash(),
                 transaction.getBundleHash());
         tangle.publish("sn_trytes %s %s %d", Converter.trytes(transaction.trits()), transaction.getHash(),
-                transaction.getTransaction().snapshot);
+                transaction.getTransaction().snapshot.get());
     }
 
     /**

@@ -264,7 +264,7 @@ public class NeighborImplTest {
             Heartbeat readHeartbeat = neighbor.heartbeat();
             assertEquals("fsmi of sent and read heartbeat should be equal", readHeartbeat.getFirstSolidMilestoneIndex(), heartbeat.getFirstSolidMilestoneIndex());
         } catch (IOException e) {
-            fail("didnt expect an exception");
+            fail("didnt expect an exception: " + e.getMessage());
         }
     }
 }

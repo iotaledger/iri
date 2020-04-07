@@ -32,7 +32,7 @@ def generate_transaction_and_attach(step, node):
     setattr(static, "TEST_STORE_TRANSACTION", transaction.get('trytes'))
     return transaction
     
-@step(r'Then a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:')
+@step(r'a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:')
 def fake_value_transaction(step):
     """
     Creates a bundle that both receives and sends value between 2 addresses.

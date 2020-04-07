@@ -3,7 +3,7 @@ from iota import Transaction
 from util import static_vals as static
 from util import logger as log
 from util.test_logic import api_test_logic as api_utils
-from util.transaction_bundle_logic import transaction_logic as transactions
+from util.transaction_bundle_logic import bundle_scenario_setup, transaction_logic as transactions
 from util.milestone_logic import milestones
 from time import sleep
 
@@ -32,6 +32,78 @@ def generate_transaction_and_attach(step, node):
     setattr(static, "TEST_STORE_TRANSACTION", transaction.get('trytes'))
     return transaction
 
+@step(r'a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:')
+def fake_value_transaction(step):
+    """
+    Creates a bundle that both receives and sends value between 2 addresses.
+    This makes the total ledger change zero
+    :param step.hashes: A gherkin table present in the feature file specifying the
+                        arguments and the associated type.
+    """
+
+    node = world.config['nodeId']
+    previous = world.responses['evaluate_and_send'][node][0]
+
+    seed = get_step_value(step, "seed")[0]
+    api = api_utils.prepare_api_call(node, seed=seed)
+
+    logger.info('Finding Transactions')
+    gtta_transactions = api.get_transactions_to_approve(depth=3)
+
+    trunk = previous
+    branch = gtta_transactions['branchTransaction']
+
+    value = int(get_step_value(step, "value"))
+    tag = get_step_value(step, "tag")
+
+    bundle = bundle_scenario_setup.create_fake_transfer_bundle(api, seed, tag, value)
+
+    argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
+                     'trytes': bundle.as_tryte_strings(), 'min_weight_magnitude': 14}
+
+    bundle = transactions.attach_store_and_broadcast(api, argument_list)
+    transaction_trytes = bundle.get('trytes')
+    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
+    set_previous_transaction(node, [transaction_hash.hash])
+
+@step(r'a double spend is generated referencing the previous transaction with:')
+def create_double_spent(step):
+    """
+    Creates two bundles which both try to spend the same address.
+    This test fails if they are both confirmed
+    :param step.hashes: A gherkin table present in the feature file specifying the
+                        arguments and the associated type.
+    """
+    node = world.config['nodeId']
+    previous = world.responses['evaluate_and_send'][node][0]
+    seed = get_step_value(step, "seed")
+    api = api_utils.prepare_api_call(node, seed=seed)
+
+    tag = get_step_value(step, "tag")[0]
+    value = int(get_step_value(step, "value"))
+
+    response = api.get_inputs(start=0, stop=1, threshold=0, security_level=2)
+    addressFrom = response['inputs'][0]
+
+    bundles = bundle_scenario_setup.create_double_spend_bundles(seed, addressFrom, static.DOUBLE_SPEND_ADDRESSES[0], static.DOUBLE_SPEND_ADDRESSES[1], tag, value)
+
+    logger.info('Finding Transactions')
+    gtta_transactions = api.get_transactions_to_approve(depth=3)
+    trunk1 = previous
+    branch1 = gtta_transactions['branchTransaction']
+    trunk2 = previous
+    branch2 = gtta_transactions['trunkTransaction']
+
+    argument_list = {'trunk_transaction': trunk1, 'branch_transaction': branch1,
+                     'trytes': bundles[0].as_tryte_strings(), 'min_weight_magnitude': 14}
+    firstDoubleSpend = Transaction.from_tryte_string( transactions.attach_store_and_broadcast(api, argument_list).get('trytes')[0] )
+        
+    argument_list = {'trunk_transaction': trunk2, 'branch_transaction': branch2,
+                     'trytes': bundles[1].as_tryte_strings(), 'min_weight_magnitude': 14}
+    secondDoubleSpend = Transaction.from_tryte_string( transactions.attach_store_and_broadcast(api, argument_list).get('trytes')[0] )
+
+    set_previous_transaction(node, [firstDoubleSpend.hash])
+    set_world_object(node, "firstDoubleSpend", [firstDoubleSpend.hash])
 
 @step(r'an inconsistent transaction is generated on "([^"]+)"')
 def create_inconsistent_transaction(step, node):
@@ -55,10 +127,7 @@ def create_inconsistent_transaction(step, node):
     transaction_trytes = transaction.get('trytes')
     transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
 
-    if 'inconsistentTransactions' not in world.responses:
-        world.responses['inconsistentTransactions'] = {}
-    world.responses['inconsistentTransactions'][node] = transaction_hash.hash
-
+    set_world_object(node, 'inconsistentTransactions', transaction_hash.hash)
 
 @step(r'a stitching transaction is issued on "([^"]*)" with the tag "([^"]*)"')
 def issue_stitching_transaction(step, node, tag):
@@ -84,10 +153,7 @@ def issue_stitching_transaction(step, node, tag):
 
     # Finds transaction hash and stores it in world
     bundlehash = api.find_transactions(bundles=[bundle.hash])
-    if 'previousTransaction' not in world.responses:
-        world.responses['previousTransaction'] = {}
-    world.responses['previousTransaction'][node] = bundlehash['hashes'][0]
-
+    set_previous_transaction(node, bundlehash['hashes'][0])
 
 @step(r'a transaction is issued referencing the previous transaction')
 def reference_stitch_transaction(step):
@@ -99,13 +165,16 @@ def reference_stitch_transaction(step):
 
     transaction_bundle = transactions.create_transaction_bundle(referencing_address, 'REFERENCE9TAG', 0)
     branch =  api.get_transactions_to_approve(depth=3)['branchTransaction']
-    options = {'trunk_transaction': stitch, 'branch_transaction': branch, 'trytes':
+    options = {'trunk_transaction': stitch[0], 'branch_transaction': branch, 'trytes':
         transaction_bundle.as_tryte_strings(), 'min_weight_magnitude': 9}
 
-    transactions.attach_store_and_broadcast(api, options)
+    transaction = transactions.attach_store_and_broadcast(api, options)
+    transaction_trytes = transaction.get('trytes')
+    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
 
+    set_previous_transaction(node, [transaction_hash.hash])
 
-@step(r'"(\d+)" transactions are issued on "([^"]+)" with:')
+@step(r'"(\d+)" transactions? (?:is|are) issued on "([^"]+)" with:')
 def issue_multiple_transactions(step, num_transactions, node):
     transactions_to_store = []
     world.responses['evaluate_and_send'] = {}
@@ -154,7 +223,6 @@ def issue_a_milestone_with_reference(step, index):
 
     milestones.update_latest_milestone(world.config, node, milestone)
 
-
 @step(r'the next (\d+) milestones are issued')
 def issue_several_milestones(step, num_milestones):
     node = world.config['nodeId']
@@ -169,7 +237,6 @@ def issue_several_milestones(step, num_milestones):
         issue_a_milestone(step, index, node)
         #Give node a moment to update solid milestone
         wait_for_update(index, api)
-
 
 @step(r'milestone (\d+) is issued on "([^"]+)"')
 def issue_a_milestone(step, index, node):
@@ -193,6 +260,22 @@ def issue_a_milestone(step, index, node):
     milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
     world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
 
+def set_previous_transaction(node, txHash):
+   set_world_object(node, 'previousTransaction', txHash)
+
+def set_world_object(node, objectName, value):
+    if objectName not in world.responses:
+        world.responses[objectName] = {}
+    world.responses[objectName][node] = value
+
+def get_step_value(step, key_name):
+    for arg_index, arg in enumerate(step.hashes):
+        if arg['keys'] == key_name :
+            if arg['type'] == "staticValue" or arg['type'] == "staticList":
+                return getattr(static, arg['values'])
+            else:
+                return arg['values']
+    return 0
 
 def wait_for_update(index, api):
     updated = False

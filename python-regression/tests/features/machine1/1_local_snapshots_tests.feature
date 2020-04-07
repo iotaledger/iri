@@ -75,7 +75,6 @@ Feature: Test Bootstrapping With LS
       |keys                       |values                   |type             |
       |state                      |True                     |bool             |
 
-
   Scenario: Old transactions are pruned
     Takes a node with a large db and transaction pruning enabled, and checks to make sure that the transactions below
     the pruning depth are no longer present.

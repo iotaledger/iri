@@ -35,7 +35,7 @@ def create_double_spend_bundles(seedFrom, addressFrom, address1, address2, tag, 
     bundle1.send_unspent_inputs_to(Address(addressFrom))
     bundle1.finalize()
     bundle1.sign_inputs(KeyGenerator(seedFrom))
-    
+
     bundle2 = ProposedBundle()
     bundle2.add_transaction(ProposedTransaction(
         address = Address(address2),

@@ -101,7 +101,7 @@ def create_double_spent(step):
     argument_list = {'trunk_transaction': trunk2, 'branch_transaction': branch2,
                      'trytes': bundles[1].as_tryte_strings(), 'min_weight_magnitude': 14}
     secondDoubleSpend = Transaction.from_tryte_string( transactions.attach_store_and_broadcast(api, argument_list).get('trytes')[0] )
-         
+
     set_previous_transaction(node, [firstDoubleSpend.hash])
     set_world_object(node, "firstDoubleSpend", [firstDoubleSpend.hash])
 

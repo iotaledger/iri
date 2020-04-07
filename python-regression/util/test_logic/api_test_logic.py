@@ -77,6 +77,7 @@ def prepare_options(args, option_list):
 
             fetch_list = {
                 'int': value_fetch.fetch_int,
+                'intList': value_fetch.fetch_int_list,
                 'string': value_fetch.fetch_string,
                 'list': value_fetch.fetch_list,
                 'nodeAddress': value_fetch.fetch_node_address,
@@ -136,7 +137,8 @@ def fetch_call(api_call, api, options):
     try:
         response = call_list[api_call](**options)
     except ValueError as e:
-        logger.error(str(e))
+        if "filter_errors" in e.context:
+            logger.info(e.context["filter_errors"])
         response = None
 
     return response

@@ -42,5 +42,4 @@ def fetch_results(future_result, timeout):
         logger.debug('Response: {}'.format(response))
         return response
     except Exception as err:
-        logger.debug(err)
-        logger.info(err)
+        logger.error(err)

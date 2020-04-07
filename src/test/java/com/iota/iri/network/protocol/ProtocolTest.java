@@ -98,4 +98,34 @@ public class ProtocolTest {
         assertEquals("should be of type tx gossip message", ProtocolMessage.TRANSACTION_GOSSIP.getTypeID(), buf.get());
         assertEquals("should have correct message length", expectedMessageSize, buf.getShort());
     }
+
+    @Test
+    public void createHeartbeatPacket(){
+        Heartbeat heartbeat = new Heartbeat();
+        heartbeat.setFirstSolidMilestoneIndex(1);
+        heartbeat.setLastSolidMilestoneIndex(2);
+
+        ByteBuffer buf = Protocol.createHeartbeatPacket(heartbeat);
+        final int expectedMessageSize = Protocol.PROTOCOL_HEARTBEAT_BYTES_LENGTH;
+        assertEquals("buffer should have the right capacity",
+                Protocol.PROTOCOL_HEADER_BYTES_LENGTH + expectedMessageSize, buf.capacity());
+        assertEquals("should be of type heartbeat message", ProtocolMessage.HEARTBEAT.getTypeID(), buf.get());
+        assertEquals("should have correct message length", expectedMessageSize, buf.getShort());
+    }
+
+    @Test
+    public void parseHeartbeat() {
+        Heartbeat heartbeat;
+        try {
+            ByteBuffer buf = ByteBuffer.allocate(Protocol.PROTOCOL_HEARTBEAT_BYTES_LENGTH);
+            buf.putInt(1);
+            buf.putInt(2);
+            buf.flip();
+            heartbeat = Heartbeat.fromByteBuffer(buf);
+            assertEquals("should have correct first solid milestone index", heartbeat.getFirstSolidMilestoneIndex(), 1);
+            assertEquals("Should have correct last solid milestone index", heartbeat.getLastSolidMilestoneIndex(), 2);
+        } catch (Exception e) {
+            fail("didn't expect any exceptions");
+        }
+    }
 }

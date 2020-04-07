@@ -56,6 +56,11 @@ public class Protocol {
     public final static int GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH = 49;
 
     /**
+     * The amount of bytes to store first and last solid milestone index
+     */
+    public final static byte PROTOCOL_HEARTBEAT_BYTES_LENGTH = 8;
+
+    /**
      * Parses the given buffer into a {@link ProtocolHeader}.
      * 
      * @param buf the buffer to parse
@@ -98,6 +103,22 @@ public class Protocol {
         addProtocolHeader(buf, ProtocolMessage.TRANSACTION_GOSSIP, payloadLengthBytes);
         buf.put(truncatedTx);
         buf.put(requestedHash, 0, GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
+        buf.flip();
+        return buf;
+    }
+
+    /**
+     * Creates a new heartbeat packet.
+     *
+     * @param heartbeat           The heartbeat to add to the packet
+     * @return a {@link ByteBuffer} containing the transaction gossip packet.
+     */
+    public static ByteBuffer createHeartbeatPacket(Heartbeat heartbeat) {
+        final short payloadLengthBytes = Protocol.PROTOCOL_HEARTBEAT_BYTES_LENGTH;
+        ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
+        addProtocolHeader(buf, ProtocolMessage.HEARTBEAT, payloadLengthBytes);
+        buf.putInt(heartbeat.getFirstSolidMilestoneIndex());
+        buf.putInt(heartbeat.getLastSolidMilestoneIndex());
         buf.flip();
         return buf;
     }

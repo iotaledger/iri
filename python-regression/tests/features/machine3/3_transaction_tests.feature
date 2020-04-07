@@ -3,7 +3,7 @@ Feature: Test transaction confirmation
     Scenario: Zero Value Transactions are confirmed
         In this test, a number of zero value transactions will be made to a specified node.
         A milestone will be issued that references these transactions, and this should
-        confirm the transations.
+        confirm the transactions.
 
         Given "10" transactions are issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
@@ -12,7 +12,7 @@ Feature: Test transaction confirmation
         |tag                    |ZERO9VALUE                 |string         |
 
         #In the default DB, the current index is 50. The next milestone issued should be 51.
-        When a milestone is issued with index 51 and references:
+        Then a milestone is issued with index 51 and references:
         |keys                   |values                     |type           |
         |transactions           |evaluate_and_send          |responseValue  |
 
@@ -46,7 +46,7 @@ Feature: Test transaction confirmation
     Scenario: Value Transactions are confirmed
         In this test, a number of value transactions will be made to a specified node.
         A milestone will be issued that references these transactions, and this should
-        confirm the transations.
+        confirm the transactions.
 
         Given "10" transactions are issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
@@ -56,7 +56,7 @@ Feature: Test transaction confirmation
         |tag                    |VALUE9TRANSACTION          |string         |
 
         #In the default test, the latest sent index will be 51. The next milestone issued should be 52.
-        When a milestone is issued with index 52 and references:
+        Then a milestone is issued with index 52 and references:
         |keys                   |values                     |type           |
         |transactions           |evaluate_and_send          |responseValue  |
 
@@ -90,19 +90,19 @@ Feature: Test transaction confirmation
         We want to ascertain that ledger state is always calculated correctly.
         Even in the presence of a bundle that handles funds but without changing address
 
-        Then "1" transaction is issued on "nodeA-m3" with:
+        Given "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
         |tag                    |ZERO9VALUE                 |string         |
 
-        Then a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:
+        And a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:
         |keys                   |values                     |type           |
         |seed                   |THE_BANK                   |staticList     |
         |value                  |100                        |int            |  
         |tag                    |FAKE9VALUE                 |string         |
 
-        Then a transaction is issued referencing the previous transaction
+        And a transaction is issued referencing the previous transaction
         |keys                   |values                     |type           |
         |seed                   |THE_BANK                   |staticList     |
         |address                |TEST_ADDRESS               |staticValue    |
@@ -110,14 +110,14 @@ Feature: Test transaction confirmation
         |tag                    |VALUE9TRANSACTION          |string         |
 
         #In the default test, the latest sent index will be 52. The next milestone issued should be 53.
-        When a milestone is issued with index 53 and references:
+        Then a milestone is issued with index 53 and references:
         |keys                   |values                     |type           |
         |transactions           |previousTransaction        |responseValue  |
 
         #Give the node time to solidify the milestone
         And we wait "15" second/seconds
         
-        Given "getBalances" is called on "nodeA-m3" with:
+        When "getBalances" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |addresses              |FAKE_SPEND_ADDRESSES       |staticList     |
 
@@ -129,27 +129,27 @@ Feature: Test transaction confirmation
         We want to ascertain that ledger state is always calculated correctly.
         Even in the presence of double spend, the confirmed state should have spent only once
 
-        Then "1" transaction is issued on "nodeA-m3" with:
+        Given "1" transaction is issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
         |tag                    |ZERO9VALUE                 |string         |
 
-        Then a double spend is generated referencing the previous transaction with:
+        And a double spend is generated referencing the previous transaction with:
         |keys                   |values                     |type           |
         |seed                   |DOUBLE_SPEND_SEED          |staticValue    |
         |value                  |1000                       |int            |
         |tag                    |FAKE9VALUE                 |string         |
 
         #In the default test, the latest sent index will be 53. The next milestone issued should be 54.
-        When a milestone is issued with index 54 and references:
+        Then a milestone is issued with index 54 and references:
         |keys                   |values                     |type           |
         |transactions           |firstDoubleSpend           |responseValue  |
 
         #Give the node time to solidify the milestone
         And we wait "15" second/seconds
         
-        Given "getBalances" is called on "nodeA-m3" with:
+        When "getBalances" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |addresses              |DOUBLE_SPEND_ADDRESSES     |staticList     |
 

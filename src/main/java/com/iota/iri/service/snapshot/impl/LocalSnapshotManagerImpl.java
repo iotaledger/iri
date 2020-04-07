@@ -22,6 +22,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * <p>
  * Creates a manager for the local snapshots, that takes care of automatically creating local snapshots when the defined

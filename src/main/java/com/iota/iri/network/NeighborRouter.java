@@ -5,6 +5,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
+import com.iota.iri.network.protocol.Heartbeat;
 
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,14 @@ public interface NeighborRouter {
      */
     void gossipTransactionTo(Neighbor neighbor, TransactionViewModel tvm, boolean useHashOfTVM)
             throws Exception;
+
+    /**
+     * Gossips the given heartbeat to the given neighbor.
+     *
+     * @param neighbor  The {@link Neighbor} to gossip the heartbeat to
+     * @param heartbeat The {@link Heartbeat} to gossip
+     */
+    void gossipHeartbeatTo(Neighbor neighbor, Heartbeat heartbeat);
 
     /**
      * Shut downs the {@link NeighborRouter} and all currently open connections.

@@ -16,6 +16,7 @@ public class NeighborMetricsImpl implements NeighborMetrics {
     private AtomicLong sentTxsCount = new AtomicLong();
     private AtomicLong newTxsCount = new AtomicLong();
     private AtomicLong droppedSendPacketsCount = new AtomicLong();
+    private AtomicLong heartbeatCount = new AtomicLong();
 
     @Override
     public long getAllTransactionsCount() {
@@ -85,5 +86,15 @@ public class NeighborMetricsImpl implements NeighborMetrics {
     @Override
     public long incrDroppedSendPacketsCount() {
         return droppedSendPacketsCount.incrementAndGet();
+    }
+
+    @Override
+    public long incrSentHeartbeatCount() {
+        return heartbeatCount.incrementAndGet();
+    }
+
+    @Override
+    public long getHeartbeatCount() {
+        return heartbeatCount.get();
     }
 }

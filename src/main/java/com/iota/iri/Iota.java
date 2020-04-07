@@ -4,6 +4,7 @@ import com.iota.iri.cache.CacheManager;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.network.HeartbeatPulse;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
@@ -113,6 +114,7 @@ public class Iota {
 
     public LocalSnapshotsPersistenceProvider localSnapshotsDb;
     public final CacheManager cacheManager;
+    public final HeartbeatPulse heartbeatPulse;
 
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
@@ -130,7 +132,7 @@ public class Iota {
             TransactionRequester transactionRequester, NeighborRouter neighborRouter,
             TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
             TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
+            CacheManager cacheManager, TransactionSolidifier transactionSolidifier, HeartbeatPulse heartbeatPulse) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -160,6 +162,7 @@ public class Iota {
 
         this.tipsSelector = tipsSelector;
         this.cacheManager = cacheManager;
+        this.heartbeatPulse = heartbeatPulse;
     }
 
     private void initDependencies() throws SnapshotException, SpentAddressesException {
@@ -223,6 +226,8 @@ public class Iota {
         if (transactionPruner != null) {
             transactionPruner.start();
         }
+
+        heartbeatPulse.start();
     }
 
     private void rescanDb() throws Exception {
@@ -270,6 +275,7 @@ public class Iota {
             localSnapshotManager.shutdown();
         }
 
+        heartbeatPulse.shutdown();
         tipsRequester.shutdown();
         txPipeline.shutdown();
         neighborRouter.shutdown();

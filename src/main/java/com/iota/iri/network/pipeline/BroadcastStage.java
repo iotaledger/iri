@@ -3,6 +3,7 @@ package com.iota.iri.network.pipeline;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.network.protocol.Heartbeat;
 import com.iota.iri.service.validation.TransactionSolidifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,15 @@ public class BroadcastStage implements Stage {
                 continue;
             }
             try {
-                neighborRouter.gossipTransactionTo(neighbor, tvm);
+                boolean shouldGossip = true;
+                //neighbor supports STING. Else fall backwards
+               if(neighbor.getProtocolVersion() >= 2){
+                   Heartbeat heartbeat = neighbor.heartbeat();
+                   shouldGossip = tvm.snapshotIndex() >= heartbeat.getFirstSolidMilestoneIndex() && tvm.snapshotIndex() <= heartbeat.getLastSolidMilestoneIndex();
+               }
+               if(shouldGossip){
+                   neighborRouter.gossipTransactionTo(neighbor, tvm);
+               }
             } catch (Exception e) {
                 log.error(e.getMessage());
             }

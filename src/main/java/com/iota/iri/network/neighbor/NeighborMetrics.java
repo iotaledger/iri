@@ -102,4 +102,16 @@ public interface NeighborMetrics {
      * @return the number of packets dropped from the neighbor's send queue
      */
     long incrDroppedSendPacketsCount();
+
+    /**
+     * Increments the sent heartbeat count
+     * @return The number of heartbeat that have been sent
+     */
+    long incrSentHeartbeatCount();
+
+    /**
+     * Gets the heartbeat count
+     * @return The heartbeat count
+     */
+    long getHeartbeatCount();
 }

@@ -44,6 +44,7 @@ import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.restserver.RestConnector;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
+import com.iota.iri.service.tipselection.TipSelSolidifier;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.TipSelectionCancelledException;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
@@ -83,11 +84,6 @@ import java.util.stream.IntStream;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
-
-import org.apache.commons.lang3.StringUtils;
-import org.iota.mddoclet.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -151,13 +147,14 @@ public class API {
     private final TipsViewModel tipsViewModel;
     private final TransactionValidator transactionValidator;
     private final LatestMilestoneTracker latestMilestoneTracker;
-    
+    private final TipSelSolidifier dummySolidifier;
+
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
 
     private final String[] features;
-    
+
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private final Gson gson = new GsonBuilder().create();
@@ -176,9 +173,8 @@ public class API {
 
     /**
      * Starts loading the IOTA API, parameters do not have to be initialized.
-     * 
-     * @param configuration Holds IRI configuration parameters.
-     * @param ixi If a command is not in the standard API, 
+     *  @param configuration Holds IRI configuration parameters.
+     * @param ixi If a command is not in the standard API,
      *            we try to process it as a Nashorn JavaScript module through {@link IXI}
      * @param transactionRequester Service where transactions get requested
      * @param spentAddressesService Service to check if addresses are spent
@@ -191,12 +187,14 @@ public class API {
      * @param tipsViewModel Contains the current tips of this node
      * @param transactionValidator Validates transactions
      * @param latestMilestoneTracker Service that tracks the latest milestone
+     * @param dummySolidifier Solidifies transactions. A dummy object is used by default as a placeholder.
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
             SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
-            SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
-            TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline) {
+            SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter,
+            TipSelector tipsSelector, TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline,
+            TipSelSolidifier dummySolidifier) {
         this.configuration = configuration;
         this.ixi = ixi;
         
@@ -212,6 +210,7 @@ public class API {
         this.tipsViewModel = tipsViewModel;
         this.transactionValidator = transactionValidator;
         this.latestMilestoneTracker = latestMilestoneTracker;
+        this.dummySolidifier = dummySolidifier;
         
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
@@ -445,7 +444,9 @@ public class API {
         if (state) {
             snapshotProvider.getLatestSnapshot().lockRead();
             try {
-                WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, configuration);
+                WalkValidatorImpl walkValidator = new WalkValidatorImpl(
+                        tangle, snapshotProvider, ledgerService, dummySolidifier,
+                        configuration);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
                         state = false;

@@ -1,5 +1,6 @@
 package com.iota.iri.service.milestone;
 
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 
 /**
@@ -8,6 +9,19 @@ import com.iota.iri.model.Hash;
  * missing transactions until the milestones become solid.
  */
 public interface MilestoneSolidifier {
+
+    /**
+     * <p>
+     * Defines the maximum amount of transactions that are allowed to get processed while trying to solidify a
+     * milestone.
+     * </p>
+     * <p>
+     * Note: We want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
+     *       long running {@link TransactionValidator#checkSolidity(Hash)} call.
+     * </p>
+     */
+    int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;
+
     /**
      * This method allows us to add new milestones to the solidifier that will consequently be solidified.
      *

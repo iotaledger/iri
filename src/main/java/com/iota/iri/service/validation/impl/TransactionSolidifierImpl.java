@@ -129,7 +129,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     public boolean addMilestoneToSolidificationQueue(Hash hash){
         try{
             TransactionViewModel tx = fromHash(tangle, hash);
-            if(tx.isSolid()){
+            if (tx.isSolid()) {
                 transactionPropagator.addToPropagationQueue(hash);
                 return true;
             }

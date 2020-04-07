@@ -2,6 +2,7 @@ package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.tipselection.TipSelSolidifier;
 
 import java.util.Set;
@@ -40,7 +41,7 @@ public class AsyncTipSelSolidifier implements TipSelSolidifier {
             solidExecutor.submit(() -> {
                 try {
                     log.debug("attempting to solidify transaction {}", transactionHash);
-                    transactionValidator.checkSolidity(transactionHash);
+                    transactionValidator.checkSolidity(transactionHash, MilestoneSolidifier.SOLIDIFICATION_TRANSACTIONS_LIMIT);
                 } catch (Exception e) {
                     log.error("Failed to solidify transaction during a walk", e);
                 }

@@ -71,20 +71,14 @@ public class SolidifyStage implements Stage {
     }
 
     private ProcessingContext broadcastTip(ProcessingContext ctx, SolidifyPayload payload) throws  Exception{
-        // First check if there is a transaction available to broadcast from the broadcast queue
-        TransactionViewModel tip = txSolidifier.getNextTxInBroadcastQueue();
+        Hash tipHash = tipsViewModel.getRandomSolidTipHash();
 
-        // If there is not a transaction available from the broadcast queue, instead try to send a solid tip
-        if (tip == null) {
-            Hash tipHash = tipsViewModel.getRandomSolidTipHash();
-
-            if (tipHash == null) {
-                ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
-                return ctx;
-            }
-
-            tip = fromHash(tangle, tipHash);
+        if (tipHash == null) {
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.FINISH);
+            return ctx;
         }
+
+        TransactionViewModel tip = fromHash(tangle, tipHash);
 
         ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
         ctx.setPayload(new BroadcastPayload(payload.getOriginNeighbor(), tip));

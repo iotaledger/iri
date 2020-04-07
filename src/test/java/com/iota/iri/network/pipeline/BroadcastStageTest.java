@@ -9,6 +9,7 @@ import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.iota.iri.service.validation.TransactionSolidifier;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -20,6 +21,9 @@ public class BroadcastStageTest {
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
+
+    @Mock
+    private TransactionSolidifier transactionSolidifier;
 
     @Mock
     private NeighborRouter neighborRouter;
@@ -38,7 +42,7 @@ public class BroadcastStageTest {
     public void doesntGossipToOriginNeighbor() {
         Mockito.when(neighborRouter.getConnectedNeighbors()).thenReturn(neighbors);
 
-        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter);
+        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter, transactionSolidifier);
         TransactionViewModel tvm = new TransactionViewModel(new Transaction(), null);
         BroadcastPayload broadcastPayload = new BroadcastPayload(neighborA, tvm);
         ProcessingContext ctx = new ProcessingContext(null, broadcastPayload);
@@ -58,7 +62,7 @@ public class BroadcastStageTest {
     public void gossipsToAllIfNoOriginNeighbor() {
         Mockito.when(neighborRouter.getConnectedNeighbors()).thenReturn(neighbors);
 
-        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter);
+        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter, transactionSolidifier);
         TransactionViewModel tvm = new TransactionViewModel(new Transaction(), null);
         BroadcastPayload broadcastPayload = new BroadcastPayload(null, tvm);
         ProcessingContext ctx = new ProcessingContext(null, broadcastPayload);

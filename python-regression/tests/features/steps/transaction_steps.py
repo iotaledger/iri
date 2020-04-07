@@ -78,26 +78,26 @@ def create_double_spent(step):
     previous = world.responses['evaluate_and_send'][node][0]
     seed = get_step_value(step, "seed")
     api = api_utils.prepare_api_call(node, seed=seed)
-    
+
     tag = get_step_value(step, "tag")[0]
     value = int(get_step_value(step, "value"))
-    
+
     response = api.get_inputs(start=0, stop=1, threshold=0, security_level=2)
     addressFrom = response['inputs'][0]
-    
+
     bundles = bundle_scenario_setup.create_double_spend_bundles(seed, addressFrom, static.DOUBLE_SPEND_ADDRESSES[0], static.DOUBLE_SPEND_ADDRESSES[1], tag, value)
-        
+
     logger.info('Finding Transactions')
     gtta_transactions = api.get_transactions_to_approve(depth=3)
     trunk1 = previous
     branch1 = gtta_transactions['branchTransaction']
     trunk2 = previous
     branch2 = gtta_transactions['trunkTransaction']
-    
+
     argument_list = {'trunk_transaction': trunk1, 'branch_transaction': branch1,
                      'trytes': bundles[0].as_tryte_strings(), 'min_weight_magnitude': 14}
     firstDoubleSpend = Transaction.from_tryte_string( transactions.attach_store_and_broadcast(api, argument_list).get('trytes')[0] )
-                     
+        
     argument_list = {'trunk_transaction': trunk2, 'branch_transaction': branch2,
                      'trytes': bundles[1].as_tryte_strings(), 'min_weight_magnitude': 14}
     secondDoubleSpend = Transaction.from_tryte_string( transactions.attach_store_and_broadcast(api, argument_list).get('trytes')[0] )
@@ -129,7 +129,6 @@ def create_inconsistent_transaction(step, node):
 
     set_world_object(node, 'inconsistentTransactions', transaction_hash.hash)
 
-
 @step(r'a stitching transaction is issued on "([^"]*)" with the tag "([^"]*)"')
 def issue_stitching_transaction(step, node, tag):
     world.config['nodeId'] = node
@@ -156,7 +155,6 @@ def issue_stitching_transaction(step, node, tag):
     bundlehash = api.find_transactions(bundles=[bundle.hash])
     set_previous_transaction(node, bundlehash['hashes'][0])
 
-
 @step(r'a transaction is issued referencing the previous transaction')
 def reference_stitch_transaction(step):
     node = world.config['nodeId']
@@ -175,7 +173,6 @@ def reference_stitch_transaction(step):
     transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
 
     set_previous_transaction(node, [transaction_hash.hash])
-
 
 @step(r'"(\d+)" transactions? (?:is|are) issued on "([^"]+)" with:')
 def issue_multiple_transactions(step, num_transactions, node):
@@ -226,7 +223,6 @@ def issue_a_milestone_with_reference(step, index):
 
     milestones.update_latest_milestone(world.config, node, milestone)
 
-
 @step(r'the next (\d+) milestones are issued')
 def issue_several_milestones(step, num_milestones):
     node = world.config['nodeId']
@@ -241,7 +237,6 @@ def issue_several_milestones(step, num_milestones):
         issue_a_milestone(step, index, node)
         #Give node a moment to update solid milestone
         wait_for_update(index, api)
-
 
 @step(r'milestone (\d+) is issued on "([^"]+)"')
 def issue_a_milestone(step, index, node):

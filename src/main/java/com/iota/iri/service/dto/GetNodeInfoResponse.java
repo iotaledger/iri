@@ -70,8 +70,8 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private int latestSolidSubtangleMilestoneIndex;
     
     /**
-     * The start index of the milestones. 
-     * This index is encoded in each milestone transaction by the coordinator
+	 * The index of the milestone from which the node started synchronizing when it first joined the network.
+	 * The Coordinator encodes this index in each milestone transaction.
      */
     private int milestoneStartIndex;
     
@@ -122,6 +122,11 @@ public class GetNodeInfoResponse extends AbstractResponse {
      * The address of the Coordinator being followed by this node.
      */
     private String coordinatorAddress;
+    
+    /**
+     * The db size in bytes, as estimated by all total persistence providers
+     */
+    private long dbSizeInBytes;
 
     /**
      * Creates a new {@link GetNodeInfoResponse}
@@ -146,13 +151,14 @@ public class GetNodeInfoResponse extends AbstractResponse {
      * @param numberOfTransactionsToRequest {@link #transactionsToRequest}
      * @param features {@link #features}
      * @param coordinatorAddress {@link #coordinatorAddress}
+     * @param dbSizeInBytes {@link #dbSizeInBytes}
      * @return a {@link GetNodeInfoResponse} filled with all the provided parameters
      */
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,
 	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex, int milestoneStartIndex,
 	        int lastSnapshottedMilestoneIndex, int neighbors, int packetsQueueSize, long currentTimeMillis, int tips, 
-	        int numberOfTransactionsToRequest,  String[] features, String coordinatorAddress) {
+	        int numberOfTransactionsToRequest,  String[] features, String coordinatorAddress, long dbSizeInBytes) {
 		final GetNodeInfoResponse res = new GetNodeInfoResponse();
 		res.appName = appName;
 		res.appVersion = appVersion;
@@ -179,6 +185,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		
 		res.features = features;
 		res.coordinatorAddress = coordinatorAddress;
+		res.dbSizeInBytes = dbSizeInBytes;
 		return res;
 	}
 

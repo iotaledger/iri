@@ -57,6 +57,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private NeighborMetrics metrics = new NeighborMetricsImpl();
     private MessageReader msgReader;
     private Handshake handshake = new Handshake();
+    private Heartbeat heartbeat = new Heartbeat();
 
     /**
      * Creates a new {@link NeighborImpl} using the given channel.
@@ -83,6 +84,12 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
             handshake.setState(Handshake.State.FAILED);
         }
         return handshake;
+    }
+
+    @Override
+    public Heartbeat heartbeat() throws IOException {
+        read();
+        return heartbeat;
     }
 
     @Override
@@ -155,6 +162,9 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                 break;
             case TRANSACTION_GOSSIP:
                 txPipeline.process(this, msg);
+                break;
+            case HEARTBEAT:
+                heartbeat = Heartbeat.fromByteBuffer(msg);
                 break;
             default:
                 // do nothing

@@ -58,6 +58,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private MessageReader msgReader;
     private Handshake handshake = new Handshake();
     private Heartbeat heartbeat = new Heartbeat();
+    private MilestoneRequest milestoneRequest = new MilestoneRequest();
 
     /**
      * Creates a new {@link NeighborImpl} using the given channel.
@@ -90,6 +91,11 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     public Heartbeat heartbeat() throws IOException {
         read();
         return heartbeat;
+    }
+
+    public MilestoneRequest milestoneRequest() throws IOException{
+        read();
+        return milestoneRequest;
     }
 
     @Override
@@ -165,6 +171,9 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                 break;
             case HEARTBEAT:
                 heartbeat = Heartbeat.fromByteBuffer(msg);
+                break;
+            case MS_REQUEST:
+                milestoneRequest = MilestoneRequest.fromByteBuffer(msg);
                 break;
             default:
                 // do nothing

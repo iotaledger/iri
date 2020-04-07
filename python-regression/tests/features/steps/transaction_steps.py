@@ -31,7 +31,7 @@ def generate_transaction_and_attach(step, node):
 
     setattr(static, "TEST_STORE_TRANSACTION", transaction.get('trytes'))
     return transaction
-    
+
 @step(r'a value bundle which moves funds back and forth from an address is generated referencing the previous transaction with:')
 def fake_value_transaction(step):
     """
@@ -40,24 +40,24 @@ def fake_value_transaction(step):
     :param step.hashes: A gherkin table present in the feature file specifying the
                         arguments and the associated type.
     """
-    
+
     node = world.config['nodeId']
     previous = world.responses['evaluate_and_send'][node][0]
-    
+
     seed = get_step_value(step, "seed")[0]
     api = api_utils.prepare_api_call(node, seed=seed)
-    
+
     logger.info('Finding Transactions')
     gtta_transactions = api.get_transactions_to_approve(depth=3)
 
     trunk = previous
     branch = gtta_transactions['branchTransaction']
-    
+
     value = int(get_step_value(step, "value"))
     tag = get_step_value(step, "tag")
-    
+
     bundle = bundle_scenario_setup.create_fake_transfer_bundle(api, seed, tag, value)
-    
+
     argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
                      'trytes': bundle.as_tryte_strings(), 'min_weight_magnitude': 14}
 

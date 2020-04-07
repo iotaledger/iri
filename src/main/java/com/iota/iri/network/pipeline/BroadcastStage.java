@@ -58,6 +58,8 @@ public class BroadcastStage implements Stage {
             }
         }
 
+        // Check the transaction solidifier to see if there are solid transactions that need to be broadcast.
+        // If so, forward them to the BroadcastStageQueue to be processed.
         TransactionViewModel transactionToBroadcast;
         if((transactionToBroadcast = transactionSolidifier.getNextTxInBroadcastQueue()) != null){
             ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);

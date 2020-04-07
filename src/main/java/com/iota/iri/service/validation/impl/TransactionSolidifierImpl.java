@@ -281,7 +281,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     }
 
     @VisibleForTesting
-    Set<Hash> getSolidificationQueue(){
+    Set<Hash> getSolidificationSet(){
         return new LinkedHashSet<>(transactionsToSolidify);
     }
 

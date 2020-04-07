@@ -135,7 +135,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             }
             addToSolidificationQueue(hash);
             return false;
-        }catch(Exception e){
+        } catch (Exception e) {
             log.error("Error adding milestone to solidification queue", e);
             return false;
         }

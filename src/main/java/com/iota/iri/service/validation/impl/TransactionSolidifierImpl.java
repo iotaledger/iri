@@ -181,8 +181,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                 tvm.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
 
                 if(!tvm.isSolid()){
-                    tvm.updateSolid(true);
-                    tvm.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
+                    tvm.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
                 }
                 addToBroadcastQueue(tvm);
                 transactionPropagator.addToPropagationQueue(tvm.getHash());
@@ -244,7 +243,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                 solid = false;
             }
             if(solid) {
-                transactionViewModel.updateSolid(true);
+                transactionViewModel.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
                 transactionViewModel.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
                 transactionPropagator.addToPropagationQueue(transactionViewModel.getHash());
                 addToBroadcastQueue(transactionViewModel);

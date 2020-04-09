@@ -312,10 +312,7 @@ public class TransactionViewModel {
             return;
         }
 
-        TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
-        if (cachedTvm != null) {
-            this.shouldPersist = true;
-        }
+        this.shouldPersist = true;
         cachePut(tangle, this, hash);
         tangle.updateMessageQueueProvider(transaction, hash, item);
     }
@@ -515,10 +512,14 @@ public class TransactionViewModel {
     /**
      * Sets the {@link Transaction#arrivalTime}.
      *
-     * @param time The time to be set in the {@link Transaction}
+     * @param tangle            The tangle reference for the database.
+     * @param initialSnapshot   snapshot that acts as genesis
+     * @param time              The time to be set in the {@link Transaction}
+     * @throws Exception        Exception
      */
-    public void setArrivalTime(long time) {
+    public void setArrivalTime(Tangle tangle, Snapshot initialSnapshot, long time) throws Exception {
         transaction.arrivalTime = time;
+        update(tangle, initialSnapshot, "arrivalTime");
     }
 
     /** @return The {@link Transaction#arrivalTime} */
@@ -784,12 +785,15 @@ public class TransactionViewModel {
      *
      * Used by the {@link TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
      *
-     * @param solid The solidity of the transaction in the database
+     * @param tangle            The tangle reference for the database.
+     * @param initialSnapshot   snapshot that acts as genesis
+     * @param solid             The solidity of the transaction in the database
      * @return True if the {@link Transaction#solid} has been updated, False if not.
      */
-    public boolean updateSolid(boolean solid) throws Exception {
+    public boolean updateSolid(Tangle tangle, Snapshot initialSnapshot, boolean solid) throws Exception {
         if (solid != transaction.solid.get()) {
             transaction.solid.set(solid);
+            update(tangle, initialSnapshot, "solid");
             return true;
         }
         return false;
@@ -905,10 +909,14 @@ public class TransactionViewModel {
     /**
      * Updates the {@link Transaction#sender}.
      *
-     * @param sender The sender of the {@link Transaction}
+     * @param tangle            The tangle reference for the database.
+     * @param initialSnapshot   snapshot that acts as genesis
+     * @param sender            The sender of the {@link Transaction}
+     * @throws Exception        Exception
      */
-    public void updateSender(String sender) throws Exception {
+    public void updateSender(Tangle tangle, Snapshot initialSnapshot, String sender) throws Exception {
         transaction.sender.set(sender);
+        this.update(tangle, initialSnapshot, "sender");
     }
 
     /** @return The {@link Transaction#sender} */

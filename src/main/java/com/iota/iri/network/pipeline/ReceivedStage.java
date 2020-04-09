@@ -63,8 +63,8 @@ public class ReceivedStage implements Stage {
         }
 
         if (stored) {
-            tvm.setArrivalTime(System.currentTimeMillis());
             try {
+                tvm.setArrivalTime(tangle, snapshotProvider.getInitialSnapshot(), System.currentTimeMillis());
                 txSolidifier.updateStatus(tvm);
 
                 // free up the recently requested transaction set
@@ -77,9 +77,8 @@ public class ReceivedStage implements Stage {
 
                 // neighbor might be null because tx came from a broadcastTransaction command
                 if (originNeighbor != null) {
-                    tvm.updateSender(originNeighbor.getHostAddressAndPort());
+                    tvm.updateSender(tangle, snapshotProvider.getInitialSnapshot(), originNeighbor.getHostAddressAndPort());
                 }
-                tvm.update(tangle, snapshotProvider.getInitialSnapshot(), "arrivalTime|sender");
             } catch (Exception e) {
                 log.error("error updating newly received tx", e);
             }

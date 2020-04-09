@@ -54,8 +54,8 @@ public class ReceivedStageTest {
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);
 
-        Mockito.verify(tvm).setArrivalTime(Mockito.anyLong());
-        Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(tvm).setArrivalTime(Mockito.any(), Mockito.any(), Mockito.anyLong());
+        Mockito.verify(tvm).updateSender(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester).requestTrunkAndBranch(Mockito.any());
         assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.SOLIDIFY,
@@ -75,7 +75,7 @@ public class ReceivedStageTest {
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);
 
-        Mockito.verify(tvm, Mockito.never()).setArrivalTime(Mockito.anyLong());
+        Mockito.verify(tvm, Mockito.never()).setArrivalTime(Mockito.any(), Mockito.any(), Mockito.anyLong());
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester, Mockito.never()).requestTrunkAndBranch(Mockito.any());

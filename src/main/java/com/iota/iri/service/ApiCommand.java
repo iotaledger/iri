@@ -58,11 +58,6 @@ public enum ApiCommand {
     GET_NODE_API_CONFIG("getNodeAPIConfiguration"),
     
     /**
-     * Get all tips currently on this node
-     */
-    GET_TIPS("getTips"),
-    
-    /**
      * Get all the transactions this node is currently requesting
      */
     GET_MISSING_TRANSACTIONS("getMissingTransactions"),

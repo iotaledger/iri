@@ -11,11 +11,7 @@ import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.tipselection.EntryPointSelector;
-import com.iota.iri.service.tipselection.RatingCalculator;
-import com.iota.iri.service.tipselection.TipSelector;
-import com.iota.iri.service.tipselection.WalkValidator;
-import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
 
 /**
@@ -37,6 +33,7 @@ public class TipSelectorImpl implements TipSelector {
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
     private final TipSelConfig config;
+    private final TipSelSolidifier tipSelSolidifier;
 
     /**
      * Constructor for Tip Selector.
@@ -47,6 +44,7 @@ public class TipSelectorImpl implements TipSelector {
      * @param entryPointSelector instance of the entry point selector to get tip selection starting points.
      * @param ratingCalculator instance of rating calculator, to calculate weighted walks.
      * @param walkerAlpha instance of walker (alpha), to perform weighted random walks as per the IOTA white paper.
+     * @param tipSelSolidifier solidifies unsolid transactions we walk on
      * @param config configurations to set internal parameters.
      */
     public TipSelectorImpl(Tangle tangle,
@@ -55,6 +53,7 @@ public class TipSelectorImpl implements TipSelector {
                            EntryPointSelector entryPointSelector,
                            RatingCalculator ratingCalculator,
                            Walker walkerAlpha,
+                           TipSelSolidifier tipSelSolidifier,
                            TipSelConfig config) {
 
         this.entryPointSelector = entryPointSelector;
@@ -66,6 +65,7 @@ public class TipSelectorImpl implements TipSelector {
         this.ledgerService = ledgerService;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
+        this.tipSelSolidifier = tipSelSolidifier;
         this.config = config;
     }
 
@@ -104,7 +104,8 @@ public class TipSelectorImpl implements TipSelector {
             //random walk
             List<Hash> tips = new LinkedList<>();
             //ISSUE #786: walkValidator should become a stateless dependency
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+                    tipSelSolidifier, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 

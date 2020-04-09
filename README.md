@@ -1,136 +1,108 @@
-[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iotaledger/iri&amp;utm_campaign=Badge_Grade)
-[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&utm_medium=referral&utm_content=iotaledger/iri&utm_campaign=Badge_Coverage)
-![GitHub release](https://img.shields.io/github/release/iotaledger/iri.svg)
-![license](https://img.shields.io/github/license/iotaledger/iri.svg)
+<h1 align="center">
+  <br>
+  <a href="https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview"><img src="IRI.png"></a>
+</h1>
 
-## IOTA
+<h2 align="center">The official node software that runs on the IOTA Mainnet and Devnet</h2>
 
-The IRI repository is the main IOTA Reference Implementation and the embodiment of the IOTA network specification. 
+<p align="center">
+    <a href="https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview" style="text-decoration:none;">
+    <img src="https://img.shields.io/badge/Documentation%20portal-blue.svg?style=for-the-badge" alt="Developer documentation portal">
+</p>
+<p align="center">
+  <a href="https://discord.iota.org/" style="text-decoration:none;"><img src="https://img.shields.io/badge/Discord-9cf.svg?logo=discord" alt="Discord"></a>
+    <a href="https://iota.stackexchange.com/" style="text-decoration:none;"><img src="https://img.shields.io/badge/StackExchange-9cf.svg?logo=stackexchange" alt="StackExchange"></a>
+    <a href="https://raw.githubusercontent.com/iotaledger/iri/dev/LICENSE" style="text-decoration:none;"><img src="https://img.shields.io/github/license/iotaledger/iri.svg" alt="GPL-3.0 license"></a>
+    <a href="https://www.codacy.com/app/iotaledger/iri" style="text-decoration:none;"><img src="https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135"></a>
+    <a href="https://travis-ci.org/iotaledger/iri" style="text-decoration:none;"><img src="https://travis-ci.org/iotaledger/iri.svg?branch=dev" alt="Build status"></a>
+</p>
+      
+<p align="center">
+  <a href="#about">About</a> ◈
+  <a href="#prerequisites">Prerequisites</a> ◈
+  <a href="#installation">Installation</a> ◈
+  <a href="#getting-started">Getting started</a> ◈
+  <a href="#api-reference">API reference</a> ◈
+  <a href="#supporting-the-project">Supporting the project</a> ◈
+  <a href="#joining-the-discussion">Joining the discussion</a> 
+</p>
 
-This is a full-featured [[IOTA]](https://iota.org/) node with a convenient JSON-REST HTTP interface.
-It allows users to become part of the [[IOTA]](https://iota.org) network as both a transaction relay
-and network information provider through the easy-to-use [[API]](https://docs.iota.org/docs/node-software/0.1/iri/references/api-reference).
+---
 
-It is specially designed for users seeking a fast, efficient and fully-compatible network setup.
+## About
 
-Running an IRI node also allows light wallet users a node to directly connect to for their own wallet transactions.
+The IRI (IOTA reference implementation) is open-source Java software that runs on the IOTA Mainnet as well as the Devnet. This software defines the current IOTA protocol, which allows nodes to do the following:
 
--* **License:** GPLv3
+- Validate transactions
+- Store valid transactions in a ledger
+- Allow clients to interact with the them through a an HTTP API
 
-# How to get started
+This is beta software, so there may be performance and stability issues.
+Please report any issues in our [issue tracker](https://github.com/iotaledger/iri/issues/new).
 
-The IOTA network is an independent peer-to-peer network with a first-user, friend-to-friend, network structure:
+## Prerequisites
 
-- As a 'first-user' network, to access the data streams and APIs that other users provide, you must first exchange your IP and port configuration with a current user.
+To run IRI, you need the following:
 
-- As a 'friend-to-friend' network, you have the privilege of joining new users into the network through your node
-by adding them to your approved neighbors list — ensuring that you both broadcast to them and also receive their broadcasts.
+- 4GB RAM
+- 64-bit processor
+- A public IP address that's either static or connected to a dynamic DNS service such as [duckdns.org](https://www.duckdns.org)
+- [Java](https://openjdk.java.net/install/)
+- [Maven](https://maven.apache.org/what-is-maven.html)
+- Ports 15600 and 14265 must be open
 
-You can **find neighbors** on the #nodesharing channel of our [[Discord server]](https://discord.iota.org/).
+## Installation
 
-Everyone will be welcoming and very happy to help you get connected.
-If you want to get tokens for your testcase, please just ask in one of the communication channels.
+You can do one of the following:
 
-## Reporting Issues
+- Download the pre-built Java file
+- Compile the Java file yourself
 
-If you'd like to contribute to IRI, report bugs, problems or irregularities with this release,
-please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Or, if you use Docker, you can [run the pre-built Docker image](https://docs.iota.org/docs/node-software/0.1/iri/how-to-guides/install-iri#run-iri-in-a-docker-container)
 
-# Documentation
+### Downloading the pre-built Java file
 
-This page contains basic instructions for setting up an IRI node. You can find the full documentation on:
-- Our [documentation website](https://docs.iota.org/docs/node-software/0.1/iri/introduction/overview)
-- [IRI API reference](https://docs.iota.org/docs/node-software/0.1/iri/references/api-reference)
+After every release, we upload a pre-built Java file onto the [GitHub Releases page](https://github.com/iotaledger/iri/releases).
 
-You can also use one of these great community guides:
-- [IOTA Partners guide](https://iota.partners/)
-- [IRI Playbook](https://iri-playbook.readthedocs.io/en/master/index.html)
+You can simply download the latest `.jar` file.
 
-# Installing
+### Compiling the Java file
 
-The preferred option is that you compile yourself.
-The second option is that you utilize the provided jar, 
-which is released whenever there is a new update here: [Github Releases](https://github.com/iotaledger/iri/releases).
+To compile the Java file yourself, do the following on a Linux operating system:
 
-### Compiling yourself  
-
-Make sure to have Maven and Java 8 installed on your computer.
-
-#### To compile & package
-```
-$ git clone https://github.com/iotaledger/iri
-$ cd iri
-$ mvn clean compile
-$ mvn package
-```
-
-This will create a `target` directory in which you will find the executable jar file that you can use.
-
-### How to run IRI
-
-#### Locally
-
-Running IRI is quick and easy, and you can usually run it without admin rights.
-Below is a list of command line options.
-
-At a minimum, the port must be specified on the command-line — e.g., '`-p 14265`' 
-or in the `iota.ini` file — e.g., '`PORT = 14265`'.
-
-If the '`iota.ini`' file exists, it will be read.
-The port and all the command line options below take precedence over values specified in the ini config file.
-
-Here is an example script that specifies only the port, with all other settings to be read from the ini file **if it exists**:
-
-```
-java -jar iri.jar -p 14265
+```bash
+git clone https://github.com/iotaledger/iri
+cd iri
+mvn clean package
 ```
 
-### Docker
+Your `.jar` file is in the `target` directory.
 
-Create an iota.ini file with all of your configuration variables set in it.
-Any that you don't provide in here will be assumed to be default or taken from
-command line arguments.
+# Getting started
 
-`docker run -d --net=host --name iota-node -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
+For instructions on running IRI, see the [documentation portal](https://docs.iota.org/docs/node-software/0.1/iri/how-to-guides/install-iri).
 
-### Command Line Options 
-A complete list can be found [here](https://docs.iota.org/docs/node-software/0.1/iri/references/iri-configuration-options). The following table are the most frequently used arguments: 
+## API reference
 
-Option | Shortened version | Description | Example Input
---- | --- | --- | --- 
-`--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14265`
-`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "tcp://148.148.148.148:15600 tcp://[2001:db8:a0b:12f0::1]:15600"`
-`--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
-`--neighboring-socket-port` | `-t` | TCP receiver port | `-t 15600`
-`--testnet` | | Makes it possible to run IRI with the IOTA testnet | `--testnet true`
-`--remote` | | Remotely access your node and send API commands | `--remote true`
-`--remote-auth` | | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `--remote-auth iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO`
-`--remote-limit-api` | | Exclude certain API calls from being able to be accessed remotely | `--remote-limit-api "attachToTangle, addNeighbors"`
-`--send-limit`| | Limit the outbound bandwidth consumption. Limit is set to mbit/s | `--send-limit 1.0`
-`--max-peers` | | Limit the number of max accepted peers. Default is set to 0 (mutual tethering) | `--max-peers 8`
-`--dns-resolution` | | Toggle DNS resolution refreshing  | `--dns-resolution false`	
-### INI File
+For an API reference, see the [documentation portal](https://docs.iota.org/docs/node-software/0.1/iri/references/api-reference).
 
-You can also provide a .ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` or the `-c` flag. If no flag is supplied, IRI attempts to load from  the `iota.ini` file.
-Every command line option can be used as a configuration field by replacing the `-` with a `_` (Snake case) and removing the initial `--`. They are case insensitive but it is good habit to make the fields upper case to prevent mixing configuration and command line.
+## Supporting the project
 
-Here is an example INI file:
-```
-[IRI]
-PORT = 14265
-NEIGHBORING_SOCKET_PORT = 15600
-NEIGHBORS = tcp://my.favorite.com:15600 tcp://my.other.favorite.com:15600 
-IXI_DIR = ixi
-DEBUG = false
-DB_PATH = mainnetdb
-```
+If you want to contribute to IRI, consider posting a [bug report](https://github.com/iotaledger/iri/issues/new), [feature request](https://github.com/iotaledger/iri/issues/new) or a [pull request](https://github.com/iotaledger/iri/pulls/). 
 
-### Special Thanks To
+Please read the following before contributing:
+
+- [Contributing guidelines](CONTRIBUTING.md)
+- [Code styleguide](STYLEGUIDE.md)
+- [Responsible disclosure policy](SECURITY.MD)
+
+## Joining the discussion
+
+If you want to get involved in the community, need help with getting set up, have any issues related to IRI, or just want to discuss IOTA, Distributed Registry Technology (DRT) and IoT with other people, feel free to join our [Discord](https://discord.iota.org/).
+
+## Special thanks
 
 ### ![alt text](https://www.yourkit.com/images/yklogo.png)
 
-YourKit supports open source projects with its full-featured Java Profiler.
-YourKit, LLC is the creator of <a href="https://www.yourkit.com/java/profiler/">YourKit Java Profiler</a>
-and <a href="https://www.yourkit.com/.net/profiler/">YourKit .NET Profiler</a>,
-innovative and intelligent tools for profiling Java and .NET applications.
+YourKit supports open-source projects with its full-featured Java Profiler.
+YourKit, LLC is the creator of <a href="https://www.yourkit.com/java/profiler/">YourKit Java Profiler</a> and <a href="https://www.yourkit.com/.net/profiler/">YourKit .NET Profiler</a>, innovative and intelligent tools for profiling Java and .NET applications.

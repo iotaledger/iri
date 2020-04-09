@@ -45,8 +45,8 @@ public class SampleTransaction {
 
         SAMPLE_TRANSACTION = new Transaction();
         SAMPLE_TRANSACTION.bytes = BYTES_OF_SAMPLE_TX;
-        SAMPLE_TRANSACTION.type = TransactionViewModel.FILLED_SLOT;
-        SAMPLE_TRANSACTION.parsed = true;
+        SAMPLE_TRANSACTION.type.set(TransactionViewModel.FILLED_SLOT);
+        SAMPLE_TRANSACTION.parsed.set(true);
     }
 
     /**

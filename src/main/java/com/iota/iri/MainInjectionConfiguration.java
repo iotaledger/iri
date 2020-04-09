@@ -4,6 +4,7 @@ import com.iota.iri.cache.CacheManager;
 import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
@@ -38,6 +39,7 @@ import java.security.SecureRandom;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 
 /**
  * Guice module. Configuration class for dependency injection.
@@ -149,14 +151,15 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     TipSelector provideTipSelector(Tangle tangle, SnapshotProvider snapshotProvider,
-                                   LatestMilestoneTracker latestMilestoneTracker, LedgerService ledgerService) {
+                                   LatestMilestoneTracker latestMilestoneTracker, LedgerService ledgerService,
+                                   @Named("AsyncTipSelSolidifier") TipSelSolidifier tipSelSolidifier) {
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
                 latestMilestoneTracker);
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, new SecureRandom(), configuration);
         return new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
-                walker, configuration);
+                walker, tipSelSolidifier, configuration);
     }
 
     @Singleton
@@ -187,12 +190,29 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    API provideApi(IXI ixi, TransactionRequester transactionRequester,
-                          SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
-                          SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
-                          TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-                          LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline) {
-        return new API(configuration, ixi, transactionRequester, spentAddressesService, tangle, bundleValidator, snapshotProvider, ledgerService, neighborRouter, tipsSelector, tipsViewModel, transactionValidator, latestMilestoneTracker, txPipeline);
+    @Named("AsyncTipSelSolidifier")
+    TipSelSolidifier provideAsyncTipSelSolidifier (TransactionValidator transactionValidator) {
+        return new AsyncTipSelSolidifier(transactionValidator);
+    }
+
+    @Singleton
+    @Provides
+    @Named("DummyTipSelSolidifier")
+    TipSelSolidifier provideDummyTipSelSolidifier () {
+        return new DummyTipSelSolidifier();
+    }
+
+    @Singleton
+    @Provides
+    API provideApi(IXI ixi, TransactionRequester transactionRequester, SpentAddressesService spentAddressesService,
+            Tangle tangle, BundleValidator bundleValidator, SnapshotProvider snapshotProvider,
+            LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
+            TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline,
+            @Named("DummyTipSelSolidifier") TipSelSolidifier checkConsistencySolidifier) {
+        return new API(configuration, ixi, transactionRequester, spentAddressesService, tangle, bundleValidator,
+                snapshotProvider, ledgerService, neighborRouter, tipsSelector, tipsViewModel, transactionValidator,
+                latestMilestoneTracker, txPipeline, checkConsistencySolidifier);
     }
 
     @Singleton

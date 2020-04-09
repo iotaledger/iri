@@ -12,6 +12,7 @@ import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Controller class for {@link Transaction} sets. A {@link TransactionViewModel} stores a {@link HashesViewModel} for
@@ -86,7 +87,7 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     // True if should the tvm should be persisted to DB upon cache persistAndReleaseNext. False otherwise.
-    private boolean shouldPersist = false;
+    private AtomicBoolean shouldPersist = new AtomicBoolean(false);
 
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
@@ -312,7 +313,7 @@ public class TransactionViewModel {
             return;
         }
 
-        this.shouldPersist = true;
+        setShouldPersist(true);
         cachePut(tangle, this, hash);
         tangle.updateMessageQueueProvider(transaction, hash, item);
     }
@@ -1029,7 +1030,7 @@ public class TransactionViewModel {
      * @return True if should persist. False otherwise
      */
     private boolean shouldPersist() {
-        return shouldPersist;
+        return shouldPersist.get();
     }
 
     /**
@@ -1038,7 +1039,7 @@ public class TransactionViewModel {
      * @param shouldPersist If the tvm should be persisted
      */
     private void setShouldPersist(boolean shouldPersist) {
-        this.shouldPersist = shouldPersist;
+        this.shouldPersist.set(shouldPersist);
     }
 
 }

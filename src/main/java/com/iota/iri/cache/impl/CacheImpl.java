@@ -6,6 +6,7 @@ import com.iota.iri.cache.CacheConfiguration;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.MapMaker;
 
@@ -50,8 +51,8 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     private final ConcurrentLinkedQueue<K> releaseQueue;
 
     // stats
-    private int cacheHits = 0;
-    private int cacheMisses = 0;
+    private AtomicInteger cacheHits = new AtomicInteger(0);
+    private AtomicInteger cacheMisses = new AtomicInteger(0);
 
     /**
      * Constructor
@@ -158,21 +159,21 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     private void cacheHit() {
-        cacheHits++;
+        cacheHits.addAndGet(1);
     }
 
     private void cacheMiss() {
-        cacheMisses++;
+        cacheMisses.addAndGet(1);
     }
 
     @Override
     public int getCacheHits() {
-        return cacheHits;
+        return cacheHits.get();
     }
 
     @Override
     public int getCacheMisses() {
-        return cacheMisses;
+        return cacheMisses.get();
     }
 
     @Override

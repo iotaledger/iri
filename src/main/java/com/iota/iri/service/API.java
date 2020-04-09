@@ -717,10 +717,9 @@ public class API {
         for (final TransactionViewModel transactionViewModel : elements) {
             //store transactions
             if(transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot())) {
-                transactionViewModel.setArrivalTime(System.currentTimeMillis());
+                transactionViewModel.setArrivalTime(tangle, snapshotProvider.getInitialSnapshot(), System.currentTimeMillis());
                 transactionValidator.updateStatus(transactionViewModel);
-                transactionViewModel.updateSender("local");
-                transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "sender");
+                transactionViewModel.updateSender(tangle, snapshotProvider.getInitialSnapshot(),"local");
             }
         }
         return AbstractResponse.createEmptyResponse();

@@ -1563,8 +1563,8 @@ public class API {
             Optional<Hash> reference = request.containsKey("reference") ?
                 Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                 : Optional.empty();
-            int depth = getParameterAsInt(request, "depth");
-
+            // We force depth 0 as compass uses this, and it prevents problems with GTTA spammers
+            int depth = 0;
             return getTransactionsToApproveStatement(depth, reference);
         };
     }

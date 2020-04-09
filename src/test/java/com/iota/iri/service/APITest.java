@@ -9,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -51,7 +52,7 @@ public class APITest {
 
         api.storeTransactionsStatement(Collections.singletonList("FOO"));
 
-        verify(transaction).setArrivalTime(longThat(this::isCloseToCurrentMillis));
+        verify(transaction).setArrivalTime(Mockito.any(), Mockito.any(), longThat(this::isCloseToCurrentMillis));
 
     }
 

@@ -428,7 +428,7 @@ public class TransactionViewModelTest {
         cacheManager.add(TransactionViewModel.class, new CacheConfigurationImpl(1));
         tangle.setCacheManager(cacheManager);
 
-        int numberOfTxs = 2;
+        int numberOfTxs = 3;
         String trytes = "";
 
         TransactionViewModel tvms[] = new TransactionViewModel[numberOfTxs];
@@ -438,11 +438,19 @@ public class TransactionViewModelTest {
             tvms[i].store(tangle, snapshot);
         }
         tvms[0].isMilestone(tangle, snapshot, true);
-        tvms[1].isMilestone(tangle, snapshot, true);
+        tvms[1].updateSolid(tangle, snapshot, true);
+        tvms[2].updateSender(tangle, snapshot, "sender");
+        tvms[0].isMilestone(tangle, snapshot, false); //Another update to kick the previous tx from cache
 
-        Hash hash = tvms[0].getHash();
-        TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
-        Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
+        Hash hash0 = tvms[0].getHash();
+        TransactionViewModel tvm0 = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash0), hash0);
+        Assert.assertTrue("TVM should be a milestone", tvm0.isMilestone());
+        Hash hash1 = tvms[1].getHash();
+        TransactionViewModel tvm1 = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash1), hash1);
+        Assert.assertTrue("TVM should be solid", tvm1.isSolid());
+        Hash hash2 = tvms[2].getHash();
+        TransactionViewModel tvm2 = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash2), hash2);
+        Assert.assertEquals("TVM sender should be equal", "sender", tvm2.getSender());
     }
 
     @Test
@@ -468,7 +476,12 @@ public class TransactionViewModelTest {
         for (int i : tvmIndicesToUpdate) {
             TransactionViewModel tvm = cache.get(tvms[i].getHash());
             if (tvm != null) {
-                tvm.isMilestone(tangle, snapshot, true);
+               if(i%2 == 0){
+                   tvm.isMilestone(tangle, snapshot, true);
+               }else{
+                   //just another test
+                   tvm.updateSolid(tangle, snapshot, true);
+               }
             }
         }
 
@@ -479,7 +492,11 @@ public class TransactionViewModelTest {
             Hash hash = tvms[i].getHash();
             TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash),
                     hash);
-            Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
+            if(i%2 == 0){
+                Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
+            }else{
+                Assert.assertTrue("TVM should be solid", tvm.isSolid());
+            }
         }
     }
 

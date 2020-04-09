@@ -78,7 +78,7 @@ public class WalkValidatorImplTest {
     public void shouldPassValidation() throws Exception {
         int depth = 15;
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
-        tx.updateSolid(true);
+        tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
@@ -95,7 +95,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getTrunkTransactionHash();
-        tx.updateSolid(true);
+        tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(depth);
@@ -110,7 +110,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(2);
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
-        tx.updateSolid(true);
+        tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
@@ -125,7 +125,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
-        tx.updateSolid(false);
+        tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), false);
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
@@ -142,7 +142,7 @@ public class WalkValidatorImplTest {
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         tx.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 2);
         Hash hash = tx.getHash();
-        tx.updateSolid(true);
+        tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
@@ -162,7 +162,7 @@ public class WalkValidatorImplTest {
             tx = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(hash, hash), getTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
-            tx.updateSolid(true);
+            tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
             hash = tx.getHash();
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
         }
@@ -188,7 +188,7 @@ public class WalkValidatorImplTest {
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             hash = tx.getHash();
-            tx.updateSolid(true);
+            tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
         }
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
@@ -209,7 +209,7 @@ public class WalkValidatorImplTest {
             tx = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(hash, hash), getTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
-            tx.updateSolid(true);
+            tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
             hash = tx.getHash();
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
         }
@@ -233,7 +233,7 @@ public class WalkValidatorImplTest {
                     getTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
-            tx.updateSolid(true);
+            tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
             hash = tx.getHash();
         }
@@ -252,7 +252,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
-        tx.updateSolid(true);
+        tx.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(false);
         snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
@@ -278,21 +278,21 @@ public class WalkValidatorImplTest {
                 getTransactionHash());
         TransactionTestUtils.setLastIndex(tx2,0);
         TransactionTestUtils.setCurrentIndex(tx2,0);
-        tx2.updateSolid(true);
+        tx2.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         tx2.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel tx3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
                 getTransactionHash());
         TransactionTestUtils.setLastIndex(tx3,0);
         TransactionTestUtils.setCurrentIndex(tx3,0);
-        tx3.updateSolid(true);
+        tx3.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         tx3.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel tx4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
                 getTransactionHash());
         TransactionTestUtils.setLastIndex(tx4,0);
         TransactionTestUtils.setCurrentIndex(tx4,0);
-        tx4.updateSolid(true);
+        tx4.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         tx4.store(tangle, snapshotProvider.getInitialSnapshot());
 
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), tx4.getHash()))
@@ -324,21 +324,21 @@ public class WalkValidatorImplTest {
                 getTransactionHash());
         TransactionTestUtils.setLastIndex(tx2,0);
         TransactionTestUtils.setCurrentIndex(tx2,0);
-        tx2.updateSolid(true);
+        tx2.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         tx2.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel tx3 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
                 getTransactionHash());
         TransactionTestUtils.setLastIndex(tx3,0);
         TransactionTestUtils.setCurrentIndex(tx3,0);
-        tx3.updateSolid(true);
+        tx3.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         tx3.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel tx4 = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
                 getTransactionHash());
         TransactionTestUtils.setLastIndex(tx4,0);
         TransactionTestUtils.setCurrentIndex(tx4,0);
-        tx4.updateSolid(true);
+        tx4.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         tx4.store(tangle, snapshotProvider.getInitialSnapshot());
 
         Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), tx4.getHash()))

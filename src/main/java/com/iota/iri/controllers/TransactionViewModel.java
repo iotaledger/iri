@@ -11,6 +11,7 @@ import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Controller class for {@link Transaction} sets. A {@link TransactionViewModel} stores a {@link HashesViewModel} for
@@ -85,7 +86,7 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     // True if should the tvm should be persisted to DB upon cache persistAndReleaseNext. False otherwise.
-    private boolean shouldPersist = false;
+    private AtomicBoolean shouldPersist = new AtomicBoolean(false);
 
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
@@ -311,10 +312,7 @@ public class TransactionViewModel {
             return;
         }
 
-        TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
-        if (cachedTvm != null) {
-            this.shouldPersist = true;
-        }
+        setShouldPersist(true);
         cachePut(tangle, this, hash);
         tangle.updateMessageQueueProvider(transaction, hash, item);
     }
@@ -514,10 +512,13 @@ public class TransactionViewModel {
     /**
      * Sets the {@link Transaction#arrivalTime}.
      *
+     * @param tangle          The tangle reference for the database.
+     * @param initialSnapshot snapshot that acts as genesis
      * @param time The time to be set in the {@link Transaction}
      */
-    public void setArrivalTime(long time) {
+    public void setArrivalTime(Tangle tangle, Snapshot initialSnapshot, long time) throws Exception {
         transaction.arrivalTime = time;
+        update(tangle, initialSnapshot, "arrivalTime");
     }
 
     /** @return The {@link Transaction#arrivalTime} */
@@ -794,8 +795,7 @@ public class TransactionViewModel {
             transactionViewModel.updateHeights(tangle, initialSnapshot);
 
             if (!transactionViewModel.isSolid()) {
-                transactionViewModel.updateSolid(true);
-                transactionViewModel.update(tangle, initialSnapshot, "solid|height");
+                transactionViewModel.updateSolid(tangle, initialSnapshot,true);
             }
         }
     }
@@ -805,12 +805,15 @@ public class TransactionViewModel {
      *
      * Used by the {@link com.iota.iri.TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
      *
+     * @param tangle          The tangle reference for the database.
+     * @param initialSnapshot snapshot that acts as genesis
      * @param solid The solidity of the transaction in the database
      * @return True if the {@link Transaction#solid} has been updated, False if not.
      */
-    public boolean updateSolid(boolean solid) throws Exception {
+    public boolean updateSolid(Tangle tangle, Snapshot initialSnapshot, boolean solid) throws Exception {
         if (solid != transaction.solid.get()) {
             transaction.solid.set(solid);
+            update(tangle, initialSnapshot, "solid");
             return true;
         }
         return false;
@@ -926,10 +929,13 @@ public class TransactionViewModel {
     /**
      * Updates the {@link Transaction#sender}.
      *
+     * @param tangle          The tangle reference for the database.
+     * @param initialSnapshot snapshot that acts as genesis
      * @param sender The sender of the {@link Transaction}
      */
-    public void updateSender(String sender) throws Exception {
+    public void updateSender(Tangle tangle, Snapshot initialSnapshot, String sender) throws Exception {
         transaction.sender.set(sender);
+        update(tangle, initialSnapshot, "sender");
     }
 
     /** @return The {@link Transaction#sender} */
@@ -1042,7 +1048,7 @@ public class TransactionViewModel {
      * @return True if should persist. False otherwise
      */
     private boolean shouldPersist() {
-        return shouldPersist;
+        return shouldPersist.get();
     }
 
     /**
@@ -1051,7 +1057,7 @@ public class TransactionViewModel {
      * @param shouldPersist If the tvm should be persisted
      */
     private void setShouldPersist(boolean shouldPersist) {
-        this.shouldPersist = shouldPersist;
+        this.shouldPersist.set(shouldPersist);
     }
 
 }

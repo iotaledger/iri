@@ -146,25 +146,25 @@ public class TransactionValidatorTest {
     @Test
     public void testTransactionPropagation() throws Exception {
         TransactionViewModel leftChildLeaf = TransactionTestUtils.createTransactionWithTrytes("CHILDTX");
-        leftChildLeaf.updateSolid(true);
+        leftChildLeaf.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         leftChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel rightChildLeaf = TransactionTestUtils.createTransactionWithTrytes("CHILDTWOTX");
-        rightChildLeaf.updateSolid(true);
+        rightChildLeaf.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         rightChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel parent = TransactionTestUtils.createTransactionWithTrunkAndBranch("PARENT",
                 leftChildLeaf.getHash(), rightChildLeaf.getHash());
-        parent.updateSolid(false);
+        parent.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), false);
         parent.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel parentSibling = TransactionTestUtils.createTransactionWithTrytes("PARENTLEAF");
-        parentSibling.updateSolid(true);
+        parentSibling.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
         parentSibling.store(tangle, snapshotProvider.getInitialSnapshot());
 
         TransactionViewModel grandParent = TransactionTestUtils.createTransactionWithTrunkAndBranch("GRANDPARENT", parent.getHash(),
                         parentSibling.getHash());
-        grandParent.updateSolid(false);
+        grandParent.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), false);
         grandParent.store(tangle, snapshotProvider.getInitialSnapshot());
 
         txValidator.addSolidTransaction(leftChildLeaf.getHash());
@@ -181,25 +181,25 @@ public class TransactionValidatorTest {
   @Test
   public void testTransactionPropagationFailure() throws Exception {
     TransactionViewModel leftChildLeaf = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
-    leftChildLeaf.updateSolid(true);
+    leftChildLeaf.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
     leftChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
     TransactionViewModel rightChildLeaf = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
-    rightChildLeaf.updateSolid(true);
+    rightChildLeaf.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), true);
     rightChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
     TransactionViewModel parent = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(leftChildLeaf.getHash(),
             rightChildLeaf.getHash()), getTransactionHash());
-    parent.updateSolid(false);
+    parent.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), false);
     parent.store(tangle, snapshotProvider.getInitialSnapshot());
 
     TransactionViewModel parentSibling = new TransactionViewModel(getTransactionTrits(), getTransactionHash());
-    parentSibling.updateSolid(false);
+    parentSibling.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), false);
     parentSibling.store(tangle, snapshotProvider.getInitialSnapshot());
 
     TransactionViewModel grandParent = new TransactionViewModel(getTransactionTritsWithTrunkAndBranch(parent.getHash(),
             parentSibling.getHash()), getTransactionHash());
-    grandParent.updateSolid(false);
+    grandParent.updateSolid(tangle, snapshotProvider.getInitialSnapshot(), false);
     grandParent.store(tangle, snapshotProvider.getInitialSnapshot());
 
     txValidator.addSolidTransaction(leftChildLeaf.getHash());

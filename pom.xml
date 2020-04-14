@@ -21,7 +21,7 @@
         <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>2.0.23.Final</undertow.version>
-        <jackson-databind.version>2.9.10.1</jackson-databind.version>
+        <jackson-databind.version>2.9.10.3</jackson-databind.version>
         <zero-allocation-hashing.version>0.8</zero-allocation-hashing.version>
         <system-rules.version>1.19.0</system-rules.version>
         <jacoco.version>0.7.9</jacoco.version>
@@ -431,7 +431,7 @@
                                             org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
                                         </urn>
                                         <urn>
-                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:cadb5d93d16151946468cd1a2e96f41bc7d4e198
+                                            com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:jar:null:compile:cc6976cdd5bacfaa005bbec6ed97f6949c3ea817
                                         </urn>
                                         <urn>
                                             com.beust:jcommander:1.72:jar:null:compile:6375e521c1e11d6563d4f25a07ce124ccf8cd171

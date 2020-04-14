@@ -100,8 +100,8 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    HeartbeatPulse providerHeartbeatPulse(NeighborRouter neighborRouter, SnapshotProvider snapshotProvider){
-        return new HeartbeatPulseImpl(neighborRouter, snapshotProvider);
+    HeartbeatPulse providerHeartbeatPulse(NeighborRouter neighborRouter, SnapshotProvider snapshotProvider, @Nullable LocalSnapshotManager localSnapshotManager){
+        return new HeartbeatPulseImpl(neighborRouter, snapshotProvider, configuration, localSnapshotManager);
     }
 
     @Singleton

@@ -34,7 +34,6 @@ public class Protocol {
      */
     public final static byte[] SUPPORTED_PROTOCOL_VERSIONS = {
             /* supports protocol version(s): 1 */
-            (byte) 0b00000001,
             (byte) 0b00000011,
     };
     /**

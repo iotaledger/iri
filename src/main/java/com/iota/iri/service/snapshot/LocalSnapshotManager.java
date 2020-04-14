@@ -2,6 +2,7 @@ package com.iota.iri.service.snapshot;
 
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.transactionpruning.PruningCondition;
+import com.iota.iri.service.transactionpruning.TransactionPruningException;
 
 /**
  * Represents the manager for local {@link Snapshot}s that takes care of periodically creating a new {@link Snapshot}
@@ -41,4 +42,10 @@ public interface LocalSnapshotManager {
      * @param conditions conditions on which we check to make a snapshot
      */
     void addPruningConditions(PruningCondition... conditions);
+
+    /**
+     * Get the max pruning milestone for all conditions.
+     * @return Max pruning milestone
+     */
+    int maxSnapshotPruningMilestone() throws TransactionPruningException;
 }

@@ -1,5 +1,4 @@
 import json
-import logging
 import urllib3
 from aloe import world
 from iota import Iota, Address, Tag, TryteString

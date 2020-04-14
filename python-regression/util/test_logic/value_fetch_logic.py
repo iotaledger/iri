@@ -121,6 +121,8 @@ def fetch_bool_list(value):
     node = world.config['nodeId']
 
     response = world.responses[api_call][node]
+    keys = list(response.keys())
+    response = response[keys[0]]
 
     if value == "False":
         return [False] * len(response)

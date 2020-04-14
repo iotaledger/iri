@@ -445,13 +445,13 @@ public class TransactionViewModelTest {
 
         Hash hash0 = tvms[0].getHash();
         TransactionViewModel tvm0 = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash0), hash0);
-        assertTrue("TVM should be a milestone", tvm0.isMilestone());
+        Assert.assertTrue("TVM should be a milestone", tvm0.isMilestone());
         Hash hash1 = tvms[1].getHash();
         TransactionViewModel tvm1 = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash1), hash1);
-        assertTrue("TVM should be solid", tvm1.isSolid());
+        Assert.assertTrue("TVM should be solid", tvm1.isSolid());
         Hash hash2 = tvms[2].getHash();
         TransactionViewModel tvm2 = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash2), hash2);
-        assertEquals("TVM sender should be equal", "sender", tvm2.getSender());
+        Assert.assertEquals("TVM sender should be equal", "sender", tvm2.getSender());
     }
 
     @Test
@@ -477,12 +477,12 @@ public class TransactionViewModelTest {
         for (int i : tvmIndicesToUpdate) {
             TransactionViewModel tvm = cache.get(tvms[i].getHash());
             if (tvm != null) {
-                if(i%2 == 0){
-                    tvm.isMilestone(tangle, snapshot, true);
-                }else{
-                    //just another test
-                    tvm.updateSolid(tangle, snapshot, true);
-                }
+               if(i%2 == 0){
+                   tvm.isMilestone(tangle, snapshot, true);
+               }else{
+                   //just another test
+                   tvm.updateSolid(tangle, snapshot, true);
+               }
             }
         }
 
@@ -494,9 +494,9 @@ public class TransactionViewModelTest {
             TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash),
                     hash);
             if(i%2 == 0){
-                assertTrue("TVM should be a milestone", tvm.isMilestone());
+                Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
             }else{
-                assertTrue("TVM should be solid", tvm.isSolid());
+                Assert.assertTrue("TVM should be solid", tvm.isSolid());
             }
         }
     }

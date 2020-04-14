@@ -23,7 +23,7 @@ def api_method_is_called(step, api_call, node_name):
     :param api_call:     The api call that will be requested
     :param node_name:    The name identifying the node you would like to make this request on
     :param step.hashes:  A gherkin table outlining any arguments needed for the call
-                        (See tests/features/machine1/1_api_tests.feature for examples)
+                        (See tests/features/machine1/4_api_tests.feature for examples)
 
         The table parameter is unique in that there are several input types available depending on the call
         being made.

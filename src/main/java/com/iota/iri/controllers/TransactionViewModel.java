@@ -4,6 +4,7 @@ import com.iota.iri.cache.Cache;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -512,9 +513,10 @@ public class TransactionViewModel {
     /**
      * Sets the {@link Transaction#arrivalTime}.
      *
-     * @param tangle          The tangle reference for the database.
-     * @param initialSnapshot snapshot that acts as genesis
-     * @param time The time to be set in the {@link Transaction}
+     * @param tangle            The tangle reference for the database.
+     * @param initialSnapshot   snapshot that acts as genesis
+     * @param time              The time to be set in the {@link Transaction}
+     * @throws Exception        Exception
      */
     public void setArrivalTime(Tangle tangle, Snapshot initialSnapshot, long time) throws Exception {
         transaction.arrivalTime = time;
@@ -778,36 +780,15 @@ public class TransactionViewModel {
                 : TransactionViewModel.FILLED_SLOT);
     }
 
-    /**
-     * Update solid transactions
-     * @param tangle Tangle
-     * @param initialSnapshot Initial snapshot
-     * @param analyzedHashes analyzed hashes
-     * @throws Exception Exception
-     */
-    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot,
-                                               final Set<Hash> analyzedHashes) throws Exception {
-        Object[] hashes = analyzedHashes.toArray();
-        TransactionViewModel transactionViewModel;
-        for (int i = hashes.length - 1; i >= 0; i--) {
-            transactionViewModel = TransactionViewModel.fromHash(tangle, (Hash) hashes[i]);
-
-            transactionViewModel.updateHeights(tangle, initialSnapshot);
-
-            if (!transactionViewModel.isSolid()) {
-                transactionViewModel.updateSolid(tangle, initialSnapshot,true);
-            }
-        }
-    }
 
     /**
      * Updates the {@link Transaction#solid} value of the referenced {@link Transaction} object.
      *
-     * Used by the {@link com.iota.iri.TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
+     * Used by the {@link TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
      *
-     * @param tangle          The tangle reference for the database.
-     * @param initialSnapshot snapshot that acts as genesis
-     * @param solid The solidity of the transaction in the database
+     * @param tangle            The tangle reference for the database.
+     * @param initialSnapshot   snapshot that acts as genesis
+     * @param solid             The solidity of the transaction in the database
      * @return True if the {@link Transaction#solid} has been updated, False if not.
      */
     public boolean updateSolid(Tangle tangle, Snapshot initialSnapshot, boolean solid) throws Exception {
@@ -929,13 +910,14 @@ public class TransactionViewModel {
     /**
      * Updates the {@link Transaction#sender}.
      *
-     * @param tangle          The tangle reference for the database.
-     * @param initialSnapshot snapshot that acts as genesis
-     * @param sender The sender of the {@link Transaction}
+     * @param tangle            The tangle reference for the database.
+     * @param initialSnapshot   snapshot that acts as genesis
+     * @param sender            The sender of the {@link Transaction}
+     * @throws Exception        Exception
      */
     public void updateSender(Tangle tangle, Snapshot initialSnapshot, String sender) throws Exception {
         transaction.sender.set(sender);
-        update(tangle, initialSnapshot, "sender");
+        this.update(tangle, initialSnapshot, "sender");
     }
 
     /** @return The {@link Transaction#sender} */

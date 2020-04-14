@@ -4,7 +4,6 @@ import com.iota.iri.cache.CacheManager;
 import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
@@ -28,6 +27,9 @@ import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.service.validation.impl.TransactionSolidifierImpl;
 import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -116,8 +118,8 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    MilestoneSolidifier provideMilestoneSolidifier(SnapshotProvider snapshotProvider, TransactionValidator transactionValidator) {
-        return new MilestoneSolidifierImpl(snapshotProvider, transactionValidator);
+    MilestoneSolidifier provideMilestoneSolidifier(SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier) {
+        return new MilestoneSolidifierImpl(snapshotProvider, transactionSolidifier);
     }
 
     @Singleton
@@ -138,8 +140,14 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    TransactionValidator provideTransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
-        return new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester, configuration);
+    TransactionValidator provideTransactionValidator(SnapshotProvider snapshotProvider, TransactionRequester transactionRequester) {
+        return new TransactionValidator(snapshotProvider, transactionRequester, configuration);
+    }
+
+    @Singleton
+    @Provides
+    TransactionSolidifier provideTransactionSolidifier(Tangle tangle, SnapshotProvider snapshotProvider, TransactionRequester transactionRequester, TipsViewModel tipsViewModel){
+        return new TransactionSolidifierImpl(tangle, snapshotProvider, transactionRequester, tipsViewModel);
     }
 
     @Singleton
@@ -174,12 +182,12 @@ public class MainInjectionConfiguration extends AbstractModule {
             TransactionRequester transactionRequester, NeighborRouter neighborRouter,
             TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
             TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-            CacheManager cacheManager) {
+            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
         return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService,
                 localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker,
                 seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle,
                 transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline,
-                tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb, cacheManager);
+                tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb, cacheManager, transactionSolidifier);
     }
 
     @Singleton
@@ -191,8 +199,8 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     @Named("AsyncTipSelSolidifier")
-    TipSelSolidifier provideAsyncTipSelSolidifier (TransactionValidator transactionValidator) {
-        return new AsyncTipSelSolidifier(transactionValidator);
+    TipSelSolidifier provideAsyncTipSelSolidifier (TransactionSolidifier transactionSolidifier) {
+        return new AsyncTipSelSolidifier(transactionSolidifier);
     }
 
     @Singleton
@@ -204,15 +212,14 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    API provideApi(IXI ixi, TransactionRequester transactionRequester, SpentAddressesService spentAddressesService,
-            Tangle tangle, BundleValidator bundleValidator, SnapshotProvider snapshotProvider,
-            LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
-            TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline,
-            @Named("DummyTipSelSolidifier") TipSelSolidifier checkConsistencySolidifier) {
+    API provideApi(IXI ixi, TransactionRequester transactionRequester,
+                          SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
+                          SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
+                          TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+                          LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline, TransactionSolidifier transactionSolidifier, @Named("DummyTipSelSolidifier") TipSelSolidifier checkConsistencySolidifier) {
         return new API(configuration, ixi, transactionRequester, spentAddressesService, tangle, bundleValidator,
                 snapshotProvider, ledgerService, neighborRouter, tipsSelector, tipsViewModel, transactionValidator,
-                latestMilestoneTracker, txPipeline, checkConsistencySolidifier);
+                latestMilestoneTracker, txPipeline,transactionSolidifier, checkConsistencySolidifier);
     }
 
     @Singleton

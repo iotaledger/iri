@@ -10,7 +10,7 @@ Feature: Test GTTA for blowballs
 		|keys           |values                 |type           |
 		|depth          |3                      |int            |
 
-		And "findTransactions" is called on "nodeA-m3" with:
+		And "findTransactions" is called on "nodeA-m2" with:
 		|keys           |values                 |type           |
 		|addresses      |TEST_BLOWBALL_COO      |staticList     |
 

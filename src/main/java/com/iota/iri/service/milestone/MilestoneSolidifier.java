@@ -1,7 +1,7 @@
 package com.iota.iri.service.milestone;
 
-import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.validation.TransactionSolidifier;
 
 /**
  * This interface defines the contract for a manager that tries to solidify unsolid milestones by incorporating a
@@ -17,7 +17,7 @@ public interface MilestoneSolidifier {
      * </p>
      * <p>
      * Note: We want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
-     *       long running {@link TransactionValidator#checkSolidity(Hash)} call.
+     *       long running {@link TransactionSolidifier#checkSolidity(Hash)} call.
      * </p>
      */
     int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;

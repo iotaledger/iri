@@ -1,6 +1,7 @@
 package com.iota.iri.service;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -30,6 +31,9 @@ public class APITest {
     private TransactionValidator transactionValidator;
 
     @Mock
+    private TransactionSolidifier transactionSolidifier;
+
+    @Mock
     private SnapshotProvider snapshotProvider;
 
     @Mock
@@ -44,7 +48,7 @@ public class APITest {
         API api = new API(config, null, null, null,
                 null, null,
                 snapshotProvider, null, null, null, null,
-                transactionValidator, null, null, null);
+                transactionValidator, null, null, transactionSolidifier, null);
 
         api.storeTransactionsStatement(Collections.singletonList("FOO"));
 

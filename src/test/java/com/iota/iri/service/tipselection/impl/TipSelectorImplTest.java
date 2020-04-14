@@ -21,10 +21,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.tipselection.EntryPointSelector;
-import com.iota.iri.service.tipselection.RatingCalculator;
-import com.iota.iri.service.tipselection.WalkValidator;
-import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
 
 public class TipSelectorImplTest {
@@ -51,6 +48,9 @@ public class TipSelectorImplTest {
     private SnapshotProvider snapshotProvider;
 
     @Mock
+    private TipSelSolidifier tipSelSolidifier;
+
+    @Mock
     private TipSelConfig config;
 
     private static final Hash REFERENCE = HashFactory.TRANSACTION.create("ENTRYPOINT");
@@ -65,7 +65,7 @@ public class TipSelectorImplTest {
     public void setUpEach() {
         when(config.getAlpha()).thenReturn(BaseIotaConfig.Defaults.ALPHA);
         tipSelector = new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
-                walker, config);
+                walker, tipSelSolidifier, config);
     }
 
     @Test

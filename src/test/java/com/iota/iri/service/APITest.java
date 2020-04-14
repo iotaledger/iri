@@ -48,7 +48,7 @@ public class APITest {
         API api = new API(config, null, null, null,
                 null, null,
                 snapshotProvider, null, null, null, null,
-                transactionValidator, null, null, transactionSolidifier);
+                transactionValidator, null, null, transactionSolidifier, null);
 
         api.storeTransactionsStatement(Collections.singletonList("FOO"));
 

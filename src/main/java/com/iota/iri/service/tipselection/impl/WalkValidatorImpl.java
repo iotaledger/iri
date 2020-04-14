@@ -5,6 +5,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.tipselection.TipSelSolidifier;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class WalkValidatorImpl implements WalkValidator {
     private final SnapshotProvider snapshotProvider;
     private final LedgerService ledgerService;
     private final TipSelConfig config;
+    private final TipSelSolidifier tipSelSolidifier;
 
     private Set<Hash> maxDepthOkMemoization;
     private Map<Hash, Long> myDiff;
@@ -44,11 +46,12 @@ public class WalkValidatorImpl implements WalkValidator {
      * @param config configurations to set internal parameters.
      */
     public WalkValidatorImpl(Tangle tangle, SnapshotProvider snapshotProvider, LedgerService ledgerService,
-                             TipSelConfig config) {
+                             TipSelSolidifier tipSelSolidifier, TipSelConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.ledgerService = ledgerService;
         this.config = config;
+        this.tipSelSolidifier = tipSelSolidifier;
 
         maxDepthOkMemoization = new HashSet<>();
         myDiff = new HashMap<>();
@@ -67,6 +70,7 @@ public class WalkValidatorImpl implements WalkValidator {
             return false;
         } else if (!transactionViewModel.isSolid()) {
             log.debug("Validation failed: {} is not solid", transactionHash);
+            tipSelSolidifier.solidify(transactionHash);
             return false;
         } else if (belowMaxDepth(transactionViewModel.getHash(),
                 snapshotProvider.getLatestSnapshot().getIndex() - config.getMaxDepth())) {

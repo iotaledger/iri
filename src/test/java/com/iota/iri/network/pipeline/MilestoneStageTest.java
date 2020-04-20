@@ -1,7 +1,6 @@
 package com.iota.iri.network.pipeline;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -40,9 +39,6 @@ public class MilestoneStageTest {
     @Mock
     private MilestoneSolidifier milestoneSolidifier;
 
-    @Mock
-    private LatestMilestoneTracker latestMilestoneTracker;
-
     private int milestoneIndex;
     private int snapshotIndex;
 
@@ -53,10 +49,9 @@ public class MilestoneStageTest {
         snapshotIndex = 10;
 
         when(snapshotProvider.getLatestSnapshot()).thenReturn(snapshot);
-        when(latestMilestoneTracker.getLatestMilestoneIndex()).thenReturn(snapshotIndex);
+        when(milestoneSolidifier.getLatestMilestoneIndex()).thenReturn(snapshotIndex);
 
-        MilestoneStage milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier,
-                                                            latestMilestoneTracker);
+        MilestoneStage milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier);
         Payload milestonePayload = new MilestonePayload(null, milestoneHash, milestoneIndex);
         ProcessingContext ctx = new ProcessingContext(milestonePayload);
 
@@ -64,7 +59,7 @@ public class MilestoneStageTest {
         Thread.sleep(100);
 
         //Milestone transaction should be updated in LatestMilestoneTracker and then placed into the MilestoneSolidifier
-        verify(latestMilestoneTracker, times(1)).setLatestMilestone(any(), anyInt());
+        verify(milestoneSolidifier, times(1)).setLatestMilestone(any(), anyInt());
         verify(milestoneSolidifier, times(1)).add(any(), anyInt());
 
         assertEquals("Expected next stage to be Solidify", TransactionProcessingPipeline.Stage.SOLIDIFY,
@@ -78,11 +73,10 @@ public class MilestoneStageTest {
         snapshotIndex = 11;
 
         when(snapshotProvider.getLatestSnapshot()).thenReturn(snapshot);
-        when(latestMilestoneTracker.getLatestMilestoneIndex()).thenReturn(snapshotIndex);
+        when(milestoneSolidifier.getLatestMilestoneIndex()).thenReturn(snapshotIndex);
         when(txSolidifier.addMilestoneToSolidificationQueue(any())).thenReturn(true);
 
-        MilestoneStage milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier,
-                latestMilestoneTracker);
+        MilestoneStage milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier);
         Payload milestonePayload = new MilestonePayload(null, milestoneHash, milestoneIndex);
         ProcessingContext ctx = new ProcessingContext(milestonePayload);
 
@@ -90,7 +84,7 @@ public class MilestoneStageTest {
         Thread.sleep(100);
 
         //Milestone is not logged, and the transaction is added to Propagation
-        verify(latestMilestoneTracker, never()).setLatestMilestone(any(), anyInt());
+        verify(milestoneSolidifier, never()).setLatestMilestone(any(), anyInt());
         verify(txSolidifier, times(1)).addToPropagationQueue(any());
 
         assertEquals("Expected next stage to be Solidify", TransactionProcessingPipeline.Stage.SOLIDIFY,
@@ -106,8 +100,7 @@ public class MilestoneStageTest {
         when(snapshotProvider.getLatestSnapshot()).thenReturn(snapshot);
         when(snapshot.getInitialIndex()).thenReturn(snapshotIndex);
 
-        MilestoneStage milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier,
-                latestMilestoneTracker);
+        MilestoneStage milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier);
         Payload milestonePayload = new MilestonePayload(null, milestoneHash, milestoneIndex);
         ProcessingContext ctx = new ProcessingContext(milestonePayload);
 

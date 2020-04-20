@@ -7,6 +7,7 @@ import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJob;
+import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJob;
@@ -277,6 +278,19 @@ public class AsyncTransactionPruner implements TransactionPruner {
         }
 
         return jobQueue;
+    }
+    
+    @Override
+    public <T extends TransactionPrunerJob> boolean hasActiveJobFor(Class<T> jobClass) {
+        JobQueue<T> jobQueue = jobQueues.get(jobClass);
+        if (jobQueue == null) {
+            return false;
+        }
+        
+        return jobQueue.stream().anyMatch(job -> {
+            return job.getStatus().equals(TransactionPrunerJobStatus.RUNNING)
+                    || job.getStatus().equals(TransactionPrunerJobStatus.PENDING);
+        });
     }
 
     /**

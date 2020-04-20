@@ -129,13 +129,13 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     public boolean addMilestoneToSolidificationQueue(Hash hash){
         try{
             TransactionViewModel tx = fromHash(tangle, hash);
-            if(tx.isSolid()){
+            if (tx.isSolid()) {
                 transactionPropagator.addToPropagationQueue(hash);
                 return true;
             }
             addToSolidificationQueue(hash);
             return false;
-        }catch(Exception e){
+        } catch (Exception e) {
             log.error("Error adding milestone to solidification queue", e);
             return false;
         }
@@ -293,7 +293,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     }
 
     @VisibleForTesting
-    Set<Hash> getSolidificationQueue(){
+    Set<Hash> getSolidificationSet(){
         return new LinkedHashSet<>(transactionsToSolidify);
     }
 

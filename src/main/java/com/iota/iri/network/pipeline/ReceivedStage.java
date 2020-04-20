@@ -48,7 +48,7 @@ public class ReceivedStage implements Stage {
     /**
      * Stores the given transaction in the database, updates it status
      * ({@link TransactionSolidifier#updateStatus(TransactionViewModel)}) and updates the sender.
-     * 
+     *
      * @param ctx the received stage {@link ProcessingContext}
      * @return a {@link ProcessingContext} which redirects to the {@link BroadcastStage}
      */

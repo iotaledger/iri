@@ -30,7 +30,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     private boolean help;
     private boolean testnet = false;
-    
+
     //API
     protected int port = Defaults.PORT;
     protected String apiHost = Defaults.API_HOST;
@@ -41,7 +41,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
-    
+
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -71,9 +71,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     // Cache
     protected int txCacheSize = Defaults.TX_CACHE_SIZE;
-    protected int milestoneBatchWrite = Defaults.MILESTONE_CACHE_SIZE;
-    protected int txCacheReleaseCount = Defaults.TX_CACHE_RELEASE_COUNT;
-    protected int milestoneCacheReleaseCount = Defaults.MILESTONE_CACHE_RELEASE_COUNT;
+    protected int milestoneCacheSize = Defaults.MILESTONE_CACHE_SIZE;
 
     //Protocol
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
@@ -141,12 +139,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     public boolean isHelp() {
         return help;
     }
-    
+
     @Override
     public boolean isTestnet() {
         return testnet;
     }
-    
+
     @JsonIgnore
     @Parameter(names = {Config.TESTNET_FLAG}, description = Config.Descriptions.TESTNET, arity = 1)
     protected void setTestnet(boolean testnet) {
@@ -175,7 +173,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         if (remote) {
             return "0.0.0.0";
         }
-        
+
         return apiHost;
     }
 
@@ -412,12 +410,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbLogPath(String dbLogPath) {
         this.dbLogPath = dbLogPath;
     }
-    
+
     @Override
     public String getDbConfigFile() {
         return dbConfigFile;
     }
-    
+
     @JsonProperty
     @Parameter(names = {"--db-config-file"}, description = DbConfig.Descriptions.DB_CONFIG_FILE)
     protected void setDbConfigFile(String dbConfigFile) {
@@ -434,7 +432,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbCacheSize(int dbCacheSize) {
         this.dbCacheSize = dbCacheSize;
     }
-    
+
     @Override
     public String getMainDb() {
         return mainDb;
@@ -462,49 +460,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public int getMilestoneBatchWrite() {
-        return milestoneBatchWrite;
+    public int getMilestoneCacheSize() {
+        return milestoneCacheSize;
     }
 
     @JsonProperty
     @Parameter(names = { "--milestone-cache-size" }, description = DbConfig.Descriptions.MILESTONE_CACHE_SIZE)
-    protected void setMilestoneBatchWrite(int milestoneBatchWrite) {
-        if (milestoneBatchWrite < 1 || milestoneBatchWrite > Defaults.MAX_MILESTONE_CACHE_SIZE) {
+    protected void setMilestoneCacheSize(int milestoneCacheSize) {
+        if (milestoneCacheSize < 1 || milestoneCacheSize > Defaults.MAX_MILESTONE_CACHE_SIZE) {
             throw new ParameterException("MILESTONE_CACHE_SIZE should be between 1 and "
-                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneBatchWrite + ")");
+                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneCacheSize + ")");
         }
-        this.milestoneBatchWrite = milestoneBatchWrite;
-    }
-
-    @Override
-    public int getTxCacheReleaseCount() {
-        return txCacheReleaseCount;
-    }
-
-    @JsonProperty
-    @Parameter(names = { "--tx-cache-release-count" }, description = DbConfig.Descriptions.TX_BATCH_RELEASE_COUNT)
-    protected void setTxCacheReleaseCount(int txCacheReleaseCount) {
-        if (txCacheReleaseCount < 1 || txCacheReleaseCount > Defaults.MAX_TX_CACHE_RELEASE_COUNT) {
-            throw new ParameterException("TX_CACHE_RELEASE_COUNT should be between 1 and "
-                    + Defaults.MAX_TX_CACHE_RELEASE_COUNT + " .(found " + txCacheReleaseCount + ")");
-        }
-        this.txCacheReleaseCount = txCacheReleaseCount;
-    }
-
-    @Override
-    public int getMilestoneCacheReleaseCount() {
-        return milestoneCacheReleaseCount;
-    }
-
-    @JsonProperty
-    @Parameter(names = { "--milestone-cache-release-count" },
-            description = DbConfig.Descriptions.MILESTONE_BATCH_RELEASE_COUNT)
-    protected void setMilestoneCacheReleaseCount(int milestoneCacheReleaseCount) {
-        if (milestoneCacheReleaseCount < 1 || milestoneCacheReleaseCount > Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT) {
-            throw new ParameterException("MILESTONE_CACHE_RELEASE_COUNT should be between 1 and "
-                    + Defaults.MAX_MILESTONE_CACHE_RELEASE_COUNT + " .(found " + milestoneCacheReleaseCount + ")");
-        }
-        this.milestoneCacheReleaseCount = milestoneCacheReleaseCount;
+        this.milestoneCacheSize = milestoneCacheSize;
     }
 
     @Override
@@ -882,7 +849,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--max-analyzed-transactions", 
+    @Parameter(names = "--max-analyzed-transactions",
         description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
     protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
@@ -951,12 +918,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         // Cache
         int MAX_TX_CACHE_SIZE = 1000;
         int MAX_MILESTONE_CACHE_SIZE = 30;
-        int MAX_TX_CACHE_RELEASE_COUNT = 10;
-        int MAX_MILESTONE_CACHE_RELEASE_COUNT = 10;
         int TX_CACHE_SIZE = MAX_TX_CACHE_SIZE;
         int MILESTONE_CACHE_SIZE = MAX_MILESTONE_CACHE_SIZE;
-        int TX_CACHE_RELEASE_COUNT = MAX_TX_CACHE_RELEASE_COUNT;
-        int MILESTONE_CACHE_RELEASE_COUNT = MAX_MILESTONE_CACHE_RELEASE_COUNT;
 
         //Protocol
         double P_SEND_MILESTONE = 0.02d;

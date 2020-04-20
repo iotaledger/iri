@@ -20,7 +20,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -96,12 +95,12 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * A set that allows us to keep track of the candidates that have been seen and added to the {@link
      * #milestoneCandidatesToAnalyze} already.
      */
-    private final Set<TransactionViewModel> seenMilestoneCandidates = new HashSet<>();
+    private final Set<Hash> seenMilestoneCandidates = new HashSet<>();
 
     /**
      * A list of milestones that still have to be analyzed.
      */
-    private final Deque<TransactionViewModel> milestoneCandidatesToAnalyze = new ArrayDeque<>();
+    private final Deque<Hash> milestoneCandidatesToAnalyze = new ArrayDeque<>();
 
     /**
      * A flag that allows us to detect if the background worker is in its first iteration (for different log
@@ -305,14 +304,13 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      */
     private void collectNewMilestoneCandidates() throws MilestoneException {
         try {
-            List<TransactionViewModel> transactions = AddressViewModel.loadAsSortedList(tangle, coordinatorAddress);
-            for (TransactionViewModel tvm : transactions) {
+            for (Hash hash : AddressViewModel.load(tangle, coordinatorAddress).getHashes()) {
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
 
-                if (tvm != null && seenMilestoneCandidates.add(tvm)) {
-                    milestoneCandidatesToAnalyze.addFirst(tvm);
+                if (seenMilestoneCandidates.add(hash)) {
+                    milestoneCandidatesToAnalyze.addFirst(hash);
                 }
             }
         } catch (Exception e) {
@@ -340,9 +338,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                 return;
             }
 
-            TransactionViewModel candidateTransactionViewModel = milestoneCandidatesToAnalyze.pollFirst();
-            if(!processMilestoneCandidate(candidateTransactionViewModel)) {
-                seenMilestoneCandidates.remove(candidateTransactionViewModel);
+            Hash candidateTransactionHash = milestoneCandidatesToAnalyze.pollFirst();
+            if(!processMilestoneCandidate(candidateTransactionHash)) {
+                seenMilestoneCandidates.remove(candidateTransactionHash);
             }
         }
     }

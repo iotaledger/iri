@@ -38,18 +38,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private static final int SOLIDIFICATION_INTERVAL = 100;
 
     /**
-     * <p>
-     * Defines the maximum amount of transactions that are allowed to get processed while trying to solidify a
-     * milestone.
-     * </p>
-     * <p>
-     * Note: We want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
-     *       long running {@link TransactionSolidifier#checkSolidity(Hash)} call.
-     * </p>
-     */
-    private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;
-
-    /**
      * Logger for this class allowing us to dump debug and status messages.
      */
     private static final IntervalLogger log = new IntervalLogger(MilestoneSolidifier.class);
@@ -341,7 +329,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         try {
-            return transactionSolidifier.checkSolidity(currentEntry.getKey(), SOLIDIFICATION_TRANSACTIONS_LIMIT);
+            return transactionSolidifier.addMilestoneToSolidificationQueue(currentEntry.getKey());
         } catch (Exception e) {
             log.error("Error while solidifying milestone #" + currentEntry.getValue(), e);
 

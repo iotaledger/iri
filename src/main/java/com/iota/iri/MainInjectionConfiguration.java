@@ -4,9 +4,7 @@ import com.iota.iri.cache.CacheManager;
 import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.network.NeighborRouter;
-import com.iota.iri.network.TipsRequester;
-import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.*;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.ledger.LedgerService;
@@ -102,6 +100,12 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
+    HeartbeatPulse providerHeartbeatPulse(NeighborRouter neighborRouter, SnapshotProvider snapshotProvider, @Nullable LocalSnapshotManager localSnapshotManager){
+        return new HeartbeatPulseImpl(neighborRouter, snapshotProvider, configuration, localSnapshotManager);
+    }
+
+    @Singleton
+    @Provides
     LatestSolidMilestoneTracker provideLatestSolidMilestoneTracker(Tangle tangle, SnapshotProvider snapshotProvider,
             MilestoneService milestoneService, LedgerService ledgerService,
             LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
@@ -171,21 +175,21 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService,
-            SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService,
-            LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker,
-            SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService,
-            @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
-            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
-            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
-            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
-            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
+                     SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+                     @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService,
+                     LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker,
+                     SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService,
+                     @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+                     BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+                     TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+                     TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+                     TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+                     CacheManager cacheManager, TransactionSolidifier transactionSolidifier, HeartbeatPulse heartbeatPulse) {
         return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService,
                 localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker,
                 seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle,
                 transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline,
-                tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb, cacheManager, transactionSolidifier);
+                tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb, cacheManager, transactionSolidifier, heartbeatPulse);
     }
 
     @Singleton

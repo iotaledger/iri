@@ -153,7 +153,7 @@ public class API {
     private final TransactionValidator transactionValidator;
     private final TransactionSolidifier transactionSolidifier;
     private final LatestMilestoneTracker latestMilestoneTracker;
-    
+
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
@@ -198,11 +198,11 @@ public class API {
      *
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
-            SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
-            SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter,
-            TipSelector tipsSelector, TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline,
-            TransactionSolidifier transactionSolidifier) {
+               SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
+               SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter,
+               TipSelector tipsSelector, TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+               LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline,
+               TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
         this.ixi = ixi;
         
@@ -219,7 +219,7 @@ public class API {
         this.transactionValidator = transactionValidator;
         this.transactionSolidifier = transactionSolidifier;
         this.latestMilestoneTracker = latestMilestoneTracker;
-        
+
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
         maxGetTrytes = configuration.getMaxGetTrytes();

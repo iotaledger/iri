@@ -22,6 +22,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 /**
  * <p>
  * Creates a manager for the local snapshots, that takes care of automatically creating local snapshots when the defined
@@ -295,5 +296,16 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
         } else {
             this.pruningConditions = ArrayUtils.addAll(this.pruningConditions, conditions);
         }
+    }
+
+    @Override
+    public int maxSnapshotPruningMilestone() throws TransactionPruningException {
+        int max = 0;
+        for (PruningCondition condition: pruningConditions) {
+            if(condition.getSnapshotPruningMilestone() > max){
+                max = condition.getSnapshotPruningMilestone();
+            }
+        }
+        return max;
     }
 }

@@ -11,6 +11,7 @@ import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
 import com.iota.iri.network.protocol.Handshake;
+import com.iota.iri.network.protocol.Heartbeat;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
 
@@ -907,6 +908,13 @@ public class NeighborRouterImpl implements NeighborRouter {
         // tx might actually not be sent, we are merely putting it into the send queue
         // TODO: find a way to increment once we actually sent the txs into the channel
         neighbor.getMetrics().incrSentTransactionsCount();
+    }
+
+    @Override
+    public void gossipHeartbeatTo(Neighbor neighbor, Heartbeat heartbeat) {
+        ByteBuffer packet = Protocol.createHeartbeatPacket(heartbeat);
+        neighbor.send(packet);
+        neighbor.getMetrics().incrSentHeartbeatCount();
     }
 
     @Override

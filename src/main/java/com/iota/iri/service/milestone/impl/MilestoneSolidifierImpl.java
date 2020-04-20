@@ -211,11 +211,15 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private void bootStrapSolidMilestones() throws Exception {
         boolean solid = true;
         int milestoneIndex = snapshotProvider.getInitialSnapshot().getIndex();
+        MilestoneViewModel milestone;
         while(solid){
             milestoneIndex += 1;
-            if(MilestoneViewModel.get(tangle, milestoneIndex) == null){
+            if((milestone = MilestoneViewModel.get(tangle, milestoneIndex)) == null){
                 solid = false;
                 milestoneIndex -= 1;
+            } else {
+                latestMilestoneHash = milestone.getHash();
+                latestMilestoneIndex = milestone.index();
             }
         }
         latestSolidMilestone = milestoneIndex;
@@ -226,9 +230,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 if ((index = milestoneService.getMilestoneIndex(TransactionViewModel.fromHash(tangle, hash))) >
                         latestSolidMilestone){
                     add(hash, index);
-                    latestMilestoneIndex = index;
-                    latestMilestoneHash = hash;
-
                 }
             } catch(Exception e) {
                 log.error("Error processing existing milestone index", e);

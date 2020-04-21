@@ -1,7 +1,5 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.cache.Cache;
-import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.service.snapshot.Snapshot;
@@ -86,9 +84,6 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
-    // true if entry is fresh. False if dirty
-    private boolean isCacheEntryFresh = true;
-
     /**
      * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is null,
      * it will return with no response. If the {@link Transaction} object has not been parsed, and the
@@ -101,8 +96,7 @@ public class TransactionViewModel {
      */
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed.get()) {
-            transactionViewModel.setAttachmentData();
-            transactionViewModel.setMetadata();
+            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
         }
     }
 
@@ -118,26 +112,9 @@ public class TransactionViewModel {
      * @throws Exception Thrown if the database fails to find the {@link Transaction} object
      */
     public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
-        Hash hashIdentifier = HashFactory.TRANSACTION.create(hash);
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        TransactionViewModel transactionViewModel = null;
-
-        if (cache != null) {
-            transactionViewModel = cache.get(hashIdentifier);
-            if (transactionViewModel != null) {
-                fillMetadata(tangle, transactionViewModel);
-                cachePut(tangle, transactionViewModel, hashIdentifier);
-                return transactionViewModel;
-            }
-        }
-
-        transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash),
-                hashIdentifier);
+        TransactionViewModel transactionViewModel = new TransactionViewModel(
+                (Transaction) tangle.find(Transaction.class, hash), HashFactory.TRANSACTION.create(hash));
         fillMetadata(tangle, transactionViewModel);
-
-        if (cache != null) {
-            cachePut(tangle, transactionViewModel, hashIdentifier);
-        }
         return transactionViewModel;
     }
 
@@ -152,23 +129,9 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error loading the {@link Transaction} object from the database
      */
     public static TransactionViewModel fromHash(Tangle tangle, final Hash hash) throws Exception {
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        TransactionViewModel transactionViewModel = null;
-        if (cache != null) {
-            transactionViewModel = cache.get(hash);
-            if (transactionViewModel != null) {
-                fillMetadata(tangle, transactionViewModel);
-                cachePut(tangle, transactionViewModel, hash);
-                return transactionViewModel;
-            }
-        }
-
-        transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        TransactionViewModel transactionViewModel = new TransactionViewModel(
+                (Transaction) tangle.load(Transaction.class, hash), hash);
         fillMetadata(tangle, transactionViewModel);
-
-        if (cache != null) {
-            cachePut(tangle, transactionViewModel, hash);
-        }
         return transactionViewModel;
     }
 
@@ -237,7 +200,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error determining if the transaction exists or not
      */
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {
-        return tangle.getCache(TransactionViewModel.class).get(hash) != null || tangle.exists(Transaction.class, hash);
+        return tangle.exists(Transaction.class, hash);
     }
 
     /**
@@ -310,15 +273,6 @@ public class TransactionViewModel {
         if (initialSnapshot.hasSolidEntryPoint(hash)) {
             return;
         }
-
-        TransactionViewModel cachedTvm = tangle.getCache(TransactionViewModel.class).get(hash);
-        if (cachedTvm != null) {
-            this.isCacheEntryFresh = false;
-        }
-        cachePut(tangle, this, hash);
-    }
-
-    private void updateDB(Tangle tangle, Transaction transaction, Hash hash, String item) throws Exception {
         tangle.update(transaction, hash, item);
     }
 
@@ -371,7 +325,6 @@ public class TransactionViewModel {
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Transaction.class, hash);
-        cacheDelete(tangle, hash);
     }
 
     /**
@@ -440,21 +393,15 @@ public class TransactionViewModel {
      * @throws Exception Thrown if there is an error fetching the batch or storing in the database.
      */
     public boolean store(Tangle tangle, Snapshot initialSnapshot) throws Exception {
-
-        if (initialSnapshot.hasSolidEntryPoint(hash)) {
+        if (initialSnapshot.hasSolidEntryPoint(hash) || exists(tangle, hash)) {
             return false;
         }
 
-        // We need to save approvees, tags, and other metadata that is used by
-        // non-cached operations.
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
         if (exists(tangle, hash)) {
             return false;
         }
-        tangle.saveBatch(batch);
-
-        cachePut(tangle, this, hash);
-        return true;
+        return tangle.saveBatch(batch);
     }
 
     /**
@@ -465,7 +412,7 @@ public class TransactionViewModel {
     public Transaction getTransaction() {
         Transaction t = new Transaction();
 
-        // if the supplied array to the call != null the transaction bytes are copied over from the buffer.
+        //if the supplied array to the call != null the transaction bytes are copied over from the buffer.
         t.read(getBytes());
         t.readMetadata(transaction.metadata());
         return t;
@@ -680,7 +627,7 @@ public class TransactionViewModel {
      *
      * The validity can be one of three states: <tt>1: Valid; -1: Invalid; 0: Unknown</tt>
      *
-     * @param tangle          The tangle reference for the database
+     * @param tangle The tangle reference for the database
      * @param initialSnapshot snapshot that acts as genesis
      * @param validity        The state of validity that the {@link Transaction} will be updated to
      * @throws Exception Thrown if there is an error with the update
@@ -934,59 +881,5 @@ public class TransactionViewModel {
     @Override
     public String toString() {
         return "transaction " + hash.toString();
-    }
-
-    /**
-     * Puts the TVM in cache
-     * @param tangle Tangle
-     * @param transactionViewModel The tvm to cache
-     * @param hash the hash of the tvm
-     * @throws Exception Exception
-     */
-    private static void cachePut(Tangle tangle, TransactionViewModel transactionViewModel, Hash hash) throws Exception {
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
-        }
-        cache.put(hash, transactionViewModel);
-    }
-
-    /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache to DB
-     * @param tangle Tangle
-     * @throws Exception Exception
-     */
-    public static void cacheEvict(Tangle tangle) throws Exception {
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
-            Indexable hash = cache.nextEvictionKey();
-            if (hash != null) {
-                TransactionViewModel tvm = cache.get(hash);
-                if (tvm != null) {
-                    if (!tvm.getIsCacheEntryFresh()) {
-                        tvm.updateDB(tangle, tvm.getTransaction(), tvm.getHash(), "");
-                    }
-                    cache.evict(tvm.getHash());
-                }
-            }
-        }
-    }
-
-    /**
-     * Deletes the item with the specified hash from cache
-     * @param tangle Tangle
-     * @param hash hash to evict
-     */
-    private static void cacheDelete(Tangle tangle, Hash hash) {
-        tangle.getCache(TransactionViewModel.class).evict(hash);
-    }
-
-    /**
-     * The state of the cache entry
-     *
-     * @return True if fresh. False otherwise
-     */
-    public boolean getIsCacheEntryFresh() {
-        return isCacheEntryFresh;
     }
 }

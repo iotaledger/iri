@@ -76,10 +76,6 @@ public class TipsViewModel {
         Set<Hash> hashes = new HashSet<>();
         synchronized (sync) {
             Iterator<Hash> hashIterator;
-            hashIterator = tips.iterator();
-            while (hashIterator.hasNext()) {
-                hashes.add(hashIterator.next());
-            }
 
             hashIterator = solidTips.iterator();
             while (hashIterator.hasNext()) {

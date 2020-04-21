@@ -162,7 +162,6 @@ Feature: Test API calls on Machine 1
 		Given "getBalances" is called on "nodeA-m4" with:
 		|keys           |values			        |type               |
 		|addresses      |TEST_EMPTY_ADDRESS	        |staticList         |
-		|threshold      |100			        |int                |
 
 		Then the response for "getBalances" should return with:
 		|keys           |values                         |type		    |

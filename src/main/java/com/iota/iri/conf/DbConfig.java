@@ -66,7 +66,7 @@ public interface DbConfig extends Config {
      *
      * @return {@value DbConfig.Descriptions#MILESTONE_CACHE_SIZE}
      */
-    int getMilestoneCacheSize();
+    int getMilestoneBatchWrite();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#TX_CACHE_RELEASE_COUNT}

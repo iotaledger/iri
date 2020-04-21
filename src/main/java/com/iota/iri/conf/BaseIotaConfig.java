@@ -71,7 +71,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     // Cache
     protected int txCacheSize = Defaults.TX_CACHE_SIZE;
-    protected int milestoneCacheSize = Defaults.MILESTONE_CACHE_SIZE;
+    protected int milestoneBatchWrite = Defaults.MILESTONE_CACHE_SIZE;
     protected int txCacheReleaseCount = Defaults.TX_CACHE_RELEASE_COUNT;
     protected int milestoneCacheReleaseCount = Defaults.MILESTONE_CACHE_RELEASE_COUNT;
 
@@ -462,18 +462,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public int getMilestoneCacheSize() {
-        return milestoneCacheSize;
+    public int getMilestoneBatchWrite() {
+        return milestoneBatchWrite;
     }
 
     @JsonProperty
     @Parameter(names = { "--milestone-cache-size" }, description = DbConfig.Descriptions.MILESTONE_CACHE_SIZE)
-    protected void setMilestoneCacheSize(int milestoneCacheSize) {
-        if (milestoneCacheSize < 1 || milestoneCacheSize > Defaults.MAX_MILESTONE_CACHE_SIZE) {
+    protected void setMilestoneBatchWrite(int milestoneBatchWrite) {
+        if (milestoneBatchWrite < 1 || milestoneBatchWrite > Defaults.MAX_MILESTONE_CACHE_SIZE) {
             throw new ParameterException("MILESTONE_CACHE_SIZE should be between 1 and "
-                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneCacheSize + ")");
+                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneBatchWrite + ")");
         }
-        this.milestoneCacheSize = milestoneCacheSize;
+        this.milestoneBatchWrite = milestoneBatchWrite;
     }
 
     @Override

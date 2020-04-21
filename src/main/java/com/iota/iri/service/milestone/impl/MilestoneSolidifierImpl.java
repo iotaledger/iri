@@ -292,9 +292,9 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
         }
 
-        MilestoneViewModel milestone = MilestoneViewModel.get(tangle, milestoneIndex);
-        setLatestMilestone(milestone.getHash(), milestone.index());
-        latestSolidMilestone = milestone.index();
+        latestSolidMilestone = milestoneIndex;
+        latestMilestoneIndex = milestoneIndex;
+        latestMilestoneHash = Hash.NULL_HASH;
 
         AddressViewModel.load(tangle, config.getCoordinator()).getHashes().forEach(hash -> {
             try {

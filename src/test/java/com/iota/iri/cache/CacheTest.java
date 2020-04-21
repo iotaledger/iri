@@ -98,6 +98,13 @@ public class CacheTest {
     }
 
     @Test
+    public void shouldRelease() {
+        cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
+        cache.release();
+        Assert.assertTrue("Cache should be empty after full release", cache.getSize() == 0);
+    }
+
+    @Test
     public void shouldReleaseElementsWithKeys() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
         cache.put(hash1, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH1), hash1));

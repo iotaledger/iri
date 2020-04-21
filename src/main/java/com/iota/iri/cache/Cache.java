@@ -53,6 +53,11 @@ public interface Cache<K, V> {
     void release(K key);
 
     /**
+     * Release expired items from the cache according to its {@link CacheConfiguration} and puts it in the weak store.
+     */
+    void release();
+
+    /**
      * Release all items specified in the given collection and puts them in the weak store.
      */
     void release(List<K> keys);

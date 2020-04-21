@@ -25,6 +25,7 @@ public interface CacheManager {
      */
     <V> Cache<Indexable, V> lookup(Class<V> type);
 
+
     /**
      * Adds a new cache of the specified type using the passed cacheConfiguration.
      * 

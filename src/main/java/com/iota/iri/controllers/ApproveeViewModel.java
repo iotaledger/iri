@@ -1,6 +1,7 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.cache.Cache;
+import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Approvee;
@@ -9,6 +10,7 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -93,43 +95,6 @@ public class ApproveeViewModel implements HashesViewModel {
         return null;
     }
 
-    /**
-     * Puts the approvee in cache
-     * 
-     * @param tangle            Tangle
-     * @param approveeViewModel The approveeViewModel to cache
-     * @param hash              The hash of this viewmodel
-     */
-    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
-        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        while (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(cache);
-        }
-        cache.put(hash, approveeViewModel);
-    }
-
-    /**
-     * Deletes the item with the specified hash fro the cache. Delegates to {@link Cache#delete(Object)}
-     *
-     * @param tangle Tangle
-     * @param hash   Hash of the item to delete
-     */
-    private static void cacheDelete(Tangle tangle, Indexable hash) {
-        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        if (cache != null) {
-            cache.delete(hash);
-        }
-    }
-
-    /**
-     * Release the next item from cache. Since this data is immutable, we only release from memory and not persist to DB
-     * again.
-     *
-     */
-    private static void cacheRelease(Cache<Indexable, ApproveeViewModel> cache) {
-        cache.releaseNext();
-    }
-
     @Override
     public boolean store(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
@@ -164,16 +129,66 @@ public class ApproveeViewModel implements HashesViewModel {
 
     @Override
     public void delete(Tangle tangle) throws Exception {
-        tangle.delete(Approvee.class, hash);
+        tangle.delete(Approvee.class,hash);
         cacheDelete(tangle, hash);
     }
 
     @Override
     public ApproveeViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Approvee.class, hash);
-        if (bundlePair != null && bundlePair.hi != null) {
-            return new ApproveeViewModel((Approvee) bundlePair.hi, bundlePair.low);
+        if(bundlePair != null && bundlePair.hi != null) {
+            return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);
         }
         return null;
+    }
+
+    /**
+     * Puts the approvee in cache
+     * 
+     * @param tangle            Tangle
+     * @param approveeViewModel The approveeViewModel to cache
+     * @param hash              The hash of this viewmodel
+     */
+    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
+            cacheRelease(tangle);
+        }
+        cache.put(hash, approveeViewModel);
+    }
+
+    /**
+     * Deletes the item with the specified hash fro the cache. Delegates to {@link Cache#delete(Object)}
+     *
+     * @param tangle Tangle
+     * @param hash   Hash of the item to delete
+     */
+    private static void cacheDelete(Tangle tangle, Indexable hash) {
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache != null) {
+            cache.delete(hash);
+        }
+    }
+
+    /**
+     * Release {@link CacheConfiguration#getReleaseCount()} items from cache. Since this data is immutable, we only
+     * release from memory and not persist to DB again.
+     * 
+     * @param tangle Tangle
+     * @throws Exception Exception
+     */
+    private static void cacheRelease(Tangle tangle) throws Exception {
+        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+
+        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
+            Indexable hash = releaseQueueCopy.poll();
+            if (hash != null) {
+                ApproveeViewModel approveeViewModel = cache.get(hash);
+                if (approveeViewModel != null) {
+                    cache.release(hash);
+                }
+            }
+        }
     }
 }

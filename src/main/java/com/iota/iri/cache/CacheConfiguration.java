@@ -15,6 +15,13 @@ public interface CacheConfiguration {
     long getMaxSize();
 
     /**
+     * Gets the number of items to release in a single batch
+     * 
+     * @return The number of items to release
+     */
+    int getReleaseCount();
+
+    /**
      * Gets the concurrency level of the cache amp
      * 
      * @return concurrency level

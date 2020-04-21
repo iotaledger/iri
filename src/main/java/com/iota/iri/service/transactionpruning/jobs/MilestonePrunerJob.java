@@ -276,7 +276,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                         }
                     }
                 } else if(Milestone.class.equals(element.hi)) {
-                    MilestoneViewModel.cacheDelete(getTangle(), ((IntegerIndex) element.low));
+                    MilestoneViewModel.clear(((IntegerIndex) element.low).getValue());
                 }
             });
 

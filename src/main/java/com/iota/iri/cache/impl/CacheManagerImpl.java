@@ -1,7 +1,6 @@
 package com.iota.iri.cache.impl;
 
 import com.iota.iri.cache.Cache;
-import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.cache.CacheManager;
 import com.iota.iri.storage.Indexable;
 
@@ -42,13 +41,6 @@ public class CacheManagerImpl implements CacheManager {
     public <V> Cache add(Class<V> type) {
         Cache<Indexable, V> cache = new CacheImpl<>(new DefaultCacheConfiguration());
         cacheMap.put(type, cache);
-        return cache;
-    }
-
-    @Override
-    public <V> Cache<Indexable, V> add(Class<V> type, CacheConfiguration cacheConfiguration) {
-        Cache<Indexable, V> cache = new CacheImpl<>(cacheConfiguration);
-        cacheMap.putIfAbsent(type, cache);
         return cache;
     }
 

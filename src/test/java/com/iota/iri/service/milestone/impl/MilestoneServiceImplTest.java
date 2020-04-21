@@ -8,9 +8,6 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
-
-import java.util.Optional;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -22,6 +19,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import java.util.Optional;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MilestoneServiceImplTest {
@@ -68,15 +67,15 @@ public class MilestoneServiceImplTest {
     private MilestoneServiceImpl milestoneService;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
-        MilestoneViewModel.cacheEvict(tangle);
+        MilestoneViewModel.clear();
     }
 
     @After
-    public void tearDown() throws Exception {
-        MilestoneViewModel.cacheEvict(tangle);
+    public void tearDown() {
+        MilestoneViewModel.clear();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

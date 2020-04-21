@@ -1,9 +1,5 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.cache.Cache;
-import com.iota.iri.cache.CacheConfiguration;
-import com.iota.iri.cache.CacheManager;
-import com.iota.iri.cache.impl.MilestoneCacheConfiguration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
@@ -12,15 +8,38 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Acts as a controller interface for a {@link Milestone} hash object. This controller is used by the
  * {@link com.iota.iri.MilestoneTracker} to manipulate a {@link Milestone} object.
  */
 public class MilestoneViewModel {
     private final Milestone milestone;
+    private static final Map<Integer, MilestoneViewModel> milestones = new ConcurrentHashMap<>();
 
     private MilestoneViewModel(final Milestone milestone) {
         this.milestone = milestone;
+    }
+
+    /**
+     * Removes the contents of the stored {@link Milestone} object set.
+     */
+    public static void clear() {
+        milestones.clear();
+    }
+
+    /**
+     * This method removes a {@link MilestoneViewModel} from the cache.
+     *
+     * It is used by the {@link com.iota.iri.service.transactionpruning.TransactionPruner} to remove milestones that
+     * were deleted in the database, so that the runtime environment correctly reflects the database state.
+     *
+     * @param milestoneIndex the index of the milestone
+     */
+    public static void clear(int milestoneIndex) {
+        milestones.remove(milestoneIndex);
     }
 
     /**
@@ -47,21 +66,31 @@ public class MilestoneViewModel {
      * @throws Exception Thrown if the database fails to load the indexed {@link Milestone} object
      */
     public static MilestoneViewModel get(Tangle tangle, int index) throws Exception {
-        Indexable integerIndex = new IntegerIndex(index);
-        Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
-        MilestoneViewModel milestoneViewModel = null;
-        if (cache != null) {
-            milestoneViewModel = cache.get(integerIndex);
-            if (milestoneViewModel != null) {
-                return milestoneViewModel;
-            }
-        }
-        Milestone milestone = (Milestone) tangle.load(Milestone.class, new IntegerIndex(index));
-        if (milestone != null && milestone.hash != null) {
-            milestoneViewModel = new MilestoneViewModel(milestone);
-            cachePut(tangle, milestoneViewModel, integerIndex);
+        MilestoneViewModel milestoneViewModel = milestones.get(index);
+        if(milestoneViewModel == null && load(tangle, index)) {
+            milestoneViewModel = milestones.get(index);
         }
         return milestoneViewModel;
+    }
+
+    /**
+     * Fetches a {@link Milestone} object from the database using its integer index. If the {@link Milestone} and the
+     * associated {@link Hash} identifier are not null, a new {@link MilestoneViewModel} is created for the
+     * {@link Milestone} object, and it is placed into the <tt>Milestones</tt> set, indexed by the provided integer
+     * index.
+     *
+     * @param tangle The tangle reference for the database
+     * @param index The integer index reference for the {@link Milestone} object
+     * @return True if the {@link Milestone} object is stored in the <tt>Milestones</tt> set, False if not
+     * @throws Exception Thrown if the database fails to load the {@link Milestone} object
+     */
+    public static boolean load(Tangle tangle, int index) throws Exception {
+        Milestone milestone = (Milestone) tangle.load(Milestone.class, new IntegerIndex(index));
+        if(milestone != null && milestone.hash != null) {
+            milestones.put(index, new MilestoneViewModel(milestone));
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -186,10 +215,6 @@ public class MilestoneViewModel {
      * @throws Exception Thrown if there is an error while saving the {@link Milestone} object
      */
     public boolean store(Tangle tangle) throws Exception {
-        Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
-        if (cache != null) {
-            cachePut(tangle, new MilestoneViewModel(milestone), milestone.index);
-        }
         return tangle.save(milestone, milestone.index);
     }
 
@@ -223,75 +248,5 @@ public class MilestoneViewModel {
     @Override
     public String toString() {
         return "milestone #" + index() + " (" + getHash().toString() + ")";
-    }
-
-    /**
-     * Puts the milestoneViewModel in cache
-     * 
-     * @param tangle             Tangle
-     * @param milestoneViewModel milestoneViewModel to cache
-     * @param index              index of milestone
-     */
-    private static void cachePut(Tangle tangle, MilestoneViewModel milestoneViewModel, Indexable index)
-            throws Exception {
-        Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
-        if (cache == null) {
-            return;
-        }
-
-        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
-            cacheEvict(tangle);
-        }
-        cache.put(index, milestoneViewModel);
-    }
-
-    /**
-     * Gets the cache for this view model
-     * 
-     * @param tangle Tangle
-     * @return Cache found.
-     */
-    private static Cache<Indexable, MilestoneViewModel> getCache(Tangle tangle) {
-        CacheManager cacheManager = tangle.getCacheManager();
-        if (cacheManager == null) {
-            return null;
-        }
-        Cache<Indexable, MilestoneViewModel> cache = cacheManager.lookup(MilestoneViewModel.class);
-        if (cache != null) {
-            return cache;
-        }
-        return tangle.getCacheManager().add(MilestoneViewModel.class, new MilestoneCacheConfiguration());
-    }
-
-    /**
-     * Deletes the item with the specified index from cache
-     * 
-     * @param tangle Tangle
-     * @param index  index of milestone to evict
-     */
-    public static void cacheDelete(Tangle tangle, IntegerIndex index) {
-        getCache(tangle).evict(index);
-    }
-
-    /**
-     * Evict {@link CacheConfiguration#getEvictionCount()} items from the cache to DB
-     * 
-     * @param tangle Tangle
-     * @throws Exception Exception
-     */
-    public static void cacheEvict(Tangle tangle) throws Exception {
-        Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
-        if (cache == null) {
-            return;
-        }
-        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
-            Indexable index = cache.nextEvictionKey();
-            if (index != null) {
-                MilestoneViewModel milestoneViewModel = cache.get(index);
-                if (milestoneViewModel != null) {
-                    cache.evict(index);
-                }
-            }
-        }
     }
 }

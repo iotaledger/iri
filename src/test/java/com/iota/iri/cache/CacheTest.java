@@ -147,16 +147,6 @@ public class CacheTest {
         Assert.assertTrue("Cache Misses should be 1", cache.getCacheMisses() == 1);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void shouldThrowNullExceptionOnNullKey() {
-        cache.put(null, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void shouldThrowNullExceptionOnNullValue() {
-        cache.put(hash, null);
-    }
-
     private Transaction getTransaction(String hash) {
         Transaction tx = new Transaction();
         tx.address = HashFactory.TRANSACTION.create(hash);

@@ -1,27 +1,23 @@
 package com.iota.iri.cache;
 
 import com.iota.iri.cache.impl.CacheManagerImpl;
-import com.iota.iri.conf.DbConfig;
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Spy;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 public class CacheManagerTest {
 
-    @Spy
+    @Mock
     CacheManager cacheManager;
-    @Spy
-    DbConfig dbConfig;
 
     @Before
     public void setUp() {
-        dbConfig = new MainnetConfig();
-        cacheManager = new CacheManagerImpl(dbConfig);
+        cacheManager = Mockito.spy(new CacheManagerImpl());
     }
 
     @After
@@ -38,5 +34,16 @@ public class CacheManagerTest {
     public void shouldReturnNotNullCache() {
         cacheManager.getCache(TransactionViewModel.class);
         Assert.assertNotNull("Cache should not be null", cacheManager.lookup(TransactionViewModel.class));
+    }
+
+    @Test
+    public void shouldReturnNullCache() {
+        Assert.assertNull("Cache should be null", cacheManager.lookup(TransactionViewModel.class));
+    }
+
+    @Test
+    public void shouldAddCache() {
+        cacheManager.add(TransactionViewModel.class);
+        Assert.assertNotNull("Cache should be null", cacheManager.lookup(TransactionViewModel.class));
     }
 }

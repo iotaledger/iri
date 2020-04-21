@@ -3,11 +3,6 @@ package com.iota.iri.cache.impl;
 import com.iota.iri.cache.Cache;
 import com.iota.iri.cache.CacheConfiguration;
 import com.iota.iri.cache.CacheManager;
-import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.conf.DbConfig;
-import com.iota.iri.controllers.ApproveeViewModel;
-import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.storage.Indexable;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,32 +16,19 @@ public class CacheManagerImpl implements CacheManager {
      * Cache map to store caches
      */
     ConcurrentHashMap<Class<?>, Cache> cacheMap;
-    private DbConfig dbConfig;
 
     /**
      * Constructor
      */
-    public CacheManagerImpl(DbConfig dbConfig) {
+    public CacheManagerImpl() {
         cacheMap = new ConcurrentHashMap<>();
-        this.dbConfig = dbConfig;
-        initializeCaches();
-    }
-
-    private void initializeCaches() {
-        add(TransactionViewModel.class,
-                new CacheConfigurationImpl(dbConfig.getTxCacheSize(), dbConfig.getTxCacheReleaseCount()));
-        add(ApproveeViewModel.class,
-                new CacheConfigurationImpl(dbConfig.getTxCacheSize(), dbConfig.getTxCacheReleaseCount()));
-        add(MilestoneViewModel.class, new CacheConfigurationImpl(dbConfig.getMilestoneBatchWrite(),
-                dbConfig.getMilestoneCacheReleaseCount()));
     }
 
     @Override
     public <V> Cache<Indexable, V> getCache(Class<V> type) {
         Cache<Indexable, V> cache = cacheMap.get(type);
         if (cache == null) {
-            return add(type, new CacheConfigurationImpl(BaseIotaConfig.Defaults.TX_CACHE_SIZE,
-                    BaseIotaConfig.Defaults.TX_CACHE_RELEASE_COUNT));
+            cache = add(type);
         }
         return cache;
     }
@@ -54,6 +36,13 @@ public class CacheManagerImpl implements CacheManager {
     @Override
     public <V> Cache<Indexable, V> lookup(Class<V> type) {
         return cacheMap.get(type);
+    }
+
+    @Override
+    public <V> Cache add(Class<V> type) {
+        Cache<Indexable, V> cache = new CacheImpl<>(new DefaultCacheConfiguration());
+        cacheMap.put(type, cache);
+        return cache;
     }
 
     @Override

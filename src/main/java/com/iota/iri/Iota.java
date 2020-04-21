@@ -1,6 +1,5 @@
 package com.iota.iri;
 
-import com.iota.iri.cache.CacheManager;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -112,7 +111,6 @@ public class Iota {
     public final TipSelector tipsSelector;
 
     public LocalSnapshotsPersistenceProvider localSnapshotsDb;
-    public final CacheManager cacheManager;
 
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
@@ -121,16 +119,16 @@ public class Iota {
      *
      */
     public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider,
-            SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
-            SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
-            MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
-            LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
-            LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
-            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
-            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
-            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
-            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
+                SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
+                SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
+                MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
+                LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
+                LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+                BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+                TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+                TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+                TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+                TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -159,7 +157,6 @@ public class Iota {
         this.transactionValidator = transactionValidator;
 
         this.tipsSelector = tipsSelector;
-        this.cacheManager = cacheManager;
     }
 
     private void initDependencies() throws SnapshotException, SpentAddressesException {
@@ -298,7 +295,6 @@ public class Iota {
                 throw new NotImplementedException("No such database type.");
             }
         }
-        tangle.setCacheManager(cacheManager);
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
@@ -316,8 +312,8 @@ public class Iota {
      * @return A new Persistance provider
      */
     private PersistenceProvider createRocksDbProvider(String path, String log, String configFile, int cacheSize,
-            Map<String, Class<? extends Persistable>> columnFamily,
-            Map.Entry<String, Class<? extends Persistable>> metadata) {
+                                                      Map<String, Class<? extends Persistable>> columnFamily,
+                                                      Map.Entry<String, Class<? extends Persistable>> metadata) {
         return new RocksDBPersistenceProvider(
                 path, log, configFile, cacheSize, columnFamily, metadata);
     }

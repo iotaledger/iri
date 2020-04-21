@@ -25,6 +25,15 @@ public interface CacheManager {
      */
     <V> Cache<Indexable, V> lookup(Class<V> type);
 
+    /**
+     * Adds a new cache of the specified type using the default cache configuration. If a cache with the specified types
+     * already exists, the existing one will be returned. Otherwise, created.
+     *
+     * @param type The type of the cache
+     * @param <V>  Template type for cache value
+     * @return The new cache created.
+     */
+    <V> Cache add(Class<V> type);
 
     /**
      * Adds a new cache of the specified type using the passed cacheConfiguration.

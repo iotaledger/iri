@@ -1,7 +1,7 @@
 package com.iota.iri.cache;
 
-import com.iota.iri.cache.impl.CacheConfigurationImpl;
 import com.iota.iri.cache.impl.CacheImpl;
+import com.iota.iri.cache.impl.DefaultCacheConfiguration;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
@@ -17,7 +17,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Spy;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 public class CacheTest {
 
@@ -26,15 +27,12 @@ public class CacheTest {
     private static final Hash hash = HashFactory.TRANSACTION.create(TEST_TRANSACTION_HASH);
     private static final Hash hash1 = HashFactory.TRANSACTION.create(TEST_TRANSACTION_HASH1);
 
-    @Spy
+    @Mock
     private Cache<Indexable, TransactionViewModel> cache;
-    @Spy
-    private CacheConfiguration cacheConfiguration;
 
     @Before
     public void setUp() {
-        cacheConfiguration = new CacheConfigurationImpl(100, 10);
-        cache = new CacheImpl<>(cacheConfiguration);
+        cache = Mockito.spy(new CacheImpl<>(new DefaultCacheConfiguration()));
     }
 
     @After

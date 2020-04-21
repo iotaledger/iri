@@ -283,16 +283,18 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private void bootStrapSolidMilestones() throws Exception {
         boolean solid = true;
         int milestoneIndex = snapshotProvider.getInitialSnapshot().getIndex();
-        MilestoneViewModel milestone;
+
         while(solid){
             milestoneIndex += 1;
-            if((milestone = MilestoneViewModel.get(tangle, milestoneIndex)) == null){
+            if(MilestoneViewModel.get(tangle, milestoneIndex) == null){
                 solid = false;
                 milestoneIndex -= 1;
             }
         }
-        latestSolidMilestone = milestoneIndex;
-        latestMilestoneIndex = milestoneIndex;
+
+        MilestoneViewModel milestone = MilestoneViewModel.get(tangle, milestoneIndex);
+        setLatestMilestone(milestone.getHash(), milestone.index());
+        latestSolidMilestone = milestone.index();
 
         AddressViewModel.load(tangle, config.getCoordinator()).getHashes().forEach(hash -> {
             try {

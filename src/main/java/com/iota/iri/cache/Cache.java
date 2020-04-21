@@ -46,11 +46,10 @@ public interface Cache<K, V> {
 
     /**
      * Release the specified key from the cache and puts it in the weak store.
-     *
+     * 
      * @param key
-     * @return {@code true} if released or {@code false} if key was never in cache
      */
-    boolean release(K key);
+    void release(K key);
 
     /**
      * Release the key at the top of the release queue and puts it in the weak store.

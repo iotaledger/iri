@@ -112,27 +112,28 @@ public class CacheImpl<K, V> implements Cache<K, V> {
     }
 
     @Override
-    public boolean release(K key) {
+    public void release(K key) {
+        if (key == null) {
+            return;
+        }
+        V value = strongStore.remove(key);
         releaseQueue.remove(key);
-        return releaseKey(key);
+        if (value != null) {
+            weakStore.put(key, value);
+        }
     }
 
     @Override
     public boolean releaseNext() {
         K key = releaseQueue.poll();
-        return releaseKey(key);
-    }
-
-    private boolean releaseKey(K key) {
         if (key == null) {
             return false;
         }
         V value = strongStore.remove(key);
-        boolean released = value != null;
-        if (released) {
+        if (value != null) {
             weakStore.put(key, value);
         }
-        return released;
+        return true;
     }
 
     @Override

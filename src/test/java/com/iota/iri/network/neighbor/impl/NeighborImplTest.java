@@ -13,6 +13,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
+import com.iota.iri.network.protocol.Heartbeat;
+import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.network.protocol.ProtocolMessage;
 import org.junit.Rule;
 import org.junit.Test;
@@ -206,5 +208,63 @@ public class NeighborImplTest {
         neighbor.setState(NeighborState.MARKED_FOR_DISCONNECT);
         neighbor.setState(NeighborState.READY_FOR_MESSAGES);
         assertEquals("should be marked for disconnect", NeighborState.MARKED_FOR_DISCONNECT, neighbor.getState());
+    }
+
+    @Test
+    public void writeHeartbeat() {
+        Heartbeat heartbeat = new Heartbeat();
+        heartbeat.setFirstSolidMilestoneIndex(1);
+        heartbeat.setLastSolidMilestoneIndex(2);
+        ByteBuffer heartbeatPacket =  Protocol.createHeartbeatPacket(heartbeat);
+
+        Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
+
+            @Override
+            public int write(ByteBuffer buf) {
+                int bytesWritten = 0;
+                while (buf.hasRemaining()) {
+                    buf.get();
+                    bytesWritten++;
+                }
+                return bytesWritten;
+            }
+        }, localAddr, serverSocketPort, pipeline);
+
+        neighbor.send(heartbeatPacket);
+
+        try {
+            assertEquals("should have written the entire heartbeat packet", heartbeatPacket.capacity(), neighbor.write());
+        } catch (IOException e) {
+            fail("didn't expect an exception");
+        }
+    }
+
+    @Test
+    public void readHeartbeat() {
+        Heartbeat heartbeat = new Heartbeat();
+        heartbeat.setFirstSolidMilestoneIndex(1);
+        heartbeat.setLastSolidMilestoneIndex(2);
+        ByteBuffer heartbeatPacket =  Protocol.createHeartbeatPacket(heartbeat);
+
+        Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
+            // fake having a heartbeat packet in the socket
+            @Override
+            public int read(ByteBuffer dst) {
+                while (dst.hasRemaining()) {
+                    dst.put(heartbeatPacket.get());
+                }
+                return 0;
+            }
+        }, localAddr, serverSocketPort, pipeline);
+
+        // set the neighbor as ready for other messages
+        neighbor.setState(NeighborState.READY_FOR_MESSAGES);
+
+        try {
+            Heartbeat readHeartbeat = neighbor.heartbeat();
+            assertEquals("fsmi of sent and read heartbeat should be equal", readHeartbeat.getFirstSolidMilestoneIndex(), heartbeat.getFirstSolidMilestoneIndex());
+        } catch (IOException e) {
+            fail("didnt expect an exception: " + e.getMessage());
+        }
     }
 }

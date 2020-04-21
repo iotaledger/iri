@@ -40,10 +40,27 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     private static final IntervalLogger log = new IntervalLogger(TransactionSolidifier.class);
 
     /**
+     * Defines the maximum amount of transactions that are allowed to get processed while trying to solidify a
+     * milestone.
+     *
+     * NOte: we want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
+     * long running {@link #checkSolidity(Hash)} call.
+     */
+    private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;
+
+
+    /**
      * Executor service for running the {@link #processTransactionsToSolidify()}.
      */
     private SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
             "Transaction Solidifier", log.delegate());
+
+    /**
+     * A queue for processing transactions with the {@link #checkSolidity(Hash)} call. Once a transaction has been
+     * marked solid it will be placed into the {@link #transactionsToBroadcast} queue.
+     */
+    private BlockingQueue<Hash> transactionsToSolidify = new LinkedBlockingQueue<>(MAX_SIZE);
+
 
     /**
      * A set of transactions that will be called by the {@link TransactionProcessingPipeline} to be broadcast to
@@ -91,6 +108,55 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      *{@inheritDoc}
      */
     @Override
+    public void addToSolidificationQueue(Hash hash){
+        try{
+            if(!transactionsToSolidify.contains(hash)) {
+                if (transactionsToSolidify.size() >= MAX_SIZE - 1) {
+                    transactionsToSolidify.remove();
+                }
+
+                transactionsToSolidify.put(hash);
+            }
+        } catch(Exception e){
+            log.error("Error placing transaction into solidification queue",e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean addMilestoneToSolidificationQueue(Hash hash){
+        try{
+            TransactionViewModel tx = fromHash(tangle, hash);
+            if (tx.isSolid()) {
+                transactionPropagator.addToPropagationQueue(hash);
+                return true;
+            }
+            addToSolidificationQueue(hash);
+            return false;
+        } catch (Exception e) {
+            log.error("Error adding milestone to solidification queue", e);
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addToPropagationQueue(Hash hash){
+        try {
+            this.transactionPropagator.addToPropagationQueue(hash);
+        } catch(Exception e){
+            log.debug("Error adding transaction to propagation queue: " + e.getMessage());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public TransactionViewModel getNextTxInBroadcastQueue(){
         return transactionsToBroadcast.poll();
     }
@@ -105,9 +171,19 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
 
 
     /**
-     * Process any solid transactions present in the {@link TransactionPropagator}.
+     * Iterate through the {@link #transactionsToSolidify} queue and call {@link #checkSolidity(Hash)} on each hash.
+     * Solid transactions are then processed into the {@link #transactionsToBroadcast} queue. After that, process any
+     * solid transactions present in the {@link TransactionPropagator}.
      */
     private void processTransactionsToSolidify(){
+        Hash hash;
+        if((hash = transactionsToSolidify.poll()) != null) {
+            try {
+                checkSolidity(hash);
+            } catch (Exception e) {
+                log.info(e.getMessage());
+            }
+        }
         transactionPropagator.propagateSolidTransactions();
     }
 
@@ -116,7 +192,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      */
     @Override
     public boolean checkSolidity(Hash hash) throws Exception {
-        return checkSolidity(hash, 50000);
+        return checkSolidity(hash, SOLIDIFICATION_TRANSACTIONS_LIMIT);
     }
 
     /**
@@ -215,6 +291,12 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             log.info("Error placing transaction into broadcast queue: " + e.getMessage());
         }
     }
+
+    @VisibleForTesting
+    Set<Hash> getSolidificationSet(){
+        return new LinkedHashSet<>(transactionsToSolidify);
+    }
+
 
     @Override
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {

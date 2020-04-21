@@ -21,6 +21,7 @@ public class MessageReaderFactory {
             case HEADER:
             case HANDSHAKE:
             case TRANSACTION_GOSSIP:
+            case HEARTBEAT:
                 return create(protoMsg, protoMsg.getMaxLength());
             // there might be message types in the future which need a separate message reader implementation
             default:

@@ -168,7 +168,7 @@ public class TransactionViewModel {
         transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
         fillMetadata(tangle, transactionViewModel);
 
-        if (cache != null && transactionViewModel.getType() != PREFILLED_SLOT) {
+        if (cache != null) {
             cachePut(tangle, transactionViewModel, hash);
         }
         return transactionViewModel;

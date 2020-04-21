@@ -74,7 +74,7 @@ public class ApproveeViewModel implements HashesViewModel {
         }
 
         approveeViewModel = new ApproveeViewModel((Approvee) tangle.load(Approvee.class, hash), hash);
-        if (cache != null && approveeViewModel.getHashes().size() > 0) {
+        if (cache != null) {
             cachePut(tangle, approveeViewModel, hash);
         }
 

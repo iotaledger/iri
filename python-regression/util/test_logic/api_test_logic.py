@@ -135,7 +135,7 @@ def fetch_call(api_call, api, options):
 
     try:
         response = call_list[api_call](**options)
-    except ValueError, e:
+    except ValueError as e:
         logger.error(str(e))
         response = None
 

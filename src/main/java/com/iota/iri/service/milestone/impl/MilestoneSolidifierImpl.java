@@ -116,11 +116,11 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             try {
                 if (firstRun) {
                     firstRun = false;
-                    latestMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
-                    latestMilestoneHash = snapshotProvider.getLatestSnapshot().getHash();
-
                     bootStrapSolidMilestones();
                     ledgerService.restoreLedgerState();
+
+                    Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
+                    setLatestMilestone(latestSnapshot.getHash(), latestSnapshot.getIndex());
                     logChange(snapshotProvider.getInitialSnapshot().getIndex());
 
                     syncProgressInfo.setSyncMilestoneStartIndex(snapshotProvider.getInitialSnapshot().getIndex());
@@ -159,6 +159,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     });
             solidificationQueue = newSolidificationQueue;
         }
+
         oldestMilestoneInQueue = null;
         for (Map.Entry<Hash, Integer> currentEntry : solidificationQueue.entrySet()) {
             if (seenMilestones.containsKey(currentEntry.getValue())) {
@@ -184,7 +185,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * checked to see if a milestone object exists already. If an existing milestone is present, then the current
      * milestone index/hash pairing is replaced with the existing milestone hash.
      */
-    private void solidifySeenMilestones() throws Exception{
+    private void solidifySeenMilestones() throws Exception {
         Iterator<Map.Entry<Integer, Hash>> iterator = seenMilestones.entrySet().iterator();
         Map.Entry<Integer, Hash> milestone;
         while(!Thread.currentThread().isInterrupted() && iterator.hasNext()){
@@ -205,7 +206,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     removeFromQueue(oldMilestoneTransaction.getHash());
                 }
             }
-            iterator.remove();
         }
     }
 
@@ -218,16 +218,22 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         while(!Thread.currentThread().isInterrupted() && iterator.hasNext()){
             milestone = iterator.next();
             TransactionViewModel milestoneCandidate = TransactionViewModel.fromHash(tangle, milestone.getKey());
-            if(milestoneService.validateMilestone(milestoneCandidate, milestone.getValue())
-                    .equals(MilestoneValidity.VALID)){
-                milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-                if(milestoneCandidate.isSolid()) {
-                    addSeenMilestone(milestone.getKey(), milestone.getValue());
-                } else {
+
+            MilestoneValidity validity = milestoneService.validateMilestone(milestoneCandidate, milestone.getValue());
+            switch(validity){
+                case VALID:
+                    milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
+                    if(milestoneCandidate.isSolid()) {
+                        addSeenMilestone(milestone.getKey(), milestone.getValue());
+                    } else {
+                        transactionSolidifier.addToSolidificationQueue(milestone.getKey());
+                    }
+                    break;
+                case INCOMPLETE:
                     transactionSolidifier.addToSolidificationQueue(milestone.getKey());
-                }
-            } else {
-                transactionSolidifier.addToSolidificationQueue(milestone.getKey());
+                    break;
+                case INVALID:
+                    removeFromQueue(milestone.getKey());
             }
         }
     }
@@ -283,12 +289,10 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             if((milestone = MilestoneViewModel.get(tangle, milestoneIndex)) == null){
                 solid = false;
                 milestoneIndex -= 1;
-            } else {
-                latestMilestoneHash = milestone.getHash();
-                latestMilestoneIndex = milestone.index();
             }
         }
         latestSolidMilestone = milestoneIndex;
+        latestMilestoneIndex = milestoneIndex;
 
         AddressViewModel.load(tangle, config.getCoordinator()).getHashes().forEach(hash -> {
             try {
@@ -301,9 +305,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 log.error("Error processing existing milestone index", e);
             }
         });
-        if(latestMilestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
-            logNewMilestone(snapshotProvider.getInitialSnapshot().getIndex(), latestMilestoneIndex, latestMilestoneHash);
-        }
     }
 
 
@@ -354,6 +355,10 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public void addSeenMilestone(Hash milestoneHash, int milestoneIndex){
+        if(milestoneIndex > latestMilestoneIndex) {
+            logNewMilestone(latestMilestoneIndex, milestoneIndex, milestoneHash);
+        }
+
         if(!seenMilestones.containsKey(milestoneIndex)){
             seenMilestones.put(milestoneIndex, milestoneHash);
         }
@@ -397,9 +402,11 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * {@inheritDoc}
      */
     @Override
-    public void setLatestMilestone(Hash latestMilestoneHash, int latestMilestoneIndex) {
-        this.latestMilestoneHash = latestMilestoneHash;
-        this.latestMilestoneIndex = latestMilestoneIndex;
+    public void setLatestMilestone(Hash milestoneHash, int milestoneIndex) {
+        if (milestoneIndex > latestMilestoneIndex) {
+            this.latestMilestoneHash = milestoneHash;
+            this.latestMilestoneIndex = milestoneIndex;
+        }
     }
 
     /**
@@ -416,7 +423,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     @Override
     public void logNewMilestone(int oldMilestoneIndex, int newMilestoneIndex, Hash newMilestoneHash){
         setLatestMilestone(newMilestoneHash, newMilestoneIndex);
-        tangle.publish("lmi %d %d", latestMilestoneIndex, newMilestoneIndex);
+        tangle.publish("lmi %d %d", oldMilestoneIndex, newMilestoneIndex);
         log.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);
     }
 

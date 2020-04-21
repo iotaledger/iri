@@ -1,6 +1,7 @@
 package com.iota.iri.service.snapshot.impl;
 
 import com.iota.iri.TangleMockUtils;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
@@ -77,6 +78,7 @@ public class SnapshotServiceImplTest {
     public void setUp() throws Exception {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
+        MilestoneViewModel.cacheRelease(tangle);
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

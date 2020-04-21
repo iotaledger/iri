@@ -10,6 +10,8 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
@@ -149,11 +151,8 @@ public class ApproveeViewModel implements HashesViewModel {
      * @param approveeViewModel The approveeViewModel to cache
      * @param hash              The hash of this viewmodel
      */
-    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
+    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(tangle);
-        }
         cache.put(hash, approveeViewModel);
     }
 
@@ -171,24 +170,29 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     /**
-     * Release {@link CacheConfiguration#getReleaseCount()} items from cache. Since this data is immutable, we only
-     * release from memory and not persist to DB again.
+     * Release {@link CacheConfiguration#getReleaseCount()} items from cache
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    private static void cacheRelease(Tangle tangle) throws Exception {
+    public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
         Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+        List<Indexable> hashesToRelease = new ArrayList<>();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
 
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
             Indexable hash = releaseQueueCopy.poll();
             if (hash != null) {
                 ApproveeViewModel approveeViewModel = cache.get(hash);
                 if (approveeViewModel != null) {
-                    cache.release(hash);
+                    batch.add(new Pair<>(approveeViewModel.hash, approveeViewModel.self));
+                    hashesToRelease.add(hash);
                 }
             }
         }
+
+        tangle.saveBatch(batch);
+        cache.release(hashesToRelease);
     }
 }

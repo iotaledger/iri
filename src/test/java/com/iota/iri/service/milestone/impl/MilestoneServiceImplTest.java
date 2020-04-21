@@ -66,10 +66,12 @@ public class MilestoneServiceImplTest {
     public void setUp() throws Exception {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
+        MilestoneViewModel.cacheRelease(tangle);
     }
 
     @After
     public void tearDown() throws Exception {
+        MilestoneViewModel.cacheRelease(tangle);
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

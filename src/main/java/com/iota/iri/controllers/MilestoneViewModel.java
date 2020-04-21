@@ -10,6 +10,8 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 
 /**
@@ -233,14 +235,10 @@ public class MilestoneViewModel {
      * @param milestoneViewModel milestoneViewModel to cache
      * @param index              index of milestone
      */
-    private static void cachePut(Tangle tangle, MilestoneViewModel milestoneViewModel, Indexable index)
-            throws Exception {
+    private static void cachePut(Tangle tangle, MilestoneViewModel milestoneViewModel, Indexable index) {
         Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
         if (cache == null) {
             return;
-        }
-        if (cache.getSize() >= cache.getConfiguration().getMaxSize()) {
-            cacheRelease(tangle);
         }
         cache.put(index, milestoneViewModel);
     }
@@ -266,27 +264,32 @@ public class MilestoneViewModel {
     }
 
     /**
-     * Release {@link CacheConfiguration#getReleaseCount()} items from the cache. Since this data is immutable, we only
-     * release from cache but not persist to DB again.
+     * Release {@link CacheConfiguration#getReleaseCount()} items from the cache
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    private static void cacheRelease(Tangle tangle) throws Exception {
+    public static void cacheRelease(Tangle tangle) throws Exception {
         Cache<Indexable, MilestoneViewModel> cache = getCache(tangle);
         if (cache == null) {
             return;
         }
         Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
+        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
+        List<Indexable> indicesToRelease = new ArrayList<>();
 
         for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
             Indexable index = releaseQueueCopy.poll();
             if (index != null) {
                 MilestoneViewModel milestoneViewModel = cache.get(index);
                 if (milestoneViewModel != null) {
-                    cache.release(index);
+                    batch.add(new Pair<>(index, milestoneViewModel.milestone));
+                    indicesToRelease.add(index);
                 }
             }
         }
+
+        tangle.saveBatch(batch);
+        cache.release(indicesToRelease);
     }
 }

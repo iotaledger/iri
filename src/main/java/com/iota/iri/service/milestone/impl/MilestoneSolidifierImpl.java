@@ -125,26 +125,57 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
                     syncProgressInfo.setSyncMilestoneStartIndex(snapshotProvider.getInitialSnapshot().getIndex());
                 }
+
+                scanMilestonesInQueue();
                 solidifySeenMilestones();
                 processSolidifyQueue();
-
                 checkLatestSolidMilestone();
-                solidifyLog();
+
+                if(latestMilestoneIndex > latestSolidMilestone) {
+                    solidifyLog();
+                }
             } catch(Exception e){
                 log.error("Error running milestone solidification thread", e);
             }
         }
     }
 
-    private void solidifyLog(){
-        if(unsolidMilestones.size() > 1){
-            if(oldestMilestoneInQueue != null){
-                int milestoneIndex = oldestMilestoneInQueue.getValue();
-                log.info("Solidifying milestone # " + milestoneIndex + " - [ LSM: " + latestSolidMilestone +
-                        " LM: " + latestMilestoneIndex + " ] - [ Remaining: " +
-                        (latestMilestoneIndex - latestSolidMilestone) + " Queued: " +
-                        (seenMilestones.size() + unsolidMilestones.size()) + " ]");
+    /**
+     * Scan through milestones in the {@link #unsolidMilestones} queue and remove any that are present in the
+     * {@link #seenMilestones} queue. If it isn't in the {@link #seenMilestones} queue, then the youngest and oldest
+     * milestone objects are updated with that milestone object. Used to reset the oldest milestones for solidification.
+     * If upon scanning the {@link #unsolidMilestones} queue is empty and {@link #initialized} is false, set
+     * {@link #initialized} to true.
+     */
+    private void scanMilestonesInQueue() {
+        if(unsolidMilestones.size() > 0) {
+            Map<Hash, Integer> newSolidificationQueue = new ConcurrentHashMap<>();
+            unsolidMilestones.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue())
+                    .forEach(milestone -> {
+                        if (newSolidificationQueue.size() < MAX_SIZE) {
+                            newSolidificationQueue.put(milestone.getKey(), milestone.getValue());
+                        }
+                    });
+            solidificationQueue = newSolidificationQueue;
+        }
+        oldestMilestoneInQueue = null;
+        for (Map.Entry<Hash, Integer> currentEntry : solidificationQueue.entrySet()) {
+            if (seenMilestones.containsKey(currentEntry.getValue())) {
+                unsolidMilestones.remove(currentEntry.getKey());
+                solidificationQueue.remove(currentEntry.getKey());
+            } else {
+                updateOldestMilestone(currentEntry.getKey(), currentEntry.getValue());
             }
+        }
+        if(!initialized && unsolidMilestones.size() == 0){
+            initialized = true;
+        }
+    }
+
+    private void updateOldestMilestone(Hash milestoneHash, int milestoneIndex){
+        if (oldestMilestoneInQueue == null || oldestMilestoneInQueue.getValue() > milestoneIndex) {
+            oldestMilestoneInQueue = new AbstractMap.SimpleEntry<>(milestoneHash, milestoneIndex);
         }
     }
 
@@ -160,8 +191,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             milestone = iterator.next();
             int milestoneIndex = milestone.getKey();
             TransactionViewModel oldMilestoneTransaction = TransactionViewModel.fromHash(tangle, milestone.getValue());
-            if(milestoneService.validateMilestone(oldMilestoneTransaction, milestoneIndex)
-                    .equals(MilestoneValidity.INVALID)){
+            MilestoneValidity valid = milestoneService.validateMilestone(oldMilestoneTransaction, milestoneIndex);
+            if(valid.equals(MilestoneValidity.INVALID)){
                 MilestoneViewModel nextMilestone = MilestoneViewModel.get(tangle, milestoneIndex);
                 if(nextMilestone != null) {
                     if(TransactionViewModel.fromHash(tangle, nextMilestone.getHash()).isSolid()) {
@@ -174,6 +205,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     removeFromQueue(oldMilestoneTransaction.getHash());
                 }
             }
+            iterator.remove();
         }
     }
 
@@ -188,18 +220,52 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             TransactionViewModel milestoneCandidate = TransactionViewModel.fromHash(tangle, milestone.getKey());
             if(milestoneService.validateMilestone(milestoneCandidate, milestone.getValue())
                     .equals(MilestoneValidity.VALID)){
-                        milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-                        if(milestoneCandidate.isSolid()) {
-                            addSeenMilestone(milestone.getKey(), milestone.getValue());
-                        } else {
-                            transactionSolidifier.addToSolidificationQueue(milestone.getKey());
-                        }
+                milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
+                if(milestoneCandidate.isSolid()) {
+                    addSeenMilestone(milestone.getKey(), milestone.getValue());
+                } else {
+                    transactionSolidifier.addToSolidificationQueue(milestone.getKey());
+                }
             } else {
                 transactionSolidifier.addToSolidificationQueue(milestone.getKey());
             }
         }
     }
 
+    /**
+     * Tries to solidifiy the next milestone index. If successful, the milestone will be removed from the
+     * {@link #seenMilestones} queue, and any milestone objects below that index in the {@link #unsolidMilestones} queue
+     * will be removed as well.
+     */
+    private void checkLatestSolidMilestone(){
+        try {
+            if (latestMilestoneIndex > latestSolidMilestone) {
+                int nextMilestone = latestSolidMilestone + 1;
+                if (seenMilestones.containsKey(nextMilestone)){
+                    TransactionViewModel milestone = TransactionViewModel.fromHash(tangle,
+                            seenMilestones.get(nextMilestone));
+                    if(milestone.isSolid()){
+                        updateSolidMilestone(latestSolidMilestone);
+                        transactionSolidifier.addToPropagationQueue(milestone.getHash());
+                    } else {
+                        transactionSolidifier.addToSolidificationQueue(milestone.getHash());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.info(e.getMessage());
+        }
+    }
+
+    private void solidifyLog(){
+        if (!unsolidMilestones.isEmpty() && oldestMilestoneInQueue != null){
+            int milestoneIndex = oldestMilestoneInQueue.getValue();
+            log.info("Solidifying milestone # " + milestoneIndex + " - [ LSM: " + latestSolidMilestone +
+                    " LM: " + latestMilestoneIndex + " ] - [ Remaining: " +
+                    (latestMilestoneIndex - latestSolidMilestone) + " Queued: " +
+                    (seenMilestones.size() + unsolidMilestones.size()) + " ]");
+        }
+    }
 
     /**
      * Iterates through milestone indexes starting from the initial snapshot index, and returns the newest existing
@@ -235,55 +301,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 log.error("Error processing existing milestone index", e);
             }
         });
-
         if(latestMilestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
             logNewMilestone(snapshotProvider.getInitialSnapshot().getIndex(), latestMilestoneIndex, latestMilestoneHash);
         }
     }
 
 
-    /**
-     * Tries to solidifiy the next milestone index. If successful, the milestone will be removed from the
-     * {@link #seenMilestones} queue, and any milestone objects below that index in the {@link #unsolidMilestones} queue
-     * will be removed as well.
-     */
-    private void checkLatestSolidMilestone(){
-        try {
-            if (latestMilestoneIndex > latestSolidMilestone) {
-                int nextMilestone = latestSolidMilestone + 1;
-                if (seenMilestones.containsKey(nextMilestone)){
-                    TransactionViewModel milestone = TransactionViewModel.fromHash(tangle,
-                            seenMilestones.get(nextMilestone));
-                    if(milestone.isSolid()){
-                        updateSolidMilestone(latestSolidMilestone);
-                        transactionSolidifier.addToPropagationQueue(milestone.getHash());
-                    } else {
-                        transactionSolidifier.addToSolidificationQueue(milestone.getHash());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.info(e.getMessage());
-        }
-    }
-
-    private void checkValidity(TransactionViewModel milestone, int index) throws  Exception{
-        switch(milestoneService.validateMilestone(milestone, index)) {
-            case INVALID:
-                MilestoneViewModel nextMilestone = MilestoneViewModel.get(tangle, index);
-                if(nextMilestone != null) {
-                    if(TransactionViewModel.fromHash(tangle, nextMilestone.getHash()).isSolid()) {
-                        seenMilestones.remove(index);
-                        removeFromQueue(milestone.getHash());
-                        add(nextMilestone.getHash(), index);
-                    }
-                } else {
-                    removeFromQueue(milestone.getHash());
-                }
-            case INCOMPLETE:
-                transactionSolidifier.addToSolidificationQueue(milestone.getHash());
-        }
-    }
 
     private void updateSolidMilestone(int currentSolidMilestoneIndex) throws Exception{
         MilestoneViewModel nextSolidMilestone = MilestoneViewModel.get(tangle, currentSolidMilestoneIndex + 1);
@@ -416,44 +439,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         scanMilestonesInQueue();
     }
 
-    /**
-     * Scan through milestones in the {@link #unsolidMilestones} queue and remove any that are present in the
-     * {@link #seenMilestones} queue. If it isn't in the {@link #seenMilestones} queue, then the youngest and oldest
-     * milestone objects are updated with that milestone object. Used to reset the oldest milestones for solidification.
-     * If upon scanning the {@link #unsolidMilestones} queue is empty and {@link #initialized} is false, set
-     * {@link #initialized} to true.
-     */
-    private void scanMilestonesInQueue() {
-        if(unsolidMilestones.size() > 0) {
-            Map<Hash, Integer> newSolidificationQueue = new ConcurrentHashMap<>();
-            unsolidMilestones.entrySet().stream()
-                    .sorted(Map.Entry.comparingByValue())
-                    .forEach(milestone -> {
-                        if (newSolidificationQueue.size() < MAX_SIZE) {
-                            newSolidificationQueue.put(milestone.getKey(), milestone.getValue());
-                        }
-                    });
-            solidificationQueue = newSolidificationQueue;
-        }
-        oldestMilestoneInQueue = null;
-        for (Map.Entry<Hash, Integer> currentEntry : solidificationQueue.entrySet()) {
-                if (seenMilestones.containsKey(currentEntry.getValue())) {
-                    unsolidMilestones.remove(currentEntry.getKey());
-                    solidificationQueue.remove(currentEntry.getKey());
-                } else {
-                    updateOldestMilestone(currentEntry.getKey(), currentEntry.getValue());
-                }
-        }
-        if(!initialized && unsolidMilestones.size() == 0){
-            initialized = true;
-        }
-    }
-
-    private void updateOldestMilestone(Hash milestoneHash, int milestoneIndex){
-        if (oldestMilestoneInQueue == null || oldestMilestoneInQueue.getValue() > milestoneIndex) {
-            oldestMilestoneInQueue = new AbstractMap.SimpleEntry<>(milestoneHash, milestoneIndex);
-        }
-    }
 
     private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
         if (ledgerService.applyMilestoneToLedger(milestone)) {
@@ -546,16 +531,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
     private void logChange(int prevSolidMilestoneIndex) {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
-        int latestSolidMilestoneIndex = latestSnapshot.getIndex();
+        latestSolidMilestone = latestSnapshot.getIndex();
 
-        if (prevSolidMilestoneIndex == latestSolidMilestoneIndex) {
+        if (prevSolidMilestoneIndex == latestSolidMilestone) {
             return;
         }
 
         Hash latestMilestoneHash = latestSnapshot.getHash();
-        log.delegate().info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + latestSolidMilestoneIndex);
+        log.delegate().info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + latestSolidMilestone);
 
-        tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, latestSolidMilestoneIndex);
+        tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, latestSolidMilestone);
         tangle.publish("lmhs %s", latestMilestoneHash);
 
         if (!config.isPrintSyncProgressEnabled()) {
@@ -565,22 +550,22 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         int latestMilestoneIndex = getLatestMilestoneIndex();
 
         // only print more sophisticated progress if we are coming from a more unsynced state
-        if(latestMilestoneIndex - latestSolidMilestoneIndex < 1) {
-            syncProgressInfo.setSyncMilestoneStartIndex(latestSolidMilestoneIndex);
+        if(latestMilestoneIndex - latestSolidMilestone < 1) {
+            syncProgressInfo.setSyncMilestoneStartIndex(latestSolidMilestone);
             syncProgressInfo.resetMilestoneApplicationTimes();
             return;
         }
 
         int estSecondsToBeSynced = syncProgressInfo.computeEstimatedTimeToSyncUpSeconds(latestMilestoneIndex,
-                latestSolidMilestoneIndex);
+                latestSolidMilestone);
         StringBuilder progressSB = new StringBuilder();
 
         // add progress bar
         progressSB.append(ASCIIProgressBar.getProgressBarString(syncProgressInfo.getSyncMilestoneStartIndex(),
-                latestMilestoneIndex, latestSolidMilestoneIndex));
+                latestMilestoneIndex, latestSolidMilestone));
         // add lsm to lm
-        progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", latestSolidMilestoneIndex,
-                latestMilestoneIndex, latestMilestoneIndex - latestSolidMilestoneIndex));
+        progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", latestSolidMilestone,
+                latestMilestoneIndex, latestMilestoneIndex - latestSolidMilestone));
         // add estimated time to get fully synced
         if (estSecondsToBeSynced != -1) {
             progressSB.append(String.format(" - est. seconds to get synced: %d", estSecondsToBeSynced));

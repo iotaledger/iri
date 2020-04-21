@@ -13,8 +13,8 @@ public class DefaultCacheConfiguration implements CacheConfiguration {
     }
 
     @Override
-    public int getReleaseCount() {
-        return DEFAULT_RELEASE_COUNT;
+    public int getEvictionCount() {
+        return DEFAULT_EVICTION_COUNT;
     }
 
     @Override

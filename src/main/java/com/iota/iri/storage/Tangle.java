@@ -87,10 +87,10 @@ public class Tangle {
      * @see PersistenceProvider#shutdown()
      */
     public void shutdown() throws Exception {
-        log.info("Releasing all caches...");
-        TransactionViewModel.cacheRelease(this);
-        ApproveeViewModel.cacheRelease(this);
-        MilestoneViewModel.cacheRelease(this);
+        log.info("Evicting all caches...");
+        TransactionViewModel.cacheEvict(this);
+        ApproveeViewModel.cacheEvict(this);
+        MilestoneViewModel.cacheEvict(this);
         cacheManager.clearAllCaches();
         log.info("Shutting down Tangle Persistence Providers... ");
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);

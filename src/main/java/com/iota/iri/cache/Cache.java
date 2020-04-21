@@ -3,7 +3,6 @@ package com.iota.iri.cache;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 /**
  * Cache operations
@@ -46,35 +45,21 @@ public interface Cache<K, V> {
     void put(K key, V value);
 
     /**
-     * Release the specified key from the cache and puts it in the weak store.
+     * Evict the specified key from the cache
      * 
      * @param key
      */
-    void release(K key);
+    void evict(K key);
 
     /**
-     * Release expired items from the cache according to its {@link CacheConfiguration} and puts it in the weak store.
+     * Evict expired items from the cache according to its {@link CacheConfiguration}.
      */
-    void release();
+    void evict();
 
     /**
-     * Release all items specified in the given collection and puts them in the weak store.
+     * Evict all items specified in the given collection
      */
-    void release(List<K> keys);
-
-    /**
-     * Permanently deletes an item from cache. It does not put it in the weak store.
-     * 
-     * @param key The key to delete
-     */
-    void delete(K key);
-
-    /**
-     * Permanently deltes a list of items from cache. It does not put them in the weak store.
-     * 
-     * @param keys The keys to delete
-     */
-    void delete(List<K> keys);
+    void evict(List<K> keys);
 
     /**
      * Clear the cache by removing all mappings
@@ -103,9 +88,9 @@ public interface Cache<K, V> {
     CacheConfiguration getConfiguration();
 
     /**
-     * Gets the release queue
+     * Poll and return the next key to evict
      * 
-     * @return The release queue
+     * @return The key to evict
      */
-    Queue<K> getReleaseQueueCopy();
+    K nextEvictionKey();
 }

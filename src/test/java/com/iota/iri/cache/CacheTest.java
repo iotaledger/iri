@@ -85,25 +85,25 @@ public class CacheTest {
     }
 
     @Test
-    public void shouldReleaseTheItemWithTheSpecifiedKey() {
+    public void shouldEvictTheItemWithTheSpecifiedKey() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
         cache.put(hash1, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH1), hash1));
 
-        cache.release(hash);
+        cache.evict(hash);
 
         Assert.assertTrue("Cache should only have 1 element left", cache.getSize() == 1);
         Assert.assertEquals("Remaining item should be hash1", cache.get(hash1).getHash(), hash1);
     }
 
     @Test
-    public void shouldRelease() {
+    public void shouldEvict() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
-        cache.release();
-        Assert.assertTrue("Cache should be empty after full release", cache.getSize() == 0);
+        cache.evict();
+        Assert.assertTrue("Cache should be empty after full eviction", cache.getSize() == 0);
     }
 
     @Test
-    public void shouldReleaseElementsWithKeys() {
+    public void shouldEvictElementsWithKeys() {
         cache.put(hash, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH), hash));
         cache.put(hash1, new TransactionViewModel(getTransaction(TEST_TRANSACTION_HASH1), hash1));
 
@@ -115,7 +115,7 @@ public class CacheTest {
             }
         };
 
-        cache.release(keys);
+        cache.evict(keys);
 
         Assert.assertTrue("Cache should be empty", cache.getSize() == 0);
     }

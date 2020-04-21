@@ -6,7 +6,7 @@ package com.iota.iri.cache;
 public interface CacheConfiguration {
 
     long DEFAULT_MAX_SIZE = 1000;
-    int DEFAULT_RELEASE_COUNT = 10;
+    int DEFAULT_EVICTION_COUNT = 10;
     int DEFAULT_CONCURRENCY_LEVEL = 5;
 
     /**
@@ -17,11 +17,11 @@ public interface CacheConfiguration {
     long getMaxSize();
 
     /**
-     * Gets the number of items to release in a single batch
+     * Gets the number of items to evict in a single batch of eviction
      * 
-     * @return The number of items to release
+     * @return eviction count
      */
-    int getReleaseCount();
+    int getEvictionCount();
 
     /**
      * Gets the concurrency level of the cache amp

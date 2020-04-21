@@ -10,9 +10,6 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -150,49 +147,44 @@ public class ApproveeViewModel implements HashesViewModel {
      * @param tangle            Tangle
      * @param approveeViewModel The approveeViewModel to cache
      * @param hash              The hash of this viewmodel
+     * @throws Exception Exception
      */
-    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) {
+    public static void cachePut(Tangle tangle, ApproveeViewModel approveeViewModel, Indexable hash) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
+        if (cache.getSize() == cache.getConfiguration().getMaxSize()) {
+            cacheEvict(tangle);
+        }
         cache.put(hash, approveeViewModel);
     }
 
     /**
-     * Deletes the item with the specified hash fro the cache. Delegates to {@link Cache#delete(Object)}
-     *
+     * Deletes the item with the specified hash from cache
+     * 
      * @param tangle Tangle
-     * @param hash   Hash of the item to delete
+     * @param hash   Hash of item to evict
      */
-    private static void cacheDelete(Tangle tangle, Indexable hash) {
-        Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        if (cache != null) {
-            cache.delete(hash);
-        }
+    public static void cacheDelete(Tangle tangle, Indexable hash) {
+        tangle.getCache(ApproveeViewModel.class).evict(hash);
     }
 
     /**
-     * Release {@link CacheConfiguration#getReleaseCount()} items from cache
+     * Evict {@link CacheConfiguration#getEvictionCount()} items from cache
      * 
      * @param tangle Tangle
      * @throws Exception Exception
      */
-    public static void cacheRelease(Tangle tangle) throws Exception {
+    public static void cacheEvict(Tangle tangle) throws Exception {
         Cache<Indexable, ApproveeViewModel> cache = tangle.getCache(ApproveeViewModel.class);
-        Queue<Indexable> releaseQueueCopy = cache.getReleaseQueueCopy();
-        List<Indexable> hashesToRelease = new ArrayList<>();
-        List<Pair<Indexable, Persistable>> batch = new ArrayList<>();
-
-        for (int i = 0; i < cache.getConfiguration().getReleaseCount(); i++) {
-            Indexable hash = releaseQueueCopy.poll();
+        for (int i = 0; i < cache.getConfiguration().getEvictionCount(); i++) {
+            Indexable hash = cache.nextEvictionKey();
             if (hash != null) {
                 ApproveeViewModel approveeViewModel = cache.get(hash);
                 if (approveeViewModel != null) {
-                    batch.add(new Pair<>(approveeViewModel.hash, approveeViewModel.self));
-                    hashesToRelease.add(hash);
+                    approveeViewModel.store(tangle);
+                    cache.evict(approveeViewModel.hash);
                 }
             }
         }
-
-        tangle.saveBatch(batch);
-        cache.release(hashesToRelease);
     }
+
 }

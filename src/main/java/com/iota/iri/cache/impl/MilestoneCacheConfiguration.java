@@ -6,7 +6,7 @@ package com.iota.iri.cache.impl;
 public class MilestoneCacheConfiguration extends DefaultCacheConfiguration {
 
     private static final int MAX_SIZE = 30;
-    private static final int RELEASE_COUNT = MAX_SIZE;
+    private static final int EVICTION_COUNT = MAX_SIZE;
 
     @Override
     public long getMaxSize() {
@@ -14,7 +14,7 @@ public class MilestoneCacheConfiguration extends DefaultCacheConfiguration {
     }
 
     @Override
-    public int getReleaseCount() {
-        return RELEASE_COUNT;
+    public int getEvictionCount() {
+        return EVICTION_COUNT;
     }
 }

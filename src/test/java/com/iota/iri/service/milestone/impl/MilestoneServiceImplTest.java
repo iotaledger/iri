@@ -11,7 +11,12 @@ import com.iota.iri.storage.Tangle;
 
 import java.util.Optional;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -66,12 +71,12 @@ public class MilestoneServiceImplTest {
     public void setUp() throws Exception {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
-        MilestoneViewModel.cacheRelease(tangle);
+        MilestoneViewModel.cacheEvict(tangle);
     }
 
     @After
     public void tearDown() throws Exception {
-        MilestoneViewModel.cacheRelease(tangle);
+        MilestoneViewModel.cacheEvict(tangle);
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -46,7 +46,7 @@ public interface CacheManager {
     <V> Cache<Indexable, V> add(Class<V> type, CacheConfiguration cacheConfiguration);
 
     /**
-     * Releases all items in all caches
+     * Evicts all items in all caches
      */
     void clearAllCaches();
 }

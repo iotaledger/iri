@@ -67,15 +67,17 @@ public class MilestoneStage implements Stage {
             boolean isFirstInBundle = (milestone.getCurrentIndex() == 0);
 
             // Log new milestones
-            if (newMilestoneIndex > milestoneSolidifier.getLatestMilestoneIndex()) {
-                milestoneSolidifier.setLatestMilestone(milestone.getHash(), newMilestoneIndex);
+            int currentMilestoneIndex = milestoneSolidifier.getLatestMilestoneIndex();
+            if (newMilestoneIndex > currentMilestoneIndex) {
+                milestoneSolidifier.logNewMilestone(currentMilestoneIndex, newMilestoneIndex, milestone.getHash());
             }
 
-            // Add unsolid milestones to the milestone solidifier, or add solid milestones to the propagation queue
-            if (!transactionSolidifier.addMilestoneToSolidificationQueue(milestone.getHash()) &&
-            isFirstInBundle) {
-                milestoneSolidifier.add(milestone.getHash(), payload.getMilestoneIndex());
-            } else {
+            // Add milestone tails to the milestone solidifier, if transaction is solid, add to the propagation queue
+            if(isFirstInBundle){
+                milestoneSolidifier.add(milestone.getHash(), newMilestoneIndex);
+            }
+
+            if (transactionSolidifier.addMilestoneToSolidificationQueue(milestone.getHash())){
                 transactionSolidifier.addToPropagationQueue(milestone.getHash());
             }
 

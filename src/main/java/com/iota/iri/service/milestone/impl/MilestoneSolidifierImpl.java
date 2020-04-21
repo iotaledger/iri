@@ -312,17 +312,17 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
 
     private void updateSolidMilestone(int currentSolidMilestoneIndex) throws Exception{
-        MilestoneViewModel nextSolidMilestone = MilestoneViewModel.get(tangle, currentSolidMilestoneIndex + 1);
+        int nextMilestoneIndex = currentSolidMilestoneIndex + 1;
+        MilestoneViewModel nextSolidMilestone = MilestoneViewModel.get(tangle, nextMilestoneIndex);
         if(nextSolidMilestone != null) {
             applySolidMilestoneToLedger(nextSolidMilestone);
             logChange(currentSolidMilestoneIndex);
 
-            if (currentSolidMilestoneIndex + 1 == latestMilestoneIndex) {
+            if (nextMilestoneIndex == latestMilestoneIndex) {
                 transactionRequester.clearRecentlyRequestedTransactions();
             }
 
-            removeSeenMilestone(currentSolidMilestoneIndex + 1);
-            latestSolidMilestone = currentSolidMilestoneIndex + 1;
+            removeSeenMilestone(nextMilestoneIndex);
         }
 
     }

@@ -148,19 +148,17 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private void scanMilestonesInQueue() {
         // refill the solidification queue with solidification candidates sorted by index
         if (unsolidMilestones.size() > 0) {
-            Map<Hash, Integer> newSolidificationQueue = new ConcurrentHashMap<>();
+            solidificationQueue.clear();
             unsolidMilestones.entrySet().stream()
                     .sorted(Map.Entry.comparingByValue())
                     .forEach(milestone -> {
-                        if (newSolidificationQueue.size() < MAX_SIZE) {
-                            newSolidificationQueue.put(milestone.getKey(), milestone.getValue());
+                        if (solidificationQueue.size() < MAX_SIZE) {
+                            solidificationQueue.put(milestone.getKey(), milestone.getValue());
                         }
                     });
-            solidificationQueue = newSolidificationQueue;
         }
 
         // update the oldest milestone in queue
-        oldestMilestoneInQueue = null;
         for (Map.Entry<Hash, Integer> currentEntry : solidificationQueue.entrySet()) {
             if (seenMilestones.containsKey(currentEntry.getValue())) {
                 // remove candidate from pool

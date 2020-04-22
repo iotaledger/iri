@@ -129,7 +129,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
     /**
      * Scan through milestones in the {@link #unsolidMilestones} queue and refill the {@link #solidificationQueue} queue.
-     * It then iterates through this queue to determine iff the milestone has already been seen and validated. If it is
+     * It then iterates through this queue to determine if the milestone has already been seen and validated. If it is
      * found in the {@link #seenMilestones} queue, then the milestone is removed from the solidification pool. If not,
      * then the {@link #oldestMilestoneInQueue} is updated iterating through whatever milestones are still present in
      * the {@link #solidificationQueue}.

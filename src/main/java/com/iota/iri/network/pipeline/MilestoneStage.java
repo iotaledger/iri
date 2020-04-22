@@ -79,7 +79,7 @@ public class MilestoneStage implements Stage {
                 milestoneSolidifier.addMilestoneCandidate(milestone.getHash(), newMilestoneIndex);
             }
 
-            if (transactionSolidifier.addMilestoneToSolidificationQueue(milestone.getHash())) {
+            if (milestone.isSolid()) {
                 transactionSolidifier.addToPropagationQueue(milestone.getHash());
             }
 

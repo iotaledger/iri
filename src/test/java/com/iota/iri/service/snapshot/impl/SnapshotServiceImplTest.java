@@ -1,6 +1,7 @@
 package com.iota.iri.service.snapshot.impl;
 
 import com.iota.iri.TangleMockUtils;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
@@ -9,16 +10,19 @@ import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SnapshotServiceImplTest {
@@ -74,9 +78,10 @@ public class SnapshotServiceImplTest {
     private SnapshotServiceImpl snapshotService;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
+        MilestoneViewModel.clear();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

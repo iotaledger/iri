@@ -1,7 +1,18 @@
 package com.iota.iri.conf;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.IotaUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.core.IsCollectionContaining;
+import org.junit.*;
+import org.junit.runners.MethodSorters;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -15,18 +26,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.core.IsCollectionContaining;
-import org.junit.*;
-import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ConfigTest {
@@ -81,7 +80,6 @@ public class ConfigTest {
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--test-no-coo-validation", "true",
-                "--tx-cache-size", "100", "--milestone-cache-size", "20",
                 //this should be ignored everywhere
                 "--fake-config"
         };
@@ -120,8 +118,6 @@ public class ConfigTest {
         Assert.assertEquals("--testnet-no-coo-validation", false, iotaConfig.isDontValidateTestnetMilestoneSig());
         //Test default value
         Assert.assertEquals("--local-snapshots-pruning-delay", 40000, iotaConfig.getLocalSnapshotsPruningDelay());
-        Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
-        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneCacheSize());
     }
 
     @Test
@@ -158,7 +154,6 @@ public class ConfigTest {
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--testnet-no-coo-validation", "true",
-                "--tx-cache-size", "100", "--milestone-cache-size", "20",
                 //this should be ignored everywhere
                 "--fake-config"
         };
@@ -189,8 +184,6 @@ public class ConfigTest {
         Assert.assertEquals("coo", HashFactory.ADDRESS.create("TTTTTTTTT"), iotaConfig.getCoordinator());
         Assert.assertEquals("--testnet-no-coo-validation", true,
                 iotaConfig.isDontValidateTestnetMilestoneSig());
-        Assert.assertEquals("--tx-cache-size", 100, iotaConfig.getTxCacheSize());
-        Assert.assertEquals("--milestone-cache-size", 20, iotaConfig.getMilestoneCacheSize());
     }
 
     @Test
@@ -203,7 +196,6 @@ public class ConfigTest {
                 .append("ZMQ_ENABLED = true").append(System.lineSeparator())
                 .append("P_REMOVE_REQUEST = 0.4").append(System.lineSeparator())
                 .append("MWM = 4").append(System.lineSeparator())
-                .append("MILESTONE_CACHE_SIZE = 1").append(System.lineSeparator())
                 .append("FAKE").append(System.lineSeparator())
                 .append("FAKE2 = lies")
                 .toString();
@@ -226,7 +218,6 @@ public class ConfigTest {
 
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
         Assert.assertNotEquals("MWM", 4, iotaConfig.getMwm());
-        Assert.assertEquals("MILESTONE_CACHE_SIZE", 1, iotaConfig.getMilestoneCacheSize());
     }
 
     @Test

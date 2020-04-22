@@ -1,39 +1,30 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.TransactionTestUtils;
-import com.iota.iri.cache.Cache;
-import com.iota.iri.cache.CacheManager;
-import com.iota.iri.cache.impl.CacheConfigurationImpl;
-import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
-import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-
-import java.util.*;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.iota.iri.TransactionTestUtils.getTransactionHash;
+import java.util.*;
+
 import static com.iota.iri.TransactionTestUtils.getTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getTransactionHash;
 import static com.iota.iri.TransactionTestUtils.getTransactionTritsWithTrunkAndBranch;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+
+import static org.junit.Assert.*;
 
 public class TransactionViewModelTest {
 
@@ -419,99 +410,5 @@ public class TransactionViewModelTest {
 
         TransactionViewModel result = TransactionViewModel.first(tangle);
         Assert.assertEquals(transactionViewModel.getHash(), result.getHash());
-    }
-
-    @Test
-    public void updateTxShouldBeSavedBeforeRelease() throws Exception {
-        CacheManager cacheManager = new CacheManagerImpl(new MainnetConfig());
-        cacheManager.clearAllCaches();
-        cacheManager.add(TransactionViewModel.class, new CacheConfigurationImpl(1));
-        tangle.setCacheManager(cacheManager);
-
-        int numberOfTxs = 2;
-        String trytes = "";
-
-        TransactionViewModel tvms[] = new TransactionViewModel[numberOfTxs];
-        for (int i = 0; i < numberOfTxs; i++) {
-            trytes = TransactionTestUtils.nextWord(trytes);
-            tvms[i] = TransactionTestUtils.createTransactionWithTrytes(trytes);
-            tvms[i].store(tangle, snapshot);
-        }
-        tvms[0].isMilestone(tangle, snapshot, true);
-        tvms[1].isMilestone(tangle, snapshot, true);
-
-        Hash hash = tvms[0].getHash();
-        TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
-        Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
-    }
-
-    @Test
-    public void updatedTxShouldBeSavedToDbBeforeTangleShutdown() throws Exception {
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        int numberOfTxs = (int) cache.getConfiguration().getMaxSize() * 2;
-        String trytes = "";
-
-        TransactionViewModel tvms[] = new TransactionViewModel[numberOfTxs];
-        for (int i = 0; i < numberOfTxs; i++) {
-            trytes = TransactionTestUtils.nextWord(trytes);
-            tvms[i] = TransactionTestUtils.createTransactionWithTrytes(trytes);
-            tvms[i].store(tangle, snapshot);
-        }
-
-        List<Integer> tvmIndicesToUpdate = new ArrayList<>();
-        for (int i = 0; i < numberOfTxs; i++) {
-            tvmIndicesToUpdate.add(i);
-        }
-        Collections.shuffle(tvmIndicesToUpdate);
-        tvmIndicesToUpdate = tvmIndicesToUpdate.subList(0, numberOfTxs / 2);
-
-        for (int i : tvmIndicesToUpdate) {
-            TransactionViewModel tvm = cache.get(tvms[i].getHash());
-            if (tvm != null) {
-                tvm.isMilestone(tangle, snapshot, true);
-            }
-        }
-
-        // tangle shutdown
-        TransactionViewModel.cacheReleaseAll(tangle);
-
-        for (int i : tvmIndicesToUpdate) {
-            Hash hash = tvms[i].getHash();
-            TransactionViewModel tvm = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash),
-                    hash);
-            Assert.assertTrue("TVM should be a milestone", tvm.isMilestone());
-        }
-    }
-
-    @Test
-    public void deletedTxFromDbShouldDeleteFromCache() throws Exception {
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-
-        Transaction tx = new Transaction();
-        Hash hash = HashFactory.TRANSACTION
-                .create("TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST999999999");
-        tx.address = hash;
-        TransactionViewModel tvm = new TransactionViewModel(tx, hash);
-
-        tvm.store(tangle, snapshot);
-        tvm.delete(tangle);
-        Assert.assertNull("TVM should be null", cache.get(hash));
-    }
-
-    @Test
-    public void deletedTxShouldNotBeBroughtBackToCache() throws Exception {
-        Transaction tx = new Transaction();
-        Hash hash = HashFactory.TRANSACTION
-                .create("TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST9TRANSACTION9TEST999999999");
-        tx.address = hash;
-        TransactionViewModel tvm = new TransactionViewModel(tx, hash);
-
-        tvm.store(tangle, snapshot);
-        tvm.delete(tangle);
-
-        TransactionViewModel.fromHash(tangle, hash);
-
-        Cache<Indexable, TransactionViewModel> cache = tangle.getCache(TransactionViewModel.class);
-        Assert.assertNull("TVM should be null", cache.get(hash));
     }
 }

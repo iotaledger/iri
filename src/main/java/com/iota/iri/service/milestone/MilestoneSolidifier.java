@@ -66,7 +66,7 @@ public interface MilestoneSolidifier {
      *
      * @param milestoneHash  The {@link Hash} of the milestone to be removed
      */
-    void removeFromQueue(Hash milestoneHash);
+    void removeFromQueues(Hash milestoneHash);
 
     /**
      * Set the latest milestone seen by the node.

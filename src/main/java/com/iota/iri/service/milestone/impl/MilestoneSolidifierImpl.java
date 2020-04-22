@@ -17,13 +17,14 @@ import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.ASCIIProgressBar;
 import com.iota.iri.utils.log.interval.IntervalLogger;
-import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
-import com.iota.iri.utils.thread.SilentScheduledExecutorService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private static final IntervalLogger log = new IntervalLogger(MilestoneSolidifierImpl.class);
@@ -36,9 +37,9 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
     private Map.Entry<Hash, Integer> oldestMilestoneInQueue = null;
 
-    private int latestMilestoneIndex;
-    private Hash latestMilestoneHash;
-    private int latestSolidMilestone;
+    private AtomicInteger latestMilestoneIndex = new AtomicInteger(0);
+    private AtomicReference<Hash> latestMilestoneHash = new AtomicReference<>(Hash.NULL_HASH);
+    private AtomicInteger latestSolidMilestone = new AtomicInteger(0);
 
     private TransactionSolidifier transactionSolidifier;
     private LedgerService ledgerService;
@@ -64,16 +65,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     /**
      * An indicator for whether or not the solidifier has processed from the first batch of seen milestones
      */
-    private boolean initialized = false;
+    private AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
-     * The execution service for the milestone solidifier thread
+     * A thread to run the milestone solidification thread in
      */
-    private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
-            "Milestone Solidifier");
-
-    private boolean firstRun = true;
-
+    private Thread milestoneSolidifier = new Thread(this::milestoneSolidificationThread, "Milestone Solidifier");
 
     /**
      * Constructor for the {@link MilestoneSolidifierImpl}. This class holds milestone objects to be processed for
@@ -102,38 +99,40 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
     @Override
     public void start() {
-        executorService.silentExecute(this::milestoneSolidificationThread);
-    }
+        try {
+            bootStrapSolidMilestones();
+            ledgerService.restoreLedgerState();
 
-    @Override
-    public void shutdown() {
-        executorService.shutdownNow();
-    }
+            Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
+            setLatestMilestone(latestSnapshot.getHash(), latestSnapshot.getIndex());
+            logChange(snapshotProvider.getInitialSnapshot().getIndex());
 
+            syncProgressInfo.setSyncMilestoneStartIndex(snapshotProvider.getInitialSnapshot().getIndex());
+            milestoneSolidifier.start();
+
+        } catch (Exception e) {
+            log.error("Error starting milestone solidification thread", e);
+        }
+    }
 
     private void milestoneSolidificationThread() {
         while(!Thread.currentThread().isInterrupted()) {
             try {
-                if (firstRun) {
-                    firstRun = false;
-                    bootStrapSolidMilestones();
-                    ledgerService.restoreLedgerState();
-
-                    Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
-                    setLatestMilestone(latestSnapshot.getHash(), latestSnapshot.getIndex());
-                    logChange(snapshotProvider.getInitialSnapshot().getIndex());
-
-                    syncProgressInfo.setSyncMilestoneStartIndex(snapshotProvider.getInitialSnapshot().getIndex());
-                }
-
                 processSolidifyQueue();
                 checkLatestSolidMilestone();
 
-                if (latestMilestoneIndex > latestSolidMilestone) { solidifyLog();}
-            } catch(Exception e) {
+                if (getLatestMilestoneIndex() > getLatestSolidMilestoneIndex()) {
+                    solidifyLog();
+                }
+            } catch (Exception e) {
                 log.error("Error running milestone solidification thread", e);
             }
         }
+    }
+
+    @Override
+    public void shutdown(){
+        milestoneSolidifier.interrupt();
     }
 
     /**
@@ -173,8 +172,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
 
-        if (!initialized && unsolidMilestones.size() == 0) {
-            initialized = true;
+        if (!initialized.get() && unsolidMilestones.size() == 0) {
+            initialized.set(true);
         }
     }
 
@@ -185,7 +184,9 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     }
 
     /**
-     * Iterates through valid milestones and submits them to the {@link TransactionSolidifier}
+     * Iterates through the {@link #solidificationQueue} to check for validity. Valid transactions are then submitted to
+     * the {@link #seenMilestones} mapping if solid, and the {@link TransactionSolidifier} if not. Invalid transactions
+     * are removed from the solidification queues.
      */
     private void processSolidifyQueue() throws Exception {
         Iterator<Map.Entry<Hash, Integer>> iterator = solidificationQueue.entrySet().iterator();
@@ -210,7 +211,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     transactionSolidifier.addToSolidificationQueue(milestoneHash);
                     break;
                 case INVALID:
-                    removeFromQueue(milestone.getKey());
+                    removeFromQueues(milestone.getKey());
             }
         }
 
@@ -224,13 +225,13 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     private void checkLatestSolidMilestone() {
         try {
-            if (latestMilestoneIndex > latestSolidMilestone) {
-                int nextMilestone = latestSolidMilestone + 1;
+            if (getLatestMilestoneIndex() > getLatestSolidMilestoneIndex()) {
+                int nextMilestone = getLatestSolidMilestoneIndex() + 1;
                 if (seenMilestones.containsKey(nextMilestone)) {
                     TransactionViewModel milestone = TransactionViewModel.fromHash(tangle,
                             seenMilestones.get(nextMilestone));
                     if (milestone.isSolid()) {
-                        updateSolidMilestone(latestSolidMilestone);
+                        updateSolidMilestone(getLatestSolidMilestoneIndex());
                         transactionSolidifier.addToPropagationQueue(milestone.getHash());
                     } else {
                         transactionSolidifier.addToSolidificationQueue(milestone.getHash());
@@ -247,7 +248,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             int milestoneIndex = oldestMilestoneInQueue.getValue();
             log.info("Solidifying milestone # " + milestoneIndex + " - [ LSM: " + latestSolidMilestone +
                     " LM: " + latestMilestoneIndex + " ] - [ Remaining: " +
-                    (latestMilestoneIndex - latestSolidMilestone) + " Queued: " +
+                    (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex()) + " Queued: " +
                     (seenMilestones.size() + unsolidMilestones.size()) + " ]");
         }
     }
@@ -271,15 +272,13 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
         }
 
-        latestSolidMilestone = milestoneIndex;
-        latestMilestoneIndex = milestoneIndex;
-        latestMilestoneHash = Hash.NULL_HASH;
+        setLatestSolidMilestone(milestoneIndex);
 
         AddressViewModel.load(tangle, config.getCoordinator()).getHashes().forEach(hash -> {
             try {
                 int index;
                 if ((index = milestoneService.getMilestoneIndex(TransactionViewModel.fromHash(tangle, hash))) >
-                        latestSolidMilestone) {
+                        getLatestSolidMilestoneIndex()) {
                     addMilestoneCandidate(hash, index);
                 }
             } catch(Exception e) {
@@ -297,7 +296,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             applySolidMilestoneToLedger(nextSolidMilestone);
             logChange(currentSolidMilestoneIndex);
 
-            if (nextMilestoneIndex == latestMilestoneIndex) {
+            if (nextMilestoneIndex == getLatestMilestoneIndex()) {
                 transactionRequester.clearRecentlyRequestedTransactions();
             }
 
@@ -312,7 +311,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     @Override
     public void addMilestoneCandidate(Hash milestoneHash, int milestoneIndex) {
         if (!unsolidMilestones.containsKey(milestoneHash) && !seenMilestones.containsKey(milestoneIndex) &&
-                milestoneIndex > latestSolidMilestone) {
+                milestoneIndex > getLatestSolidMilestoneIndex()) {
             unsolidMilestones.put(milestoneHash, milestoneIndex);
             updateQueues(milestoneHash, milestoneIndex);
         }
@@ -336,14 +335,14 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public void addSeenMilestone(Hash milestoneHash, int milestoneIndex) {
-        if (milestoneIndex > latestMilestoneIndex) {
-            logNewMilestone(latestMilestoneIndex, milestoneIndex, milestoneHash);
+        if (milestoneIndex > getLatestMilestoneIndex()) {
+            logNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
         }
 
         if (!seenMilestones.containsKey(milestoneIndex)) {
             seenMilestones.put(milestoneIndex, milestoneHash);
         }
-        removeFromQueue(milestoneHash);
+        removeFromQueues(milestoneHash);
     }
 
     /**
@@ -358,7 +357,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * {@inheritDoc}
      */
     @Override
-    public void removeFromQueue(Hash milestoneHash) {
+    public void removeFromQueues(Hash milestoneHash) {
         unsolidMilestones.remove(milestoneHash);
         solidificationQueue.remove(milestoneHash);
     }
@@ -368,7 +367,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public int getLatestMilestoneIndex() {
-        return latestMilestoneIndex;
+        return latestMilestoneIndex.get();
     }
 
     /**
@@ -376,17 +375,28 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public Hash getLatestMilestoneHash() {
-        return latestMilestoneHash;
+        return latestMilestoneHash.get();
     }
+
+    private int getLatestSolidMilestoneIndex() {
+        return latestSolidMilestone.get();
+    }
+
+    private void setLatestSolidMilestone(int milestoneIndex) {
+        if (milestoneIndex > latestSolidMilestone.get()) {
+            this.latestSolidMilestone.set(milestoneIndex);
+        }
+    }
+
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void setLatestMilestone(Hash milestoneHash, int milestoneIndex) {
-        if (milestoneIndex > latestMilestoneIndex) {
-            this.latestMilestoneHash = milestoneHash;
-            this.latestMilestoneIndex = milestoneIndex;
+        if (milestoneIndex > latestMilestoneIndex.get()) {
+            this.latestMilestoneHash.set(milestoneHash);
+            this.latestMilestoneIndex.set(milestoneIndex);
         }
     }
 
@@ -395,7 +405,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public boolean isInitialScanComplete() {
-        return initialized;
+        return initialized.get();
     }
 
     /**
@@ -519,15 +529,17 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
     private void logChange(int prevSolidMilestoneIndex) {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
-        latestSolidMilestone = latestSnapshot.getIndex();
+        int nextLatestSolidMilestone = latestSnapshot.getIndex();
+        setLatestSolidMilestone(nextLatestSolidMilestone);
 
-        if (prevSolidMilestoneIndex == latestSolidMilestone) {
+
+        if (prevSolidMilestoneIndex == nextLatestSolidMilestone) {
             return;
         }
 
-        log.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + latestSolidMilestone);
+        log.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
 
-        tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, latestSolidMilestone);
+        tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, nextLatestSolidMilestone);
         tangle.publish("lmhs %s", latestMilestoneHash);
 
         if (!config.isPrintSyncProgressEnabled()) {
@@ -535,22 +547,22 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         // only print more sophisticated progress if we are coming from a more unsynced state
-        if (latestMilestoneIndex - latestSolidMilestone < 1) {
-            syncProgressInfo.setSyncMilestoneStartIndex(latestSolidMilestone);
+        if (getLatestMilestoneIndex() - nextLatestSolidMilestone < 1) {
+            syncProgressInfo.setSyncMilestoneStartIndex(nextLatestSolidMilestone);
             syncProgressInfo.resetMilestoneApplicationTimes();
             return;
         }
 
-        int estSecondsToBeSynced = syncProgressInfo.computeEstimatedTimeToSyncUpSeconds(latestMilestoneIndex,
-                latestSolidMilestone);
+        int estSecondsToBeSynced = syncProgressInfo.computeEstimatedTimeToSyncUpSeconds(getLatestMilestoneIndex(),
+                nextLatestSolidMilestone);
         StringBuilder progressSB = new StringBuilder();
 
         // add progress bar
         progressSB.append(ASCIIProgressBar.getProgressBarString(syncProgressInfo.getSyncMilestoneStartIndex(),
-                latestMilestoneIndex, latestSolidMilestone));
+                getLatestMilestoneIndex(), nextLatestSolidMilestone));
         // add lsm to lm
-        progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", latestSolidMilestone,
-                latestMilestoneIndex, latestMilestoneIndex - latestSolidMilestone));
+        progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", nextLatestSolidMilestone,
+                getLatestMilestoneIndex(), getLatestMilestoneIndex() - nextLatestSolidMilestone));
         // add estimated time to get fully synced
         if (estSecondsToBeSynced != -1) {
             progressSB.append(String.format(" - est. seconds to get synced: %d", estSecondsToBeSynced));

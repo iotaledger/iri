@@ -58,7 +58,9 @@ public class MilestoneStage implements Stage {
             MilestonePayload payload = (MilestonePayload) ctx.getPayload();
 
             //If the milestone index is below the latest snapshot initial index, then abort the process
-            if(payload.getMilestoneIndex() < snapshotProvider.getLatestSnapshot().getInitialIndex()){
+            //Exempts index 0, as milestone objects don't require both transactions to hold the index
+            if(payload.getMilestoneIndex() < snapshotProvider.getLatestSnapshot().getInitialIndex() &&
+                    payload.getMilestoneIndex() != 0){
               return abort(ctx);
             }
 

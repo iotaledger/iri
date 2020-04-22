@@ -35,7 +35,7 @@ public class MilestoneStage implements Stage {
      * @param milestoneSolidifier    Tracks the latest milestone object
      */
     public MilestoneStage(Tangle tangle, MilestoneSolidifier milestoneSolidifier,
-                          SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier){
+                          SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier) {
         this.milestoneSolidifier = milestoneSolidifier;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
@@ -53,20 +53,20 @@ public class MilestoneStage implements Stage {
      * @return Either an abort or solidify stage ctx
      */
     @Override
-    public ProcessingContext process(ProcessingContext ctx){
+    public ProcessingContext process(ProcessingContext ctx) {
         try {
             MilestonePayload payload = (MilestonePayload) ctx.getPayload();
 
             //If the milestone index is below the latest snapshot initial index, then abort the process
             //Exempts index 0, as milestone objects don't require both transactions to hold the index
-            if(payload.getMilestoneIndex() < snapshotProvider.getLatestSnapshot().getInitialIndex() &&
-                    payload.getMilestoneIndex() != 0){
+            if (payload.getMilestoneIndex() < snapshotProvider.getLatestSnapshot().getInitialIndex() &&
+                    payload.getMilestoneIndex() != 0) {
               return abort(ctx);
             }
 
             TransactionViewModel milestone = TransactionViewModel.fromHash(tangle, payload.getMilestoneHash());
             int newMilestoneIndex = payload.getMilestoneIndex();
-            boolean isFirstInBundle = (milestone.getCurrentIndex() == 0);
+            boolean isTail = (milestone.getCurrentIndex() == 0);
 
             // Log new milestones
             int currentMilestoneIndex = milestoneSolidifier.getLatestMilestoneIndex();
@@ -75,30 +75,30 @@ public class MilestoneStage implements Stage {
             }
 
             // Add milestone tails to the milestone solidifier, if transaction is solid, add to the propagation queue
-            if(isFirstInBundle){
-                milestoneSolidifier.add(milestone.getHash(), newMilestoneIndex);
+            if (isTail) {
+                milestoneSolidifier.addMilestoneCandidate(milestone.getHash(), newMilestoneIndex);
             }
 
-            if (transactionSolidifier.addMilestoneToSolidificationQueue(milestone.getHash())){
+            if (transactionSolidifier.addMilestoneToSolidificationQueue(milestone.getHash())) {
                 transactionSolidifier.addToPropagationQueue(milestone.getHash());
             }
 
             return solidify(ctx, payload, milestone);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("Error processing milestone: ", e);
             return abort(ctx);
         }
     }
 
 
-    private ProcessingContext solidify(ProcessingContext ctx, Payload payload, TransactionViewModel tvm){
+    private ProcessingContext solidify(ProcessingContext ctx, Payload payload, TransactionViewModel tvm) {
         SolidifyPayload solidifyPayload = new SolidifyPayload(payload.getOriginNeighbor(), tvm);
         ctx.setNextStage(TransactionProcessingPipeline.Stage.SOLIDIFY);
         ctx.setPayload(solidifyPayload);
         return ctx;
     }
 
-    private ProcessingContext abort(ProcessingContext ctx){
+    private ProcessingContext abort(ProcessingContext ctx) {
         ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
         return ctx;
     }

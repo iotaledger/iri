@@ -60,7 +60,7 @@ public class MilestoneStageTest {
 
         //Milestone transaction should be updated in LatestMilestoneTracker and then placed into the MilestoneSolidifier
         verify(milestoneSolidifier, times(1)).logNewMilestone(anyInt(), anyInt(), any());
-        verify(milestoneSolidifier, times(1)).add(any(), anyInt());
+        verify(milestoneSolidifier, times(1)).addMilestoneCandidate(any(), anyInt());
 
         assertEquals("Expected next stage to be Solidify", TransactionProcessingPipeline.Stage.SOLIDIFY,
                 ctx.getNextStage());

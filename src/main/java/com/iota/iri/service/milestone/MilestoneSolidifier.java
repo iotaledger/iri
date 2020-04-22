@@ -18,7 +18,7 @@ public interface MilestoneSolidifier {
      * @param milestoneHash Hash of the milestone that shall be solidified
      * @param milestoneIndex index of the milestone that shall be solidified
      */
-    void add(Hash milestoneHash, int milestoneIndex);
+    void addMilestoneCandidate(Hash milestoneHash, int milestoneIndex);
 
     /**
      * This method starts the background worker that asynchronously solidifies the milestones.

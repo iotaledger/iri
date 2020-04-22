@@ -7,7 +7,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.MilestoneException;
+import com.iota.iri.service.milestone.MilestoneRepairer;
 import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.milestone.MilestoneValidity;
@@ -47,20 +47,11 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private Tangle tangle;
     private TransactionRequester transactionRequester;
     private MilestoneService milestoneService;
+    private MilestoneRepairer milestoneRepairer;
     private SolidificationConfig config;
 
 
     private SyncProgressInfo syncProgressInfo = new SyncProgressInfo();
-
-    /**
-     * Holds the milestone index of the milestone that caused the repair logic to get started.
-     */
-    private int errorCausingMilestoneIndex = Integer.MAX_VALUE;
-
-    /**
-     * Counter for the backoff repair strategy (see {@link #repairCorruptedMilestone(MilestoneViewModel)}.
-     */
-    private int repairBackoffCounter = 0;
 
     /**
      * An indicator for whether or not the solidifier has processed from the first batch of seen milestones
@@ -95,6 +86,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         this.transactionRequester = txRequester;
         this.milestoneService = milestoneService;
         this.config = config;
+        this.milestoneRepairer = new MilestoneRepairerImpl(milestoneService);
     }
 
     @Override
@@ -438,91 +430,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
     private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
         if (ledgerService.applyMilestoneToLedger(milestone)) {
-            if (isRepairRunning() && isRepairSuccessful(milestone)) {
-                stopRepair();
+            if (milestoneRepairer.isRepairRunning() && milestoneRepairer.isRepairSuccessful(milestone)) {
+                milestoneRepairer.stopRepair();
             }
             syncProgressInfo.addMilestoneApplicationTime();
         } else {
-            repairCorruptedMilestone(milestone);
+            milestoneRepairer.repairCorruptedMilestone(milestone);
         }
     }
 
-    /**
-     * <p>
-     * Tries to actively repair the ledger by reverting the milestones preceding the given milestone.
-     * </p>
-     * <p>
-     * It gets called when a milestone could not be applied to the ledger state because of problems like "inconsistent
-     * balances". While this should theoretically never happen (because milestones are by definition "consistent"), it
-     * can still happen because IRI crashed or got stopped in the middle of applying a milestone or if a milestone
-     * was processed in the wrong order.
-     * </p>
-     * <p>
-     * Every time we call this method the internal {@link #repairBackoffCounter} is incremented which causes the next
-     * call of this method to repair an additional milestone. This means that whenever we face an error we first try to
-     * reset only the last milestone, then the two last milestones, then the three last milestones (and so on ...) until
-     * the problem was fixed.
-     * </p>
-     * <p>
-     * To be able to tell when the problem is fixed and the {@link #repairBackoffCounter} can be reset, we store the
-     * milestone index that caused the problem the first time we call this method.
-     * </p>
-     *
-     * @param errorCausingMilestone the milestone that failed to be applied
-     * @throws MilestoneException if we failed to reset the corrupted milestone
-     */
-    private void repairCorruptedMilestone(MilestoneViewModel errorCausingMilestone) throws MilestoneException {
-        if (repairBackoffCounter++ == 0) {
-            errorCausingMilestoneIndex = errorCausingMilestone.index();
-        }
-        for (int i = errorCausingMilestone.index(); i > errorCausingMilestone.index() - repairBackoffCounter; i--) {
-            milestoneService.resetCorruptedMilestone(i);
-        }
-    }
 
-    /**
-     * <p>
-     * Checks if we are currently trying to repair a milestone.
-     * </p>
-     * <p>
-     * We simply use the {@link #repairBackoffCounter} as an indicator if a repair routine is running.
-     * </p>
-     *
-     * @return {@code true} if we are trying to repair a milestone and {@code false} otherwise
-     */
-    private boolean isRepairRunning() {
-        return repairBackoffCounter != 0;
-    }
-
-    /**
-     * <p>
-     * Checks if we successfully repaired the corrupted milestone.
-     * </p>
-     * <p>
-     * To determine if the repair routine was successful we check if the processed milestone has a higher index than the
-     * one that initially could not get applied to the ledger.
-     * </p>
-     *
-     * @param processedMilestone the currently processed milestone
-     * @return {@code true} if we advanced to a milestone following the corrupted one and {@code false} otherwise
-     */
-    private boolean isRepairSuccessful(MilestoneViewModel processedMilestone) {
-        return processedMilestone.index() > errorCausingMilestoneIndex;
-    }
-
-    /**
-     * <p>
-     * Resets the internal variables that are used to keep track of the repair process.
-     * </p>
-     * <p>
-     * It gets called whenever we advance to a milestone that has a higher milestone index than the milestone that
-     * initially caused the repair routine to kick in (see {@link #repairCorruptedMilestone(MilestoneViewModel)}.
-     * </p>
-     */
-    private void stopRepair() {
-        repairBackoffCounter = 0;
-        errorCausingMilestoneIndex = Integer.MAX_VALUE;
-    }
 
 
     private void logChange(int prevSolidMilestoneIndex) {

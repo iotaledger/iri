@@ -15,7 +15,7 @@ Feature: Test Bootstrapping With LS
 
     #Default for test is to issue 10322
     When milestone 10322 is issued on "nodeA-m1"
-    And we wait "30" second/seconds
+    And we wait "10" second/seconds
     Then "nodeA-m1" is synced up to milestone 10322
 
 
@@ -30,7 +30,7 @@ Feature: Test Bootstrapping With LS
     # Default for test is to issue 10323
     When milestone 10323 is issued on "nodeA-m1"
     #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
-    And we wait "30" second/seconds
+    And we wait "10" second/seconds
     Then "nodeB-m1" is synced up to milestone 10323
     And A local snapshot was taken on "nodeB-m1" at index 10220
 
@@ -53,7 +53,7 @@ Feature: Test Bootstrapping With LS
     #Default for test is to issue 10324
     When milestone 10324 is issued on "nodeA-m1"
     #Give the node time to finish syncing properly, then make sure that the node is synced to the latest milestone.
-    And we wait "120" second/seconds
+    And we wait "20" second/seconds
     Then "nodeC-m1" is synced up to milestone 10324
 
 
@@ -65,7 +65,7 @@ Feature: Test Bootstrapping With LS
     Given "nodeC-m1" and "nodeA-m1" are neighbors
      #Default for test is to issue 10325
     When milestone 10325 is issued on "nodeA-m1"
-    And we wait "30" second/seconds
+    And we wait "10" second/seconds
 
     Then "checkConsistency" is called on "nodeC-m1" with:
       |keys                       |values                   |type             |
@@ -135,7 +135,7 @@ Feature: Test Bootstrapping With LS
       |addresses                  |True                     |boolList         |
 
     #Drop the spend transactions below the pruning depth
-    When the next 30 milestones are issued
+    When the next 40 milestones are issued
 
     # Check that addresses were spent after transaction have been pruned
     And "wereAddressesSpentFrom" is called on "nodeE-m1" with:

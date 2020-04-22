@@ -88,5 +88,5 @@ public interface MilestoneSolidifier {
      * @param newMilestoneIndex     New milestone index
      * @param newMilestoneHash      New milestone hash
      */
-    void logNewMilestone(int oldMilestoneIndex, int newMilestoneIndex, Hash newMilestoneHash);
+    void registerNewMilestone(int oldMilestoneIndex, int newMilestoneIndex, Hash newMilestoneHash);
 }

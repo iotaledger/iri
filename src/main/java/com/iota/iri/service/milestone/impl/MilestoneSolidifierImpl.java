@@ -323,7 +323,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     @Override
     public void addSeenMilestone(Hash milestoneHash, int milestoneIndex) {
         if (milestoneIndex > getLatestMilestoneIndex()) {
-            logNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
+            registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
         }
 
         if (!seenMilestones.containsKey(milestoneIndex)) {
@@ -399,7 +399,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * {@inheritDoc}
      */
     @Override
-    public void logNewMilestone(int oldMilestoneIndex, int newMilestoneIndex, Hash newMilestoneHash) {
+    public void registerNewMilestone(int oldMilestoneIndex, int newMilestoneIndex, Hash newMilestoneHash) {
         setLatestMilestone(newMilestoneHash, newMilestoneIndex);
         tangle.publish("lmi %d %d", oldMilestoneIndex, newMilestoneIndex);
         log.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);

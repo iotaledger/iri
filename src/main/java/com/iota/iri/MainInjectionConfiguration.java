@@ -1,7 +1,5 @@
 package com.iota.iri;
 
-import com.iota.iri.cache.CacheManager;
-import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.NeighborRouter;
@@ -103,8 +101,8 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     LatestSolidMilestoneTracker provideLatestSolidMilestoneTracker(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneService milestoneService, LedgerService ledgerService,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
+                                                                   MilestoneService milestoneService, LedgerService ledgerService,
+                                                                   LatestMilestoneTracker latestMilestoneTracker, TransactionRequester transactionRequester) {
         return new LatestSolidMilestoneTrackerImpl(tangle, snapshotProvider, milestoneService, ledgerService,
                 latestMilestoneTracker, transactionRequester, configuration);
     }
@@ -151,12 +149,6 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    CacheManager provideCacheManager() {
-        return new CacheManagerImpl(configuration);
-    }
-
-    @Singleton
-    @Provides
     TipSelector provideTipSelector(Tangle tangle, SnapshotProvider snapshotProvider,
                                    LatestMilestoneTracker latestMilestoneTracker, LedgerService ledgerService) {
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
@@ -171,21 +163,21 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     Iota provideIota(SpentAddressesProvider spentAddressesProvider, SpentAddressesService spentAddressesService,
-            SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService,
-            LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker,
-            SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService,
-            @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
-            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
-            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
-            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
-            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
+                     SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+                     @Nullable LocalSnapshotManager localSnapshotManager, MilestoneService milestoneService,
+                     LatestMilestoneTracker latestMilestoneTracker, LatestSolidMilestoneTracker latestSolidMilestoneTracker,
+                     SeenMilestonesRetriever seenMilestonesRetriever, LedgerService ledgerService,
+                     @Nullable TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+                     BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+                     TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+                     TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+                     TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+                     TransactionSolidifier transactionSolidifier) {
         return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService,
                 localSnapshotManager, milestoneService, latestMilestoneTracker, latestSolidMilestoneTracker,
                 seenMilestonesRetriever, ledgerService, transactionPruner, milestoneSolidifier, bundleValidator, tangle,
                 transactionValidator, transactionRequester, neighborRouter, transactionProcessingPipeline,
-                tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb, cacheManager, transactionSolidifier);
+                tipsRequester, tipsViewModel, tipsSelector, localSnapshotsDb, transactionSolidifier);
     }
 
     @Singleton
@@ -197,10 +189,10 @@ public class MainInjectionConfiguration extends AbstractModule {
     @Singleton
     @Provides
     API provideApi(IXI ixi, TransactionRequester transactionRequester,
-                          SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
-                          SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
-                          TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-                          LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline, TransactionSolidifier transactionSolidifier) {
+                   SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
+                   SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter, TipSelector tipsSelector,
+                   TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+                   LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline, TransactionSolidifier transactionSolidifier) {
         return new API(configuration, ixi, transactionRequester, spentAddressesService, tangle, bundleValidator, snapshotProvider, ledgerService, neighborRouter, tipsSelector, tipsViewModel, transactionValidator, latestMilestoneTracker, txPipeline, transactionSolidifier);
     }
 

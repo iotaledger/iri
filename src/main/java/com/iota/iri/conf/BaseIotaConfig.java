@@ -1,23 +1,22 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.apache.commons.lang3.ArrayUtils;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
 
 /**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -30,7 +29,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     private boolean help;
     private boolean testnet = false;
-
+    
     //API
     protected int port = Defaults.PORT;
     protected String apiHost = Defaults.API_HOST;
@@ -41,7 +40,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
-
+    
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -68,10 +67,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
-
-    // Cache
-    protected int txCacheSize = Defaults.TX_CACHE_SIZE;
-    protected int milestoneCacheSize = Defaults.MILESTONE_CACHE_SIZE;
 
     //Protocol
     protected double pSendMilestone = Defaults.P_SEND_MILESTONE;
@@ -139,12 +134,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     public boolean isHelp() {
         return help;
     }
-
+    
     @Override
     public boolean isTestnet() {
         return testnet;
     }
-
+    
     @JsonIgnore
     @Parameter(names = {Config.TESTNET_FLAG}, description = Config.Descriptions.TESTNET, arity = 1)
     protected void setTestnet(boolean testnet) {
@@ -173,7 +168,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         if (remote) {
             return "0.0.0.0";
         }
-
+        
         return apiHost;
     }
 
@@ -410,12 +405,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbLogPath(String dbLogPath) {
         this.dbLogPath = dbLogPath;
     }
-
+    
     @Override
     public String getDbConfigFile() {
         return dbConfigFile;
     }
-
+    
     @JsonProperty
     @Parameter(names = {"--db-config-file"}, description = DbConfig.Descriptions.DB_CONFIG_FILE)
     protected void setDbConfigFile(String dbConfigFile) {
@@ -432,7 +427,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbCacheSize(int dbCacheSize) {
         this.dbCacheSize = dbCacheSize;
     }
-
+    
     @Override
     public String getMainDb() {
         return mainDb;
@@ -442,36 +437,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
-    }
-
-    @Override
-    public int getTxCacheSize() {
-        return txCacheSize;
-    }
-
-    @JsonProperty
-    @Parameter(names = { "--tx-cache-size" }, description = DbConfig.Descriptions.TX_CACHE_SIZE)
-    protected void setTxCacheSize(int txCacheSize) {
-        if (txCacheSize < 1 || txCacheSize > Defaults.MAX_TX_CACHE_SIZE) {
-            throw new ParameterException("TX_CACHE_SIZE should be between 1 and " + Defaults.MAX_TX_CACHE_SIZE
-                    + ". (found " + txCacheSize + ")");
-        }
-        this.txCacheSize = txCacheSize;
-    }
-
-    @Override
-    public int getMilestoneCacheSize() {
-        return milestoneCacheSize;
-    }
-
-    @JsonProperty
-    @Parameter(names = { "--milestone-cache-size" }, description = DbConfig.Descriptions.MILESTONE_CACHE_SIZE)
-    protected void setMilestoneCacheSize(int milestoneCacheSize) {
-        if (milestoneCacheSize < 1 || milestoneCacheSize > Defaults.MAX_MILESTONE_CACHE_SIZE) {
-            throw new ParameterException("MILESTONE_CACHE_SIZE should be between 1 and "
-                    + Defaults.MAX_MILESTONE_CACHE_SIZE + ". (found " + milestoneCacheSize + ")");
-        }
-        this.milestoneCacheSize = milestoneCacheSize;
     }
 
     @Override
@@ -849,7 +814,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--max-analyzed-transactions",
+    @Parameter(names = "--max-analyzed-transactions", 
         description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
     protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
@@ -914,12 +879,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
-
-        // Cache
-        int MAX_TX_CACHE_SIZE = 1000;
-        int MAX_MILESTONE_CACHE_SIZE = 30;
-        int TX_CACHE_SIZE = MAX_TX_CACHE_SIZE;
-        int MILESTONE_CACHE_SIZE = MAX_MILESTONE_CACHE_SIZE;
 
         //Protocol
         double P_SEND_MILESTONE = 0.02d;

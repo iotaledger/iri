@@ -71,7 +71,7 @@ public class MilestoneStage implements Stage {
             // Log new milestones
             int currentMilestoneIndex = milestoneSolidifier.getLatestMilestoneIndex();
             if (newMilestoneIndex > currentMilestoneIndex) {
-                milestoneSolidifier.logNewMilestone(currentMilestoneIndex, newMilestoneIndex, milestone.getHash());
+                milestoneSolidifier.registerNewMilestone(currentMilestoneIndex, newMilestoneIndex, milestone.getHash());
             }
 
             // Add milestone tails to the milestone solidifier, if transaction is solid, add to the propagation queue

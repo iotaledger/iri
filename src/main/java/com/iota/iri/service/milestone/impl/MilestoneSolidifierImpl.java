@@ -152,11 +152,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
         // update the oldest milestone in queue
         for (Map.Entry<Hash, Integer> currentEntry : solidificationQueue.entrySet()) {
-            if (seenMilestones.containsKey(currentEntry.getValue())) {
-                // remove candidate from pool
-                unsolidMilestones.remove(currentEntry.getKey());
-                solidificationQueue.remove(currentEntry.getKey());
-            } else {
+            if (!seenMilestones.containsKey(currentEntry.getValue())) {
                 updateOldestMilestone(currentEntry.getKey(), currentEntry.getValue());
             }
         }
@@ -192,6 +188,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 case VALID:
                     milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
                     if (milestoneCandidate.isSolid()) {
+                        removeFromQueues(milestoneHash);
                         addSeenMilestone(milestoneHash, milestoneIndex);
                     } else {
                         transactionSolidifier.addToSolidificationQueue(milestoneHash);
@@ -290,7 +287,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 transactionRequester.clearRecentlyRequestedTransactions();
             }
 
-            removeSeenMilestone(nextMilestoneIndex);
+            removeCurrentAndLowerSeenMilestone(nextMilestoneIndex);
         }
 
     }
@@ -414,7 +411,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      *
      * @param solidMilestoneIndex   The milestone index to remove
      */
-    private void removeSeenMilestone(int solidMilestoneIndex) {
+    private void removeCurrentAndLowerSeenMilestone(int solidMilestoneIndex) {
         seenMilestones.remove(solidMilestoneIndex);
         for (Iterator<Map.Entry<Hash, Integer>> iterator = unsolidMilestones.entrySet().iterator();
              !Thread.currentThread().isInterrupted() && iterator.hasNext();) {

@@ -260,7 +260,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                     tvm.updateSolid(true);
                     tvm.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
                 }
-                addToBroadcastQueue(tvm);
+
+                if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash)) {
+                    addToBroadcastQueue(tvm);
+                }
                 transactionPropagator.addToPropagationQueue(tvm.getHash());
             } catch (Exception e) {
                 log.info(e.getMessage());
@@ -286,7 +289,9 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                 transactionsToBroadcast.remove();
             }
 
-            transactionsToBroadcast.put(tvm);
+            if(!transactionsToBroadcast.contains(tvm)) {
+                transactionsToBroadcast.put(tvm);
+            }
         } catch(Exception e){
             log.info("Error placing transaction into broadcast queue: " + e.getMessage());
         }

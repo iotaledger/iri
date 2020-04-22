@@ -126,7 +126,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     syncProgressInfo.setSyncMilestoneStartIndex(snapshotProvider.getInitialSnapshot().getIndex());
                 }
 
-                solidifySeenMilestones();
                 processSolidifyQueue();
                 checkLatestSolidMilestone();
 
@@ -186,37 +185,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     }
 
     /**
-     * Iterates through seen milestones and ensures that they are valid. If the milestone is invalid, the index is
-     * checked to see if a milestone object exists already. If an existing milestone is present, then the current
-     * milestone index/hash pairing is replaced with the existing milestone hash.
-     */
-    private void solidifySeenMilestones() throws Exception {
-        Iterator<Map.Entry<Integer, Hash>> iterator = seenMilestones.entrySet().iterator();
-        Map.Entry<Integer, Hash> milestone;
-        while (!Thread.currentThread().isInterrupted() && iterator.hasNext()) {
-            milestone = iterator.next();
-            int milestoneIndex = milestone.getKey();
-            TransactionViewModel oldMilestoneTransaction = TransactionViewModel.fromHash(tangle, milestone.getValue());
-
-            MilestoneValidity valid = milestoneService.validateMilestone(oldMilestoneTransaction, milestoneIndex);
-            if (valid.equals(MilestoneValidity.INVALID)) {
-                MilestoneViewModel nextMilestone = MilestoneViewModel.get(tangle, milestoneIndex);
-                if (nextMilestone != null) {
-                    if (TransactionViewModel.fromHash(tangle, nextMilestone.getHash()).isSolid()) {
-                        seenMilestones.remove(milestoneIndex);
-                        removeFromQueue(oldMilestoneTransaction.getHash());
-                        addMilestoneCandidate(nextMilestone.getHash(), milestoneIndex);
-                    }
-                } else {
-                    //if incomplete or valid already, remove from solidification pools
-                    seenMilestones.remove(milestoneIndex);
-                    removeFromQueue(oldMilestoneTransaction.getHash());
-                }
-            }
-        }
-    }
-
-    /**
      * Iterates through valid milestones and submits them to the {@link TransactionSolidifier}
      */
     private void processSolidifyQueue() throws Exception {
@@ -224,25 +192,29 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         Map.Entry<Hash, Integer> milestone;
         while(!Thread.currentThread().isInterrupted() && iterator.hasNext()) {
             milestone = iterator.next();
-            TransactionViewModel milestoneCandidate = TransactionViewModel.fromHash(tangle, milestone.getKey());
+            Hash milestoneHash = milestone.getKey();
+            int milestoneIndex = milestone.getValue();
+            TransactionViewModel milestoneCandidate = TransactionViewModel.fromHash(tangle, milestoneHash);
 
-            MilestoneValidity validity = milestoneService.validateMilestone(milestoneCandidate, milestone.getValue());
+            MilestoneValidity validity = milestoneService.validateMilestone(milestoneCandidate, milestoneIndex);
             switch(validity) {
                 case VALID:
                     milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
                     if (milestoneCandidate.isSolid()) {
-                        addSeenMilestone(milestone.getKey(), milestone.getValue());
+                        addSeenMilestone(milestoneHash, milestoneIndex);
                     } else {
-                        transactionSolidifier.addToSolidificationQueue(milestone.getKey());
+                        transactionSolidifier.addToSolidificationQueue(milestoneHash);
                     }
                     break;
                 case INCOMPLETE:
-                    transactionSolidifier.addToSolidificationQueue(milestone.getKey());
+                    transactionSolidifier.addToSolidificationQueue(milestoneHash);
                     break;
                 case INVALID:
                     removeFromQueue(milestone.getKey());
             }
         }
+
+        scanMilestonesInQueue();
     }
 
     /**

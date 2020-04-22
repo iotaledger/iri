@@ -5,30 +5,48 @@ labels: T-Bug
 
 ---
 
-<!--- Remove text and sections that do not apply -->
-The issue tracker is only for reporting bugs or submitting feature requests.
-If you need technical assistance for running a node please consult the #fullnode channel on Discord (https://discord.iota.org) or https://forum.helloiota.com/Technology/Help.
-If you have general questions on IOTA you can go to https://iota.stackexchange.com/, https://helloiota.com/, or browse Discord channels (https://discord.iota.org).
+## Bug description
 
-### Bug description
-A general description of the bug.
+Briefly describe the bug.
 
-### IRI version
-What version are you running?
+## Version
 
-### Hardware Spec
-On what hardware is the node running on?
+Which version of IRI are you running?
 
-### Steps To Reproduce
+- Version:
+
+## IOTA network
+
+Which node are you connected to and which IOTA network is it in?
+
+- Node URL:
+- Network:
+
+## Hardware specification
+
+What hardware are you using?
+
+- Operating system:
+- RAM:
+- Number of cores:
+- Device type:
+
+## Steps To reproduce the bug
+
+Explain how the maintainer can reproduce the bug.
+
 1. 
 2. 
 3. 
 
-### Expected behaviour
-What should happen.
+## Expected behaviour
 
-### Actual behaviour
-What really happened.
+Describe what you expect to happen.
 
-### Errors
+## Actual behaviour
+
+Describe what actually happens.
+
+## Errors
+
 Paste any errors that you see.

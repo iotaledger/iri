@@ -1,6 +1,6 @@
 # Java Style Guide
 
-###### This is a modified version of the excellent [Twitter Java Style Guide](https://github.com/twitter/commons/blob/master/src/java/com/twitter/common/styleguide.md).
+**This is a modified version of the excellent [Twitter Java Style Guide](https://github.com/twitter/commons/blob/master/src/java/com/twitter/common/styleguide.md).**
 
 The intention of this guide is to provide a set of conventions that encourage good code.
 It is the distillation of many combined man-years of software engineering and Java development experience.  While some suggestions are more strict than others, you should always practice good judgement.
@@ -11,8 +11,8 @@ In general, much of our style and conventions mirror the
 [Code Conventions for the Java Programming Language](http://www.oracle.com/technetwork/java/codeconvtoc-136057.html)
 and [Google's Java Style Guide](https://google.github.io/styleguide/javaguide.html).
 
-
 ## Recommended reading
+
 - [Effective Java](http://www.amazon.com/Effective-Java-Edition-Joshua-Bloch/dp/0321356683)
 
 - [Java Concurrency in Practice](http://jcip.net/)
@@ -21,6 +21,7 @@ and [Google's Java Style Guide](https://google.github.io/styleguide/javaguide.ht
   Not java-specific, but a good handbook for programming best-practices.
 
 ## Table of Contents
+
   * [Coding style](#coding-style)                                                                                             
      * [Formatting](#formatting)                                                                                              
         * [Use line breaks wisely](#use-line-breaks-wisely)                                                                   
@@ -100,8 +101,8 @@ and [Google's Java Style Guide](https://google.github.io/styleguide/javaguide.ht
         * [Centralize duplicate logic in utility functions](#centralize-duplicate-logic-in-utility-functions)
      * [Manage threads properly](#manage-threads-properly)
      * [Avoid unnecessary code](#avoid-unnecessary-code)
-        * [Superfluous temporary variables.](#superfluous-temporary-variables)
-        * [Unneeded assignment.](#unneeded-assignment)
+        * [Superfluous temporary variables](#superfluous-temporary-variables)
+        * [Unneeded assignment](#unneeded-assignment)
      * [The 'fast' implementation](#the-fast-implementation)
 
 

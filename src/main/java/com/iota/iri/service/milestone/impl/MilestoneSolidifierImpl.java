@@ -144,7 +144,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             unsolidMilestones.entrySet().stream()
                     .sorted(Map.Entry.comparingByValue())
                     .forEach(milestone -> {
-                        if (solidificationQueue.size() < MAX_SIZE) {
+                        while (solidificationQueue.size() < MAX_SIZE) {
                             solidificationQueue.put(milestone.getKey(), milestone.getValue());
                         }
                     });
@@ -206,7 +206,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     }
 
     /**
-     * Tries to solidifiy the next available milestone index. If successful, the milestone will be removed from the
+     * Tries to solidify the next available milestone index. If successful, the milestone will be removed from the
      * {@link #seenMilestones} queue, and any milestone objects below that index in the {@link #unsolidMilestones} queue
      * will be removed as well.
      */

@@ -102,7 +102,7 @@ public class ReceivedStage implements Stage {
             if(tvm.getAddressHash().equals(cooAddress)) {
                 int milestoneIndex = milestoneService.getMilestoneIndex(tvm);
                 MilestonePayload milestonePayload = new MilestonePayload(payload.getOriginNeighbor(),
-                                tvm.getHash(), milestoneIndex);
+                                tvm, milestoneIndex);
                 ctx.setNextStage(TransactionProcessingPipeline.Stage.MILESTONE);
                 ctx.setPayload(milestonePayload);
                 return ctx;

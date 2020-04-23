@@ -6,7 +6,7 @@ import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotMetaData;
@@ -200,12 +200,12 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Snapshot takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner, int targetMilestoneIndex)
+    public Snapshot takeLocalSnapshot(MilestoneSolidifier milestoneSolidifier, TransactionPruner transactionPruner, int targetMilestoneIndex)
             throws SnapshotException {
 
         MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, targetMilestoneIndex);
         
-        Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
+        Snapshot newSnapshot = generateSnapshot(milestoneSolidifier, targetMilestone);
 
         if (transactionPruner != null) {
             cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
@@ -230,7 +230,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Snapshot generateSnapshot(LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone)
+    public Snapshot generateSnapshot(MilestoneSolidifier milestoneSolidifier, MilestoneViewModel targetMilestone)
             throws SnapshotException {
 
         if (targetMilestone == null) {
@@ -266,7 +266,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
 
         snapshot.setSolidEntryPoints(generateSolidEntryPoints(targetMilestone));
-        snapshot.setSeenMilestones(generateSeenMilestones(latestMilestoneTracker, targetMilestone));
+        snapshot.setSeenMilestones(generateSeenMilestones(milestoneSolidifier, targetMilestone));
 
         return snapshot;
     }
@@ -289,7 +289,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Map<Hash, Integer> generateSeenMilestones(LatestMilestoneTracker latestMilestoneTracker,
+    public Map<Hash, Integer> generateSeenMilestones(MilestoneSolidifier milestoneSolidifier,
             MilestoneViewModel targetMilestone) throws SnapshotException {
 
         ProgressLogger progressLogger = new IntervalProgressLogger(
@@ -300,7 +300,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             MilestoneViewModel seenMilestone = targetMilestone;
             while ((seenMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, seenMilestone.index(),
-                    latestMilestoneTracker.getLatestMilestoneIndex())) != null) {
+                    milestoneSolidifier.getLatestMilestoneIndex())) != null) {
 
                 seenMilestones.put(seenMilestone.getHash(), seenMilestone.index());
 

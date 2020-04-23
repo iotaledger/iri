@@ -41,7 +41,7 @@ import com.iota.iri.service.dto.GetTrytesResponse;
 import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.service.dto.WereAddressesSpentFrom;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.restserver.RestConnector;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
@@ -152,7 +152,7 @@ public class API {
     private final TipsViewModel tipsViewModel;
     private final TransactionValidator transactionValidator;
     private final TransactionSolidifier transactionSolidifier;
-    private final LatestMilestoneTracker latestMilestoneTracker;
+    private final MilestoneSolidifier milestoneSolidifier;
     
     private final int maxFindTxs;
     private final int maxRequestList;
@@ -192,16 +192,16 @@ public class API {
      * @param tipsSelector Handles logic for selecting tips based on other transactions
      * @param tipsViewModel Contains the current tips of this node
      * @param transactionValidator Validates transactions
-     * @param latestMilestoneTracker Service that tracks the latest milestone
+     * @param milestoneSolidifier Service that tracks the latest milestone
+     * @param txPipeline Network service for routing transaction requests and broadcasts
      * @param transactionSolidifier Holds transaction pipeline, including broadcast transactions
-     * @param t Service that tracks the latest milestone
      *
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
             SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
             SnapshotProvider snapshotProvider, LedgerService ledgerService, NeighborRouter neighborRouter,
             TipSelector tipsSelector, TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionProcessingPipeline txPipeline,
+            MilestoneSolidifier milestoneSolidifier, TransactionProcessingPipeline txPipeline,
             TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
         this.ixi = ixi;
@@ -218,7 +218,7 @@ public class API {
         this.tipsViewModel = tipsViewModel;
         this.transactionValidator = transactionValidator;
         this.transactionSolidifier = transactionSolidifier;
-        this.latestMilestoneTracker = latestMilestoneTracker;
+        this.milestoneSolidifier = milestoneSolidifier;
         
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
@@ -285,7 +285,7 @@ public class API {
      *
      * @param requestString The JSON encoded data of the request.
      *                      This String is attempted to be converted into a {@code Map<String, Object>}.
-     * @param sourceAddress The address from the sender of this API request.
+     * @param netAddress The address from the sender of this API request.
      * @return The result of this request.
      * @throws UnsupportedEncodingException If the requestString cannot be parsed into a Map.
      *                                      Currently caught and turned into a {@link ExceptionResponse}.
@@ -477,7 +477,7 @@ public class API {
      */
     private boolean isNodeSynchronized() {
         return (snapshotProvider.getLatestSnapshot().getIndex() != snapshotProvider.getInitialSnapshot().getIndex()) &&
-                snapshotProvider.getLatestSnapshot().getIndex() >= latestMilestoneTracker.getLatestMilestoneIndex() -1;
+                snapshotProvider.getLatestSnapshot().getIndex() >= milestoneSolidifier.getLatestMilestoneIndex() -1;
     }
 
     /**
@@ -763,8 +763,8 @@ public class API {
 
                 Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().totalMemory(),
-                latestMilestoneTracker.getLatestMilestoneHash(),
-                latestMilestoneTracker.getLatestMilestoneIndex(),
+                milestoneSolidifier.getLatestMilestoneHash(),
+                milestoneSolidifier.getLatestMilestoneIndex(),
                 
                 snapshotProvider.getLatestSnapshot().getHash(),
                 snapshotProvider.getLatestSnapshot().getIndex(),

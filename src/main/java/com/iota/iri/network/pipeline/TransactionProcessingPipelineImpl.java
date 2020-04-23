@@ -16,7 +16,6 @@ import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.TransactionCacheDigester;
 import com.iota.iri.network.neighbor.Neighbor;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
@@ -93,17 +92,15 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      * @param tangle                 The {@link Tangle} database to use to store and load transactions.
      * @param snapshotProvider       The {@link SnapshotProvider} to use to store transactions with.
      * @param tipsViewModel          The {@link TipsViewModel} to load tips from in the reply stage
-     * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
-     *                               reply stage
      */
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
+            TipsViewModel tipsViewModel, MilestoneSolidifier milestoneSolidifier,
             TransactionRequester transactionRequester, TransactionSolidifier txSolidifier,
-            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier) {
+            MilestoneService milestoneService) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
-        this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
+        this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, milestoneSolidifier,
                 snapshotProvider, recentlySeenBytesCache);
         this.broadcastStage = new BroadcastStage(neighborRouter, txSolidifier);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
@@ -112,8 +109,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
         this.solidifyStage = new SolidifyStage(txSolidifier, tipsViewModel, tangle);
-        this.milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier,
-                latestMilestoneTracker);
+        this.milestoneStage = new MilestoneStage(milestoneSolidifier, snapshotProvider, txSolidifier);
     }
 
     @Override

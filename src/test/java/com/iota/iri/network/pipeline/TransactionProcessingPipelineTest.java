@@ -1,6 +1,5 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.validation.TransactionSolidifier;
@@ -121,9 +120,6 @@ public class TransactionProcessingPipelineTest {
     private MilestoneSolidifier milestoneSolidifier;
 
     @Mock
-    private LatestMilestoneTracker latestMilestoneTracker;
-
-    @Mock
     private TransactionSolidifier transactionSolidifier;
 
     private void mockHashingStage(TransactionProcessingPipeline pipeline) {
@@ -149,8 +145,8 @@ public class TransactionProcessingPipelineTest {
     public void processingAValidNewTransactionFlowsThroughTheEntirePipeline() throws InterruptedException {
 
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
-                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, transactionSolidifier, milestoneService, milestoneSolidifier);
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
+                transactionRequester, transactionSolidifier, milestoneService);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -201,8 +197,8 @@ public class TransactionProcessingPipelineTest {
     @Test
     public void processingAValidMilestone() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
-                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, transactionSolidifier, milestoneService, milestoneSolidifier);
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
+                transactionRequester, transactionSolidifier, milestoneService);
 
         injectMockedStagesIntoPipeline(pipeline);
 
@@ -258,8 +254,8 @@ public class TransactionProcessingPipelineTest {
     @Test
     public void processingAKnownTransactionOnlyFlowsToTheReplyStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
-                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, transactionSolidifier, milestoneService, milestoneSolidifier);
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
+                transactionRequester, transactionSolidifier, milestoneService);
 
         // inject mocks
         pipeline.setPreProcessStage(preProcessStage);
@@ -293,8 +289,8 @@ public class TransactionProcessingPipelineTest {
     public void processingAValidNewTransactionNotOriginatingFromANeighborFlowsThroughTheCorrectStages()
             throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
-                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, transactionSolidifier, milestoneService, milestoneSolidifier);
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
+                transactionRequester, transactionSolidifier, milestoneService);
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
 
@@ -343,8 +339,8 @@ public class TransactionProcessingPipelineTest {
     @Test
     public void anInvalidNewTransactionStopsBeingProcessedAfterTheValidationStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
-                transactionValidator, tangle, snapshotProvider, tipsViewModel, latestMilestoneTracker,
-                transactionRequester, transactionSolidifier, milestoneService, milestoneSolidifier);
+                transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
+                transactionRequester, transactionSolidifier, milestoneService);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);

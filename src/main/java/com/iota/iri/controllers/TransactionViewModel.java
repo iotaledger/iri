@@ -825,7 +825,7 @@ public class TransactionViewModel {
     /**
      * This method sets the {@link Transaction#milestone} flag.
      *
-     * It gets automatically called by the {@link com.iota.iri.service.milestone.LatestMilestoneTracker} and marks
+     * It gets automatically called by the {@link com.iota.iri.service.milestone.MilestoneSolidifier} and marks
      * transactions that represent a milestone accordingly. It first checks if the {@link Transaction#milestone} flag
      * has changed and if so, it issues a database update.
      *

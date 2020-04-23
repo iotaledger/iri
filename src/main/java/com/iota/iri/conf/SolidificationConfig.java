@@ -1,5 +1,7 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.model.Hash;
+
 /**
  * 
  * Configurations that should be used for the solidification processes.
@@ -12,6 +14,11 @@ public interface SolidificationConfig extends Config {
      * @return {@value SolidificationConfig.Descriptions#PRINT_SYNC_PROGRESS_ENABLED}
      */
     boolean isPrintSyncProgressEnabled();
+
+    /**
+     * @return the coordinator address hash
+     */
+    Hash getCoordinator();
 
     /**
      * Field descriptions

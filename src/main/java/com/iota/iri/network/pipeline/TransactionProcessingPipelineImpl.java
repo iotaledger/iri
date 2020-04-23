@@ -109,7 +109,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
         this.solidifyStage = new SolidifyStage(txSolidifier, tipsViewModel, tangle);
-        this.milestoneStage = new MilestoneStage(tangle, milestoneSolidifier, snapshotProvider, txSolidifier);
+        this.milestoneStage = new MilestoneStage(milestoneSolidifier, snapshotProvider, txSolidifier);
     }
 
     @Override

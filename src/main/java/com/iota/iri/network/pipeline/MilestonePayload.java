@@ -1,6 +1,6 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.model.Hash;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.neighbor.Neighbor;
 
 /**
@@ -13,9 +13,9 @@ public class MilestonePayload extends Payload {
     private Neighbor originNeighbor;
 
     /**
-     * {@link Hash} of potential milestone object
+     * {@link TransactionViewModel} of potential milestone object
      */
-    private Hash milestoneHash;
+    private TransactionViewModel milestoneTransaction;
 
     /**
      * Index of potential milestone object
@@ -25,13 +25,13 @@ public class MilestonePayload extends Payload {
     /**
      * Constructor for a {@link MilestonePayload} object that will be processed by the {@link MilestoneStage}.
      *
-     * @param originNeighbor    Neighbor that milestone candidate originated from
-     * @param milestoneHash     {@link Hash} of the milestone candidate
-     * @param milestoneIndex    Index of the milestone candidate
+     * @param originNeighbor        Neighbor that milestone candidate originated from
+     * @param milestoneTransaction  {@link TransactionViewModel} of the milestone candidate
+     * @param milestoneIndex        Index of the milestone candidate
      */
-    public MilestonePayload(Neighbor originNeighbor, Hash milestoneHash, int milestoneIndex){
+    public MilestonePayload(Neighbor originNeighbor, TransactionViewModel milestoneTransaction, int milestoneIndex){
         this.originNeighbor = originNeighbor;
-        this.milestoneHash = milestoneHash;
+        this.milestoneTransaction = milestoneTransaction;
         this.milestoneIndex = milestoneIndex;
     }
 
@@ -41,10 +41,10 @@ public class MilestonePayload extends Payload {
     }
 
     /**
-     * @return {@link #milestoneHash}
+     * @return {@link #milestoneTransaction}
      */
-    public Hash getMilestoneHash(){
-        return this.milestoneHash;
+    public TransactionViewModel getMilestoneTransaction(){
+        return this.milestoneTransaction;
     }
 
     /**

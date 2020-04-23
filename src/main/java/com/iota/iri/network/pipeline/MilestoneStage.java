@@ -4,7 +4,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.validation.TransactionSolidifier;
-import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +17,6 @@ public class MilestoneStage implements Stage {
 
 
     private MilestoneSolidifier milestoneSolidifier;
-    private Tangle tangle;
     private SnapshotProvider snapshotProvider;
     private TransactionSolidifier transactionSolidifier;
 
@@ -28,16 +26,14 @@ public class MilestoneStage implements Stage {
      * milestone candidates into a queue for solidification. The stage will always try to solidify the oldest milestone
      * candidate in the queue.
      *
-     * @param tangle                    The tangle reference
      * @param milestoneSolidifier       Solidification service for processing milestone objects
      * @param snapshotProvider          Snapshot provider service for latest snapshot references
      * @param transactionSolidifier     A service for solidifying transactions
      * @param milestoneSolidifier    Tracks the latest milestone object
      */
-    public MilestoneStage(Tangle tangle, MilestoneSolidifier milestoneSolidifier,
+    public MilestoneStage(MilestoneSolidifier milestoneSolidifier,
                           SnapshotProvider snapshotProvider, TransactionSolidifier transactionSolidifier) {
         this.milestoneSolidifier = milestoneSolidifier;
-        this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.transactionSolidifier = transactionSolidifier;
     }
@@ -64,7 +60,7 @@ public class MilestoneStage implements Stage {
               return abort(ctx);
             }
 
-            TransactionViewModel milestone = TransactionViewModel.fromHash(tangle, payload.getMilestoneHash());
+            TransactionViewModel milestone = payload.getMilestoneTransaction();
             int newMilestoneIndex = payload.getMilestoneIndex();
             boolean isTail = (milestone.getCurrentIndex() == 0);
 

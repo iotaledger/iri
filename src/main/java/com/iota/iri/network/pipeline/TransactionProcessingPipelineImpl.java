@@ -72,12 +72,12 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private HashingStage hashingStage;
     private SolidifyStage solidifyStage;
 
-    private BlockingQueue<ProcessingContext> preProcessStageQueue = new LinkedBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> validationStageQueue = new LinkedBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> receivedStageQueue = new LinkedBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> replyStageQueue = new LinkedBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> broadcastStageQueue = new LinkedBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> solidifyStageQueue = new LinkedBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> preProcessStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> validationStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> receivedStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> replyStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> broadcastStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> solidifyStageQueue = new LinkedBlockingQueue<>();
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.

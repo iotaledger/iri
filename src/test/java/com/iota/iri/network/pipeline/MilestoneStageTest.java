@@ -62,8 +62,7 @@ public class MilestoneStageTest {
         milestoneStage.process(ctx);
         Thread.sleep(100);
 
-        //Milestone transaction should be updated in LatestMilestoneTracker and then placed into the MilestoneSolidifier
-        verify(milestoneSolidifier, times(1)).registerNewMilestone(anyInt(), anyInt(), any());
+        //Milestone transaction should be placed into the MilestoneSolidifier
         verify(milestoneSolidifier, times(1)).addMilestoneCandidate(any(), anyInt());
 
         assertEquals("Expected next stage to be Solidify", TransactionProcessingPipeline.Stage.SOLIDIFY,
@@ -87,8 +86,7 @@ public class MilestoneStageTest {
         milestoneStage.process(ctx);
         Thread.sleep(100);
 
-        //Milestone is not logged, and the transaction is added to Propagation
-        verify(milestoneSolidifier, never()).registerNewMilestone(anyInt(), anyInt(), any());
+        //Milestone transaction is added to Propagation
         verify(txSolidifier, times(1)).addToPropagationQueue(any());
 
         assertEquals("Expected next stage to be Solidify", TransactionProcessingPipeline.Stage.SOLIDIFY,

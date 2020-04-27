@@ -159,7 +159,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     });
         }
 
-        // update the oldest milestone in queue
+        // update the oldest milestone in queue. First reset oldestMilestoneInQueue before scanning queue.
+        oldestMilestoneInQueue = null;
         for (Map.Entry<Hash, Integer> currentEntry : solidificationQueue.entrySet()) {
             if (!seenMilestones.containsKey(currentEntry.getValue())) {
                 updateOldestMilestone(currentEntry.getKey(), currentEntry.getValue());
@@ -204,7 +205,9 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     }
                     break;
                 case INCOMPLETE:
-                    setLatestMilestone(milestoneHash, milestoneIndex);
+                    if(milestoneIndex > getLatestMilestoneIndex()) {
+                        registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
+                    }
                     transactionSolidifier.addToSolidificationQueue(milestoneHash);
                     break;
                 case INVALID:

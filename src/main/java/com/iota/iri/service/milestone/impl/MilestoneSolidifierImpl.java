@@ -204,6 +204,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     }
                     break;
                 case INCOMPLETE:
+                    setLatestMilestone(milestoneHash, milestoneIndex);
                     transactionSolidifier.addToSolidificationQueue(milestoneHash);
                     break;
                 case INVALID:

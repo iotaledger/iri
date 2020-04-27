@@ -116,6 +116,10 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 if (getLatestMilestoneIndex() > getLatestSolidMilestoneIndex()) {
                     solidifyLog();
                 }
+
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                log.info("Milestone Thread interrupted. Shutting Down.");
             } catch (Exception e) {
                 log.error("Error running milestone solidification thread", e);
             }
@@ -143,9 +147,13 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             solidificationQueue.clear();
             unsolidMilestones.entrySet().stream()
                     .sorted(Map.Entry.comparingByValue())
-                    .forEach(milestone -> {
-                        while (solidificationQueue.size() < MAX_SIZE) {
-                            solidificationQueue.put(milestone.getKey(), milestone.getValue());
+                    .forEach(milestone -> { //If milestone candidate has a lower index than the latest solid milestone remove it from the queues.
+                        if (milestone.getValue() < getLatestSolidMilestoneIndex()){
+                            removeFromQueues(milestone.getKey());
+                        } else {
+                            if (solidificationQueue.size() < MAX_SIZE) {
+                                solidificationQueue.put(milestone.getKey(), milestone.getValue());
+                            }
                         }
                     });
         }
@@ -260,18 +268,24 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         setLatestSolidMilestone(milestoneIndex);
-
-        AddressViewModel.load(tangle, config.getCoordinator()).getHashes().forEach(hash -> {
+        Set<Hash> milestoneTransactions = AddressViewModel.load(tangle, config.getCoordinator()).getHashes();
+        int processed = 0;
+        int index;
+        for (Hash hash: milestoneTransactions) {
             try {
-                int index;
+                processed += 1;
                 if ((index = milestoneService.getMilestoneIndex(TransactionViewModel.fromHash(tangle, hash))) >
                         getLatestSolidMilestoneIndex()) {
                     addMilestoneCandidate(hash, index);
                 }
+
+                if (processed % 1000 == 0 || processed % milestoneTransactions.size() == 0){
+                    log.info("Bootstrapping milestones: [ " + processed  + " / " + milestoneTransactions.size() + " ]");
+                }
             } catch(Exception e) {
                 log.error("Error processing existing milestone index", e);
             }
-        });
+        }
     }
 
 

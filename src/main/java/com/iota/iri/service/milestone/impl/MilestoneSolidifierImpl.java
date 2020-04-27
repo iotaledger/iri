@@ -147,7 +147,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             solidificationQueue.clear();
             unsolidMilestones.entrySet().stream()
                     .sorted(Map.Entry.comparingByValue())
-                    .forEach(milestone -> { //If milestone candidate has a lower index than the latest solid milestone remove it from the queues.
+                    .forEach(milestone -> {
+                        //If milestone candidate has a lower index than the latest solid milestone remove it from the queues.
                         if (milestone.getValue() < getLatestSolidMilestoneIndex()){
                             removeFromQueues(milestone.getKey());
                         } else {

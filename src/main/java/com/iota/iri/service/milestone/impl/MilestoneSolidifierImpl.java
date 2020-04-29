@@ -197,6 +197,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             switch(validity) {
                 case VALID:
                     milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
+                    registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
                     if (milestoneCandidate.isSolid()) {
                         removeFromQueues(milestoneHash);
                         addSeenMilestone(milestoneHash, milestoneIndex);
@@ -205,9 +206,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     }
                     break;
                 case INCOMPLETE:
-                    if(milestoneIndex > getLatestMilestoneIndex()) {
-                        registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
-                    }
+                    registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
                     transactionSolidifier.addToSolidificationQueue(milestoneHash);
                     break;
                 case INVALID:
@@ -341,10 +340,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public void addSeenMilestone(Hash milestoneHash, int milestoneIndex) {
-        if (milestoneIndex > getLatestMilestoneIndex()) {
-            registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
-        }
-
         if (!seenMilestones.containsKey(milestoneIndex)) {
             seenMilestones.put(milestoneIndex, milestoneHash);
         }
@@ -419,9 +414,11 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public void registerNewMilestone(int oldMilestoneIndex, int newMilestoneIndex, Hash newMilestoneHash) {
-        setLatestMilestone(newMilestoneHash, newMilestoneIndex);
-        tangle.publish("lmi %d %d", oldMilestoneIndex, newMilestoneIndex);
-        log.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);
+        if (oldMilestoneIndex > getLatestMilestoneIndex()) {
+            setLatestMilestone(newMilestoneHash, newMilestoneIndex);
+            tangle.publish("lmi %d %d", oldMilestoneIndex, newMilestoneIndex);
+            log.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);
+        }
     }
 
     /**

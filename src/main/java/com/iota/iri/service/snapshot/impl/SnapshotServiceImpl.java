@@ -499,7 +499,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         ProgressLogger progressLogger = new IntervalProgressLogger(
                 "Taking local snapshot [analyzing old solid entry points]", log)
-                        .start(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().size());
+                .start(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().size());
         try {
             Snapshot initialSnapshot = snapshotProvider.getInitialSnapshot();
             Map<Hash, Integer> orgSolidEntryPoints = initialSnapshot.getSolidEntryPoints();
@@ -527,21 +527,19 @@ public class SnapshotServiceImpl implements SnapshotService {
      * This method retrieves the new solid entry points of the snapshot reference given by the target milestone.
      * </p>
      * <p>
-     * A transaction is considered a solid entry point if it is a bundle tail that can be traversed down from a
-     * non-orphaned transaction that was approved by a milestone that is above the last local snapshot. Or if it is a
-     * bundle tail of a non-orphaned transaction that was approved by a milestone that is above the last local snapshot.
+     * A transaction is considered a solid entry point if it is a
+     * bundle tail of a non-orphaned transaction that was approved by a milestone that is above the target milestone.
      *
-     * It iterates over all unprocessed milestones and analyzes their directly and indirectly approved transactions.
-     * Every transaction is checked for being not orphaned and the appropriate SEP is added to {@param SolidEntryPoints}
+     * It iterates over all relevant unprocessed milestones and analyzes their directly and indirectly approved transactions.
+     * Every transaction is checked for being SEP and added to {@param SolidEntryPoints} when required
      * </p>
-     *
      *
      * @param tangle           Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param targetMilestone  milestone that is used to generate the solid entry points
      * @param solidEntryPoints map that is used to collect the solid entry points
      * @throws SnapshotException if anything goes wrong while determining the solid entry points
-     * @see #isAboveMinMilestone(Tangle, Hash, MilestoneViewModel)
+     * @see #getSolidEntryPoints(int, ProgressLogger)
      */
     private void processNewSolidEntryPoints(Tangle tangle, SnapshotProvider snapshotProvider,
             MilestoneViewModel targetMilestone, Map<Hash, Integer> solidEntryPoints) throws SnapshotException {
@@ -570,7 +568,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * @param targetIndex The milestone index we target to generate entrypoints until.
      * @param progressLogger The logger we use to write progress of entrypoint generation
      * @return a map of entrypoints or <code>null</code> when we were interrupted
-     * @throws ExceptionWhen we fail to get entry points due to errors generally caused by db interaction
+     * @throws Exception When we fail to get entry points due to errors generally caused by db interaction
      */
     private Map<Hash, Integer> getSolidEntryPoints(int targetIndex, ProgressLogger progressLogger) throws Exception {
         Map<Hash, Integer> solidEntryPoints = new HashMap<>();

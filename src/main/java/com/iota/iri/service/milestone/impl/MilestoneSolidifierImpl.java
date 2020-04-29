@@ -414,7 +414,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public void registerNewMilestone(int oldMilestoneIndex, int newMilestoneIndex, Hash newMilestoneHash) {
-        if (oldMilestoneIndex > getLatestMilestoneIndex()) {
+        if (newMilestoneIndex > oldMilestoneIndex) {
             setLatestMilestone(newMilestoneHash, newMilestoneIndex);
             tangle.publish("lmi %d %d", oldMilestoneIndex, newMilestoneIndex);
             log.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);

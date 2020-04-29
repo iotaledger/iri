@@ -1,19 +1,23 @@
 ---
 name: Regression test
 about: Create a regression test for IRI
-
 ---
 
-### Description
+## Description
+
 Briefly describe the regression test.
 
-### Motivation
-Describe why the regression test is needed.
+## Motivation
 
-### Issues / Scenarios
-Describe the issues/scenarios addressed by this test
-1. A node that does X and Y crashes. 
-2. Blowballs are being formed when... 
+Describe why the regression test is needed, and the issues or scenarios that this it will address.
 
-### How to test for this
-Provide the steps on creating the actual test.
+1.  
+2.  
+
+## Steps to run the test
+
+Provide the steps that need to be taken to run the test.
+
+1. 
+2. 
+3. 

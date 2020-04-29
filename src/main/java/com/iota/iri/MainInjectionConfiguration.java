@@ -1,7 +1,5 @@
 package com.iota.iri;
 
-import com.iota.iri.cache.CacheManager;
-import com.iota.iri.cache.impl.CacheManagerImpl;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.NeighborRouter;
@@ -136,12 +134,6 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    CacheManager provideCacheManager() {
-        return new CacheManagerImpl(configuration);
-    }
-
-    @Singleton
-    @Provides
     TipSelector provideTipSelector(Tangle tangle, SnapshotProvider snapshotProvider,
                                    MilestoneSolidifier milestoneSolidifier, LedgerService ledgerService) {
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
@@ -164,12 +156,12 @@ public class MainInjectionConfiguration extends AbstractModule {
             TransactionRequester transactionRequester, NeighborRouter neighborRouter,
             TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
             TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-            CacheManager cacheManager, TransactionSolidifier transactionSolidifier) {
+            TransactionSolidifier transactionSolidifier) {
         return new Iota(configuration, spentAddressesProvider, spentAddressesService, snapshotProvider, snapshotService,
                 localSnapshotManager, milestoneService, seenMilestonesRetriever, ledgerService, transactionPruner,
                 milestoneSolidifier, bundleValidator, tangle, transactionValidator, transactionRequester,
                 neighborRouter, transactionProcessingPipeline, tipsRequester, tipsViewModel, tipsSelector,
-                localSnapshotsDb, cacheManager, transactionSolidifier);
+                localSnapshotsDb, transactionSolidifier);
     }
 
     @Singleton

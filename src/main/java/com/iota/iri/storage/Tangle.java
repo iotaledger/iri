@@ -1,10 +1,5 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.cache.Cache;
-import com.iota.iri.cache.CacheManager;
-import com.iota.iri.cache.impl.CacheManagerImpl;
-import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.Address;
@@ -15,23 +10,15 @@ import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Pair;
-import com.iota.iri.zmq.MessageQueueProvider;
 
-import javax.naming.OperationNotSupportedException;
-
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.iota.iri.zmq.MessageQueueProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.naming.OperationNotSupportedException;
 
 /**
  * Delegates methods from {@link PersistenceProvider}
@@ -56,28 +43,24 @@ public class Tangle {
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
     private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
-    private CacheManager cacheManager;
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
     }
 
     /**
-     * 
+     *
      * @see PersistenceProvider#init()
      */
     public void init() throws Exception {
         for(PersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
-        if (cacheManager == null) {
-            cacheManager = new CacheManagerImpl(new MainnetConfig());
-        }
     }
 
     /**
      * Adds {@link com.iota.iri.zmq.MessageQueueProvider} that should be notified.
-     * 
+     *
      * @param provider that should be notified.
      */
     public void addMessageQueueProvider(MessageQueueProvider provider) {
@@ -88,9 +71,6 @@ public class Tangle {
      * @see PersistenceProvider#shutdown()
      */
     public void shutdown() throws Exception {
-        log.info("Releasing all caches...");
-        TransactionViewModel.cacheReleaseAll(this);
-        cacheManager.clearAllCaches();
         log.info("Shutting down Tangle Persistence Providers... ");
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);
         this.persistenceProviders.clear();
@@ -218,7 +198,7 @@ public class Tangle {
         }
     }
 
-    public void updateMessageQueueProvider(Persistable model, Indexable index, String item) {
+    private void updateMessageQueueProvider(Persistable model, Indexable index, String item) {
         for(MessageQueueProvider provider: this.messageQueueProviders) {
             provider.publishTransaction(model, index, item);
         }
@@ -388,28 +368,6 @@ public class Tangle {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.clearMetadata(column);
         }
-    }
-
-    /**
-     * Gets a cache with the specified type
-     * @param type cache type
-     * @param <T> Template type
-     * @return The cache with the specified type
-     */
-    public <T> Cache<Indexable, T> getCache(Class<T> type){
-        if (cacheManager != null) {
-            return cacheManager.getCache(type);
-        }
-        return null;
-    }
-
-    /**
-     * Sets the cache manager used by the Tangle
-     * 
-     * @param cacheManager The cache manager
-     */
-    public void setCacheManager(CacheManager cacheManager) {
-        this.cacheManager = cacheManager;
     }
 
     /**

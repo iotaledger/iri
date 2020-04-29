@@ -54,20 +54,6 @@ public interface DbConfig extends Config {
      */
     boolean isRescanDb();
 
-    /**
-     * Default Value: {@value BaseIotaConfig.Defaults#TX_CACHE_SIZE}
-     *
-     * @return {@value DbConfig.Descriptions#TX_CACHE_SIZE}
-     */
-    int getTxCacheSize();
-
-    /**
-     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_CACHE_SIZE}
-     *
-     * @return {@value DbConfig.Descriptions#MILESTONE_CACHE_SIZE}
-     */
-    int getMilestoneCacheSize();
-
     interface Descriptions {
 
         String DB_PATH = "The folder where the DB saves its data.";
@@ -78,7 +64,5 @@ public interface DbConfig extends Config {
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
         String DB_CONFIG_FILE = "The location of the RocksDB configuration file";
-        String TX_CACHE_SIZE = "The size of the tangle cache for transactions";
-        String MILESTONE_CACHE_SIZE = "The size of the tangle cache for milestones";
     }
 }

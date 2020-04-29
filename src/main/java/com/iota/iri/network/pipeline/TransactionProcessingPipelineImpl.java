@@ -22,7 +22,7 @@ import com.iota.iri.utils.Converter;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,14 +74,13 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private SolidifyStage solidifyStage;
     private MilestoneStage milestoneStage;
 
-    private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> solidifyStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> milestoneStageQueue = new ArrayBlockingQueue<>(100);
-
+    private BlockingQueue<ProcessingContext> milestoneStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> preProcessStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> validationStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> receivedStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> replyStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> broadcastStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> solidifyStageQueue = new LinkedBlockingQueue<>();
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.

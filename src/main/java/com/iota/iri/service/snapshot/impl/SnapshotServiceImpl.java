@@ -547,14 +547,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         ProgressLogger progressLogger = new IntervalProgressLogger(
                 "Taking local snapshot [generating solid entry points]", log);
         try {
-            Map<Hash, Integer> entryPoints = getSolidEntryPoints(targetMilestone.index(), progressLogger);
-            
-            // Only is null when we are shutting down / Thread interrupted
-            if (entryPoints == null) {
-                throw new SnapshotException("No solid entrypoint generation due to thread interruption");
-            }
-            
-            solidEntryPoints.putAll(entryPoints);
+            solidEntryPoints.putAll(getSolidEntryPoints(targetMilestone.index(), progressLogger));
             progressLogger.finish();
         } catch (Exception e) {
             progressLogger.abort(e);
@@ -584,7 +577,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         // Iterate from a reasonable old milestone to the target index to check for solid entry points
         for (int milestoneIndex = startIndex; milestoneIndex <= targetIndex; milestoneIndex++) {
             if (Thread.currentThread().isInterrupted()) {
-                return null;
+                Thread.currentThread().interrupt();
             }
             
             MilestoneViewModel milestone = MilestoneViewModel.get(tangle, milestoneIndex);
@@ -596,7 +589,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             List<Hash> approvees = getMilestoneApprovees(milestoneIndex, milestone);
             for (Hash approvee : approvees) {
                 if (Thread.currentThread().isInterrupted()) {
-                    return null;
+                    Thread.currentThread().interrupt();
                 }
                 
                 if (isSolidEntryPoint(approvee, targetIndex)) {

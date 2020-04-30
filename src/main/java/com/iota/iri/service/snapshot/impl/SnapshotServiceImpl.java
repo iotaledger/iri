@@ -53,6 +53,11 @@ public class SnapshotServiceImpl implements SnapshotService {
      * Holds the config with important snapshot specific settings.
      */
     private final IotaConfig config;
+    
+    /**
+     * Minimum depth for generating solid entrypoints due to coordinator allowing 15 MS back attachment
+     */
+    private static final int MIN_LS_DEPTH_MAINNET = 15 + 1;
 
     /**
      * Implements the snapshot service. See interface for more information.
@@ -476,7 +481,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
     
     private boolean isAboveMinMilestone(int fromIndex, int toIndex) {
-        return toIndex - fromIndex <= config.getMaxDepth();
+        return toIndex - fromIndex <= getSepDepth();
     }
 
     /**
@@ -568,8 +573,9 @@ public class SnapshotServiceImpl implements SnapshotService {
         solidEntryPoints.put(Hash.NULL_HASH, targetIndex);
         log.info("Generating entrypoints for {}", targetIndex);
         
+        int sepDepth = getSepDepth();
         // Co back a but below the milestone. Limited to maxDepth or genisis
-        int startIndex = Math.max(snapshotProvider.getInitialSnapshot().getIndex(), targetIndex - config.getMaxDepth()
+        int startIndex = Math.max(snapshotProvider.getInitialSnapshot().getIndex(), targetIndex - sepDepth
                 ) + 1; // cant start at last snapshot now can we, could be 0!
         
         progressLogger.start(startIndex);
@@ -602,6 +608,15 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
         
         return solidEntryPoints;
+    }
+
+    /**
+     * Calculates minimum solid entrypoint depth based on network and maxDepth
+     * 
+     * @return The amount of ms we go back under target snapshot for generation of solid entrypoints
+     */
+    private int getSepDepth() {
+        return config.isTestnet() ? config.getMaxDepth() : Math.min(MIN_LS_DEPTH_MAINNET, config.getMaxDepth());
     }
 
     /**

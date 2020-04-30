@@ -84,10 +84,6 @@ public class Iota {
 
     public final MilestoneService milestoneService;
 
-    public final LatestMilestoneTracker latestMilestoneTracker;
-
-    public final LatestSolidMilestoneTracker latestSolidMilestoneTracker;
-
     public final SeenMilestonesRetriever seenMilestonesRetriever;
 
     public final LedgerService ledgerService;
@@ -119,16 +115,15 @@ public class Iota {
      *
      */
     public Iota(IotaConfig configuration, SpentAddressesProvider spentAddressesProvider,
-                SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
-                SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
-                MilestoneService milestoneService, LatestMilestoneTracker latestMilestoneTracker,
-                LatestSolidMilestoneTracker latestSolidMilestoneTracker, SeenMilestonesRetriever seenMilestonesRetriever,
-                LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
-                BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
-                TransactionRequester transactionRequester, NeighborRouter neighborRouter,
-                TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
-                TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
-                TransactionSolidifier transactionSolidifier) {
+            SpentAddressesService spentAddressesService, SnapshotProvider snapshotProvider,
+            SnapshotService snapshotService, LocalSnapshotManager localSnapshotManager,
+            MilestoneService milestoneService, SeenMilestonesRetriever seenMilestonesRetriever,
+            LedgerService ledgerService, TransactionPruner transactionPruner, MilestoneSolidifier milestoneSolidifier,
+            BundleValidator bundleValidator, Tangle tangle, TransactionValidator transactionValidator,
+            TransactionRequester transactionRequester, NeighborRouter neighborRouter,
+            TransactionProcessingPipeline transactionProcessingPipeline, TipsRequester tipsRequester,
+            TipsViewModel tipsViewModel, TipSelector tipsSelector, LocalSnapshotsPersistenceProvider localSnapshotsDb,
+            TransactionSolidifier transactionSolidifier) {
         this.configuration = configuration;
 
         this.ledgerService = ledgerService;
@@ -138,8 +133,6 @@ public class Iota {
         this.snapshotService = snapshotService;
         this.localSnapshotManager = localSnapshotManager;
         this.milestoneService = milestoneService;
-        this.latestMilestoneTracker = latestMilestoneTracker;
-        this.latestSolidMilestoneTracker = latestSolidMilestoneTracker;
         this.seenMilestonesRetriever = seenMilestonesRetriever;
         this.milestoneSolidifier = milestoneSolidifier;
         this.transactionPruner = transactionPruner;
@@ -166,7 +159,6 @@ public class Iota {
         boolean assertSpentAddressesExistence = !configuration.isTestnet()
                 && snapshotProvider.getInitialSnapshot().getIndex() != configuration.getMilestoneStartIndex();
         spentAddressesProvider.init(assertSpentAddressesExistence);
-        latestMilestoneTracker.init();
         seenMilestonesRetriever.init();
         if (transactionPruner != null) {
             transactionPruner.init();
@@ -204,8 +196,6 @@ public class Iota {
         neighborRouter.start();
         tipsRequester.start();
 
-        latestMilestoneTracker.start();
-        latestSolidMilestoneTracker.start();
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
         transactionSolidifier.start();
@@ -215,7 +205,7 @@ public class Iota {
             localSnapshotManager.addPruningConditions(
                     new DepthPruningCondition(configuration, snapshotProvider, tangle),
                     new SizePruningCondition(tangle, configuration));
-            localSnapshotManager.start(latestMilestoneTracker);
+            localSnapshotManager.start(milestoneSolidifier);
         }
         if (transactionPruner != null) {
             transactionPruner.start();
@@ -257,8 +247,6 @@ public class Iota {
         milestoneSolidifier.shutdown();
         transactionSolidifier.shutdown();
         seenMilestonesRetriever.shutdown();
-        latestSolidMilestoneTracker.shutdown();
-        latestMilestoneTracker.shutdown();
 
         if (transactionPruner != null) {
             transactionPruner.shutdown();

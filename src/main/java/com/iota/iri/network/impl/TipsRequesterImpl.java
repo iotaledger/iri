@@ -6,7 +6,7 @@ import com.iota.iri.network.TipsRequester;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
@@ -29,7 +29,7 @@ public class TipsRequesterImpl implements TipsRequester {
     private final NeighborRouter neighborRouter;
     private final Tangle tangle;
     private final TransactionRequester txRequester;
-    private final LatestMilestoneTracker latestMilestoneTracker;
+    private final MilestoneSolidifier milestoneSolidifier;
 
     private long lastIterationTime = 0;
 
@@ -38,15 +38,15 @@ public class TipsRequesterImpl implements TipsRequester {
      *
      * @param neighborRouter         the {@link NeighborRouter} to use
      * @param tangle                 the {@link Tangle} database to load the latest milestone from
-     * @param latestMilestoneTracker the {@link LatestMilestoneTracker} to gets the latest milestone hash from
+     * @param milestoneSolidifier    the {@link MilestoneSolidifier} to gets the latest milestone hash from
      * @param txRequester            the {@link TransactionRequester} to get the currently number of requested
      *                               transactions from
      */
-    public TipsRequesterImpl(NeighborRouter neighborRouter, Tangle tangle, LatestMilestoneTracker latestMilestoneTracker,
+    public TipsRequesterImpl(NeighborRouter neighborRouter, Tangle tangle, MilestoneSolidifier milestoneSolidifier,
                              TransactionRequester txRequester) {
         this.neighborRouter = neighborRouter;
         this.tangle = tangle;
-        this.latestMilestoneTracker = latestMilestoneTracker;
+        this.milestoneSolidifier = milestoneSolidifier;
         this.txRequester = txRequester;
     }
 
@@ -64,7 +64,7 @@ public class TipsRequesterImpl implements TipsRequester {
     public void requestTips() {
         try {
             final TransactionViewModel msTVM = TransactionViewModel.fromHash(tangle,
-                    latestMilestoneTracker.getLatestMilestoneHash());
+                    milestoneSolidifier.getLatestMilestoneHash());
 
             if (msTVM.getBytes().length > 0) {
                 for (Neighbor neighbor : neighborRouter.getConnectedNeighbors().values()) {

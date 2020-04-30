@@ -3,7 +3,7 @@ package com.iota.iri.service.snapshot.impl;
 import com.iota.iri.TangleMockUtils;
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.SnapshotConfig;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.conditions.SnapshotDepthCondition;
@@ -57,7 +57,7 @@ public class LocalSnapshotManagerImplTest {
     Tangle tangle;
     
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    LatestMilestoneTracker milestoneTracker;
+    MilestoneSolidifier milestoneTracker;
     
     private LocalSnapshotManagerImpl lsManager;
 

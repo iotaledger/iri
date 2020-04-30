@@ -5,7 +5,7 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.TransactionHash;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.service.tipselection.EntryPointSelector;
@@ -28,7 +28,7 @@ public class EntryPointSelectorImplTest {
     public MockitoRule mockitoRule = MockitoJUnit.rule();
     
     @Mock
-    private LatestMilestoneTracker latestMilestoneTracker;
+    private MilestoneSolidifier milestoneSolidifier;
     
     @Mock
     private Tangle tangle;
@@ -49,7 +49,7 @@ public class EntryPointSelectorImplTest {
         mockTangleBehavior(milestoneHash);
         mockMilestoneTrackerBehavior(snapshotProvider.getInitialSnapshot().getIndex() + 1, Hash.NULL_HASH);
 
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider, latestMilestoneTracker);
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider, milestoneSolidifier);
         Hash entryPoint = entryPointSelector.getEntryPoint(10);
 
         Assert.assertEquals("The entry point should be the milestone in the Tangle", milestoneHash, entryPoint);
@@ -59,7 +59,7 @@ public class EntryPointSelectorImplTest {
     public void testEntryPointAWithoutTangleData() throws Exception {
         mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
 
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider, latestMilestoneTracker);
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider, milestoneSolidifier);
         Hash entryPoint = entryPointSelector.getEntryPoint(10);
 
         Assert.assertEquals("The entry point should be the last tracked solid milestone", Hash.NULL_HASH, entryPoint);
@@ -69,7 +69,7 @@ public class EntryPointSelectorImplTest {
     private void mockMilestoneTrackerBehavior(int latestSolidSubtangleMilestoneIndex, Hash latestSolidSubtangleMilestone) {
         snapshotProvider.getLatestSnapshot().setIndex(latestSolidSubtangleMilestoneIndex);
         snapshotProvider.getLatestSnapshot().setHash(latestSolidSubtangleMilestone);
-        Mockito.when(latestMilestoneTracker.getLatestMilestoneIndex()).thenReturn(latestSolidSubtangleMilestoneIndex);
+        Mockito.when(milestoneSolidifier.getLatestMilestoneIndex()).thenReturn(latestSolidSubtangleMilestoneIndex);
     }
 
     private void mockTangleBehavior(Hash milestoneModelHash) throws Exception {

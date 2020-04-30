@@ -1,6 +1,9 @@
 package com.iota.iri.network.pipeline;
 
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
@@ -21,20 +24,25 @@ public class ReceivedStage implements Stage {
     private TransactionRequester transactionRequester;
     private TransactionSolidifier txSolidifier;
     private SnapshotProvider snapshotProvider;
+    private MilestoneService milestoneService;
+    private Hash cooAddress;
 
     /**
      * Creates a new {@link ReceivedStage}.
-     *
+     * 
      * @param tangle           The {@link Tangle} database used to store/update the transaction
      * @param txSolidifier      The {@link TransactionSolidifier} used to store/update the transaction
      * @param snapshotProvider The {@link SnapshotProvider} used to store/update the transaction
      */
     public ReceivedStage(Tangle tangle, TransactionSolidifier txSolidifier, SnapshotProvider snapshotProvider,
-                         TransactionRequester transactionRequester) {
+                         TransactionRequester transactionRequester, MilestoneService milestoneService,
+                         Hash cooAddress) {
         this.txSolidifier = txSolidifier;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.transactionRequester = transactionRequester;
+        this.milestoneService = milestoneService;
+        this.cooAddress = cooAddress;
     }
 
     /**
@@ -90,6 +98,19 @@ public class ReceivedStage implements Stage {
             transactionRequester.removeRecentlyRequestedTransaction(tvm.getHash());
         }
 
+        try{
+            if(tvm.getAddressHash().equals(cooAddress)) {
+                int milestoneIndex = milestoneService.getMilestoneIndex(tvm);
+                MilestonePayload milestonePayload = new MilestonePayload(payload.getOriginNeighbor(),
+                                tvm, milestoneIndex);
+                ctx.setNextStage(TransactionProcessingPipeline.Stage.MILESTONE);
+                ctx.setPayload(milestonePayload);
+                return ctx;
+            }
+
+        } catch(Exception e){
+            log.error("Error checking apparent milestone transaction", e);
+        }
         // broadcast the newly saved tx to the other neighbors
         ctx.setNextStage(TransactionProcessingPipeline.Stage.SOLIDIFY);
         ctx.setPayload(new SolidifyPayload(originNeighbor, tvm));

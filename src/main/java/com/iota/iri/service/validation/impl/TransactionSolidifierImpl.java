@@ -142,7 +142,19 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     }
 
     /**
-     *{@inheritDoc}
+     * {@inheritDoc}
+     */
+    @Override
+    public void addToPropagationQueue(Hash hash){
+        try {
+            this.transactionPropagator.addToPropagationQueue(hash);
+        } catch(Exception e){
+            log.debug("Error adding transaction to propagation queue: " + e.getMessage());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public TransactionViewModel getNextTxInBroadcastQueue(){
@@ -248,7 +260,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                     tvm.updateSolid(true);
                     tvm.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
                 }
-                addToBroadcastQueue(tvm);
+
+                if(!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash)) {
+                    addToBroadcastQueue(tvm);
+                }
                 transactionPropagator.addToPropagationQueue(tvm.getHash());
             } catch (Exception e) {
                 log.info(e.getMessage());
@@ -274,7 +289,9 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                 transactionsToBroadcast.remove();
             }
 
-            transactionsToBroadcast.put(tvm);
+            if(!transactionsToBroadcast.contains(tvm)) {
+                transactionsToBroadcast.put(tvm);
+            }
         } catch(Exception e){
             log.info("Error placing transaction into broadcast queue: " + e.getMessage());
         }
@@ -354,6 +371,14 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
          */
         private BlockingQueue<Hash> solidTransactions = new ArrayBlockingQueue<>(MAX_SIZE);
 
+
+        /**
+         * Defines the maximum number of transactions that will be processed in a single run of the
+         * {@link TransactionPropagator#propagateSolidTransactions()} call. This is to stop the propagator from potentially
+         * stalling out solidification with an endless addition of new transactions to propagate.
+         */
+        private static final int PROPAGATION_QUEUE_MAX_PROCESS = 10;
+
         /**
          * Add to the propagation queue where it will be processed to help solidify approving transactions faster
          * @param hash      The transaction hash to be removed
@@ -370,8 +395,11 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
 
         @VisibleForTesting
         void propagateSolidTransactions() {
-            while(!Thread.currentThread().isInterrupted() && solidTransactions.peek() != null) {
+            int processed = 0;
+            while(!Thread.currentThread().isInterrupted() && solidTransactions.peek() != null
+                    && processed < PROPAGATION_QUEUE_MAX_PROCESS) {
                 try {
+                    ++processed;
                     Hash hash = solidTransactions.poll();
                     TransactionViewModel transaction = fromHash(tangle, hash);
                     Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();

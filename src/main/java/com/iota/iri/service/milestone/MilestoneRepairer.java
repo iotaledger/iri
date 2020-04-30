@@ -2,6 +2,11 @@ package com.iota.iri.service.milestone;
 
 import com.iota.iri.controllers.MilestoneViewModel;
 
+/**
+ * Contains the logic for comparing and repairing corrupted milestones. Used by the
+ * {@link com.iota.iri.service.milestone.MilestoneSolidifier} to forward transactions to the
+ * {@link MilestoneService#resetCorruptedMilestone(int)} method.
+ */
 public interface MilestoneRepairer {
     /**
      * <p>

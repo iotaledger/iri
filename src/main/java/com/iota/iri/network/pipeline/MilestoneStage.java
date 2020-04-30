@@ -62,9 +62,8 @@ public class MilestoneStage implements Stage {
 
             TransactionViewModel milestone = payload.getMilestoneTransaction();
             int newMilestoneIndex = payload.getMilestoneIndex();
-            boolean isTail = (milestone.getCurrentIndex() == 0);
+            boolean isTail = milestone.getCurrentIndex() == 0;
 
-            // Add milestone tails to the milestone solidifier, if transaction is solid, add to the propagation queue
             if (isTail) {
                 milestoneSolidifier.addMilestoneCandidate(milestone.getHash(), newMilestoneIndex);
             }

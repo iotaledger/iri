@@ -6,9 +6,7 @@ import com.iota.iri.service.milestone.MilestoneRepairer;
 import com.iota.iri.service.milestone.MilestoneService;
 
 /**
- * Contains the logic for comparing and repairing corrupted milestones. Used by the
- * {@link com.iota.iri.service.milestone.MilestoneSolidifier} to forward transactions to the
- * {@link MilestoneService#resetCorruptedMilestone(int)} method.
+ * Creates a {@link MilestoneRepairer} service to fix corrupted milestone objects.
  */
 public class MilestoneRepairerImpl implements MilestoneRepairer {
 

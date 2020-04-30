@@ -31,7 +31,7 @@ public class ReceivedStage implements Stage {
      * Creates a new {@link ReceivedStage}.
      * 
      * @param tangle           The {@link Tangle} database used to store/update the transaction
-     * @param txSolidifier      The {@link TransactionValidator} used to store/update the transaction
+     * @param txSolidifier      The {@link TransactionSolidifier} used to store/update the transaction
      * @param snapshotProvider The {@link SnapshotProvider} used to store/update the transaction
      */
     public ReceivedStage(Tangle tangle, TransactionSolidifier txSolidifier, SnapshotProvider snapshotProvider,

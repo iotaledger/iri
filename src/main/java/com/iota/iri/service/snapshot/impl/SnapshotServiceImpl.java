@@ -583,7 +583,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         
         // Iterate from a reasonable old milestone to the target index to check for solid entry points
         for (int milestoneIndex = startIndex; milestoneIndex <= targetIndex; milestoneIndex++) {
-            if (Thread.interrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
                 return null;
             }
             
@@ -595,7 +595,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             
             List<Hash> approvees = getMilestoneApprovees(milestoneIndex, milestone);
             for (Hash approvee : approvees) {
-                if (Thread.interrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     return null;
                 }
                 

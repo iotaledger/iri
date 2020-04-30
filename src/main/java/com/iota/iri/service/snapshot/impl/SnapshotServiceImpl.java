@@ -573,12 +573,16 @@ public class SnapshotServiceImpl implements SnapshotService {
     private Map<Hash, Integer> getSolidEntryPoints(int targetIndex, ProgressLogger progressLogger) throws Exception {
         Map<Hash, Integer> solidEntryPoints = new HashMap<>();
         solidEntryPoints.put(Hash.NULL_HASH, targetIndex);
+        log.info("Generating entrypoints for {}", targetIndex);
         
-        progressLogger.start(Math.min(targetIndex - snapshotProvider.getInitialSnapshot().getIndex(),
-                config.getMaxDepth()));
+        // Co back a but below the milestone. Limited to maxDepth or genisis
+        int startIndex = Math.max(snapshotProvider.getInitialSnapshot().getIndex(), targetIndex - config.getMaxDepth()
+                ) + 1; // cant start at last snapshot now can we, could be 0!
+        
+        progressLogger.start(startIndex);
         
         // Iterate from a reasonable old milestone to the target index to check for solid entry points
-        for (int milestoneIndex = targetIndex - config.getMaxDepth(); milestoneIndex <= targetIndex; milestoneIndex++) {
+        for (int milestoneIndex = startIndex; milestoneIndex <= targetIndex; milestoneIndex++) {
             if (Thread.interrupted()) {
                 return null;
             }

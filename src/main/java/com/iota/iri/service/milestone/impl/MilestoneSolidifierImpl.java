@@ -197,6 +197,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             switch(validity) {
                 case VALID:
                     milestoneCandidate.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
+                    registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
                     if (milestoneCandidate.isSolid()) {
                         removeFromQueues(milestoneHash);
                         addSeenMilestone(milestoneHash, milestoneIndex);
@@ -338,7 +339,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     @Override
     public void addSeenMilestone(Hash milestoneHash, int milestoneIndex) {
-        registerNewMilestone(getLatestMilestoneIndex(), milestoneIndex, milestoneHash);
         if (!seenMilestones.containsKey(milestoneIndex)) {
             seenMilestones.put(milestoneIndex, milestoneHash);
         }

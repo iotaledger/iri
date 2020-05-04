@@ -277,8 +277,10 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         for (Hash hash: milestoneTransactions) {
             try {
                 processed += 1;
-                if ((index = milestoneService.getMilestoneIndex(TransactionViewModel.fromHash(tangle, hash))) >
-                        getLatestSolidMilestoneIndex()) {
+                TransactionViewModel tvm = TransactionViewModel.fromHash(tangle, hash);
+                boolean isTail = tvm.getCurrentIndex() == 0;
+                if (isTail && (index = milestoneService
+                        .getMilestoneIndex(tvm)) > getLatestSolidMilestoneIndex()) {
                     addMilestoneCandidate(hash, index);
                 }
 

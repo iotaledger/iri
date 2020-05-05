@@ -137,9 +137,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * found in the {@link #seenMilestones} queue, then the milestone is removed from the solidification pool. If not,
      * then the {@link #oldestMilestoneInQueue} is updated iterating through whatever milestones are still present in
      * the {@link #solidificationQueue}.
-     *
-     * If upon scanning the {@link #unsolidMilestones} queue is empty and {@link #initialized} is false, set
-     * {@link #initialized} to true.
      */
     private void scanMilestonesInQueue() {
         // refill the solidification queue with solidification candidates sorted by index
@@ -165,11 +162,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             if (!seenMilestones.containsKey(currentEntry.getValue())) {
                 updateOldestMilestone(currentEntry.getKey(), currentEntry.getValue());
             }
-        }
-
-
-        if (!initialized.get() && unsolidMilestones.size() == 0) {
-            initialized.set(true);
         }
     }
 
@@ -252,8 +244,10 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     }
 
     /**
-     * Iterates through milestone indexes starting from the initial snapshot index, and returns the newest existing
-     * milestone index
+     * Sets the {@link #latestSolidMilestone} index to the snapshot index, and scans through all transactions that are
+     * present in the db associated with the coordinator address. It then iterates through these transactions, adding
+     * valid transactions to the {@link #seenMilestones} pool, and adding all valid and incomplete milestones to the
+     * solidification queue. Once completed the {@link #initialized} flag is set to true.
      *
      * @return  Latest Solid Milestone index
      * @throws Exception
@@ -287,6 +281,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 log.error("Error processing existing milestone index", e);
             }
         }
+        initialized.set(true);
     }
 
 

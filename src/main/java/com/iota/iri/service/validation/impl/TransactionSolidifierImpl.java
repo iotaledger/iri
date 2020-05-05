@@ -46,7 +46,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * NOte: we want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
      * long running {@link #checkSolidity(Hash)} call.
      */
-    private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;
+    private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 300_000;
 
 
     /**

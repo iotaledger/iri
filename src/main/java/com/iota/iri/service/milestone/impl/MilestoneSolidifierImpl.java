@@ -259,18 +259,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * @throws Exception
      */
     private void bootStrapSolidMilestones() throws Exception {
-        boolean solid = true;
-        int milestoneIndex = snapshotProvider.getInitialSnapshot().getIndex();
-
-        while (solid) {
-            milestoneIndex += 1;
-            if (MilestoneViewModel.get(tangle, milestoneIndex) == null) {
-                solid = false;
-                milestoneIndex -= 1;
-            }
-        }
-
-        setLatestSolidMilestone(milestoneIndex);
+        setLatestSolidMilestone(snapshotProvider.getLatestSnapshot().getIndex());
         Set<Hash> milestoneTransactions = AddressViewModel.load(tangle, config.getCoordinator()).getHashes();
         int processed = 0;
         int index;
@@ -281,9 +270,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 boolean isTail = tvm.getCurrentIndex() == 0;
                 if (isTail && (index = milestoneService
                         .getMilestoneIndex(tvm)) > getLatestSolidMilestoneIndex()) {
-                    addMilestoneCandidate(hash, index);
-                }
+                    MilestoneValidity validity = milestoneService.validateMilestone(tvm, index);
+                    if (validity == MilestoneValidity.VALID) {
+                        tvm.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
+                        registerNewMilestone(getLatestMilestoneIndex(), index, tvm.getHash());
+                    }
 
+                    if (validity != MilestoneValidity.INVALID) {
+                        addMilestoneCandidate(hash, index);
+                    }
+                }
                 if (processed % 1000 == 0 || processed % milestoneTransactions.size() == 0){
                     log.info("Bootstrapping milestones: [ " + processed  + " / " + milestoneTransactions.size() + " ]");
                 }

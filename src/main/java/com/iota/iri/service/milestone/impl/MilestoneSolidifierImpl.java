@@ -315,21 +315,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         if (!unsolidMilestones.containsKey(milestoneHash) && !seenMilestones.containsKey(milestoneIndex) &&
                 milestoneIndex > getLatestSolidMilestoneIndex()) {
             unsolidMilestones.put(milestoneHash, milestoneIndex);
-            updateQueues(milestoneHash, milestoneIndex);
         }
-    }
-
-    private void updateQueues(Hash milestoneHash, int milestoneIndex) {
-        if (solidificationQueue.containsKey(milestoneHash)) {
-            if (solidificationQueue.size() >= MAX_SIZE) {
-                Iterator<Map.Entry<Hash, Integer>> iterator = solidificationQueue.entrySet().iterator();
-                iterator.next();
-                iterator.remove();
-            }
-        }
-
-        solidificationQueue.put(milestoneHash, milestoneIndex);
-        scanMilestonesInQueue();
     }
 
     /**

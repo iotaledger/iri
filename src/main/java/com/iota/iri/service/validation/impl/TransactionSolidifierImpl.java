@@ -387,9 +387,9 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
         public void addToPropagationQueue(Hash hash) throws Exception{
             if(!solidTransactions.contains(hash)) {
                 if (solidTransactions.size() >= MAX_SIZE) {
-                    solidTransactions.poll();
+                    solidTransactions.remove();
                 }
-                solidTransactions.put(hash);
+                solidTransactions.offer(hash);
             }
         }
 

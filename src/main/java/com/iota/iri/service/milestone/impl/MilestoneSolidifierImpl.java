@@ -18,6 +18,9 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.ASCIIProgressBar;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -27,7 +30,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MilestoneSolidifierImpl implements MilestoneSolidifier {
-    private static final IntervalLogger log = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
+    private final static Logger log = LoggerFactory.getLogger(MilestoneSolidifierImpl.class);
+    
+    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
 
     private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     // Max size fo the solidification queue
@@ -238,7 +244,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private void solidifyLog() {
         if (!unsolidMilestones.isEmpty() && oldestMilestoneInQueue != null) {
             int milestoneIndex = oldestMilestoneInQueue.getValue();
-            log.info("Solidifying milestone # " + milestoneIndex + " - [ LSM: " + latestSolidMilestone +
+            solidifyLogger.info("Solidifying milestone # " + milestoneIndex + " - [ LSM: " + latestSolidMilestone +
                     " LM: " + latestMilestoneIndex + " ] - [ Remaining: " +
                     (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex()) + " Queued: " +
                     (seenMilestones.size() + unsolidMilestones.size()) + " ]");

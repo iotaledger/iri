@@ -19,15 +19,17 @@ import com.iota.iri.utils.ASCIIProgressBar;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private static final IntervalLogger log = new IntervalLogger(MilestoneSolidifierImpl.class);
+
+    private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     // Max size fo the solidification queue
     private static final int MAX_SIZE = 10;
 
@@ -473,7 +475,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         if (estSecondsToBeSynced != -1) {
             progressSB.append(String.format(" - est. seconds to get synced: %d", estSecondsToBeSynced));
         }
-        log.info(progressSB.toString());
+        progressBarLogger.info(progressSB.toString());
     }
 
 

@@ -33,9 +33,15 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     
     private final static Logger log = LoggerFactory.getLogger(MilestoneSolidifierImpl.class);
     
+    private static final IntervalLogger latestMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
+    private static final IntervalLogger latestSolidMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
     private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
 
     private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
+    
     // Max size fo the solidification queue
     private static final int MAX_SIZE = 10;
 
@@ -403,7 +409,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         if (newMilestoneIndex > oldMilestoneIndex) {
             setLatestMilestone(newMilestoneHash, newMilestoneIndex);
             tangle.publish("lmi %d %d", oldMilestoneIndex, newMilestoneIndex);
-            log.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);
+            latestMilestoneLogger.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);
         }
     }
 
@@ -451,7 +457,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             return;
         }
 
-        log.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
+        latestSolidMilestoneLogger.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
 
         tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, nextLatestSolidMilestone);
         tangle.publish("lmhs %s", latestMilestoneHash);

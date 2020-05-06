@@ -137,9 +137,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * found in the {@link #seenMilestones} queue, then the milestone is removed from the solidification pool. If not,
      * then the {@link #oldestMilestoneInQueue} is updated iterating through whatever milestones are still present in
      * the {@link #solidificationQueue}.
-     *
-     * If upon scanning the {@link #unsolidMilestones} queue is empty and {@link #initialized} is false, set
-     * {@link #initialized} to true.
      */
     private void scanMilestonesInQueue() {
         // refill the solidification queue with solidification candidates sorted by index
@@ -165,11 +162,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             if (!seenMilestones.containsKey(currentEntry.getValue())) {
                 updateOldestMilestone(currentEntry.getKey(), currentEntry.getValue());
             }
-        }
-
-
-        if (!initialized.get() && unsolidMilestones.size() == 0) {
-            initialized.set(true);
         }
     }
 
@@ -252,25 +244,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     }
 
     /**
-     * Iterates through milestone indexes starting from the initial snapshot index, and returns the newest existing
-     * milestone index
+     * Sets the {@link #latestSolidMilestone} index to the snapshot index, and scans through all transactions that are
+     * present in the db associated with the coordinator address. It then iterates through these transactions, adding
+     * valid transactions to the {@link #seenMilestones} pool, and adding all valid and incomplete milestones to the
+     * solidification queue. Once completed the {@link #initialized} flag is set to true.
      *
      * @return  Latest Solid Milestone index
      * @throws Exception
      */
     private void bootStrapSolidMilestones() throws Exception {
-        boolean solid = true;
-        int milestoneIndex = snapshotProvider.getInitialSnapshot().getIndex();
-
-        while (solid) {
-            milestoneIndex += 1;
-            if (MilestoneViewModel.get(tangle, milestoneIndex) == null) {
-                solid = false;
-                milestoneIndex -= 1;
-            }
-        }
-
-        setLatestSolidMilestone(milestoneIndex);
+        setLatestSolidMilestone(snapshotProvider.getLatestSnapshot().getIndex());
         Set<Hash> milestoneTransactions = AddressViewModel.load(tangle, config.getCoordinator()).getHashes();
         int processed = 0;
         int index;
@@ -281,9 +264,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 boolean isTail = tvm.getCurrentIndex() == 0;
                 if (isTail && (index = milestoneService
                         .getMilestoneIndex(tvm)) > getLatestSolidMilestoneIndex()) {
-                    addMilestoneCandidate(hash, index);
-                }
+                    MilestoneValidity validity = milestoneService.validateMilestone(tvm, index);
+                    if (validity == MilestoneValidity.VALID) {
+                        tvm.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
+                        registerNewMilestone(getLatestMilestoneIndex(), index, tvm.getHash());
+                    }
 
+                    if (validity != MilestoneValidity.INVALID) {
+                        addMilestoneCandidate(hash, index);
+                    }
+                }
                 if (processed % 1000 == 0 || processed % milestoneTransactions.size() == 0){
                     log.info("Bootstrapping milestones: [ " + processed  + " / " + milestoneTransactions.size() + " ]");
                 }
@@ -291,6 +281,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 log.error("Error processing existing milestone index", e);
             }
         }
+        initialized.set(true);
     }
 
 
@@ -319,21 +310,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         if (!unsolidMilestones.containsKey(milestoneHash) && !seenMilestones.containsKey(milestoneIndex) &&
                 milestoneIndex > getLatestSolidMilestoneIndex()) {
             unsolidMilestones.put(milestoneHash, milestoneIndex);
-            updateQueues(milestoneHash, milestoneIndex);
         }
-    }
-
-    private void updateQueues(Hash milestoneHash, int milestoneIndex) {
-        if (solidificationQueue.containsKey(milestoneHash)) {
-            if (solidificationQueue.size() >= MAX_SIZE) {
-                Iterator<Map.Entry<Hash, Integer>> iterator = solidificationQueue.entrySet().iterator();
-                iterator.next();
-                iterator.remove();
-            }
-        }
-
-        solidificationQueue.put(milestoneHash, milestoneIndex);
-        scanMilestonesInQueue();
     }
 
     /**

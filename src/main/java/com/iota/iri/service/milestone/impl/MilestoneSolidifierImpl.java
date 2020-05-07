@@ -18,16 +18,30 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.ASCIIProgressBar;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MilestoneSolidifierImpl implements MilestoneSolidifier {
-    private static final IntervalLogger log = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
+    private final static Logger log = LoggerFactory.getLogger(MilestoneSolidifierImpl.class);
+    
+    private static final IntervalLogger latestMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
+    private static final IntervalLogger latestSolidMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
+    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+
+    private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    
+    
     // Max size fo the solidification queue
     private static final int MAX_SIZE = 10;
 
@@ -236,7 +250,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private void solidifyLog() {
         if (!unsolidMilestones.isEmpty() && oldestMilestoneInQueue != null) {
             int milestoneIndex = oldestMilestoneInQueue.getValue();
-            log.info("Solidifying milestone # " + milestoneIndex + " - [ LSM: " + latestSolidMilestone +
+            solidifyLogger.info("Solidifying milestone # " + milestoneIndex + " - [ LSM: " + latestSolidMilestone +
                     " LM: " + latestMilestoneIndex + " ] - [ Remaining: " +
                     (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex()) + " Queued: " +
                     (seenMilestones.size() + unsolidMilestones.size()) + " ]");
@@ -395,7 +409,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         if (newMilestoneIndex > oldMilestoneIndex) {
             setLatestMilestone(newMilestoneHash, newMilestoneIndex);
             tangle.publish("lmi %d %d", oldMilestoneIndex, newMilestoneIndex);
-            log.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);
+            latestMilestoneLogger.info("Latest milestone has changed from #" + oldMilestoneIndex + " to #" + newMilestoneIndex);
         }
     }
 
@@ -443,7 +457,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             return;
         }
 
-        log.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
+        latestSolidMilestoneLogger.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
 
         tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, nextLatestSolidMilestone);
         tangle.publish("lmhs %s", latestMilestoneHash);
@@ -473,7 +487,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         if (estSecondsToBeSynced != -1) {
             progressSB.append(String.format(" - est. seconds to get synced: %d", estSecondsToBeSynced));
         }
-        log.info(progressSB.toString());
+        progressBarLogger.info(progressSB.toString());
     }
 
 

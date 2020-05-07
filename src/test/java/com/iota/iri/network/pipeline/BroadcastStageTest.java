@@ -5,17 +5,18 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.impl.NeighborImpl;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import com.iota.iri.service.milestone.InSyncService;
 import com.iota.iri.service.validation.TransactionSolidifier;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BroadcastStageTest {
 
@@ -27,6 +28,14 @@ public class BroadcastStageTest {
 
     @Mock
     private NeighborRouter neighborRouter;
+    
+    private InSyncService inSyncService = new InSyncService() {
+        
+        @Override
+        public boolean isInSync() {
+            return true;
+        }
+    };
 
     // setup neighbors
     private final static Neighbor neighborA = new NeighborImpl<>(null, null, "A", 0, null);
@@ -42,7 +51,7 @@ public class BroadcastStageTest {
     public void doesntGossipToOriginNeighbor() {
         Mockito.when(neighborRouter.getConnectedNeighbors()).thenReturn(neighbors);
 
-        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter, transactionSolidifier);
+        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter, transactionSolidifier, inSyncService);
         TransactionViewModel tvm = new TransactionViewModel(new Transaction(), null);
         BroadcastPayload broadcastPayload = new BroadcastPayload(neighborA, tvm);
         ProcessingContext ctx = new ProcessingContext(null, broadcastPayload);
@@ -62,7 +71,7 @@ public class BroadcastStageTest {
     public void gossipsToAllIfNoOriginNeighbor() {
         Mockito.when(neighborRouter.getConnectedNeighbors()).thenReturn(neighbors);
 
-        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter, transactionSolidifier);
+        BroadcastStage broadcastStage = new BroadcastStage(neighborRouter, transactionSolidifier, inSyncService);
         TransactionViewModel tvm = new TransactionViewModel(new Transaction(), null);
         BroadcastPayload broadcastPayload = new BroadcastPayload(null, tvm);
         ProcessingContext ctx = new ProcessingContext(null, broadcastPayload);

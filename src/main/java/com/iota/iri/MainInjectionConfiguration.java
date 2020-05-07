@@ -9,8 +9,14 @@ import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
-import com.iota.iri.service.milestone.*;
-import com.iota.iri.service.milestone.impl.*;
+import com.iota.iri.service.milestone.InSyncService;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.milestone.SeenMilestonesRetriever;
+import com.iota.iri.service.milestone.impl.MilestoneInSyncService;
+import com.iota.iri.service.milestone.impl.MilestoneServiceImpl;
+import com.iota.iri.service.milestone.impl.MilestoneSolidifierImpl;
+import com.iota.iri.service.milestone.impl.SeenMilestonesRetrieverImpl;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
@@ -32,13 +38,13 @@ import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 
-import javax.annotation.Nullable;
-
-import java.security.SecureRandom;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+
+import java.security.SecureRandom;
+
+import javax.annotation.Nullable;
 
 /**
  * Guice module. Configuration class for dependency injection.
@@ -114,9 +120,15 @@ public class MainInjectionConfiguration extends AbstractModule {
 
     @Singleton
     @Provides
-    LocalSnapshotManager provideLocalSnapshotManager(SnapshotProvider snapshotProvider, SnapshotService snapshotService, @Nullable TransactionPruner transactionPruner) {
+    InSyncService provideInSyncService(SnapshotProvider snapshotProvider, MilestoneSolidifier milestoneSolidifier) {
+        return new MilestoneInSyncService(snapshotProvider, milestoneSolidifier);
+    }
+    
+    @Singleton
+    @Provides
+    LocalSnapshotManager provideLocalSnapshotManager(SnapshotProvider snapshotProvider, SnapshotService snapshotService, @Nullable TransactionPruner transactionPruner, InSyncService inSyncService) {
         return configuration.getLocalSnapshotsEnabled()
-                ? new LocalSnapshotManagerImpl(snapshotProvider, snapshotService, transactionPruner, configuration)
+                ? new LocalSnapshotManagerImpl(snapshotProvider, snapshotService, transactionPruner, configuration, inSyncService)
                 : null;
     }
 

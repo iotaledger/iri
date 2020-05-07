@@ -1,3 +1,50 @@
+1.8.6
+
+- Fix: LS taking too long (#1843)
+- Feature: New milestone stage and solidification pipeline (#1844)
+- Use LinkedBlockingQueue to fix sync problems (#1841)
+- Up jackson version 2.9.10.3 (#1837)
+- Feature: Add transaction solidifier queue (#1821)
+- Fix: Update Broadcast Stage logic  (#1827)
+- Regression: Update pruning test  (#1775)
+- Test: Fix getinclusion assertion to what it should be (#1819)
+- Add transaction solidifier (#1805)
+- Move validation to validation service package (#1804)
+- Update regression logging (#1803)
+- Update regression structure (#1764)
+- Rename zmq tx_trytes to trytes (#1772)
+- Remove ping pong from reply stage (#1745)
+- Fix: reference transaction logic in Regression Test (#1737)
+- Feature: Db size in bytes (#1717)
+- Fix: broken getInclusionStates API call (#1685)
+- Feature: Use one RocksDB instance for spent addresses and local snapshots
+- Fix: Stop submitting zero value bundles as a task into the SpentAddressesService (#1614)
+- Fix: lower error severity for faulty neighbor to warning (#1710)
+- Fix: sort milestone candidates before analyzing for faster solidification (#1660)
+- Change: Regression tests to python3 (#1707)
+- Feature: publish sn_trytes in zmq (#1551)
+- Change: Count subtypes for pipeline threads  (#1681)
+- Remove magic numbers from handshake (#1694)
+- Fix: Remove neighbors correctly (#1687)
+- Fix: improve API error response for storeTransactions (#1686)
+- Add spent addresses test (#1489)
+- Fix: Correct walker behaviour for alpha == 0 (#1645)
+- Allow to configure benchmark from CLI (#1663)
+- Fix: Don't resave the transaction itself (#1671)
+- Fix: Zmq documentation (#1665)
+- Fix: file descriptors leak in IXI module (#1669)
+- Fix: Updated db config loading to account for sections (#1667)
+- Memory optimization for serializing db objects  (#1656)
+- Updated RocksDB to 6.3.6 (#1654)
+- Feature: Allow users to tinker with RocksDB configuration via file and upgrade RocksDb (#1638)
+- Feature: Truncate transaction bytes before persisting them to the database (#1635)
+- Update Jdeb plugin (#1639)
+- DB_PATH changed in README.md, .factorypath added to .gitignore
+- adds config option to disable sync progress printing (#1649)g
+- Changed closing order for column family
+- Updated rocksdb to 6.2.2
+
+
 1.8.5
 
 Protocol-Change:

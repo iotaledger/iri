@@ -219,7 +219,11 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
         }
 
+        int lowest = oldestMilestoneInQueue == null ? -1 : oldestMilestoneInQueue.getValue();
         scanMilestonesInQueue();
+        if (lowest != -1 && lowest > oldestMilestoneInQueue.getValue()) {
+            logChange(-1);
+        }
     }
 
     /**
@@ -446,31 +450,34 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             return false;
         }
     }
-
-
-
-
+    
+    /**
+     * Logs changes to the console based on a change in syncing state
+     * 
+     * @param prevSolidMilestoneIndex THe previous solid milestone, -1 if we went down 1 ms in oldestMilestoneInQueue
+     */
     private void logChange(int prevSolidMilestoneIndex) {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
         int nextLatestSolidMilestone = latestSnapshot.getIndex();
-        setLatestSolidMilestone(nextLatestSolidMilestone);
+        
+        if (prevSolidMilestoneIndex != -1) {
+            if (prevSolidMilestoneIndex == nextLatestSolidMilestone) {
+                return;
+            }
 
+            setLatestSolidMilestone(nextLatestSolidMilestone);
+            latestSolidMilestoneLogger.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
 
-        if (prevSolidMilestoneIndex == nextLatestSolidMilestone) {
-            return;
+            tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, nextLatestSolidMilestone);
+            tangle.publish("lmhs %s", latestMilestoneHash);
         }
-
-        latestSolidMilestoneLogger.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
-
-        tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, nextLatestSolidMilestone);
-        tangle.publish("lmhs %s", latestMilestoneHash);
 
         if (!config.isPrintSyncProgressEnabled()) {
             return;
         }
 
         // only print more sophisticated progress if we are coming from a more unsynced state
-        if (getLatestMilestoneIndex() - nextLatestSolidMilestone < 1) {
+        if (prevSolidMilestoneIndex != -1 && getLatestMilestoneIndex() - nextLatestSolidMilestone < 1) {
             syncProgressInfo.setSyncMilestoneStartIndex(nextLatestSolidMilestone);
             syncProgressInfo.resetMilestoneApplicationTimes();
             return;
@@ -480,9 +487,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 nextLatestSolidMilestone);
         StringBuilder progressSB = new StringBuilder();
 
+        double percentPreferDown = 95;
+        double percentageSynced = ((100d - oldestMilestoneInQueue.getValue() / latestMilestoneIndex.doubleValue() / 0.01d) / 100d * percentPreferDown) 
+            + ((latestSolidMilestone.doubleValue() / latestMilestoneIndex.doubleValue() / 0.01d) / 100d * (100d - percentPreferDown));
+
         // add progress bar
-        progressSB.append(ASCIIProgressBar.getProgressBarString(syncProgressInfo.getSyncMilestoneStartIndex(),
-                getLatestMilestoneIndex(), nextLatestSolidMilestone));
+        progressSB.append(ASCIIProgressBar.getProgressBarString(0, 1000, (int)Math.round(percentageSynced*10)));
         // add lsm to lm
         progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", nextLatestSolidMilestone,
                 getLatestMilestoneIndex(), getLatestMilestoneIndex() - nextLatestSolidMilestone));

@@ -112,7 +112,7 @@ public interface SnapshotConfig extends Config {
         String LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = "Take local snapshots every n milestones if the node is syncing.";
         String LOCAL_SNAPSHOTS_DEPTH = "Number of milestones to keep.";
         String LOCAL_SNAPSHOTS_DB_MAX_SIZE = "The maximum size this database should be on disk. Human readable format (GB, GiB, MB, MiB)."
-                + "If set to -1, the database size will not affect the node.";
+                + "If set to -1, the database size will not affect the node. Without a suffix, we default to GB";
         String SNAPSHOT_TIME = "Epoch time of the last snapshot.";
         String SNAPSHOT_FILE = "Path of the file that contains the state of the ledger at the last snapshot.";
         String SNAPSHOT_SIGNATURE_FILE = "Path to the file that contains a signature for the snapshot file.";

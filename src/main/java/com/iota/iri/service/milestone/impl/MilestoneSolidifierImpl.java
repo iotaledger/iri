@@ -37,7 +37,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     
     private static final IntervalLogger latestSolidMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
-    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class, 10000);
 
     private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
@@ -221,7 +221,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
         int lowest = oldestMilestoneInQueue == null ? -1 : oldestMilestoneInQueue.getValue();
         scanMilestonesInQueue();
-        if (lowest != -1 && lowest > oldestMilestoneInQueue.getValue()) {
+        if (oldestMilestoneInQueue != null && lowest > oldestMilestoneInQueue.getValue()) {
             logChange(-1);
         }
     }
@@ -247,7 +247,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 }
             }
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -477,7 +477,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         // only print more sophisticated progress if we are coming from a more unsynced state
-        if (prevSolidMilestoneIndex != -1 && getLatestMilestoneIndex() - nextLatestSolidMilestone < 1) {
+        if (oldestMilestoneInQueue == null || 
+                (prevSolidMilestoneIndex != -1 && getLatestMilestoneIndex() - nextLatestSolidMilestone < 1)) {
             syncProgressInfo.setSyncMilestoneStartIndex(nextLatestSolidMilestone);
             syncProgressInfo.resetMilestoneApplicationTimes();
             return;
@@ -492,7 +493,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             + ((latestSolidMilestone.doubleValue() / latestMilestoneIndex.doubleValue() / 0.01d) / 100d * (100d - percentPreferDown));
 
         // add progress bar
-        progressSB.append(ASCIIProgressBar.getProgressBarString(0, 1000, (int)Math.round(percentageSynced*10)));
+        progressSB.append(ASCIIProgressBar.getProgressBarString(0, 100, (int)Math.round(percentageSynced)));
         // add lsm to lm
         progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", nextLatestSolidMilestone,
                 getLatestMilestoneIndex(), getLatestMilestoneIndex() - nextLatestSolidMilestone));

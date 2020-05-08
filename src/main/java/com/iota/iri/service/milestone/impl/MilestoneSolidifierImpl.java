@@ -292,7 +292,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                         addMilestoneCandidate(hash, index);
                     }
                 }
-                if (processed % 1000 == 0 || processed % milestoneTransactions.size() == 0){
+                if (processed % (milestoneTransactions.size()/10) == 0 || processed % milestoneTransactions.size() == 0){
                     log.info("Bootstrapping milestones: [ " + processed  + " / " + milestoneTransactions.size() + " ]");
                 }
             } catch(Exception e) {

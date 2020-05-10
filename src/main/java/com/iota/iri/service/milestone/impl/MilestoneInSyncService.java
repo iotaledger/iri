@@ -6,6 +6,8 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * 
  * A node is defined in sync when the latest snapshot milestone index and the
@@ -28,7 +30,7 @@ public class MilestoneInSyncService implements InSyncService {
     /**
      * If this node is currently seen as in sync
      */
-    private boolean isInSync;
+    private AtomicBoolean isInSync;
     
     /**
      * Data provider for the latest solid index
@@ -46,7 +48,7 @@ public class MilestoneInSyncService implements InSyncService {
     public MilestoneInSyncService(SnapshotProvider snapshotProvider, MilestoneSolidifier milestoneSolidifier) {
         this.snapshotProvider = snapshotProvider;
         this.milestoneSolidifier = milestoneSolidifier;
-        this.isInSync = false;
+        this.isInSync = new AtomicBoolean(false);
     }
 
     @Override
@@ -59,15 +61,15 @@ public class MilestoneInSyncService implements InSyncService {
         int latestSnapshot = snapshotProvider.getLatestSnapshot().getIndex();
 
         // If we are out of sync, only a full sync will get us in
-        if (!isInSync && latestIndex == latestSnapshot) {
-            isInSync = true;
+        if (!isInSync.get() && latestIndex == latestSnapshot) {
+            isInSync.set(true);
 
         // When we are in sync, only dropping below the buffer gets us out of sync
         } else if (latestSnapshot < latestIndex - LOCAL_SNAPSHOT_SYNC_BUFFER) {
-            isInSync = false;
+            isInSync.set(false);
         }
 
-        return isInSync;
+        return isInSync.get();
     }
 
 }

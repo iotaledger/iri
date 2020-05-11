@@ -113,7 +113,6 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             setLatestMilestone(latestSnapshot.getHash(), latestSnapshot.getIndex());
             logChange(snapshotProvider.getInitialSnapshot().getIndex());
 
-            syncProgressInfo.setSyncMilestoneStartIndex(snapshotProvider.getInitialSnapshot().getIndex());
             milestoneSolidifier.start();
 
         } catch (Exception e) {
@@ -222,6 +221,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         int lowest = oldestMilestoneInQueue == null ? -1 : oldestMilestoneInQueue.getValue();
         scanMilestonesInQueue();
         if (oldestMilestoneInQueue != null && lowest > oldestMilestoneInQueue.getValue()) {
+            // Going down or going up doesnt matter to the calculation
+            syncProgressInfo.addMilestoneApplicationTime();
             logChange(-1);
         }
     }
@@ -477,8 +478,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
 
         // only print more sophisticated progress if we are coming from a more unsynced state
-        if (oldestMilestoneInQueue == null || 
-                (prevSolidMilestoneIndex != -1 && getLatestMilestoneIndex() - nextLatestSolidMilestone < 1)) {
+        if (prevSolidMilestoneIndex != -1 && getLatestMilestoneIndex() - nextLatestSolidMilestone < 1) {
             syncProgressInfo.setSyncMilestoneStartIndex(nextLatestSolidMilestone);
             syncProgressInfo.resetMilestoneApplicationTimes();
             return;
@@ -486,12 +486,14 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
         int estSecondsToBeSynced = syncProgressInfo.computeEstimatedTimeToSyncUpSeconds(getLatestMilestoneIndex(),
                 nextLatestSolidMilestone);
+        
+        // oldestMilestoneInQueue can be null if they are processed faster than coming in. 
+        // Unlikely to happen on mainnet though.
+        double percentageSynced = syncProgressInfo.calculatePercentageSynced(getLatestMilestoneIndex(), 
+                getLatestSolidMilestoneIndex(),  
+                oldestMilestoneInQueue == null ? getLatestSolidMilestoneIndex() : oldestMilestoneInQueue.getValue());
+
         StringBuilder progressSB = new StringBuilder();
-
-        double percentPreferDown = 95;
-        double percentageSynced = ((100d - oldestMilestoneInQueue.getValue() / latestMilestoneIndex.doubleValue() / 0.01d) / 100d * percentPreferDown) 
-            + ((latestSolidMilestone.doubleValue() / latestMilestoneIndex.doubleValue() / 0.01d) / 100d * (100d - percentPreferDown));
-
         // add progress bar
         progressSB.append(ASCIIProgressBar.getProgressBarString(0, 100, (int)Math.round(percentageSynced)));
         // add lsm to lm
@@ -509,6 +511,9 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * Holds variables containing information needed for sync progress calculation.
      */
     private static class SyncProgressInfo {
+        
+        static final double PERCENT_WEIGHT_DOWN = 95;
+        
         /**
          * The actual start milestone index from which the node started from when syncing up.
          */
@@ -578,6 +583,21 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
 
             return (int) ((avgMilestoneApplyMillisec / 1000) * (latestMilestoneIndex - latestSolidMilestoneIndex));
+        }
+        
+        /**
+         * 
+         * @param latest
+         * @param latestSolid
+         * @return
+         */
+        double calculatePercentageSynced(int latest, int latestSolid, int oldestInQueue) {
+            double currentD = oldestInQueue - latestSolid;
+            double targetD  = latest - latestSolid;
+            double processPercentage = 100 - currentD / targetD / 0.01d / 100d * PERCENT_WEIGHT_DOWN;
+            
+            double percentageSynced = processPercentage + ((latestSolid / latest / 0.01d) / 100d * (100d - PERCENT_WEIGHT_DOWN));
+            return percentageSynced;
         }
     }
 

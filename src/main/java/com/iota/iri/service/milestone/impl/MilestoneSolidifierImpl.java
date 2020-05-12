@@ -484,15 +484,19 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             return;
         }
 
-        int estSecondsToBeSynced = syncProgressInfo.computeEstimatedTimeToSyncUpSeconds(getLatestMilestoneIndex(),
-                nextLatestSolidMilestone);
-        
         // oldestMilestoneInQueue can be null if they are processed faster than coming in. 
         // Unlikely to happen on mainnet though.
         double percentageSynced = syncProgressInfo.calculatePercentageSynced(getLatestMilestoneIndex(), 
                 getLatestSolidMilestoneIndex(),  
                 oldestMilestoneInQueue == null ? getLatestSolidMilestoneIndex() : oldestMilestoneInQueue.getValue());
+        if (percentageSynced >= 100 && getLatestSolidMilestoneIndex() != getLatestMilestoneIndex()) {
+            // Were still starting up things... 
+            return;
+        }
 
+        int estSecondsToBeSynced = syncProgressInfo.computeEstimatedTimeToSyncUpSeconds(getLatestMilestoneIndex(),
+                nextLatestSolidMilestone);
+        
         StringBuilder progressSB = new StringBuilder();
         // add progress bar
         progressSB.append(ASCIIProgressBar.getProgressBarString(0, 100, (int)Math.round(percentageSynced)));

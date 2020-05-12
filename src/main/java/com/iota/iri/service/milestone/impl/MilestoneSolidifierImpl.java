@@ -111,7 +111,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
             Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
             setLatestMilestone(latestSnapshot.getHash(), latestSnapshot.getIndex());
-            logChange(snapshotProvider.getInitialSnapshot().getIndex());
+            //logChange(snapshotProvider.getInitialSnapshot().getIndex());
 
             milestoneSolidifier.start();
 
@@ -488,8 +488,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         // Unlikely to happen on mainnet though.
         double percentageSynced = syncProgressInfo.calculatePercentageSynced(getLatestMilestoneIndex(), 
                 getLatestSolidMilestoneIndex(),  
-                oldestMilestoneInQueue == null ? getLatestSolidMilestoneIndex() : oldestMilestoneInQueue.getValue());
-        if (percentageSynced >= 100 && getLatestSolidMilestoneIndex() != getLatestMilestoneIndex()) {
+                oldestMilestoneInQueue == null ? 0 : oldestMilestoneInQueue.getValue());
+        if (percentageSynced  == -1) {
             // Were still starting up things... 
             return;
         }
@@ -522,6 +522,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
          * The actual start milestone index from which the node started from when syncing up.
          */
         private int syncMilestoneStartIndex;
+        
+        /**
+         * The oldest milestone index we have seen. 
+         * Cached so that once we synced down, it doesnt revert to the new latest milestone index
+         */
+        private int oldestSeenMilestoneIndex;
 
         /**
          * Used to calculate the average time needed to apply a milestone.
@@ -561,6 +567,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
          */
         void resetMilestoneApplicationTimes() {
             lastMilestoneApplyTimes.clear();
+            oldestSeenMilestoneIndex = 0;
         }
 
         /**
@@ -590,15 +597,26 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         }
         
         /**
+         * Calculates the percentage we are synced
          * 
-         * @param latest
-         * @param latestSolid
-         * @return
+         * @param latest latest milestone index
+         * @param latestSolid latest solid milestone index
+         * @param oldestInQueue oldest milestone index we process, can be <code>null</code>
+         * @return A percentage value of syncedness
          */
         double calculatePercentageSynced(int latest, int latestSolid, int oldestInQueue) {
-            double currentD = oldestInQueue - latestSolid;
+            if (oldestInQueue != 0 && oldestInQueue > latestSolid &&
+                    (oldestSeenMilestoneIndex > oldestInQueue || oldestSeenMilestoneIndex == 0)) {
+                oldestSeenMilestoneIndex = oldestInQueue;
+            }
+            
+            double currentD = (oldestInQueue == 0 ? latestSolid : oldestSeenMilestoneIndex) - latestSolid;
             double targetD  = latest - latestSolid;
-            double processPercentage = 100 - currentD / targetD / 0.01d / 100d * PERCENT_WEIGHT_DOWN;
+            
+            double processPercentage = (100 - currentD / targetD / 0.01d) / 100d * PERCENT_WEIGHT_DOWN;
+            if (processPercentage >= 95 && latestSolid != latest) {
+                return -1;
+            }
             
             double percentageSynced = processPercentage + ((latestSolid / latest / 0.01d) / 100d * (100d - PERCENT_WEIGHT_DOWN));
             return percentageSynced;

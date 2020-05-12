@@ -1,9 +1,5 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.service.milestone.MilestoneService;
-import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.validation.TransactionSolidifier;
-import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.crypto.batched.BatchedHasher;
@@ -13,23 +9,28 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.TransactionCacheDigester;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.service.milestone.InSyncService;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.IotaUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import com.iota.iri.utils.IotaUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The {@link TransactionProcessingPipelineImpl} processes transactions which either came from {@link Neighbor} instances or
@@ -91,17 +92,18 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      * @param tangle                 The {@link Tangle} database to use to store and load transactions.
      * @param snapshotProvider       The {@link SnapshotProvider} to use to store transactions with.
      * @param tipsViewModel          The {@link TipsViewModel} to load tips from in the reply stage
+     * @param inSyncService          The {@link InSyncService} to check if we are in sync
      */
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
             TipsViewModel tipsViewModel, MilestoneSolidifier milestoneSolidifier,
             TransactionRequester transactionRequester, TransactionSolidifier txSolidifier,
-            MilestoneService milestoneService) {
+            MilestoneService milestoneService, InSyncService inSyncService) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
         this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, milestoneSolidifier,
                 snapshotProvider, recentlySeenBytesCache);
-        this.broadcastStage = new BroadcastStage(neighborRouter, txSolidifier);
+        this.broadcastStage = new BroadcastStage(neighborRouter, txSolidifier, inSyncService);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
         this.receivedStage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester,
                 milestoneService, config.getCoordinator());

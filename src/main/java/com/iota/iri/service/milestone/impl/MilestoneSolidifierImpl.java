@@ -111,9 +111,8 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
             Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
             setLatestMilestone(latestSnapshot.getHash(), latestSnapshot.getIndex());
-            logChange(snapshotProvider.getInitialSnapshot().getIndex());
+            //logChange(snapshotProvider.getInitialSnapshot().getIndex());
 
-            syncProgressInfo.setSyncMilestoneStartIndex(snapshotProvider.getInitialSnapshot().getIndex());
             milestoneSolidifier.start();
 
         } catch (Exception e) {
@@ -219,7 +218,13 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
         }
 
+        int lowest = oldestMilestoneInQueue == null ? -1 : oldestMilestoneInQueue.getValue();
         scanMilestonesInQueue();
+        if (oldestMilestoneInQueue != null && lowest > oldestMilestoneInQueue.getValue()) {
+            // Going down or going up doesnt matter to the calculation
+            syncProgressInfo.addMilestoneApplicationTime();
+            logChange(-1);
+        }
     }
 
     /**
@@ -446,43 +451,55 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             return false;
         }
     }
-
-
-
-
+    
+    /**
+     * Logs changes to the console based on a change in syncing state
+     * 
+     * @param prevSolidMilestoneIndex THe previous solid milestone, -1 if we went down 1 ms in oldestMilestoneInQueue
+     */
     private void logChange(int prevSolidMilestoneIndex) {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
         int nextLatestSolidMilestone = latestSnapshot.getIndex();
-        setLatestSolidMilestone(nextLatestSolidMilestone);
+        
+        if (prevSolidMilestoneIndex != -1) {
+            if (prevSolidMilestoneIndex == nextLatestSolidMilestone) {
+                return;
+            }
 
+            setLatestSolidMilestone(nextLatestSolidMilestone);
+            latestSolidMilestoneLogger.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
 
-        if (prevSolidMilestoneIndex == nextLatestSolidMilestone) {
-            return;
+            tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, nextLatestSolidMilestone);
+            tangle.publish("lmhs %s", latestMilestoneHash);
         }
-
-        latestSolidMilestoneLogger.info("Latest SOLID milestone index changed from #" + prevSolidMilestoneIndex + " to #" + nextLatestSolidMilestone);
-
-        tangle.publish("lmsi %d %d", prevSolidMilestoneIndex, nextLatestSolidMilestone);
-        tangle.publish("lmhs %s", latestMilestoneHash);
 
         if (!config.isPrintSyncProgressEnabled()) {
             return;
         }
 
         // only print more sophisticated progress if we are coming from a more unsynced state
-        if (getLatestMilestoneIndex() - nextLatestSolidMilestone < 1) {
+        if (prevSolidMilestoneIndex != -1 && getLatestMilestoneIndex() - nextLatestSolidMilestone < 1) {
             syncProgressInfo.setSyncMilestoneStartIndex(nextLatestSolidMilestone);
             syncProgressInfo.resetMilestoneApplicationTimes();
             return;
         }
 
+        // oldestMilestoneInQueue can be null if they are processed faster than coming in. 
+        // Unlikely to happen on mainnet though.
+        double percentageSynced = syncProgressInfo.calculatePercentageSynced(getLatestMilestoneIndex(), 
+                getLatestSolidMilestoneIndex(),  
+                oldestMilestoneInQueue == null ? 0 : oldestMilestoneInQueue.getValue());
+        if (percentageSynced  == -1) {
+            // Were still starting up things... 
+            return;
+        }
+
         int estSecondsToBeSynced = syncProgressInfo.computeEstimatedTimeToSyncUpSeconds(getLatestMilestoneIndex(),
                 nextLatestSolidMilestone);
+        
         StringBuilder progressSB = new StringBuilder();
-
         // add progress bar
-        progressSB.append(ASCIIProgressBar.getProgressBarString(syncProgressInfo.getSyncMilestoneStartIndex(),
-                getLatestMilestoneIndex(), nextLatestSolidMilestone));
+        progressSB.append(ASCIIProgressBar.getProgressBarString(0, 100, (int)Math.round(percentageSynced)));
         // add lsm to lm
         progressSB.append(String.format(" [LSM %d / LM %d - remaining: %d]", nextLatestSolidMilestone,
                 getLatestMilestoneIndex(), getLatestMilestoneIndex() - nextLatestSolidMilestone));
@@ -498,10 +515,19 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * Holds variables containing information needed for sync progress calculation.
      */
     private static class SyncProgressInfo {
+        
+        static final double PERCENT_WEIGHT_DOWN = 95;
+        
         /**
          * The actual start milestone index from which the node started from when syncing up.
          */
         private int syncMilestoneStartIndex;
+        
+        /**
+         * The oldest milestone index we have seen. 
+         * Cached so that once we synced down, it doesnt revert to the new latest milestone index
+         */
+        private int oldestSeenMilestoneIndex;
 
         /**
          * Used to calculate the average time needed to apply a milestone.
@@ -541,6 +567,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
          */
         void resetMilestoneApplicationTimes() {
             lastMilestoneApplyTimes.clear();
+            oldestSeenMilestoneIndex = 0;
         }
 
         /**
@@ -567,6 +594,32 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
 
             return (int) ((avgMilestoneApplyMillisec / 1000) * (latestMilestoneIndex - latestSolidMilestoneIndex));
+        }
+        
+        /**
+         * Calculates the percentage we are synced
+         * 
+         * @param latest latest milestone index
+         * @param latestSolid latest solid milestone index
+         * @param oldestInQueue oldest milestone index we process, can be <code>null</code>
+         * @return A percentage value of syncedness
+         */
+        double calculatePercentageSynced(int latest, int latestSolid, int oldestInQueue) {
+            if (oldestInQueue != 0 && oldestInQueue > latestSolid &&
+                    (oldestSeenMilestoneIndex > oldestInQueue || oldestSeenMilestoneIndex == 0)) {
+                oldestSeenMilestoneIndex = oldestInQueue;
+            }
+            
+            double currentD = (oldestInQueue == 0 ? latestSolid : oldestSeenMilestoneIndex) - latestSolid;
+            double targetD  = latest - latestSolid;
+            
+            double processPercentage = (100 - currentD / targetD / 0.01d) / 100d * PERCENT_WEIGHT_DOWN;
+            if (processPercentage >= 95 && latestSolid != latest) {
+                return -1;
+            }
+            
+            double percentageSynced = processPercentage + ((latestSolid / latest / 0.01d) / 100d * (100d - PERCENT_WEIGHT_DOWN));
+            return percentageSynced;
         }
     }
 

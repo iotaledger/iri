@@ -37,7 +37,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     
     private static final IntervalLogger latestSolidMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
-    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class, 10000);
 
     private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
@@ -243,7 +243,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 }
             }
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -288,7 +288,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                         addMilestoneCandidate(hash, index);
                     }
                 }
-                if (processed % 1000 == 0 || processed % milestoneTransactions.size() == 0){
+                if (processed % (milestoneTransactions.size()/10) == 0 || processed % milestoneTransactions.size() == 0){
                     log.info("Bootstrapping milestones: [ " + processed  + " / " + milestoneTransactions.size() + " ]");
                 }
             } catch(Exception e) {

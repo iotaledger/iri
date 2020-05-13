@@ -37,7 +37,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     
     private static final IntervalLogger latestSolidMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
-    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class, 10000);
 
     private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
@@ -243,7 +243,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                 }
             }
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -293,14 +293,15 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         int nextMilestoneIndex = currentSolidMilestoneIndex + 1;
         MilestoneViewModel nextSolidMilestone = MilestoneViewModel.get(tangle, nextMilestoneIndex);
         if (nextSolidMilestone != null) {
-            applySolidMilestoneToLedger(nextSolidMilestone);
-            logChange(currentSolidMilestoneIndex);
+            if (applySolidMilestoneToLedger(nextSolidMilestone)) {
+                logChange(currentSolidMilestoneIndex);
 
-            if (nextMilestoneIndex == getLatestMilestoneIndex()) {
-                transactionRequester.clearRecentlyRequestedTransactions();
+                if (nextMilestoneIndex == getLatestMilestoneIndex()) {
+                    transactionRequester.clearRecentlyRequestedTransactions();
+                }
+
+                removeCurrentAndLowerSeenMilestone(nextMilestoneIndex);
             }
-
-            removeCurrentAndLowerSeenMilestone(nextMilestoneIndex);
         }
 
     }
@@ -422,14 +423,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     }
 
 
-    private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
+    private boolean applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
         if (ledgerService.applyMilestoneToLedger(milestone)) {
             if (milestoneRepairer.isRepairRunning() && milestoneRepairer.isRepairSuccessful(milestone)) {
                 milestoneRepairer.stopRepair();
             }
             syncProgressInfo.addMilestoneApplicationTime();
+            return true;
         } else {
             milestoneRepairer.repairCorruptedMilestone(milestone);
+            return false;
         }
     }
 

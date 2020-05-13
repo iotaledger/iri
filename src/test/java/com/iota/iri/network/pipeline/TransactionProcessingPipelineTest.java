@@ -1,16 +1,17 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.service.milestone.MilestoneService;
-import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.validation.TransactionSolidifier;
-import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.NeighborRouter;
 import com.iota.iri.network.SampleTransaction;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
+import com.iota.iri.service.milestone.InSyncService;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 
 import org.junit.Rule;
@@ -121,6 +122,14 @@ public class TransactionProcessingPipelineTest {
 
     @Mock
     private TransactionSolidifier transactionSolidifier;
+    
+    private InSyncService inSyncService = new InSyncService() {
+        
+        @Override
+        public boolean isInSync() {
+            return true;
+        }
+    };
 
     private void mockHashingStage(TransactionProcessingPipeline pipeline) {
         Mockito.when(hashingPayload.getTxTrits()).thenReturn(null);
@@ -146,7 +155,7 @@ public class TransactionProcessingPipelineTest {
 
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
-                transactionRequester, transactionSolidifier, milestoneService);
+                transactionRequester, transactionSolidifier, milestoneService, inSyncService);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
@@ -198,7 +207,7 @@ public class TransactionProcessingPipelineTest {
     public void processingAValidMilestone() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
-                transactionRequester, transactionSolidifier, milestoneService);
+                transactionRequester, transactionSolidifier, milestoneService, inSyncService);
 
         injectMockedStagesIntoPipeline(pipeline);
 
@@ -255,7 +264,7 @@ public class TransactionProcessingPipelineTest {
     public void processingAKnownTransactionOnlyFlowsToTheReplyStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
-                transactionRequester, transactionSolidifier, milestoneService);
+                transactionRequester, transactionSolidifier, milestoneService, inSyncService);
 
         // inject mocks
         pipeline.setPreProcessStage(preProcessStage);
@@ -290,7 +299,7 @@ public class TransactionProcessingPipelineTest {
             throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
-                transactionRequester, transactionSolidifier, milestoneService);
+                transactionRequester, transactionSolidifier, milestoneService, inSyncService);
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);
 
@@ -340,7 +349,7 @@ public class TransactionProcessingPipelineTest {
     public void anInvalidNewTransactionStopsBeingProcessedAfterTheValidationStage() throws InterruptedException {
         TransactionProcessingPipeline pipeline = new TransactionProcessingPipelineImpl(neighborRouter, nodeConfig,
                 transactionValidator, tangle, snapshotProvider, tipsViewModel, milestoneSolidifier,
-                transactionRequester, transactionSolidifier, milestoneService);
+                transactionRequester, transactionSolidifier, milestoneService, inSyncService);
 
         // inject mocks
         injectMockedStagesIntoPipeline(pipeline);

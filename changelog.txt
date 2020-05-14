@@ -1,5 +1,6 @@
 1.8.6
 
+- Remove address scan in bootstrap (#1861)
 - Fix: LS taking too long (#1843)
 - Feature: New milestone stage and solidification pipeline (#1844)
 - Use LinkedBlockingQueue to fix sync problems (#1841)

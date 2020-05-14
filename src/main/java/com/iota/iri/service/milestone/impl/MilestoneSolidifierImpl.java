@@ -268,33 +268,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     private void bootStrapSolidMilestones() throws Exception {
         setLatestSolidMilestone(snapshotProvider.getLatestSnapshot().getIndex());
-        Set<Hash> milestoneTransactions = AddressViewModel.load(tangle, config.getCoordinator()).getHashes();
-        int processed = 0;
-        int index;
-        for (Hash hash: milestoneTransactions) {
-            try {
-                processed += 1;
-                TransactionViewModel tvm = TransactionViewModel.fromHash(tangle, hash);
-                boolean isTail = tvm.getCurrentIndex() == 0;
-                if (isTail && (index = milestoneService
-                        .getMilestoneIndex(tvm)) > getLatestSolidMilestoneIndex()) {
-                    MilestoneValidity validity = milestoneService.validateMilestone(tvm, index);
-                    if (validity == MilestoneValidity.VALID) {
-                        tvm.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-                        registerNewMilestone(getLatestMilestoneIndex(), index, tvm.getHash());
-                    }
 
-                    if (validity != MilestoneValidity.INVALID) {
-                        addMilestoneCandidate(hash, index);
-                    }
-                }
-                if (processed % (milestoneTransactions.size()/10) == 0 || processed % milestoneTransactions.size() == 0){
-                    log.info("Bootstrapping milestones: [ " + processed  + " / " + milestoneTransactions.size() + " ]");
-                }
-            } catch(Exception e) {
-                log.error("Error processing existing milestone index", e);
-            }
+        int index = getLatestSolidMilestoneIndex();
+        MilestoneViewModel nextMilestone;
+        log.info("Starting milestone bootstrapping...");
+        while ((nextMilestone = MilestoneViewModel.get(tangle, ++index)) != null) {
+            registerNewMilestone(getLatestMilestoneIndex(), index, nextMilestone.getHash());
+            addMilestoneCandidate(nextMilestone.getHash(), nextMilestone.index());
         }
+        log.info("Done bootstrapping milestones.");
+
         initialized.set(true);
     }
 

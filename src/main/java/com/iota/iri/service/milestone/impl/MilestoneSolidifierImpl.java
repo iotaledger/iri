@@ -241,6 +241,10 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                         transactionSolidifier.addToSolidificationQueue(milestone.getHash());
                     }
                 }
+
+                if (!seenMilestones.isEmpty()) {
+                    checkOldestSeenMilestoneSolidity();
+                }
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -281,6 +285,17 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         initialized.set(true);
     }
 
+
+    private void checkOldestSeenMilestoneSolidity() {
+        int lowestIndex = 0;
+        for (int index: seenMilestones.keySet()) {
+            if (lowestIndex == 0 || lowestIndex > index) {
+                lowestIndex = index;
+            }
+        }
+
+        transactionSolidifier.addToSolidificationQueue(seenMilestones.get(lowestIndex));
+    }
 
 
     private void updateSolidMilestone(int currentSolidMilestoneIndex) throws Exception {

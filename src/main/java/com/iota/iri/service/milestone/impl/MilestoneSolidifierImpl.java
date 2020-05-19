@@ -5,6 +5,7 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.MilestoneRepairer;
@@ -294,7 +295,36 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
         }
 
-        transactionSolidifier.addToSolidificationQueue(seenMilestones.get(lowestIndex));
+        if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex))) {
+            scanAddressHashes();
+        }
+    }
+
+    private void scanAddressHashes() {
+        try{
+            log.info("Scanning existing milestone candidates...");
+            TransactionViewModel milestoneCandidate;
+            int index;
+            int processed = 0;
+            for (Hash hash: AddressViewModel.load(tangle, config.getCoordinator()).getHashes()) {
+                processed++;
+                milestoneCandidate = TransactionViewModel.fromHash(tangle, hash);
+                index = milestoneService.getMilestoneIndex(milestoneCandidate);
+                if (!seenMilestones.containsValue(hash) &&
+                        milestoneCandidate.getCurrentIndex() == 0 &&
+                        index > getLatestSolidMilestoneIndex() &&
+                        milestoneService.validateMilestone(milestoneCandidate, index) == MilestoneValidity.VALID) {
+                    addMilestoneCandidate(hash, index);
+                }
+
+                if (processed % 5000 == 0) {
+                    log.info(processed + " Milestones Processed...");
+                }
+            }
+            log.info("Done scanning existing milestone candidates.");
+        } catch (Exception e) {
+            log.warn("Error scanning coo address hashes.", e);
+        }
     }
 
 

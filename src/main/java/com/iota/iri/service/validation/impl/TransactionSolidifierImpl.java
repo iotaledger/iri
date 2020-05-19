@@ -134,13 +134,13 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             TransactionViewModel tx = fromHash(tangle, hash);
             if (tx.isSolid()) {
                 transactionPropagator.addToPropagationQueue(hash);
-                return true;
+                return false;
             }
             addToSolidificationQueue(hash);
-            return false;
+            return true;
         } catch (Exception e) {
             log.error("Error adding milestone to solidification queue", e);
-            return false;
+            return true;
         }
     }
 

@@ -295,7 +295,9 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
         }
 
-        if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex))) {
+        if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex)) &&
+                (seenMilestones.size() + unsolidMilestones.size()) <
+                        (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex())) {
             scanAddressHashes();
         }
     }

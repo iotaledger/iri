@@ -288,7 +288,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         initialized.set(true);
     }
 
-
+    /**
+     * Checks the seen milestones queue for the lowest index available, and tries to solidify it. If it is already
+     * solid but not syncing, there are milestone objects in the db that have not been processed through the solidifier
+     * (likely due to shutting down during synchronisation). If this is the case, an address scan is performed to
+     * find and process all present milestone transactions through the milestone solidifier.
+     */
     private void checkOldestSeenMilestoneSolidity() {
         int lowestIndex = 0;
         for (int index: seenMilestones.keySet()) {

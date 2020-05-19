@@ -33,7 +33,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     /**
      * Max size for all queues.
      */
-    private static final int MAX_SIZE= 10000;
+    private static final int MAX_SIZE= 100;
 
     private static final int SOLIDIFICATION_INTERVAL = 100;
 

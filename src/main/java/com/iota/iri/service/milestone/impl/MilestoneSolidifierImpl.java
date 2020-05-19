@@ -297,10 +297,14 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
             }
         }
 
-        if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex)) &&
-                (seenMilestones.size() + unsolidMilestones.size()) <
-                        (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex())) {
-            scanAddressHashes();
+        if (lowestIndex <= getLatestSolidMilestoneIndex()) {
+            removeCurrentAndLowerSeenMilestone(lowestIndex);
+        } else {
+            if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex)) &&
+                    (seenMilestones.size() + unsolidMilestones.size()) <
+                            (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex())) {
+                scanAddressHashes();
+            }
         }
     }
 

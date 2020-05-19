@@ -232,10 +232,12 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         try {
             if (getLatestMilestoneIndex() > getLatestSolidMilestoneIndex()) {
                 int nextMilestone = getLatestSolidMilestoneIndex() + 1;
+                boolean isSyncing = false;
                 if (seenMilestones.containsKey(nextMilestone)) {
                     TransactionViewModel milestone = TransactionViewModel.fromHash(tangle,
                             seenMilestones.get(nextMilestone));
                     if (milestone.isSolid()) {
+                        isSyncing = true;
                         updateSolidMilestone(getLatestSolidMilestoneIndex());
                         transactionSolidifier.addToPropagationQueue(milestone.getHash());
                     } else {
@@ -243,7 +245,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
                     }
                 }
 
-                if (!seenMilestones.isEmpty()) {
+                if (!seenMilestones.isEmpty() && !isSyncing) {
                     checkOldestSeenMilestoneSolidity();
                 }
             }

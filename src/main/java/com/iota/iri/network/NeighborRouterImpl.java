@@ -356,6 +356,10 @@ public class NeighborRouterImpl implements NeighborRouter {
         try {
             switch (neighbor.write()) {
                 case 0:
+                    // nothing was written, because no message was available to be sent.
+                    // lets unregister this channel from write interests until at least
+                    // one message is back available for sending.
+                    key.interestOps(SelectionKey.OP_READ);
                     break;
                 case -1:
                     if (neighbor.getState() == NeighborState.HANDSHAKING) {

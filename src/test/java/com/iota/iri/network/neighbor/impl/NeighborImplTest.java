@@ -167,42 +167,6 @@ public class NeighborImplTest {
     }
 
     @Test
-    public void aSendWhileWriteInterestIsDisabledActivatesItAgain() {
-        SelectionKey fakeSelectionKey = new FakeSelectionKey() {
-
-            private int ops = SelectionKey.OP_READ;
-
-            @Override
-            public boolean isValid() {
-                return true;
-            }
-
-            @Override
-            public int interestOps() {
-                return ops;
-            }
-
-            @Override
-            public SelectionKey interestOps(int ops) {
-                this.ops = ops;
-                return null;
-            }
-        };
-        Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
-
-            @Override
-            public SelectionKey keyFor(Selector sel) {
-                return fakeSelectionKey;
-            }
-        }, localAddr, serverSocketPort, pipeline);
-        neighbor.send(createEmptyTxPacket());
-
-        Mockito.verify(selector).wakeup();
-        assertEquals("should be interested in read and write readiness", SelectionKey.OP_READ | SelectionKey.OP_WRITE,
-                fakeSelectionKey.interestOps());
-    }
-
-    @Test
     public void markingTheNeighborForDisconnectWillNeverMakeItReadyForMessagesAgain() {
         Neighbor neighbor = new NeighborImpl<>(selector, null, localAddr, serverSocketPort, pipeline);
         neighbor.setState(NeighborState.MARKED_FOR_DISCONNECT);

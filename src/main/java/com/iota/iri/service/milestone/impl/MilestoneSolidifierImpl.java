@@ -5,6 +5,7 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.MilestoneRepairer;
@@ -231,15 +232,21 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         try {
             if (getLatestMilestoneIndex() > getLatestSolidMilestoneIndex()) {
                 int nextMilestone = getLatestSolidMilestoneIndex() + 1;
+                boolean isSyncing = false;
                 if (seenMilestones.containsKey(nextMilestone)) {
                     TransactionViewModel milestone = TransactionViewModel.fromHash(tangle,
                             seenMilestones.get(nextMilestone));
                     if (milestone.isSolid()) {
+                        isSyncing = true;
                         updateSolidMilestone(getLatestSolidMilestoneIndex());
                         transactionSolidifier.addToPropagationQueue(milestone.getHash());
                     } else {
                         transactionSolidifier.addToSolidificationQueue(milestone.getHash());
                     }
+                }
+
+                if (!seenMilestones.isEmpty() && !isSyncing) {
+                    checkOldestSeenMilestoneSolidity();
                 }
             }
         } catch (Exception e) {
@@ -281,6 +288,53 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         initialized.set(true);
     }
 
+    /**
+     * Checks the seen milestones queue for the lowest index available, and tries to solidify it. If it is already
+     * solid but not syncing, there are milestone objects in the db that have not been processed through the solidifier
+     * (likely due to shutting down during synchronisation). If this is the case, an address scan is performed to
+     * find and process all present milestone transactions through the milestone solidifier.
+     */
+    private void checkOldestSeenMilestoneSolidity() {
+        Optional<Integer> lowestIndex = seenMilestones.keySet().stream().min(Integer::compareTo);
+        if (lowestIndex.isPresent()) {
+            if (lowestIndex.get() <= getLatestSolidMilestoneIndex()) {
+                removeCurrentAndLowerSeenMilestone(lowestIndex.get());
+            } else {
+                if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex.get())) &&
+                        (seenMilestones.size() + unsolidMilestones.size()) <
+                                (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex())) {
+                    scanAddressHashes();
+                }
+            }
+        }
+    }
+
+    private void scanAddressHashes() {
+        try{
+            log.info("Scanning existing milestone candidates...");
+            TransactionViewModel milestoneCandidate;
+            int index;
+            int processed = 0;
+            for (Hash hash: AddressViewModel.load(tangle, config.getCoordinator()).getHashes()) {
+                processed++;
+                milestoneCandidate = TransactionViewModel.fromHash(tangle, hash);
+                index = milestoneService.getMilestoneIndex(milestoneCandidate);
+                if (!seenMilestones.containsValue(hash) &&
+                        milestoneCandidate.getCurrentIndex() == 0 &&
+                        index > getLatestSolidMilestoneIndex() &&
+                        milestoneService.validateMilestone(milestoneCandidate, index) == MilestoneValidity.VALID) {
+                    addMilestoneCandidate(hash, index);
+                }
+
+                if (processed % 5000 == 0) {
+                    log.info(processed + " Milestones Processed...");
+                }
+            }
+            log.info("Done scanning existing milestone candidates.");
+        } catch (Exception e) {
+            log.warn("Error scanning coo address hashes.", e);
+        }
+    }
 
 
     private void updateSolidMilestone(int currentSolidMilestoneIndex) throws Exception {

@@ -295,20 +295,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      * find and process all present milestone transactions through the milestone solidifier.
      */
     private void checkOldestSeenMilestoneSolidity() {
-        int lowestIndex = 0;
-        for (int index: seenMilestones.keySet()) {
-            if (lowestIndex == 0 || lowestIndex > index) {
-                lowestIndex = index;
-            }
-        }
-
-        if (lowestIndex <= getLatestSolidMilestoneIndex()) {
-            removeCurrentAndLowerSeenMilestone(lowestIndex);
-        } else {
-            if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex)) &&
-                    (seenMilestones.size() + unsolidMilestones.size()) <
-                            (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex())) {
-                scanAddressHashes();
+        Optional<Integer> lowestIndex = seenMilestones.keySet().stream().min(Integer::compareTo);
+        if (lowestIndex.isPresent()) {
+            if (lowestIndex.get() <= getLatestSolidMilestoneIndex()) {
+                removeCurrentAndLowerSeenMilestone(lowestIndex.get());
+            } else {
+                if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex.get())) &&
+                        (seenMilestones.size() + unsolidMilestones.size()) <
+                                (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex())) {
+                    scanAddressHashes();
+                }
             }
         }
     }

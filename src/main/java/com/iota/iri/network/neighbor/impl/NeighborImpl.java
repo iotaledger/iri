@@ -198,13 +198,6 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
 
     @Override
     public void send(ByteBuffer buf) {
-        // re-register write interest
-        SelectionKey key = channel.keyFor(selector);
-        if (key != null && key.isValid() && (key.interestOps() & SelectionKey.OP_WRITE) == 0) {
-            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-            selector.wakeup();
-        }
-
         if (!sendQueue.offer(buf)) {
             metrics.incrDroppedSendPacketsCount();
         }

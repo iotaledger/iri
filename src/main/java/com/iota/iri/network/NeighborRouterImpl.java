@@ -355,8 +355,7 @@ public class NeighborRouterImpl implements NeighborRouter {
     private boolean handleWrite(SocketChannel channel, SelectionKey key, String identity, Neighbor neighbor) {
         try {
             switch (neighbor.write()) {
-                case 0:
-                    break;
+                // something bad happened
                 case -1:
                     if (neighbor.getState() == NeighborState.HANDSHAKING) {
                         log.info("closing connection to {} as handshake packet couldn't be written", identity);
@@ -365,8 +364,14 @@ public class NeighborRouterImpl implements NeighborRouter {
                         closeNeighborConnection(channel, identity, selector);
                     }
                     return false;
+                // bytes were either written or not written to the channel
+                // we check whether we still have something else to send, if not we unregister write
                 default:
-                    // bytes were written to the channel
+                    synchronized (key) {
+                        if (!neighbor.hasDataToSendTo()) {
+                            key.interestOps(SelectionKey.OP_READ);
+                        }
+                    }
             }
             return true;
         } catch (IOException ex) {

@@ -59,9 +59,10 @@ public class SnapshotServiceImpl implements SnapshotService {
     private final IotaConfig config;
     
     /**
-     * Minimum depth for generating solid entrypoints due to coordinator allowing 15 MS back attachment
+     * Minimum depth for generating solid entrypoints due to coordinator allowing 15 MS back attachment.
+     * So we put it on 50 just to be sure
      */
-    private static final int MIN_LS_DEPTH_MAINNET = 15 + 1;
+    private static final int MIN_LS_DEPTH_MAINNET = 50;
 
     /**
      * Implements the snapshot service. See interface for more information.

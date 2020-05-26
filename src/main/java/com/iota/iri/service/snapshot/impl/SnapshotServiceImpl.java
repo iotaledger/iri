@@ -88,7 +88,6 @@ public class SnapshotServiceImpl implements SnapshotService {
     @Override
     public void replayMilestones(Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
         Map<Hash, Long> balanceChanges = new HashMap<>();
-        Set<Integer> skippedMilestones = new HashSet<>();
         MilestoneViewModel lastAppliedMilestone = null;
 
         try {
@@ -106,7 +105,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
                     lastAppliedMilestone = currentMilestone;
                 } else {
-                    skippedMilestones.add(currentMilestoneIndex);
+                    throw new SnapshotException("milestone # " + currentMilestoneIndex  + " is missing");
                 }
             }
 
@@ -125,9 +124,6 @@ public class SnapshotServiceImpl implements SnapshotService {
                         snapshot.setTimestamp(milestoneTransaction.getTimestamp());
                     }
 
-                    for (int skippedMilestoneIndex : skippedMilestones) {
-                        snapshot.addSkippedMilestone(skippedMilestoneIndex);
-                    }
                 } finally {
                     snapshot.unlockWrite();
                 }

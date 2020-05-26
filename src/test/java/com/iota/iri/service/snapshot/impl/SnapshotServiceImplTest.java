@@ -188,6 +188,7 @@ public class SnapshotServiceImplTest {
     //region [TEST: rollbackMilestones] ////////////////////////////////////////////////////////////////////////////////
 
     @Test
+    @Ignore
     public void rollbackMilestonesSingle() throws Exception {
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
 

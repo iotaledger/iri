@@ -18,6 +18,13 @@ public interface DbConfig extends Config {
      * @return {@value DbConfig.Descriptions#DB_LOG_PATH}
      */
     String getDbLogPath();
+    
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#DB_CONFIG_FILE}
+     *
+     * @return {@value DbConfig.Descriptions#DB_CONFIG_FILE}
+     */
+    String getDbConfigFile();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#DB_CACHE_SIZE}
@@ -56,5 +63,6 @@ public interface DbConfig extends Config {
         String REVALIDATE = "Reload from the db data about confirmed transaction (milestones), state of the ledger, " +
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
+        String DB_CONFIG_FILE = "The location of the RocksDB configuration file";
     }
 }

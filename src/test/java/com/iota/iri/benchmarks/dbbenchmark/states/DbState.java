@@ -1,5 +1,15 @@
 package com.iota.iri.benchmarks.dbbenchmark.states;
 
+import java.io.File;
+import java.util.*;
+
+import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
+import org.apache.commons.io.FileUtils;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
@@ -10,24 +20,18 @@ import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import org.apache.commons.io.FileUtils;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 @State(Scope.Benchmark)
 public abstract class DbState {
     private final File dbFolder = new File("db-bench");
     private final File logFolder = new File("db-log-bench");
+    private final File lsFolder = new File("localsnapshots-db-bench");
+    private final File lsLogFolder = new File("localsnapshots-db-log-bench");
 
     private Tangle tangle;
     private SnapshotProvider snapshotProvider;
     private List<TransactionViewModel> transactions;
+
 
     @Param({"10", "100", "500", "1000", "3000"})
     private int numTxsToTest;
@@ -42,11 +46,24 @@ public abstract class DbState {
         }
         logFolder.mkdirs();
         PersistenceProvider dbProvider = new RocksDBPersistenceProvider(
-                dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(),  BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
+                dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(), null, BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         dbProvider.init();
+
+        PersistenceProvider lsDbProvider = new RocksDBPersistenceProvider(
+                lsFolder.getAbsolutePath(), lsLogFolder.getAbsolutePath(), null, BaseIotaConfig.Defaults.DB_CACHE_SIZE, LocalSnapshotsPersistenceProvider.COLUMN_FAMILIES, null);
+        lsDbProvider.init();
+
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        IotaConfig config = new MainnetConfig();
+        lsFolder.mkdirs();
+        lsLogFolder.mkdirs();
+
+
+        LocalSnapshotsPersistenceProvider localSnapshotDb = new LocalSnapshotsPersistenceProvider(lsDbProvider);
+        localSnapshotDb.init();
+        snapshotProvider = new SnapshotProviderImpl(config, localSnapshotDb);
         snapshotProvider.init();
+
         tangle.addPersistenceProvider(dbProvider);
         String trytes = "";
         System.out.println("numTxsToTest = [" + numTxsToTest + "]");

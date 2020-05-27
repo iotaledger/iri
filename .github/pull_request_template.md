@@ -1,40 +1,27 @@
-<!---
-Hints for a successful PR:
-1. It is recommended that before you submit a PR to IOTA, to open an issue first and assign yourself.
-This way you may get inputs and discover parallel PRs to the one you want to submit.
-2. In case of a big PR, consider breaking it up into smaller PRs. This will help to get it merged in an incremental process.
-3. Note that a PR should have a *single* area of responsibility. If your PR does more than one thing than it should be split into several PRs!!!!!
-4. It will be helpful if you make additional comments on the code via GitHub PR review to explain the choices you made
--->
+# Description of change
 
-# Description
-
-_Please include a summary of the change. Include the motivation for the change._
-
-Fixes # (issue)
+Please write a summary of your changes and why you made them. Be sure to reference any related issues by adding `fixes # (issue)`.
 
 ## Type of change
 
-_Please delete options that are not relevant._
+Choose a type of change, and delete any options that are not relevant.
 
 - Bug fix (a non-breaking change which fixes an issue)
 - Enhancement (a non-breaking change which adds functionality)
 - Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - Documentation Fix
 
-# How Has This Been Tested?
+## How the change has been tested
 
-_Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration_
+Describe the tests that you ran to verify your changes.
 
-- Test A
-- Test B
+Make sure to provide instructions for the maintainer as well as any relevant configurations.
 
+## Change checklist
 
-# Checklist:
+Add an `x` to the boxes that are relevant to your changes, and delete any items that are not.
 
-_Please delete items that are not relevant._
-
-- [ ] My code follows the style guidelines for this project
+- [ ] My code follows the contribution guidelines for this project
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation

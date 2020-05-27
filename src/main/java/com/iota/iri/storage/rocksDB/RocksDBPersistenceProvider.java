@@ -1,5 +1,7 @@
 package com.iota.iri.storage.rocksDB;
 
+import com.iota.iri.conf.BaseIotaConfig;
+import com.iota.iri.conf.TestnetConfig;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -8,6 +10,9 @@ import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.Pair;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -19,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -28,17 +34,22 @@ import org.rocksdb.BackupEngine;
 import org.rocksdb.BackupableDBOptions;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
+import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
+import org.rocksdb.LRUCache;
 import org.rocksdb.MergeOperator;
+import org.rocksdb.OptionsUtil;
+import org.rocksdb.Priority;
 import org.rocksdb.RestoreOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksEnv;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.SstFileManager;
 import org.rocksdb.StringAppendOperator;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
@@ -58,6 +69,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private final String dbPath;
     private final String logPath;
+    private String configPath;
+    
     private final int cacheSize;
     private final Map<String, Class<? extends Persistable>> columnFamilies;
     private final Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily;
@@ -70,8 +83,37 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private DBOptions options;
     private BloomFilter bloomFilter;
     private boolean available;
-
+    
+    private SstFileManager sstFileManager;
+    private Cache cache, compressedCache;
+    private ColumnFamilyOptions columnFamilyOptions;
+    
+    /**
+     * Creates a new RocksDB provider without reading from a configuration file
+     * 
+     * @param dbPath The location where the database will be stored
+     * @param logPath The location where the log files will be stored
+     * @param cacheSize the size of the cache used by the database implementation
+     * @param columnFamilies A map of the names related to their Persistable class
+     * @param metadataColumnFamily Map of metadata used by the Persistable class, can be <code>null</code>
+     */
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
+            Map<String, Class<? extends Persistable>> columnFamilies,
+            Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
+        this(dbPath, logPath, null, cacheSize, columnFamilies, metadataColumnFamily);
+    }
+    
+    /**
+     * Creates a new RocksDB provider by reading the configuration to be used in this instance from a file
+     * 
+     * @param dbPath The location where the database will be stored
+     * @param logPath The location where the log files will be stored
+     * @param configPath The location where the RocksDB config is read from
+     * @param cacheSize the size of the cache used by the database implementation
+     * @param columnFamilies A map of the names related to their Persistable class
+     * @param metadataColumnFamily Map of metadata used by the Persistable class, can be <code>null</code>
+     */
+    public RocksDBPersistenceProvider(String dbPath, String logPath, String configPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
                                       Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
         this.dbPath = dbPath;
@@ -79,13 +121,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         this.cacheSize = cacheSize;
         this.columnFamilies = columnFamilies;
         this.metadataColumnFamily = metadataColumnFamily;
+        this.configPath = configPath;
 
     }
 
     @Override
     public void init() throws Exception {
         log.info("Initializing Database on " + dbPath);
-        initDB(dbPath, logPath, columnFamilies);
+        initDB(dbPath, logPath, configPath, columnFamilies);
         available = true;
         log.info("RocksDB persistence provider initialized.");
     }
@@ -101,7 +144,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
             IotaIOUtils.closeQuietly(columnFamilyHandle);
         }
-        IotaIOUtils.closeQuietly(db, options, bloomFilter);
+        IotaIOUtils.closeQuietly(db, options, bloomFilter, cache, compressedCache, columnFamilyOptions);
     }
 
     @Override
@@ -320,7 +363,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models)
             throws Exception {
         if (CollectionUtils.isNotEmpty(models)) {
-            try (WriteBatch writeBatch = new WriteBatch()) {
+            try (WriteBatch writeBatch = new WriteBatch(); 
+                    WriteOptions writeOptions = new WriteOptions()
+                            //We are explicit about what happens if the node reboots before a flush to the db
+                            .setDisableWAL(false)
+                            //We want to make sure deleted data was indeed deleted
+                            .setSync(true)) {
+                
                 for (Pair<Indexable, ? extends Class<? extends Persistable>> entry : models) {
                     Indexable indexable = entry.low;
                     byte[] keyBytes = indexable.bytes();
@@ -332,11 +381,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     }
                 }
 
-                WriteOptions writeOptions = new WriteOptions()
-                        //We are explicit about what happens if the node reboots before a flush to the db
-                        .setDisableWAL(false)
-                        //We want to make sure deleted data was indeed deleted
-                        .setSync(true);
                 db.write(writeOptions, writeBatch);
             }
         }
@@ -420,10 +464,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 backupEngine.restoreDbFromLatestBackup(path, logPath, restoreOptions);
             }
         }
-        initDB(path, logPath, columnFamilies);
+        initDB(path, logPath, configPath, columnFamilies);
     }
 
-    private void initDB(String path, String logPath, Map<String, Class<? extends Persistable>> columnFamilies) throws Exception {
+    // options is closed in shutdown
+    @SuppressWarnings("resource")
+    private void initDB(String path, String logPath, String configFile, Map<String, Class<? extends Persistable>> columnFamilies) throws Exception {
         try {
             try {
                 RocksDB.loadLibrary();
@@ -436,52 +482,55 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 throw e;
             }
 
-            File pathToLogDir = Paths.get(logPath).toFile();
-            if (!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
-                boolean success = pathToLogDir.mkdir();
-                if (!success) {
-                    log.warn("Unable to make directory: {}", pathToLogDir);
-                }
-            }
+            
+            sstFileManager = new SstFileManager(Env.getDefault());
 
-            int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
-            RocksEnv.getDefault()
-                .setBackgroundThreads(numThreads, RocksEnv.FLUSH_POOL)
-                .setBackgroundThreads(numThreads, RocksEnv.COMPACTION_POOL);
-
-            options = new DBOptions()
-                .setCreateIfMissing(true)
-                .setCreateMissingColumnFamilies(true)
-                .setDbLogDir(logPath)
-                .setMaxLogFileSize(SizeUnit.MB)
-                .setMaxManifestFileSize(SizeUnit.MB)
-                .setMaxOpenFiles(10000)
-                .setMaxBackgroundCompactions(1);
-
-            options.setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
+            List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
+            // Pass columnFamilyDescriptors so that they are loaded from options file, we check modifications later
+            options = createOptions(logPath, configFile, columnFamilyDescriptors);
 
             bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
-
-            BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
-            blockBasedTableConfig
-                .setFilter(bloomFilter)
-                .setCacheNumShardBits(2)
+            cache = new LRUCache(cacheSize * SizeUnit.KB, 2);
+            compressedCache = new LRUCache(32 * SizeUnit.KB, 10);
+            
+            BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig()
+                .setFilterPolicy(bloomFilter)
                 .setBlockSizeDeviation(10)
                 .setBlockRestartInterval(16)
-                .setBlockCacheSize(cacheSize * SizeUnit.KB)
-                .setBlockCacheCompressedNumShardBits(10)
-                .setBlockCacheCompressedSize(32 * SizeUnit.KB);
-
-            options.setAllowConcurrentMemtableWrite(true);
+                .setBlockCache(cache)
+                .setBlockCacheCompressed(compressedCache);
 
             MergeOperator mergeOperator = new StringAppendOperator();
-            ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()
+            
+            columnFamilyOptions = new ColumnFamilyOptions()
                 .setMergeOperator(mergeOperator)
                 .setTableFormatConfig(blockBasedTableConfig)
                 .setMaxWriteBufferNumber(2)
                 .setWriteBufferSize(2 * SizeUnit.MB);
+            
+            
+            // Column families could get loaded from the config
+            loadColumnFamilyDescriptors(columnFamilyDescriptors);
+            
+            db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
+            db.enableFileDeletions(true);
 
-            List<ColumnFamilyDescriptor> columnFamilyDescriptors = new ArrayList<>();
+            initClassTreeMap(columnFamilyDescriptors);
+
+        } catch (Exception e) {
+            IotaIOUtils.closeQuietly(db, options, bloomFilter, columnFamilyOptions, cache, compressedCache);
+            throw e;
+        }
+    }
+    
+    /**
+     * Checks if we have correct column families
+     * Currently does not use the columnFamilyDescriptors parameter, and just cleans the list.
+     * @param columnFamilyDescriptors The descriptors we had in described in the config
+     */
+    private void loadColumnFamilyDescriptors(List<ColumnFamilyDescriptor> columnFamilyDescriptors) {
+        columnFamilyDescriptors.clear();
+        if (columnFamilyDescriptors.isEmpty()) {
             //Add default column family. Main motivation is to not change legacy code
             columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, columnFamilyOptions));
             for (String name : columnFamilies.keySet()) {
@@ -493,16 +542,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                         new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
                 metadataReference = new HashMap<>();
             }
-
-
-            db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
-            db.enableFileDeletions(true);
-
-            initClassTreeMap(columnFamilyDescriptors);
-
-        } catch (Exception e) {
-            IotaIOUtils.closeQuietly(db);
-            throw e;
         }
     }
 
@@ -513,7 +552,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         int i = 1;
         for (; i < columnFamilyDescriptors.size(); i++) {
 
-            String name = new String(columnFamilyDescriptors.get(i).columnFamilyName());
+            String name = new String(columnFamilyDescriptors.get(i).getName());
             if (name.equals(mcfName)) {
                 Map<Class<?>, ColumnFamilyHandle> metadataRef = new HashMap<>();
                 metadataRef.put(metadataColumnFamily.getValue(), columnFamilyHandles.get(i));
@@ -530,4 +569,84 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classTreeMap = MapUtils.unmodifiableMap(classMap);
     }
 
+    private DBOptions createOptions(String logPath, String configFile, List<ColumnFamilyDescriptor> columnFamilyDescriptors) throws IOException {
+        DBOptions options = null;
+        File pathToLogDir = Paths.get(logPath).toFile();
+        if (!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
+            boolean success = pathToLogDir.mkdir();
+            if (!success) {
+                log.warn("Unable to make directory: {}", pathToLogDir);
+            }
+        }
+
+        int numThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+        RocksEnv.getDefault()
+            .setBackgroundThreads(numThreads, Priority.HIGH)
+            .setBackgroundThreads(numThreads, Priority.LOW);
+
+        if (configFile != null) {
+            File config = Paths.get(configFile).toFile();
+            if (config.exists() && config.isFile() && config.canRead()) {
+                try (InputStream stream = new FileInputStream(config)){
+                    // Map will contain DBOptions, TableOptions/BlockBasedTable, CFOptions
+                    // Currently we only use DBOptions
+                    Map<String, Properties> map = IotaIOUtils.parseINI(stream);
+                    if (map.containsKey("DBOptions")) {
+                        options = DBOptions.getDBOptionsFromProps(map.get("DBOptions"));
+                    } else if (map.containsKey("default")) {
+                        options = DBOptions.getDBOptionsFromProps(map.get("default"));
+                    }
+                    
+                    if (map.containsKey("CFOptions")) {
+
+                        ColumnFamilyOptions.getColumnFamilyOptionsFromProps((map.get("CFOptions")));
+                    }
+                    
+                    if (options == null) {
+                        log.warn("Options failed to parse, check the OPTIONS-00X in the db folder");
+                    }
+                } catch (IllegalArgumentException e) {
+                    log.warn("Options failed to parse, check the OPTIONS-00X in the db folder", e);
+                }
+            }
+        }
+        
+        if (options == null) {
+            options = new DBOptions();
+            try {
+                //Load previous settings
+                OptionsUtil.loadLatestOptions(dbPath, RocksEnv.getDefault(), options, columnFamilyDescriptors , true);
+            } catch (RocksDBException e) {
+                // We never started before
+                options.setCreateIfMissing(true)
+                    .setCreateMissingColumnFamilies(true)
+                    .setMaxLogFileSize(SizeUnit.MB)
+                    .setMaxManifestFileSize(SizeUnit.MB)
+                    .setMaxOpenFiles(10000)
+                    .setMaxBackgroundCompactions(1)
+                    .setAllowConcurrentMemtableWrite(true)
+                    .setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
+            }  
+        }
+
+        //Defaults we always need to set
+        options.setSstFileManager(sstFileManager);
+        
+        if (!(BaseIotaConfig.Defaults.DB_LOG_PATH.equals(logPath) || TestnetConfig.Defaults.DB_LOG_PATH.equals(logPath))
+                && logPath != null) {
+            
+            if (!options.dbLogDir().equals("")) {
+                log.warn("Defined a db log path in config and commandline; Using the command line setting."); 
+            }
+            
+            options.setDbLogDir(logPath);
+        }
+
+        return options;
+    }
+    
+    @Override
+    public long getPersistenceSize() {
+        return sstFileManager.getTotalSize();
+    }
 }

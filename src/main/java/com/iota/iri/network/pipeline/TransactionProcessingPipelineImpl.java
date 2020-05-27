@@ -1,6 +1,5 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.crypto.batched.BatchedHasher;
@@ -10,23 +9,28 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.NeighborRouter;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.TransactionCacheDigester;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.InSyncService;
+import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
-
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import com.iota.iri.utils.IotaUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The {@link TransactionProcessingPipelineImpl} processes transactions which either came from {@link Neighbor} instances or
@@ -52,7 +56,13 @@ import org.slf4j.LoggerFactory;
 public class TransactionProcessingPipelineImpl implements TransactionProcessingPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionProcessingPipelineImpl.class);
-    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(6);
+    private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+
+    /**
+     * List of stages that will be ignored when determining thread count
+     */
+    private static final List IGNORED_STAGES = IotaUtils.createImmutableList(Stage.MULTIPLE, Stage.ABORT, Stage.FINISH);
+    private static final int NUMBER_OF_THREADS = Stage.values().length - IGNORED_STAGES.size();
 
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;
@@ -62,12 +72,16 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     private BroadcastStage broadcastStage;
     private BatchedHasher batchedHasher;
     private HashingStage hashingStage;
+    private SolidifyStage solidifyStage;
+    private MilestoneStage milestoneStage;
 
-    private BlockingQueue<ProcessingContext> preProcessStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> validationStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> receivedStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> broadcastStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext> replyStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<ProcessingContext> milestoneStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> preProcessStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> validationStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> receivedStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> replyStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> broadcastStageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<ProcessingContext> solidifyStageQueue = new LinkedBlockingQueue<>();
 
     /**
      * Creates a {@link TransactionProcessingPipeline}.
@@ -78,22 +92,25 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
      * @param tangle                 The {@link Tangle} database to use to store and load transactions.
      * @param snapshotProvider       The {@link SnapshotProvider} to use to store transactions with.
      * @param tipsViewModel          The {@link TipsViewModel} to load tips from in the reply stage
-     * @param latestMilestoneTracker The {@link LatestMilestoneTracker} to load the latest milestone hash from in the
-     *                               reply stage
+     * @param inSyncService          The {@link InSyncService} to check if we are in sync
      */
     public TransactionProcessingPipelineImpl(NeighborRouter neighborRouter, NodeConfig config,
             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
-            TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker,
-            TransactionRequester transactionRequester) {
+            TipsViewModel tipsViewModel, MilestoneSolidifier milestoneSolidifier,
+            TransactionRequester transactionRequester, TransactionSolidifier txSolidifier,
+            MilestoneService milestoneService, InSyncService inSyncService) {
         FIFOCache<Long, Hash> recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
-        this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
+        this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, milestoneSolidifier,
                 snapshotProvider, recentlySeenBytesCache);
-        this.broadcastStage = new BroadcastStage(neighborRouter);
+        this.broadcastStage = new BroadcastStage(neighborRouter, txSolidifier, inSyncService);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
-        this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider, transactionRequester);
+        this.receivedStage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester,
+                milestoneService, config.getCoordinator());
         this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
+        this.solidifyStage = new SolidifyStage(txSolidifier, tipsViewModel, tangle);
+        this.milestoneStage = new MilestoneStage(milestoneSolidifier, snapshotProvider, txSolidifier);
     }
 
     @Override
@@ -104,6 +121,8 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
         addStage("reply", replyStageQueue, replyStage);
         addStage("received", receivedStageQueue, receivedStage);
         addStage("broadcast", broadcastStageQueue, broadcastStage);
+        addStage("solidify", solidifyStageQueue, solidifyStage);
+        addStage("milestone", milestoneStageQueue, milestoneStage);
     }
 
     /**
@@ -119,6 +138,7 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
             try {
                 while (!Thread.currentThread().isInterrupted()) {
                     ProcessingContext ctx = stage.process(queue.take());
+
                     switch (ctx.getNextStage()) {
                         case REPLY:
                             replyStageQueue.put(ctx);
@@ -136,6 +156,12 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
                             break;
                         case BROADCAST:
                             broadcastStageQueue.put(ctx);
+                            break;
+                        case SOLIDIFY:
+                            solidifyStageQueue.put(ctx);
+                            break;
+                        case MILESTONE:
+                            milestoneStageQueue.put(ctx);
                             break;
                         case ABORT:
                             break;
@@ -247,5 +273,15 @@ public class TransactionProcessingPipelineImpl implements TransactionProcessingP
     @Override
     public void setHashingStage(HashingStage hashingStage) {
         this.hashingStage = hashingStage;
+    }
+
+    @Override
+    public void setSolidifyStage(SolidifyStage solidifyStage){
+        this.solidifyStage = solidifyStage;
+    }
+
+    @Override
+    public void setMilestoneStage(MilestoneStage milestoneStage){
+        this.milestoneStage = milestoneStage;
     }
 }

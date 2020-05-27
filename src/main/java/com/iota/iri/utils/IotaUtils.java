@@ -1,11 +1,5 @@
 package com.iota.iri.utils;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.iota.iri.IRI;
 import com.iota.iri.model.Hash;
 
@@ -21,8 +15,22 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class IotaUtils {
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+public class IotaUtils {
+    
+    private final static long MB_FACTOR = 1000 * 1000;
+    private final static long MIB_FACTOR = 1024 * 1024;
+    private final static long GB_FACTOR = 1000 * MB_FACTOR;
+    private final static long GIB_FACTOR = 1024 * MIB_FACTOR;
+    private final static long TB_FACTOR = 1000 * GB_FACTOR;
+    private final static long TIB_FACTOR = 1024 * GIB_FACTOR;
+    
     private static final Logger log = LoggerFactory.getLogger(IotaUtils.class);
 
     /**
@@ -100,5 +108,62 @@ public class IotaUtils {
 	public static ExecutorService createNamedSingleThreadExecutor(String name) {
         return Executors.newSingleThreadExecutor(r -> new Thread(r, name));
 
+    }
+	
+	/**
+     * Parses a human readable string for a file size (tb, gb, mb -> file modifier)
+     * Follows the following format: [double][optional space][case insensitive file modifier]
+     * 
+     * Kb is not parsed as this is too small for us to be used in a persistence provider
+     * 
+     * @return The size of the human readable string in bytes, rounded down.
+     */
+    public static long parseFileSize(String humanReadableSize) {
+        humanReadableSize = humanReadableSize.replaceAll(",", "").toLowerCase();
+        int spaceNdx = humanReadableSize.indexOf(" ");
+        double amount;
+        //If we forgot a space,check until we find it
+        if (spaceNdx == -1) {
+            spaceNdx = 0;
+            while (spaceNdx < humanReadableSize.length() && 
+                    (Character.isDigit(humanReadableSize.charAt(spaceNdx)) || humanReadableSize.charAt(spaceNdx) == '.' )) {
+                spaceNdx++;
+            }
+
+            // Still nothing? started with a character
+            if (spaceNdx == 0) {
+                return -1;
+            }
+            amount = Double.parseDouble(humanReadableSize.substring(0, spaceNdx));
+        } else {
+            // ++ to skip the space
+            amount = Double.parseDouble(humanReadableSize.substring(0, spaceNdx++));
+        }
+
+        //Default to GB
+        String sub = amount == humanReadableSize.length() ? "gb" : humanReadableSize.substring(spaceNdx);
+        switch (sub) {
+            case "tb":
+                return (long) (amount * TB_FACTOR);
+            case "tib":
+                return (long) (amount * TIB_FACTOR);
+            case "gb":
+                return (long) (amount * GB_FACTOR);
+            case "gib":
+                return (long) (amount * GIB_FACTOR);
+            case "mb":
+                return (long) (amount * MB_FACTOR);
+            case "mib":
+                return (long) (amount * MIB_FACTOR);
+            default: 
+                return -1;
+        }
+    }
+    
+    /**
+     * @see FileUtils#byteCountToDisplaySize(Long)
+     */
+    public static String bytesToReadableFilesize(long bytes) {
+        return FileUtils.byteCountToDisplaySize(bytes);
     }
 }

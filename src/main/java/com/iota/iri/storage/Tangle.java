@@ -49,7 +49,7 @@ public class Tangle {
     }
 
     /**
-     * 
+     *
      * @see PersistenceProvider#init()
      */
     public void init() throws Exception {
@@ -60,7 +60,7 @@ public class Tangle {
 
     /**
      * Adds {@link com.iota.iri.zmq.MessageQueueProvider} that should be notified.
-     * 
+     *
      * @param provider that should be notified.
      */
     public void addMessageQueueProvider(MessageQueueProvider provider) {
@@ -368,5 +368,16 @@ public class Tangle {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.clearMetadata(column);
         }
+    }
+
+    /**
+     * @see PersistenceProvider#getPersistenceSize()
+     */
+    public long getPersistanceSize() {
+        long size = 0;
+        for (PersistenceProvider provider : persistenceProviders) {
+            size += provider.getPersistenceSize();
+        }
+        return size;
     }
 }

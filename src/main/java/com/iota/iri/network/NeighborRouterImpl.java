@@ -15,7 +15,9 @@ import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.Converter;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.security.SecureRandom;
@@ -33,6 +35,7 @@ public class NeighborRouterImpl implements NeighborRouter {
 
     private static final Logger log = LoggerFactory.getLogger(NeighborRouterImpl.class);
     private static final String PROTOCOL_PREFIX = "tcp://";
+    private static final int MAX_PORT = 65535;
 
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -243,7 +246,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * Handles a new incoming connection and if it passes some initial conditions (via
      * {@link NeighborRouterImpl#okToConnect(String, SocketChannel)}), will start the handshaking process by placing a
      * handshake packet into the connection's send queue.
-     * 
+     *
      * @param key the selection key associated with the server socket channel
      * @return whether the new connection was accepted
      */
@@ -295,7 +298,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * <p>
      * In case the connection sequence fails, the connection will be dropped.
      * </p>
-     * 
+     *
      * @param channel  the associated channel for the given connection
      * @param key      the associated selection key associated with the given connection
      * @param identity the identity of the connection/neighbor
@@ -332,7 +335,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * <p>
      * Handles the write readiness by the given channel by writing a message into its send buffer.
      * </p>
-     * 
+     *
      * <p>
      * If there was no message to send, then the channel is de-registered from write interests. If the channel would not
      * be de-registered from write interests, the channel's write readiness would constantly fire this method even if
@@ -352,12 +355,7 @@ public class NeighborRouterImpl implements NeighborRouter {
     private boolean handleWrite(SocketChannel channel, SelectionKey key, String identity, Neighbor neighbor) {
         try {
             switch (neighbor.write()) {
-                case 0:
-                    // nothing was written, because no message was available to be sent.
-                    // lets unregister this channel from write interests until at least
-                    // one message is back available for sending.
-                    key.interestOps(SelectionKey.OP_READ);
-                    break;
+                // something bad happened
                 case -1:
                     if (neighbor.getState() == NeighborState.HANDSHAKING) {
                         log.info("closing connection to {} as handshake packet couldn't be written", identity);
@@ -366,8 +364,14 @@ public class NeighborRouterImpl implements NeighborRouter {
                         closeNeighborConnection(channel, identity, selector);
                     }
                     return false;
+                // bytes were either written or not written to the channel
+                // we check whether we still have something else to send, if not we unregister write
                 default:
-                    // bytes were written to the channel
+                    synchronized (key) {
+                        if (!neighbor.hasDataToSendTo()) {
+                            key.interestOps(SelectionKey.OP_READ);
+                        }
+                    }
             }
             return true;
         } catch (IOException ex) {
@@ -422,7 +426,7 @@ public class NeighborRouterImpl implements NeighborRouter {
 
     /**
      * Adjusts the given socket's configuration.
-     * 
+     *
      * @param socketChannel the socket to configure
      * @throws IOException throw during adjusting the socket's configuration
      */
@@ -437,7 +441,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * domain of the neighbor was known when the connection was established, it will be used to re-establish the
      * connection to the neighbor, otherwise the neighbor's current known IP address is used.<br/>
      * The neighbor is only added to the 'reconnect pool' if the neighbor was ready to send/process messages.
-     * 
+     *
      * @param neighbor the neighbor to attempt to reconnect to
      * @return whether the neighbor got added to the reconnect pool or not
      */
@@ -462,7 +466,7 @@ public class NeighborRouterImpl implements NeighborRouter {
     /**
      * Ensures that the neighbor is removed from the reconnect pool by using the neighbor's IP address and domain
      * identity.
-     * 
+     *
      * @param neighbor the neighbor to remove from the reconnect pool
      * @return whether the neighbor was removed from the reconnect pool or not
      */
@@ -493,7 +497,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * <li>the neighbor is already connected (checked by the identity)</li>
      * <li>the identity is not known (missing in {@link NeighborRouterImpl#allowedNeighbors})</li>
      * </ul>
-     * 
+     *
      * @param identity The identity of the neighbor
      * @param neighbor The {@link Neighbor} to finalize the handshaking with
      * @param channel  The associated {@link SocketChannel} of the {@link Neighbor}
@@ -635,7 +639,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * Initializes a new {@link SocketChannel} to the given neighbor. <br/>
      * The IP address of the neighbor is removed from the blacklist, added to the whitelist and registered as an allowed
      * neighbor by its identity.
-     * 
+     *
      * @param neighborURI The {@link URI} of the neighbor to connect to
      * @param addr        The {@link InetSocketAddress} extracted from the {@link URI}
      * @throws IOException if initializing the {@link SocketChannel} fails
@@ -684,7 +688,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * </ul>
      * The IP address is blacklisted to mute it from subsequent connection attempts. The blacklisting is removed if the
      * IP address is added through {@link NeighborRouter#addNeighbor(String)}.
-     * 
+     *
      * @param ipAddress       The IP address
      * @param newNeighborConn The {@link SocketChannel} to close if the connection is not allowed
      * @return true if allowed, false if not
@@ -719,7 +723,7 @@ public class NeighborRouterImpl implements NeighborRouter {
      * Closes the connection to the neighbor, re-registers the {@link ServerSocketChannel} for
      * {@link SelectionKey#OP_CONNECT} in case neighbor slots will be available again and finally removes the neighbor
      * from the connected neighbors map.
-     * 
+     *
      * @param channel  {@link SocketChannel} to close
      * @param identity The identity of the neighbor, null must be passed if the neighbor should not be marked as not
      *                 connected.
@@ -782,14 +786,18 @@ public class NeighborRouterImpl implements NeighborRouter {
         }
 
         // remove the neighbor from connection attempts
-        reconnectPool.remove(neighborURI);
+        boolean isSeen = reconnectPool.remove(neighborURI);
         URI rawURI = URI.create(String.format("%s%s:%d", PROTOCOL_PREFIX, inetAddr.getAddress().getHostAddress(),
                 neighborURI.getPort()));
         reconnectPool.remove(rawURI);
 
         String identity = String.format("%s:%d", inetAddr.getAddress().getHostAddress(), inetAddr.getPort());
         Neighbor neighbor = connectedNeighbors.get(identity);
+
         if (neighbor == null) {
+            if (isSeen) {
+                return NeighborMutOp.OK;
+            }
             return NeighborMutOp.UNKNOWN_NEIGHBOR;
         }
 
@@ -823,14 +831,24 @@ public class NeighborRouterImpl implements NeighborRouter {
     }
 
     /**
-     * Checks whether the given URI is valid. The URI is valid if it is not null and it uses TCP as the protocol.
-     * 
+     * Checks whether the given URI is valid. The URI is valid if
+     * - it is not null
+     * - it uses TCP as the protocol and
+     * - the port is in the range 0 and {@value MAX_PORT}
+     *
      * @param uri The URI to check
      * @return true if the URI is valid, false if not
      */
     private static boolean isURIValid(final URI uri) {
+        if (uri == null) {
+            return false;
+        }
         if (!uri.getScheme().equals("tcp")) {
             log.error("'{}' is not a valid URI schema, only TCP ({}) is supported", uri, PROTOCOL_PREFIX);
+            return false;
+        }
+        if (uri.getPort() < 0 || uri.getPort() > MAX_PORT) {
+            log.error("'{} is not in the valid port range of {} and {}", uri.getPort(), 0, MAX_PORT);
             return false;
         }
         return true;

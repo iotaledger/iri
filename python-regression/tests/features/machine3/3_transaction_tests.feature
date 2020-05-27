@@ -5,7 +5,7 @@ Feature: Test transaction confirmation
         A milestone will be issued that references these transactions, and this should
         confirm the transations.
 
-        Given "10" transactions are issued on "nodeA-m2" with:
+        Given "10" transactions are issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |address                |TEST_ADDRESS               |staticValue    |
         |value                  |0                          |int            |
@@ -17,17 +17,31 @@ Feature: Test transaction confirmation
         |transactions           |evaluate_and_send          |responseValue  |
 
         #Give the node 10 seconds to solidify the milestone
-        And we wait "10" second/seconds
+        And we wait "15" second/seconds
 
-        Then "getInclusionStates" is called on "nodeA-m2" with:
+        Then "getInclusionStates" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |transactions           |evaluate_and_send          |responseValue  |
         |tips                   |latestMilestone            |configValue    |
 
         And the response for "getInclusionStates" should return with:
         |keys                   |values                     |type           |
-        |states                 |True                       |bool           |
+        | states | True True True True True True True True True True | boolListMixed |
 
+
+        When a transaction is generated and attached on "nodeA-m3" with:
+            | keys    | values       | type        |
+            | address | TEST_ADDRESS | staticValue |
+            | value   | 0            | int         |
+
+        And "getInclusionStates" is called on "nodeA-m3" with:
+            | keys         | values             | type        |
+            | transactions | TEST_STORE_ADDRESS | staticList  |
+            | tips         | latestMilestone    | configValue |
+
+        Then the response for "getInclusionStates" should return with:
+            | keys   | values | type          |
+            | states | False  | boolListMixed |
 
 
     Scenario: Value Transactions are confirmed
@@ -35,7 +49,7 @@ Feature: Test transaction confirmation
         A milestone will be issued that references these transactions, and this should
         confirm the transations.
 
-        Given "10" transactions are issued on "nodeA-m2" with:
+        Given "10" transactions are issued on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |seed                   |THE_BANK                   |staticList     |
         |address                |TEST_ADDRESS               |staticValue    |
@@ -48,14 +62,28 @@ Feature: Test transaction confirmation
         |transactions           |evaluate_and_send          |responseValue  |
 
         #Give the node time to solidify the milestone
-        And we wait "10" second/seconds
+        And we wait "15" second/seconds
 
-        Then "getInclusionStates" is called on "nodeA-m2" with:
+        Then "getInclusionStates" is called on "nodeA-m3" with:
         |keys                   |values                     |type           |
         |transactions           |evaluate_and_send          |responseValue  |
         |tips                   |latestMilestone            |configValue    |
 
         And the response for "getInclusionStates" should return with:
         |keys                   |values                     |type           |
-        |states                 |True                       |bool           |
+        | states | True True True True True True True True True True | boolListMixed |
+
+        When a transaction is generated and attached on "nodeA-m3" with:
+            | keys    | values       | type        |
+            | address | TEST_ADDRESS | staticValue |
+            | value   | 0            | int         |
+
+        And "getInclusionStates" is called on "nodeA-m3" with:
+            | keys         | values             | type        |
+            | transactions | TEST_STORE_ADDRESS | staticList  |
+            | tips         | latestMilestone    | configValue |
+
+        Then the response for "getInclusionStates" should return with:
+            | keys   | values | type          |
+            | states | False  | boolListMixed |
 

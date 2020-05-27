@@ -1,23 +1,22 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
-import com.iota.iri.utils.IotaUtils;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.apache.commons.lang3.ArrayUtils;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
 
 /**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -63,6 +62,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //DB
     protected String dbPath = Defaults.DB_PATH;
     protected String dbLogPath = Defaults.DB_LOG_PATH;
+    protected String dbConfigFile = Defaults.DB_CONFIG_FILE;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
     protected String mainDb = Defaults.MAIN_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
@@ -101,10 +101,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsPruningDelay = Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY;
     protected int localSnapshotsIntervalSynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_SYNCED;
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
+    protected String localSnapshotsDbMaxSize = Defaults.LOCAL_SNAPSHOTS_DB_MAX_SIZE; //Human readable
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
-    protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
-    protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
-    protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
+    protected String localSnapshotsDbPath = Defaults.LOCAL_SNAPSHOTS_DB_PATH;
+    protected String localSnapshotsDbLogPath = Defaults.LOCAL_SNAPSHOTS_DB_LOG_PATH;
+
+    //Solidification
+    protected boolean printSyncProgressEnabled = Defaults.PRINT_SYNC_PROGRESS_ENABLED;
 
     public BaseIotaConfig() {
         //empty constructor
@@ -402,6 +405,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbLogPath(String dbLogPath) {
         this.dbLogPath = dbLogPath;
     }
+    
+    @Override
+    public String getDbConfigFile() {
+        return dbConfigFile;
+    }
+    
+    @JsonProperty
+    @Parameter(names = {"--db-config-file"}, description = DbConfig.Descriptions.DB_CONFIG_FILE)
+    protected void setDbConfigFile(String dbConfigFile) {
+        this.dbConfigFile = dbConfigFile;
+    }
 
     @Override
     public int getDbCacheSize() {
@@ -413,7 +427,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setDbCacheSize(int dbCacheSize) {
         this.dbCacheSize = dbCacheSize;
     }
-
+    
     @Override
     public String getMainDb() {
         return mainDb;
@@ -562,15 +576,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getLocalSnapshotsBasePath() {
-        return this.localSnapshotsBasePath;
+    public String getLocalSnapshotsDbMaxSize() {
+        return localSnapshotsDbMaxSize;
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-base-path"}, description =
-            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_BASE_PATH)
-    protected void setLocalSnapshotsBasePath(String localSnapshotsBasePath) {
-        this.localSnapshotsBasePath = localSnapshotsBasePath;
+    @Parameter(names = {"--local-snapshots-db-max-size"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_MAX_SIZE)
+    protected void setLocalSnapshotsDbMaxSize(String dbMaxSize) {
+        this.localSnapshotsDbMaxSize = dbMaxSize;
     }
 
     @Override
@@ -609,25 +622,25 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getSpentAddressesDbPath() {
-        return spentAddressesDbPath;
+    public String getLocalSnapshotsDbPath() {
+        return localSnapshotsDbPath;
     }
 
     @JsonProperty
-    @Parameter(names = {"--spent-addresses-db-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_PATH)
-    protected void setSpentAddressesDbPath(String spentAddressesDbPath) {
-        this.spentAddressesDbPath = spentAddressesDbPath;
+    @Parameter(names = {"--localsnapshots-db-path"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_PATH)
+    protected void setLocalSnapshotsDbPath(String localSnapshotsDbPath) {
+        this.localSnapshotsDbPath = localSnapshotsDbPath;
     }
 
     @Override
-    public String getSpentAddressesDbLogPath() {
-        return spentAddressesDbLogPath;
+    public String getLocalSnapshotsDbLogPath() {
+        return localSnapshotsDbLogPath;
     }
 
     @JsonProperty
-    @Parameter(names = {"--spent-addresses-db-log-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH)
-    protected void setSpentAddressesDbLogPath(String spentAddressesDbLogPath) {
-        this.spentAddressesDbLogPath = spentAddressesDbLogPath;
+    @Parameter(names = {"--localsnapshots-db-log-path"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DB_LOG_PATH)
+    protected void setLocalSnapshotsDbLogPath(String localSnapshotsDbLogPath) {
+        this.localSnapshotsDbLogPath = localSnapshotsDbLogPath;
     }
 
     /**
@@ -818,6 +831,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.powThreads = powThreads;
     }
 
+    @Override
+    public boolean isPrintSyncProgressEnabled() {
+        return printSyncProgressEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--print-sync-progress"}, description = SolidificationConfig.Descriptions.PRINT_SYNC_PROGRESS_ENABLED, arity = 1)
+    protected void setPrintSyncProgressEnabled(boolean printSyncProgressEnabled) {
+        this.printSyncProgressEnabled = printSyncProgressEnabled;
+    }
+
     /**
      * Represents the default values primarily used by the {@link BaseIotaConfig} field initialisation.
      */
@@ -850,6 +874,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //DB
         String DB_PATH = "mainnetdb";
         String DB_LOG_PATH = "mainnet.log";
+        String DB_CONFIG_FILE = "rocksdb-config.properties";
         int DB_CACHE_SIZE = 100_000;
         String MAIN_DB = "rocksdb";
         boolean REVALIDATE = false;
@@ -891,16 +916,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
         boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
 
+        String LOCAL_SNAPSHOTS_DB_MAX_SIZE = "-1";
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
         int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
         int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
         int LOCAL_SNAPSHOTS_DEPTH = 100;
         int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
-        String SPENT_ADDRESSES_DB_PATH = "spent-addresses-db";
-        String SPENT_ADDRESSES_DB_LOG_PATH = "spent-addresses-log";
+        String LOCAL_SNAPSHOTS_DB_PATH = "localsnapshots-db";
+        String LOCAL_SNAPSHOTS_DB_LOG_PATH = "localsnapshots-log";
 
-        String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIGNATURE_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_FILE =
@@ -909,6 +934,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         long SNAPSHOT_TIME = 1554904800;
         int MILESTONE_START_INDEX = 1050000;
         int BELOW_MAX_DEPTH_TRANSACTION_LIMIT = 20_000;
+
+        //Solidification
+        boolean PRINT_SYNC_PROGRESS_ENABLED = true;
 
     }
 }

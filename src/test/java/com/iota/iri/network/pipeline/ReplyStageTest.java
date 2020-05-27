@@ -10,7 +10,7 @@ import com.iota.iri.network.SampleTransaction;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import com.iota.iri.network.neighbor.impl.NeighborMetricsImpl;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
@@ -44,7 +44,7 @@ public class ReplyStageTest {
     private TipsViewModel tipsViewModel;
 
     @Mock
-    private LatestMilestoneTracker latestMilestoneTracker;
+    private MilestoneSolidifier milestoneSolidifier;
 
     @Mock
     private SnapshotProvider snapshotProvider;
@@ -74,13 +74,13 @@ public class ReplyStageTest {
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
         Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(snapshot);
         Mockito.when(snapshot.getIndex()).thenReturn(8);
-        Mockito.when(latestMilestoneTracker.getLatestMilestoneIndex()).thenReturn(10);
+        Mockito.when(milestoneSolidifier.getLatestMilestoneIndex()).thenReturn(10);
         Mockito.when(transactionRequester.numberOfTransactionsToRequest()).thenReturn(1);
         Mockito.when(tipsViewModel.getRandomSolidTipHash()).thenReturn(SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
         TangleMockUtils.mockTransaction(tangle, SampleTransaction.CURL_HASH_OF_SAMPLE_TX,
                 SampleTransaction.SAMPLE_TRANSACTION);
 
-        ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
+        ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, milestoneSolidifier,
                 snapshotProvider, recentlySeenBytesCache, random);
         ReplyPayload replyPayload = new ReplyPayload(neighbor, Hash.NULL_HASH);
         ProcessingContext ctx = new ProcessingContext(replyPayload);
@@ -100,7 +100,7 @@ public class ReplyStageTest {
         TangleMockUtils.mockTransaction(tangle, SampleTransaction.CURL_HASH_OF_SAMPLE_TX,
                 SampleTransaction.SAMPLE_TRANSACTION);
 
-        ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, latestMilestoneTracker,
+        ReplyStage stage = new ReplyStage(neighborRouter, nodeConfig, tangle, tipsViewModel, milestoneSolidifier,
                 snapshotProvider, recentlySeenBytesCache, random);
         ReplyPayload replyPayload = new ReplyPayload(neighbor, SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
         ProcessingContext ctx = new ProcessingContext(replyPayload);

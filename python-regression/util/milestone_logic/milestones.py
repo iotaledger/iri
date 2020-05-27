@@ -1,11 +1,9 @@
-from iota import ProposedTransaction, ProposedBundle, Tag, Address
+from iota import ProposedTransaction, ProposedBundle, Tag, Address, Transaction
 from util import conversion as converter
+from util import logger as log
 from util.transaction_bundle_logic import bundle_logic
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+logger = log.getLogger(__name__)
 
 def issue_milestone(address, api, index, *reference_transaction):
     txn1 = ProposedTransaction(
@@ -38,3 +36,12 @@ def issue_milestone(address, api, index, *reference_transaction):
     api.broadcast_and_store(milestone['trytes'])
 
     return milestone
+
+
+def update_latest_milestone(config, node, milestone):
+    if 'latestMilestone' not in config:
+        config['latestMilestone'] = {}
+
+    milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
+    milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
+    config['latestMilestone'][node] = [milestone_hash, milestone_hash2]

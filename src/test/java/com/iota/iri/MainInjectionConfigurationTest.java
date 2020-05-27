@@ -12,8 +12,6 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.API;
 import com.iota.iri.service.ledger.LedgerService;
-import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.milestone.SeenMilestonesRetriever;
@@ -23,6 +21,8 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
+import com.iota.iri.service.validation.TransactionValidator;
+import com.iota.iri.storage.LocalSnapshotsPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import org.junit.Test;
 
@@ -61,16 +61,6 @@ public class MainInjectionConfigurationTest {
     @Test
     public void provideLedgerService() {
         assertNotNull("instance creation did not work", testInjector().getInstance(LedgerService.class));
-    }
-
-    @Test
-    public void provideLatestMilestoneTracker() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(LatestMilestoneTracker.class));
-    }
-
-    @Test
-    public void provideLatestSolidMilestoneTracker() {
-        assertNotNull("instance creation did not work", testInjector().getInstance(LatestSolidMilestoneTracker.class));
     }
 
     @Test
@@ -135,6 +125,11 @@ public class MainInjectionConfigurationTest {
     @Test
     public void provideApi() {
         assertNotNull("instance creation did not work", testInjector().getInstance(API.class));
+    }
+
+    @Test
+    public void provideLocalSnapshotsPersistenceProvider(){
+        assertNotNull("instance creation did not work", testInjector().getInstance(LocalSnapshotsPersistenceProvider.class));
     }
 
     @Test

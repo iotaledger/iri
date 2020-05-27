@@ -8,6 +8,8 @@
 /mainnetdb
 /spent-addresses-db
 /spent-addresses-log
+/localsnapshots-db
+/localsnapshots-log
 /mainnet.log
 /*.iml
 .classpath
@@ -24,6 +26,7 @@ dependency-reduced-pom.xml
 .checkstyle
 db-bench/
 db-log-bench/
+.factorypath
 
 # Created by https://www.gitignore.io/api/osx,linux,windows
 

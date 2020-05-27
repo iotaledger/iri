@@ -14,7 +14,7 @@ Feature: Test API calls on Machine 1
 		#See tests/features/steps/api_test_steps.py for further details
 		#
 
-		Given "getNodeInfo" is called on "nodeA-m1" with:
+		Given "getNodeInfo" is called on "nodeA-m4" with:
 		|keys       |values				|type   	|
 
 		Then a response with the following is returned:
@@ -40,15 +40,16 @@ Feature: Test API calls on Machine 1
 		|tips						|
 		|transactionsToRequest				|
 		|coordinatorAddress				|
+		|dbSizeInBytes					|
 
 
 	Scenario: GetNeighbors is called
 
-	    Given "addNeighbors" is called on "nodeA-m1" with:
+	    Given "addNeighbors" is called on "nodeA-m4" with:
 		|keys       |values				|type           |
-		|uris       |nodeB-m1				|nodeAddress    |
+		|uris       |nodeB-m4				|nodeAddress    |
 
-		And "getNeighbors" is called on "nodeA-m1" with:
+		And "getNeighbors" is called on "nodeA-m4" with:
 		|keys       |values				|type   	|
 
 		Then a response with the following is returned:
@@ -66,11 +67,11 @@ Feature: Test API calls on Machine 1
 
 
 	Scenario: Add and Remove Neighbors
-		Adds nodeB-m1 as a neighbor to nodeA-m1, and then removes it.
+		Adds nodeB-m4 as a neighbor to nodeA-m4, and then removes it.
 
-		Given "addNeighbors" is called on "nodeA-m1" with:
+		Given "addNeighbors" is called on "nodeA-m4" with:
 		|keys       |values				|type           |
-		|uris       |nodeB-m1				|nodeAddress    |
+		|uris       |nodeB-m4				|nodeAddress    |
 
 		Then a response with the following is returned:
 		|keys						|
@@ -78,9 +79,9 @@ Feature: Test API calls on Machine 1
 		|duration					|
 
 
-		When "removeNeighbors" is called on "nodeA-m1" with:
+		When "removeNeighbors" is called on "nodeA-m4" with:
 		|keys       |values				|type           |
-		|uris       |nodeB-m1				|nodeAddress    |
+		|uris       |nodeB-m4				|nodeAddress    |
 
 
 		Then a response with the following is returned:
@@ -88,21 +89,9 @@ Feature: Test API calls on Machine 1
 		|duration					|
 		|removedNeighbors				|
 
-
-	Scenario: GetTips is called
-		Given "getTips" is called on "nodeA-m1" with:
-		|keys       |values				|type           |
-
-		Then a response with the following is returned:
-		|keys						|
-		|hashes						|
-		|duration					|
-
-
-
     #Values can be found in util/static_vals.py
 	Scenario: GetTrytes is called
-		Given "getTrytes" is called on "nodeA-m1" with:
+		Given "getTrytes" is called on "nodeA-m4" with:
 		|keys       |values             |type               |
 		|hashes     |TEST_HASH          |staticList         |
 
@@ -113,7 +102,7 @@ Feature: Test API calls on Machine 1
 
 
 	Scenario: GetTransactionsToApprove is called
-		Given "getTransactionsToApprove" is called on "nodeA-m1" with:
+		Given "getTransactionsToApprove" is called on "nodeA-m4" with:
 		|keys       |values				|type           |
 		|depth      |3					|int            |
 
@@ -125,7 +114,7 @@ Feature: Test API calls on Machine 1
 
 
 	Scenario: CheckConsistency is called
-		Given "checkConsistency" is called on "nodeA-m1" with:
+		Given "checkConsistency" is called on "nodeA-m4" with:
 		|keys           |values				|type           |
 		|tails          |TEST_HASH			|staticList     |
 
@@ -133,9 +122,9 @@ Feature: Test API calls on Machine 1
 		|keys           |values         |type           |
 		|state		|True           |bool           |
 
-		When an inconsistent transaction is generated on "nodeA-m1"
+		When an inconsistent transaction is generated on "nodeA-m4"
 
-		And "checkConsistency" is called on "nodeA-m1" with:
+		And "checkConsistency" is called on "nodeA-m4" with:
 		|keys           |values				|type           |
 		|tails          |inconsistentTransactions       |responseList   |
 
@@ -147,22 +136,32 @@ Feature: Test API calls on Machine 1
 
 	#Values can be found in util/static_vals.py
 	Scenario: GetInclusionStates is called
-		Given "getInclusionStates" is called on "nodeA-m1" with:
+		Given "getInclusionStates" is called on "nodeA-m4" with:
 		|keys           |values				|type               |
 		|transactions   |TEST_HASH			|staticList         |
 		|tips           |TEST_TIP_LIST			|staticValue        |
 
 		Then the response for "getInclusionStates" should return with:
 		|keys			|values			|type               |
-		|states			|False		        |bool               |
+		| states | True   | boolListMixed |
+
+	#Values can be found in util/static_vals.py
+    Scenario: GetInclusionStates is called with transaction list
+	Given "getInclusionStates" is called on "nodeA-m4" with:
+	    | keys         | values         | type        |
+	    | transactions | TEST_HASH_LIST | staticValue |
+	    | tips         | TEST_TIP_LIST  | staticValue |
+
+	Then the response for "getInclusionStates" should return with:
+	    | keys   | values        | type        |
+	    | states | True True False | boolListMixed |
 
 	
 	#Address can be found in util/static_vals.py
 	Scenario: GetBalances is called
-		Given "getBalances" is called on "nodeA-m1" with:
+		Given "getBalances" is called on "nodeA-m4" with:
 		|keys           |values			        |type               |
 		|addresses      |TEST_EMPTY_ADDRESS	        |staticList         |
-		|threshold      |100			        |int                |
 
 		Then the response for "getBalances" should return with:
 		|keys           |values                         |type		    |
@@ -173,7 +172,7 @@ Feature: Test API calls on Machine 1
 	    Begins attaching a transaction to the tangle with a high MWM, then issues an interrupt to the node
 	    If the interrupt is successful, the attachToTangle response will return a null tryte list
 
-		Given "attachToTangle" is called in parallel on "nodeA-m1" with:
+		Given "attachToTangle" is called in parallel on "nodeA-m4" with:
 		|keys                   |values			|type           |
 		|trytes                 |EMPTY_TRANSACTION_TRYTES|staticList     |
 		|trunk_transaction      |TEST_HASH		|staticValue    |
@@ -181,7 +180,7 @@ Feature: Test API calls on Machine 1
 		|min_weight_magnitude   |50			|int            |
 
 		And we wait "1" second/seconds
-		Then "interruptAttachingToTangle" is called in parallel on "nodeA-m1" with:
+		Then "interruptAttachingToTangle" is called in parallel on "nodeA-m4" with:
 		|keys                   |values				|type           |
 
         # Do not include duration in the return expectations as it will always return a variable amount
@@ -192,7 +191,7 @@ Feature: Test API calls on Machine 1
 
 
 	Scenario: WereAddressesSpentFrom is called
-		Given "wereAddressesSpentFrom" is called on "nodeA-m1" with:
+		Given "wereAddressesSpentFrom" is called on "nodeA-m4" with:
 		|keys       |values				|type               |
 		|addresses  |TEST_EMPTY_ADDRESS			|staticList         |
 
@@ -207,7 +206,7 @@ Feature: Test API calls on Machine 1
 		Generate a transaction, attach it to the tangle, and store it locally. Then find
 		that transaction via its address.
 
-		Given a transaction is generated and attached on "nodeA-m1" with:
+		Given a transaction is generated and attached on "nodeA-m4" with:
 		|keys       |values				|type           |
 		|address    |TEST_STORE_ADDRESS			|staticValue    |
 		|value      |0					|int            |
@@ -216,11 +215,11 @@ Feature: Test API calls on Machine 1
 		|keys						|
 		|trytes						|
 
-		When "storeTransactions" is called on "nodeA-m1" with:
+		When "storeTransactions" is called on "nodeA-m4" with:
 		|keys       |values				|type           |
 		|trytes     |TEST_STORE_TRANSACTION		|staticValue    |
 
-		And "findTransactions" is called on "nodeA-m1" with:
+		And "findTransactions" is called on "nodeA-m4" with:
 		|keys       |values				|type           |
 		|addresses  |TEST_STORE_ADDRESS			|staticList     |
 
@@ -234,8 +233,8 @@ Feature: Test API calls on Machine 1
 		Send a test transaction from one node in a machine with a unique tag, and find that transaction
 		through a different node in the same machine
 		
-		Given "nodeA-m1" and "nodeB-m1" are neighbors
-		When a transaction is generated and attached on "nodeA-m1" with:
+		Given "nodeA-m4" and "nodeB-m4" are neighbors
+		When a transaction is generated and attached on "nodeA-m4" with:
 		|keys       |values				|type           |
 		|address    |TEST_ADDRESS			|staticValue    |
 		|tag        |TEST9TAG9ONE			|string         |
@@ -244,7 +243,7 @@ Feature: Test API calls on Machine 1
         #Give the transaction time to propagate
 		And we wait "3" second/seconds
 
-		And "findTransactions" is called on "nodeB-m1" with:
+		And "findTransactions" is called on "nodeB-m4" with:
 		|keys       |values             |type           |
 		|tags       |TEST9TAG9ONE       |list           |
 

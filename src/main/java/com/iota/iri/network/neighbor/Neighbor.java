@@ -1,6 +1,7 @@
 package com.iota.iri.network.neighbor;
 
 import com.iota.iri.network.protocol.Handshake;
+import com.iota.iri.network.protocol.Heartbeat;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -38,6 +39,13 @@ public interface Neighbor {
      * @throws IOException thrown when reading from the source channels fails
      */
     Handshake handshake() throws IOException;
+
+    /**
+     * Instructs the {@link Neighbor} to read from its source channel a {@link Heartbeat} packet.
+     * @return The {@link Heartbeat} object
+     * @throws IOException thrown when reading from the source channels fails
+     */
+    Heartbeat heartbeat() throws IOException;
 
     /**
      * Instructs the {@link Neighbor} to send the given {@link ByteBuffer} to its destination channel.
@@ -122,5 +130,12 @@ public interface Neighbor {
      * @return the protocol version
      */
     int getProtocolVersion();
+
+    /**
+     * Checks if we have data (transactions) to send to the neighbor
+     *
+     * @return {@code true} if we have data to send, else returns {@code false}
+     */
+    boolean hasDataToSendTo();
 
 }

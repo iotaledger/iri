@@ -1,11 +1,13 @@
 package com.iota.iri.network.pipeline;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.impl.NeighborMetricsImpl;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.validation.TransactionSolidifier;
 import com.iota.iri.storage.Tangle;
 
 import org.junit.Rule;
@@ -26,7 +28,7 @@ public class ReceivedStageTest {
     private Tangle tangle;
 
     @Mock
-    private TransactionValidator transactionValidator;
+    private TransactionSolidifier txSolidifier;
 
     @Mock
     private SnapshotProvider snapshotProvider;
@@ -43,13 +45,20 @@ public class ReceivedStageTest {
     @Mock
     private NeighborMetricsImpl neighborMetrics;
 
+    @Mock
+    private MilestoneService milestoneService;
+
+    @Mock
+    private Hash cooAddress;
+
     @Test
     public void newlyStoredTransactionUpdatesAlsoArrivalTimeAndSender() throws Exception {
         Mockito.when(tvm.store(tangle, snapshotProvider.getInitialSnapshot())).thenReturn(true);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
         Mockito.when(transactionRequester.removeRecentlyRequestedTransaction(Mockito.any())).thenReturn(true);
 
-        ReceivedStage stage = new ReceivedStage(tangle, transactionValidator, snapshotProvider, transactionRequester);
+        ReceivedStage stage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester,
+                milestoneService, cooAddress);
         ReceivedPayload receivedPayload = new ReceivedPayload(neighbor, tvm);
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);
@@ -58,11 +67,11 @@ public class ReceivedStageTest {
         Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester).requestTrunkAndBranch(Mockito.any());
-        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.SOLIDIFY,
                 ctx.getNextStage());
-        BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor is still the same", neighbor, broadcastPayload.getOriginNeighbor());
-        assertEquals("tvm is still the same", tvm, broadcastPayload.getTransactionViewModel());
+        SolidifyPayload solidifyPayload = (SolidifyPayload) ctx.getPayload();
+        assertEquals("neighbor is still the same", neighbor, solidifyPayload.getOriginNeighbor());
+        assertEquals("tvm is still the same", tvm, solidifyPayload.getTransaction());
     }
 
     @Test
@@ -70,7 +79,8 @@ public class ReceivedStageTest {
         Mockito.when(tvm.store(tangle, snapshotProvider.getInitialSnapshot())).thenReturn(false);
         Mockito.when(neighbor.getMetrics()).thenReturn(neighborMetrics);
 
-        ReceivedStage stage = new ReceivedStage(tangle, transactionValidator, snapshotProvider, transactionRequester);
+        ReceivedStage stage = new ReceivedStage(tangle, txSolidifier, snapshotProvider, transactionRequester,
+                milestoneService, cooAddress);
         ReceivedPayload receivedPayload = new ReceivedPayload(neighbor, tvm);
         ProcessingContext ctx = new ProcessingContext(null, receivedPayload);
         stage.process(ctx);
@@ -79,11 +89,11 @@ public class ReceivedStageTest {
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(transactionRequester).removeRecentlyRequestedTransaction(Mockito.any());
         Mockito.verify(transactionRequester, Mockito.never()).requestTrunkAndBranch(Mockito.any());
-        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.BROADCAST,
+        assertEquals("should submit to broadcast stage next", TransactionProcessingPipeline.Stage.SOLIDIFY,
                 ctx.getNextStage());
-        BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
-        assertEquals("neighbor should still be the same", neighbor, broadcastPayload.getOriginNeighbor());
-        assertEquals("tvm should still be the same", tvm, broadcastPayload.getTransactionViewModel());
+        SolidifyPayload solidifyPayload = (SolidifyPayload) ctx.getPayload();
+        assertEquals("neighbor should still be the same", neighbor, solidifyPayload.getOriginNeighbor());
+        assertEquals("tvm should still be the same", tvm, solidifyPayload.getTransaction());
     }
 
 }

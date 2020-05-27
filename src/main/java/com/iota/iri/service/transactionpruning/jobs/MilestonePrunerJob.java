@@ -9,6 +9,7 @@ import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
+import com.iota.iri.utils.ASCIIProgressBar;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.dag.DAGHelper;
 
@@ -31,6 +32,16 @@ import org.slf4j.LoggerFactory;
 public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
 
     private static final Logger log = LoggerFactory.getLogger(MilestonePrunerJob.class);
+    
+    /**
+     * We start logging progress of deletion when the job contains at least this amount of milestones to prune
+     */
+    private static final int MIN_LOG_NUMBER = 500;
+    
+    /**
+     * Delay between logging attempts, if that is enabled for this job
+     */
+    private static final int LOG_DELAY = 60000;
 
     /**
      * Holds the milestone index where this job starts cleaning up.
@@ -46,6 +57,16 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
      * Holds the milestone index of the oldest milestone that was cleaned up already (the current progress).
      */
     private int currentIndex;
+    
+    /**
+     * Cached variable whether we log this job or not
+     */
+    private boolean shouldLog;
+    
+    /**
+     * The last time we logged, logging happens once a minute
+     */
+    private long lastLogTime;
 
     /**
      * This method parses the string representation of a {@link MilestonePrunerJob} and creates the corresponding
@@ -105,6 +126,8 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
         if (currentIndex > targetIndex) {
             setStatus(TransactionPrunerJobStatus.DONE);
         }
+        
+        shouldLog = targetIndex - startingIndex > MIN_LOG_NUMBER;
     }
 
     /**
@@ -124,6 +147,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                     cleanupMilestoneTransactions();
 
                     setCurrentIndex(getCurrentIndex() + 1);
+                    logProgress();
 
                     // synchronize this call because the MilestonePrunerJobQueue needs it to check if we can be extended
                     synchronized (this) {
@@ -138,6 +162,23 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                 throw e;
             }
         }
+    }
+
+    private void logProgress() {
+        if (!shouldLog || (lastLogTime + LOG_DELAY) > System.currentTimeMillis()) {
+            return;
+        }
+        
+        StringBuilder progressSB = new StringBuilder();
+
+        // add progress bar
+        progressSB.append(ASCIIProgressBar.getProgressBarString(startingIndex, targetIndex, currentIndex));
+        // add lsm to lm
+        progressSB.append(String.format(" [Pruned %d / %d MS - remaining: %d]", currentIndex - startingIndex,
+                targetIndex - startingIndex, targetIndex - currentIndex));
+        
+        log.info(progressSB.toString());
+        lastLogTime = System.currentTimeMillis();
     }
 
     /**

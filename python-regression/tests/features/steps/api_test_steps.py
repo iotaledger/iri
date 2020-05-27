@@ -1,14 +1,13 @@
 from aloe import *
 from util import static_vals
+from util import logger as log
 from util.test_logic import api_test_logic as api_utils
 from util.threading_logic import pool_logic as pool
 from util.neighbor_logic import neighbor_logic as neighbors
 from util.response_logic import response_handling as responses
 from time import sleep, time
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = log.getLogger(__name__)
 
 testAddress = static_vals.TEST_ADDRESS
 
@@ -24,7 +23,7 @@ def api_method_is_called(step, api_call, node_name):
     :param api_call:     The api call that will be requested
     :param node_name:    The name identifying the node you would like to make this request on
     :param step.hashes:  A gherkin table outlining any arguments needed for the call
-                        (See tests/features/machine1/1_api_tests.feature for examples)
+                        (See tests/features/machine1/4_api_tests.feature for examples)
 
         The table parameter is unique in that there are several input types available depending on the call
         being made.

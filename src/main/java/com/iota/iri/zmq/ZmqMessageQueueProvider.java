@@ -40,7 +40,7 @@ public class ZmqMessageQueueProvider implements MessageQueueProvider {
         TransactionViewModel transactionViewModel = new TransactionViewModel(transaction, (Hash)index);
 
         publishTx(transactionViewModel);
-        publishTxTrytes(transactionViewModel);
+        publishTrytes(transactionViewModel);
 
         return true;
     }
@@ -70,18 +70,18 @@ public class ZmqMessageQueueProvider implements MessageQueueProvider {
         }
     }
 
-    private void publishTxTrytes(TransactionViewModel transactionViewModel) {
-        StringBuilder txTrytesStringBuilder = new StringBuilder(TransactionViewModel.TRINARY_SIZE/3);
+    private void publishTrytes(TransactionViewModel transactionViewModel) {
+        StringBuilder trytesStringBuilder = new StringBuilder(TransactionViewModel.TRINARY_SIZE/3);
 
         try {
-            txTrytesStringBuilder.append("tx_trytes ");
-            txTrytesStringBuilder.append(Converter.trytes(transactionViewModel.trits())); txTrytesStringBuilder.append(" ");
-            txTrytesStringBuilder.append(transactionViewModel.getHash());
+            trytesStringBuilder.append("trytes ");
+            trytesStringBuilder.append(Converter.trytes(transactionViewModel.trits())); trytesStringBuilder.append(" ");
+            trytesStringBuilder.append(transactionViewModel.getHash());
 
-            messageQ.publish(txTrytesStringBuilder.toString());
+            messageQ.publish(trytesStringBuilder.toString());
         } catch (Exception e) {
-            log.error(txTrytesStringBuilder.toString());
-            log.error("Error publishing tx_trytes to zmq.", e);
+            log.error(trytesStringBuilder.toString());
+            log.error("Error publishing trytes to zmq.", e);
         }
     }
 

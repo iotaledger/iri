@@ -14,7 +14,7 @@ public interface TransactionProcessingPipeline {
      * Defines the different stages of the {@link TransactionProcessingPipelineImpl}.
      */
     enum Stage {
-        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH,
+        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT, FINISH, SOLIDIFY, MILESTONE
     }
 
     /**
@@ -111,4 +111,18 @@ public interface TransactionProcessingPipeline {
      * @param hashingStage the {@link HashingStage} to use
      */
     void setHashingStage(HashingStage hashingStage);
+
+    /**
+     * Sets the solidify stage. This method should only be used for injecting mocked objects.
+     *
+     * @param solidifyStage the {@link SolidifyStage} to use
+     */
+    void setSolidifyStage(SolidifyStage solidifyStage);
+
+    /**
+     * Sets the milestone stage. This method should only be used for injecting mocked objects.
+     *
+     * @param milestoneStage the {@link MilestoneStage} to use
+     */
+    void setMilestoneStage(MilestoneStage milestoneStage);
 }

@@ -49,7 +49,7 @@ public class MilestoneServiceImplTest {
         public void mockProcessed(Tangle tangle, boolean applied) {
             TangleMockUtils.mockMilestone(tangle, transactionHash, milestoneIndex);
             Transaction mockedTransaction = TangleMockUtils.mockTransaction(tangle, transactionHash);
-            mockedTransaction.snapshot = applied ? milestoneIndex : 0;
+            mockedTransaction.snapshot.set(applied ? milestoneIndex : 0);
         }
     }
 

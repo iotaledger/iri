@@ -1,4 +1,5 @@
 1.8.6
+- Do not skip milestones while doing local snapshot (#1868)
 - Fix: resolve race in networking layer assigning write operation to key (#1865)
 - Fix: Remove condition in send to prevent deadlock in networking (#1864)
 - Remove address scan in bootstrap (#1861)

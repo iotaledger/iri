@@ -5,6 +5,7 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.MilestoneRepairer;
@@ -37,7 +38,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     
     private static final IntervalLogger latestSolidMilestoneLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
-    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
+    private static final IntervalLogger solidifyLogger = new IntervalLogger(MilestoneSolidifierImpl.class, 10000);
 
     private static final IntervalLogger progressBarLogger = new IntervalLogger(MilestoneSolidifierImpl.class);
     
@@ -231,19 +232,25 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
         try {
             if (getLatestMilestoneIndex() > getLatestSolidMilestoneIndex()) {
                 int nextMilestone = getLatestSolidMilestoneIndex() + 1;
+                boolean isSyncing = false;
                 if (seenMilestones.containsKey(nextMilestone)) {
                     TransactionViewModel milestone = TransactionViewModel.fromHash(tangle,
                             seenMilestones.get(nextMilestone));
                     if (milestone.isSolid()) {
+                        isSyncing = true;
                         updateSolidMilestone(getLatestSolidMilestoneIndex());
                         transactionSolidifier.addToPropagationQueue(milestone.getHash());
                     } else {
                         transactionSolidifier.addToSolidificationQueue(milestone.getHash());
                     }
                 }
+
+                if (!seenMilestones.isEmpty() && !isSyncing) {
+                    checkOldestSeenMilestoneSolidity();
+                }
             }
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -268,50 +275,81 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
      */
     private void bootStrapSolidMilestones() throws Exception {
         setLatestSolidMilestone(snapshotProvider.getLatestSnapshot().getIndex());
-        Set<Hash> milestoneTransactions = AddressViewModel.load(tangle, config.getCoordinator()).getHashes();
-        int processed = 0;
-        int index;
-        for (Hash hash: milestoneTransactions) {
-            try {
-                processed += 1;
-                TransactionViewModel tvm = TransactionViewModel.fromHash(tangle, hash);
-                boolean isTail = tvm.getCurrentIndex() == 0;
-                if (isTail && (index = milestoneService
-                        .getMilestoneIndex(tvm)) > getLatestSolidMilestoneIndex()) {
-                    MilestoneValidity validity = milestoneService.validateMilestone(tvm, index);
-                    if (validity == MilestoneValidity.VALID) {
-                        tvm.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-                        registerNewMilestone(getLatestMilestoneIndex(), index, tvm.getHash());
-                    }
 
-                    if (validity != MilestoneValidity.INVALID) {
-                        addMilestoneCandidate(hash, index);
-                    }
-                }
-                if (processed % 1000 == 0 || processed % milestoneTransactions.size() == 0){
-                    log.info("Bootstrapping milestones: [ " + processed  + " / " + milestoneTransactions.size() + " ]");
-                }
-            } catch(Exception e) {
-                log.error("Error processing existing milestone index", e);
-            }
+        int index = getLatestSolidMilestoneIndex();
+        MilestoneViewModel nextMilestone;
+        log.info("Starting milestone bootstrapping...");
+        while ((nextMilestone = MilestoneViewModel.get(tangle, ++index)) != null) {
+            registerNewMilestone(getLatestMilestoneIndex(), index, nextMilestone.getHash());
+            addMilestoneCandidate(nextMilestone.getHash(), nextMilestone.index());
         }
+        log.info("Done bootstrapping milestones.");
+
         initialized.set(true);
     }
 
+    /**
+     * Checks the seen milestones queue for the lowest index available, and tries to solidify it. If it is already
+     * solid but not syncing, there are milestone objects in the db that have not been processed through the solidifier
+     * (likely due to shutting down during synchronisation). If this is the case, an address scan is performed to
+     * find and process all present milestone transactions through the milestone solidifier.
+     */
+    private void checkOldestSeenMilestoneSolidity() {
+        Optional<Integer> lowestIndex = seenMilestones.keySet().stream().min(Integer::compareTo);
+        if (lowestIndex.isPresent()) {
+            if (lowestIndex.get() <= getLatestSolidMilestoneIndex()) {
+                removeCurrentAndLowerSeenMilestone(lowestIndex.get());
+            } else {
+                if (!transactionSolidifier.addMilestoneToSolidificationQueue(seenMilestones.get(lowestIndex.get())) &&
+                        (seenMilestones.size() + unsolidMilestones.size()) <
+                                (getLatestMilestoneIndex() - getLatestSolidMilestoneIndex())) {
+                    scanAddressHashes();
+                }
+            }
+        }
+    }
+
+    private void scanAddressHashes() {
+        try{
+            log.info("Scanning existing milestone candidates...");
+            TransactionViewModel milestoneCandidate;
+            int index;
+            int processed = 0;
+            for (Hash hash: AddressViewModel.load(tangle, config.getCoordinator()).getHashes()) {
+                processed++;
+                milestoneCandidate = TransactionViewModel.fromHash(tangle, hash);
+                index = milestoneService.getMilestoneIndex(milestoneCandidate);
+                if (!seenMilestones.containsValue(hash) &&
+                        milestoneCandidate.getCurrentIndex() == 0 &&
+                        index > getLatestSolidMilestoneIndex() &&
+                        milestoneService.validateMilestone(milestoneCandidate, index) == MilestoneValidity.VALID) {
+                    addMilestoneCandidate(hash, index);
+                }
+
+                if (processed % 5000 == 0) {
+                    log.info(processed + " Milestones Processed...");
+                }
+            }
+            log.info("Done scanning existing milestone candidates.");
+        } catch (Exception e) {
+            log.warn("Error scanning coo address hashes.", e);
+        }
+    }
 
 
     private void updateSolidMilestone(int currentSolidMilestoneIndex) throws Exception {
         int nextMilestoneIndex = currentSolidMilestoneIndex + 1;
         MilestoneViewModel nextSolidMilestone = MilestoneViewModel.get(tangle, nextMilestoneIndex);
         if (nextSolidMilestone != null) {
-            applySolidMilestoneToLedger(nextSolidMilestone);
-            logChange(currentSolidMilestoneIndex);
+            if (applySolidMilestoneToLedger(nextSolidMilestone)) {
+                logChange(currentSolidMilestoneIndex);
 
-            if (nextMilestoneIndex == getLatestMilestoneIndex()) {
-                transactionRequester.clearRecentlyRequestedTransactions();
+                if (nextMilestoneIndex == getLatestMilestoneIndex()) {
+                    transactionRequester.clearRecentlyRequestedTransactions();
+                }
+
+                removeCurrentAndLowerSeenMilestone(nextMilestoneIndex);
             }
-
-            removeCurrentAndLowerSeenMilestone(nextMilestoneIndex);
         }
 
     }
@@ -433,14 +471,16 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     }
 
 
-    private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
+    private boolean applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
         if (ledgerService.applyMilestoneToLedger(milestone)) {
             if (milestoneRepairer.isRepairRunning() && milestoneRepairer.isRepairSuccessful(milestone)) {
                 milestoneRepairer.stopRepair();
             }
             syncProgressInfo.addMilestoneApplicationTime();
+            return true;
         } else {
             milestoneRepairer.repairCorruptedMilestone(milestone);
+            return false;
         }
     }
 

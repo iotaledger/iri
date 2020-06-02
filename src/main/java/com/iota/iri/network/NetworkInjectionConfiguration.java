@@ -1,19 +1,21 @@
 package com.iota.iri.network;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.iota.iri.service.validation.TransactionSolidifier;
-import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.network.impl.TipsRequesterImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.pipeline.TransactionProcessingPipelineImpl;
-import com.iota.iri.service.milestone.MilestoneSolidifier;
+import com.iota.iri.service.milestone.InSyncService;
 import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.milestone.MilestoneSolidifier;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.validation.TransactionSolidifier;
+import com.iota.iri.service.validation.TransactionValidator;
 import com.iota.iri.storage.Tangle;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 
 /**
  * Guice module for network package. Configuration class for dependency injection.
@@ -49,10 +51,10 @@ public class NetworkInjectionConfiguration extends AbstractModule {
             TransactionValidator txValidator, Tangle tangle, SnapshotProvider snapshotProvider,
             TipsViewModel tipsViewModel, TransactionRequester transactionRequester,
             TransactionSolidifier transactionSolidifier, MilestoneService milestoneService,
-            MilestoneSolidifier milestoneSolidifier) {
+            MilestoneSolidifier milestoneSolidifier, InSyncService inSyncService) {
         return new TransactionProcessingPipelineImpl(neighborRouter, configuration, txValidator, tangle,
                 snapshotProvider, tipsViewModel, milestoneSolidifier, transactionRequester, transactionSolidifier,
-                milestoneService);
+                milestoneService, inSyncService);
     }
 
     @Singleton

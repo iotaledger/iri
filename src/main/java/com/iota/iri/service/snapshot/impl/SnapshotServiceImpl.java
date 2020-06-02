@@ -59,9 +59,10 @@ public class SnapshotServiceImpl implements SnapshotService {
     private final IotaConfig config;
     
     /**
-     * Minimum depth for generating solid entrypoints due to coordinator allowing 15 MS back attachment
+     * Minimum depth for generating solid entrypoints due to coordinator allowing 15 MS back attachment.
+     * So we put it on 50 just to be sure
      */
-    private static final int MIN_LS_DEPTH_MAINNET = 15 + 1;
+    private static final int MIN_LS_DEPTH_MAINNET = 50;
 
     /**
      * Implements the snapshot service. See interface for more information.
@@ -88,7 +89,6 @@ public class SnapshotServiceImpl implements SnapshotService {
     @Override
     public void replayMilestones(Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
         Map<Hash, Long> balanceChanges = new HashMap<>();
-        Set<Integer> skippedMilestones = new HashSet<>();
         MilestoneViewModel lastAppliedMilestone = null;
 
         try {
@@ -106,7 +106,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
                     lastAppliedMilestone = currentMilestone;
                 } else {
-                    skippedMilestones.add(currentMilestoneIndex);
+                    throw new SnapshotException("milestone # " + currentMilestoneIndex  + " is missing");
                 }
             }
 
@@ -125,9 +125,6 @@ public class SnapshotServiceImpl implements SnapshotService {
                         snapshot.setTimestamp(milestoneTransaction.getTimestamp());
                     }
 
-                    for (int skippedMilestoneIndex : skippedMilestones) {
-                        snapshot.addSkippedMilestone(skippedMilestoneIndex);
-                    }
                 } finally {
                     snapshot.unlockWrite();
                 }

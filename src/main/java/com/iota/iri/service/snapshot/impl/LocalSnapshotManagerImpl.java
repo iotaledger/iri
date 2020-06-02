@@ -2,13 +2,9 @@ package com.iota.iri.service.snapshot.impl;
 
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.SnapshotConfig;
+import com.iota.iri.service.milestone.InSyncService;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.snapshot.LocalSnapshotManager;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotCondition;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotService;
+import com.iota.iri.service.snapshot.*;
 import com.iota.iri.service.transactionpruning.PruningCondition;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
@@ -72,11 +68,6 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private final SnapshotConfig config;
     
     /**
-     * If this node is currently seen as in sync
-     */
-    private boolean isInSync;
-
-    /**
      * Holds a reference to the {@link ThreadIdentifier} for the monitor thread.
      *
      * Using a {@link ThreadIdentifier} for spawning the thread allows the {@link ThreadUtils} to spawn exactly one
@@ -87,6 +78,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private SnapshotCondition[] snapshotConditions;
     private PruningCondition[] pruningConditions;
 
+    private InSyncService inSyncService;
+
     /**
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param snapshotService service instance of the snapshot package that gives us access to packages' business logic
@@ -94,12 +87,12 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param config important snapshot related configuration parameters
      */
     public LocalSnapshotManagerImpl(SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            TransactionPruner transactionPruner, SnapshotConfig config) {
+            TransactionPruner transactionPruner, SnapshotConfig config, InSyncService inSyncService) {
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.transactionPruner = transactionPruner;
         this.config = config;
-        this.isInSync = false;
+        this.inSyncService = inSyncService;
     }
 
     /**
@@ -143,7 +136,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     }
     
     private Snapshot handleSnapshot(MilestoneSolidifier milestoneSolidifier) {
-        boolean isInSync = isInSync(milestoneSolidifier);
+        boolean isInSync = inSyncService.isInSync();
         int lowestSnapshotIndex = calculateLowestSnapshotIndex(isInSync);
         if (canTakeSnapshot(lowestSnapshotIndex, milestoneSolidifier)) {
             try {
@@ -245,38 +238,6 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
         return pruningMilestoneIndex > 0 
                 && pruningMilestoneIndex < snapshotIndex 
                 && !transactionPruner.hasActiveJobFor(MilestonePrunerJob.class);
-    }
-
-    /**
-     * A node is defined in sync when the latest snapshot milestone index and the
-     * latest milestone index are equal. In order to prevent a bounce between in and
-     * out of sync, a buffer is added when a node became in sync.
-     * 
-     * This will always return false if we are not done scanning milestone
-     * candidates during initialization.
-     * 
-     * @param milestoneSolidifier tracker we use to determine milestones
-     * @return <code>true</code> if we are in sync, otherwise <code>false</code>
-     */
-    @VisibleForTesting
-    boolean isInSync(MilestoneSolidifier milestoneSolidifier) {
-        if (!milestoneSolidifier.isInitialScanComplete()) {
-            return false;
-        }
-
-        int latestIndex = milestoneSolidifier.getLatestMilestoneIndex();
-        int latestSnapshot = snapshotProvider.getLatestSnapshot().getIndex();
-
-        // If we are out of sync, only a full sync will get us in
-        if (!isInSync && latestIndex == latestSnapshot) {
-            isInSync = true;
-
-        // When we are in sync, only dropping below the buffer gets us out of sync
-        } else if (latestSnapshot < latestIndex - LOCAL_SNAPSHOT_SYNC_BUFFER) {
-            isInSync = false;
-        }
-
-        return isInSync;
     }
 
     @Override

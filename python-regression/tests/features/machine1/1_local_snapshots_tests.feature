@@ -91,7 +91,7 @@ Feature: Test Bootstrapping With LS
 
     # Trigger pruning and wait for it to finish
     When the next 10 milestones are issued
-    And we wait "15" second/seconds
+    And we wait "20" second/seconds
 
     And "getInclusionStates" is called on "nodeD-m1" with:
       |keys                       |values                   |type             |

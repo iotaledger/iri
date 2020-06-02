@@ -33,7 +33,7 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
     /**
      * Max size for all queues.
      */
-    private static final int MAX_SIZE= 10000;
+    private static final int MAX_SIZE= 100;
 
     private static final int SOLIDIFICATION_INTERVAL = 100;
 
@@ -72,6 +72,8 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
 
     private TransactionPropagator transactionPropagator;
 
+    private Hash cooAddress;
+
     /**
      * Constructor for the solidifier.
      * @param tangle                    The DB reference
@@ -79,12 +81,13 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
      * @param transactionRequester      A requester for missing transactions
      */
     public TransactionSolidifierImpl(Tangle tangle, SnapshotProvider snapshotProvider, TransactionRequester transactionRequester,
-                                     TipsViewModel tipsViewModel){
+                                     TipsViewModel tipsViewModel, Hash cooAddress){
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.transactionRequester = transactionRequester;
         this.tipsViewModel = tipsViewModel;
         this.transactionPropagator = new TransactionPropagator();
+        this.cooAddress = cooAddress;
     }
 
     /**
@@ -131,10 +134,10 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
             TransactionViewModel tx = fromHash(tangle, hash);
             if (tx.isSolid()) {
                 transactionPropagator.addToPropagationQueue(hash);
-                return true;
+                return false;
             }
             addToSolidificationQueue(hash);
-            return false;
+            return true;
         } catch (Exception e) {
             log.error("Error adding milestone to solidification queue", e);
             return false;
@@ -225,6 +228,9 @@ public class TransactionSolidifierImpl implements TransactionSolidifier {
                 } else {
                     nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+                    if (transaction.getAddressHash().equals(cooAddress)) {
+                        checkRequester(hashPointer);
+                    }
                 }
             }
         }

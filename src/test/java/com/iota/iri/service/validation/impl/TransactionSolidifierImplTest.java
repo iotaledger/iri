@@ -3,6 +3,7 @@ package com.iota.iri.service.validation.impl;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -52,6 +53,9 @@ public class TransactionSolidifierImplTest {
     @Mock
     private static TransactionRequester txRequester;
 
+    @Mock
+    private static Hash cooAddress;
+
     @BeforeClass
     public static void setUp() throws Exception {
         dbFolder.create();
@@ -74,7 +78,7 @@ public class TransactionSolidifierImplTest {
     public void setUpEach() {
         when(snapshotProvider.getInitialSnapshot()).thenReturn(SnapshotMockUtils.createSnapshot());
         txRequester = new TransactionRequester(tangle, snapshotProvider);
-        txSolidifier = new TransactionSolidifierImpl(tangle, snapshotProvider, txRequester, tipsViewModel);
+        txSolidifier = new TransactionSolidifierImpl(tangle, snapshotProvider, txRequester, tipsViewModel, cooAddress);
         txSolidifier.start();
     }
 

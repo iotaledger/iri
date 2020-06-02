@@ -131,4 +131,11 @@ public interface Neighbor {
      */
     int getProtocolVersion();
 
+    /**
+     * Checks if we have data (transactions) to send to the neighbor
+     *
+     * @return {@code true} if we have data to send, else returns {@code false}
+     */
+    boolean hasDataToSendTo();
+
 }

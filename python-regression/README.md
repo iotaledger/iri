@@ -46,11 +46,6 @@ Machine 5 - Stitching Tests: This machine uses 1 node. The node is loaded with a
 stitching transaction is issued, and another transaction referencing that one is issued. After these transactions are 
 issued, making `getTransactionsToApprove` calls should not crash the node.  
 
-Machine 6 - Milestone Validation Tests: This machine uses 2 nodes. Both nodes are loaded with the same db. The db 
-contains several signed milestone transactions, and several unsigned transactions. One node is set to validate the 
-testnet coordinator signature, while the other is not. The one that requires validation should solidify to one point, 
-while the other should solidify further. 
-
 __*Note:*__ _The db's used for these tests have been documented below for reference_
 
 ### Running Tests Locally
@@ -223,11 +218,3 @@ for testing basic api commands.
 https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Stitching_tests_db.tar - A full db synced to milestone 37 
 with a large subtangle that is building beside the main tangle. This db is used to test the success or failure of 
 stitching this subtangle back into the original.
-
-
-##### _Machine 6_
-https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Validation_tests_db.tar - A full db containing 2 separate 
-synchronisation points. The first point is hit at milestone 37, where the last milestone issued with valid signatures is 
-present. The db contains several more milestones that have been attached without a valid signature. The test will sync 
-to 37 if a valid signature is required and 45 if not. 
-

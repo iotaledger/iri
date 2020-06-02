@@ -28,6 +28,8 @@
 </p>
 
 ---
+## Notice
+This project is currently being deprecated in favor of [hornet](https://github.com/gohornet/hornet). Users are encouraged to migrate.
 
 ## About
 

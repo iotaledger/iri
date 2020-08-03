@@ -28,6 +28,9 @@
 </p>
 
 ---
+## Notice
+This project is currently being deprecated in favor of [HORNET](https://github.com/gohornet/hornet). Users are encouraged to migrate.
+In order to migrate your existing DB to HORNET please follow the [guide](https://docs.iota.org/docs/hornet/1.0/guides/migrating-from-iri).
 
 ## About
 

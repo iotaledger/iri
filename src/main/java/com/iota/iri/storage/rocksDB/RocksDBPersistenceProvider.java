@@ -412,22 +412,27 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
-        List<byte[]> itemsToDelete = new ArrayList<>();
-        try (RocksIterator iterator = db.newIterator(handle)) {
+        try (WriteBatch delBatch = new WriteBatch();
+             WriteOptions writeOptions = new WriteOptions()
+                     //We are explicit about what happens if the node reboots before a flush to the db
+                     .setDisableWAL(false)
+                     //We want to make sure deleted data was indeed deleted
+                     .setSync(true)) {
+            int counter = 0;
+            try (RocksIterator iterator = db.newIterator(handle)) {
+                for (iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
+                    delBatch.delete(handle, iterator.key());
+                    if (++counter % 10000 == 0) {
+                        db.write(writeOptions, delBatch);
+                        log.info("Deleted: {}", counter);
+                        delBatch.clear();
+                    }
+                }
+            }
 
-            for (iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
-                itemsToDelete.add(iterator.key());
-            }
-        }
-        if (!itemsToDelete.isEmpty()) {
-            log.info("Amount to delete: " + itemsToDelete.size());
-        }
-        int counter = 0;
-        for (byte[] itemToDelete : itemsToDelete) {
-            if (++counter % 10000 == 0) {
-                log.info("Deleted: {}", counter);
-            }
-            db.delete(handle, itemToDelete);
+            //delete remaining
+            db.write(writeOptions, delBatch);
+            log.info("Deleted {} entries in total", counter);
         }
     }
 

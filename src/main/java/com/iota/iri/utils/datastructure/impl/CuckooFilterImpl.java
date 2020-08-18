@@ -5,6 +5,7 @@ import com.iota.iri.utils.datastructure.CuckooFilter;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.BitSet;
 
 /**
@@ -239,10 +240,11 @@ public class CuckooFilterImpl implements CuckooFilter {
         }
 
         // filter is full -> start moving MAX_NUM_KICKS times (randomly select which bucket to start with)
-        int indexOfDestinationBucket = Math.random() < 0.5 ? item.index : item.altIndex;
+        SecureRandom secureRandom = new SecureRandom();
+        int indexOfDestinationBucket = secureRandom.nextDouble() < 0.5 ? item.index : item.altIndex;
         for(int i = 0; i < MAX_NUM_KICKS; i++) {
             // select a random item to kick
-            int indexOfItemToKick = (int) (Math.random() * bucketSize);
+            int indexOfItemToKick = secureRandom.nextInt() * bucketSize;
 
             // swap the items
             BitSet kickedFingerPrint = cuckooFilterTable.get(indexOfDestinationBucket, indexOfItemToKick);

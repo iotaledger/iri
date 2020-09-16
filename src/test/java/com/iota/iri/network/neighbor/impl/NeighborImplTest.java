@@ -6,16 +6,13 @@ import com.iota.iri.network.FakeSelectionKey;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.NeighborState;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
-import com.iota.iri.network.protocol.Handshake;
+import com.iota.iri.network.protocol.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
-import com.iota.iri.network.protocol.Heartbeat;
-import com.iota.iri.network.protocol.Protocol;
-import com.iota.iri.network.protocol.ProtocolMessage;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -265,6 +262,62 @@ public class NeighborImplTest {
             assertEquals("fsmi of sent and read heartbeat should be equal", readHeartbeat.getFirstSolidMilestoneIndex(), heartbeat.getFirstSolidMilestoneIndex());
         } catch (IOException e) {
             fail("didnt expect an exception: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void writeMilestoneRequest() {
+        MilestoneRequest milestoneRequest = new MilestoneRequest();
+        milestoneRequest.setMilestoneIndex(1);
+        ByteBuffer milestoneRequestPacket =  Protocol.createMilestoneRequestPacket(milestoneRequest);
+
+        Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
+
+            @Override
+            public int write(ByteBuffer buf) {
+                int bytesWritten = 0;
+                while (buf.hasRemaining()) {
+                    buf.get();
+                    bytesWritten++;
+                }
+                return bytesWritten;
+            }
+        }, localAddr, serverSocketPort, pipeline);
+
+        neighbor.send(milestoneRequestPacket);
+
+        try {
+            assertEquals("should have written the entire milestone request packet", milestoneRequestPacket.capacity(), neighbor.write());
+        } catch (IOException e) {
+            fail("Didn't expect an exception: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void readMilestoneRequest() {
+        MilestoneRequest milestoneRequest = new MilestoneRequest();
+        milestoneRequest.setMilestoneIndex(1);
+        ByteBuffer milestoneRequestPacket =  Protocol.createMilestoneRequestPacket(milestoneRequest);
+
+        Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
+            // fake having a heartbeat packet in the socket
+            @Override
+            public int read(ByteBuffer dst) {
+                while (dst.hasRemaining()) {
+                    dst.put(milestoneRequestPacket.get());
+                }
+                return 0;
+            }
+        }, localAddr, serverSocketPort, pipeline);
+
+        // set the neighbor as ready for other messages
+        neighbor.setState(NeighborState.READY_FOR_MESSAGES);
+
+        try {
+            MilestoneRequest readMilestoneRequest = neighbor.milestoneRequest();
+            assertEquals("milestone index of sent and read ms request should be equal", readMilestoneRequest.getMilestoneIndex(), milestoneRequest.getMilestoneIndex());
+        } catch (IOException e) {
+            fail("Didn't expect an exception: " + e.getMessage());
         }
     }
 }

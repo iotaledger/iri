@@ -2,6 +2,7 @@ package com.iota.iri.network.neighbor;
 
 import com.iota.iri.network.protocol.Handshake;
 import com.iota.iri.network.protocol.Heartbeat;
+import com.iota.iri.network.protocol.MilestoneRequest;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -46,6 +47,13 @@ public interface Neighbor {
      * @throws IOException thrown when reading from the source channels fails
      */
     Heartbeat heartbeat() throws IOException;
+
+    /**
+     * Instructs the {@link Neighbor} to read from its source channel a {@link MilestoneRequest} packet.
+     * @return The {@link MilestoneRequest} object.
+     * @throws IOException thrown when reading from the source channel fails
+     */
+    MilestoneRequest milestoneRequest() throws IOException;
 
     /**
      * Instructs the {@link Neighbor} to send the given {@link ByteBuffer} to its destination channel.

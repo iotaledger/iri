@@ -128,4 +128,30 @@ public class ProtocolTest {
             fail("didn't expect any exceptions");
         }
     }
+
+    @Test
+    public void createMilestoneRequestPacket(){
+        MilestoneRequest milestoneRequest = new MilestoneRequest();
+        milestoneRequest.setMilestoneIndex(1);
+
+        ByteBuffer buf = Protocol.createMilestoneRequestPacket(milestoneRequest);
+        final int expectedMessageSize = Protocol.PROTOCOL_MS_REQUEST_BYTES_LENGTH;
+        assertEquals("buffer should have the right capacity",
+                Protocol.PROTOCOL_HEADER_BYTES_LENGTH + expectedMessageSize, buf.capacity());
+        assertEquals("should be of type milestone request message", ProtocolMessage.MS_REQUEST.getTypeID(), buf.get());
+        assertEquals("should have correct message length", expectedMessageSize, buf.getShort());
+    }
+
+    @Test
+    public void parseMilestoneRequest() {
+        try {
+            ByteBuffer buf = ByteBuffer.allocate(Protocol.PROTOCOL_MS_REQUEST_BYTES_LENGTH);
+            buf.putInt(1);
+            buf.flip();
+            MilestoneRequest milestoneRequest = MilestoneRequest.fromByteBuffer(buf);
+            assertEquals("should have correct milestone index", milestoneRequest.getMilestoneIndex(), 1);
+        } catch (Exception e) {
+            fail("Didn't expect any exceptions: " + e.getMessage());
+        }
+    }
 }

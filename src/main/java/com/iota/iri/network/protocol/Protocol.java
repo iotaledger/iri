@@ -61,6 +61,11 @@ public class Protocol {
     public final static byte PROTOCOL_HEARTBEAT_BYTES_LENGTH = 8;
 
     /**
+     * The amount of byes to store the index of the milestone to request
+     */
+    public final static byte PROTOCOL_MS_REQUEST_BYTES_LENGTH = 4;
+
+    /**
      * Parses the given buffer into a {@link ProtocolHeader}.
      * 
      * @param buf the buffer to parse
@@ -119,6 +124,15 @@ public class Protocol {
         addProtocolHeader(buf, ProtocolMessage.HEARTBEAT, payloadLengthBytes);
         buf.putInt(heartbeat.getFirstSolidMilestoneIndex());
         buf.putInt(heartbeat.getLastSolidMilestoneIndex());
+        buf.flip();
+        return buf;
+    }
+
+    public static ByteBuffer createMilestoneRequestPacket(MilestoneRequest milestoneRequest){
+        final short payloadLengthBytes = Protocol.PROTOCOL_MS_REQUEST_BYTES_LENGTH;
+        ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
+        addProtocolHeader(buf, ProtocolMessage.MS_REQUEST,  payloadLengthBytes);
+        buf.putInt(milestoneRequest.getMilestoneIndex());
         buf.flip();
         return buf;
     }

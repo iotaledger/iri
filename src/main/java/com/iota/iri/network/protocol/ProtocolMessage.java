@@ -28,7 +28,8 @@ public enum ProtocolMessage {
     TRANSACTION_GOSSIP((byte) 2, (short) (Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH + TransactionTruncator.NON_SIG_TX_PART_BYTES_LENGTH
             + TransactionTruncator.SIG_DATA_MAX_BYTES_LENGTH), true),
 
-    HEARTBEAT((byte) 3, Protocol.PROTOCOL_HEARTBEAT_BYTES_LENGTH, true);
+    HEARTBEAT((byte) 3, Protocol.PROTOCOL_HEARTBEAT_BYTES_LENGTH, true),
+    MS_REQUEST((byte) 4, Protocol.PROTOCOL_MS_REQUEST_BYTES_LENGTH, true);
 
     private static final ProtocolMessage[] lookup = new ProtocolMessage[256];
 
@@ -47,6 +48,7 @@ public enum ProtocolMessage {
         lookup[1] = HANDSHAKE;
         lookup[2] = TRANSACTION_GOSSIP;
         lookup[3] = HEARTBEAT;
+        lookup[4] = MS_REQUEST;
     }
 
     /**
